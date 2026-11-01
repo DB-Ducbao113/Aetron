@@ -164,3 +164,4 @@ Dựa trên các bằng chứng toán học, kết quả phân tích mã nguồn
 > **Bằng chứng:**  
 > - Tính đồng nhất hạ tầng (Pipeline Parity) giữa Fixed-Alpha và EKF 4-State đã được chứng minh tuyệt đối bằng bài test đối sánh: cả hai thuật toán đều dùng chung 100% tầng tiền kiểm định, phân đoạn sự kiện, cơ chế re-anchor và bộ tích lũy cự ly.  
 > - Việc khóa cấu trúc Pipeline tại PR #15 cho phép Bước 2 tiến hành nạp cùng một tập dữ liệu raw GPS vào cả 2 bộ lọc để so sánh công bằng về độ bám đường (RMSE) và khử trôi tĩnh mà không sợ sai lệch do tầng xử lý ngoại vi.
+
