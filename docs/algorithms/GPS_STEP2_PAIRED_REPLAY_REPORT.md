@@ -1,160 +1,200 @@
-# BÁO CÁO THỰC NGHIỆM: BƯỚC 2 — PAIRED FIELD REPLAY BASELINE VS EKF 4-STATE
-## AETRON GPS PIPELINE RESEARCH & QUALITY ASSURANCE
+# BÁO CÁO THỰC NGHIỆM ĐÃ HIỆU ĐÍNH: BƯỚC 2 — PAIRED FIELD REPLAY BASELINE VS EKF 4-STATE
+## AETRON GPS PIPELINE RESEARCH & SCIENTIFIC EVIDENCE AUDIT
 
-> **Phiên bản:** Bước 2 — Paired Replay Report  
+> **Phiên bản:** Bước 2 — Paired Replay Final Evidence Report (Hiệu đính & Kiểm toán Độc lập)  
 > **Thời điểm xuất báo cáo:** 01/11/2026  
 > **Nhánh kiểm thử:** `fix/gps-step1-raw-signal-gap`  
-> **Commit cơ sở (SHA):** `f1e5f53` (theo dõi `origin/fix/gps-step1-raw-signal-gap`)  
-> **Tập dữ liệu kiểm thử:** `exports/aetron_raw_gps_combined.csv` (10.779 raw GPS fixes, 7 phiên đạp xe thực tế)  
-> **Bộ kiểm thử tự động:** `test/gps_paired_field_replay_test.dart` (PASS 100%)  
+> **Commit cơ sở (SHA):** `HEAD` (`04c7001`+) trên `origin/fix/gps-step1-raw-signal-gap`  
+> **Commit đối chứng cũ (Pre-PR #15 SHA):** `53be32a` (kiểm chứng độc lập tại worktree riêng `/tmp/aetron_pre_pr15`)  
+> **Tập dữ liệu kiểm thử thực địa:** `exports/aetron_raw_gps_combined.csv`  
+> **SHA-256 Checksum:** `4352aaf43356ab1e7b5e0f4acd3ca8f20259417bde2b3f5bfbabf9c956d2a9c5`  
+> **Quy mô dữ liệu:** 10.780 dòng (1 tiêu đề + 10.779 bản ghi GPS thô từ 7 phiên thực tế)  
+> **Trạng thái kiểm thử tự động:** `test/gps_paired_field_replay_test.dart` (PASS 100%, độc lập an toàn không phụ thuộc CSV riêng)  
 > **Trạng thái phân tích tĩnh:** `flutter analyze` 0 issues found  
 
 ---
 
-## 1. MỤC TIÊU & NGUYÊN TẮC ĐỐI CHỨNG CÔNG BẰNG
+## 1. MỤC TIÊU & NGUYÊN TẮC ĐỐI CHỨNG KHOA HỌC
 
-Bước 2 nhằm giải quyết bài toán cốt lõi trong nghiên cứu thuật toán định vị Aetron: **So sánh công bằng và khách quan giữa Fixed-Alpha + Turn-Boost (Baseline lịch sử) và EKF 4-State (Ứng viên nâng cấp)** trên cùng một tập dữ liệu GPS thô thu thập từ các buổi vận động thực địa.
+Mục tiêu của Bước 2 là đánh giá đối chứng công bằng (Fair Paired Comparison) giữa hai chiến lược làm mượt:
+- **Baseline:** Fixed-Alpha ($\alpha \in \{0.34, 0.52, 0.72\}$) kết hợp Turn-Boost.
+- **Ứng viên:** EKF 4-State (vector trạng thái $[x, y, v, \theta]^T$, ma trận hiệp phương sai sai số $P$, nhiễu tiến trình $Q$, nhiễu đo $R$).
 
-### Nguyên tắc đối chứng khoa học (Fair Paired Comparison):
-1. **Chung một đầu vào (Single Source of Truth):** Cả hai thuật toán đều nạp cùng một chuỗi tọa độ GPS raw từ cảm biến điện thoại, theo đúng thứ tự thời gian.
-2. **Chung một tầng tiền kiểm định (Shared Pre-Validation):** Cùng chung các ngưỡng lọc tốc độ ảo (`gpsSpeedHardSpike`), độ chính xác vệ tinh (`accuracy > 35m`) và bước nhảy tối thiểu (`minSegmentMeters = 1.5m`).
-3. **Chung một cơ chế ngắt tuyến & tái neo (Shared Gap & Re-Anchor Policy):** Cùng sử dụng `GpsRawSignalContinuity` với ngưỡng $5.0\text{s}$ để chia cắt tuyến khi có blackout thật sự.
-4. **Cô lập bộ lọc (Isolated State):** Trạng thái bộ lọc (ma trận hiệp phương sai $P$, vector ước lượng $[x, y, v, \theta]^T$ của EKF và điểm làm mượt trước đó của Fixed-Alpha) được xóa sạch (`reset()`) giữa các phiên chạy, không có hiện tượng rò rỉ trạng thái (Zero State Carryover).
-5. **Rạch ròi về thước đo (Metric Provenance):** Không lấy `saved_distance_km` làm thước đo so sánh thuật toán làm mượt, vì cự ly này được tính lại từ raw GPS. Thước đo thực sự phản ánh chất lượng bộ lọc là **`filtered_route_distance_km`**, **độ mượt góc cua (Turn Geometry)** và **độ bám tim đường chuẩn (RMSE/P95)** khi có Ground Truth tương ứng thời gian.
+### 5 Nguyên tắc đối chứng khoa học bất biến:
+1. **Chung một nguồn dữ liệu thô (Single Source of Truth):** 10.779 điểm GPS phần cứng nạp tuần tự theo đúng dòng thời gian.
+2. **Chung tầng tiền kiểm định (Shared Pre-Validation):** Dùng chung bộ lọc vận tốc ảo (`gpsSpeedHardSpike`), độ chính xác vệ tinh (`accuracy > 35m`) và ngưỡng dịch chuyển tối thiểu (`minSegmentMeters = 1.5m`).
+3. **Chung cơ chế nhận diện mất sóng (Shared Gap & Re-Anchor Policy):** Cùng sử dụng `GpsRawSignalContinuity` (ngưỡng $5.0\text{s}$) để tách đoạn tuyến khi mất sóng phần cứng.
+4. **Cô lập trạng thái bộ lọc (Zero State Carryover):** Toàn bộ ma trận EKF và điểm neo Fixed-Alpha được `reset()` sạch sẽ giữa các phiên.
+5. **Rạch ròi về thước đo (Metric Provenance):** 
+   - `saved_distance_km` **không** phản ánh chất lượng smoothing vì được tính toán lại từ raw GPS qua logic lưu trữ.
+   - Chiều dài polyline dài hơn **không** đồng nghĩa với độ chính xác vị trí cao hơn.
+   - Positional RMSE/P95 chỉ được công nhận khi có Ground Truth tọa độ chuẩn theo thời gian thực.
 
 ---
 
-## 2. XÁC MINH NGUỒN DỮ LIỆU THỰC ĐỊA (10.779 RAW FIXES)
+## 2. XÁC MINH NGUỒN DỮ LIỆU & TÍNH TÁI LẬP (REPRODUCIBILITY)
 
-Tệp dữ liệu thực nghiệm lưu trữ tại `exports/aetron_raw_gps_combined.csv` gồm $10.779$ bản ghi GPS thô của 7 phiên đạp xe ngoài đời thực tại TP.HCM:
+### 2.1. Quản lý dữ liệu riêng tư & Checksum
+Tệp `exports/aetron_raw_gps_combined.csv` là dữ liệu GPS thực nghiệm trên đường phố TP.HCM. Để bảo vệ dữ liệu vị trí cá nhân (PII), tệp được đặt trong thư mục `exports/` (nằm trong `.gitignore`). Tính toàn vẹn của tệp được khóa cứng bằng giá trị băm cryptographic:
 
-| STT | Mã phiên (Workout ID) | Thời gian bắt đầu | Thời gian kết thúc | Thời lượng | Số lượng raw fixes | Đặc điểm vận động |
+$$\text{SHA-256} = \mathtt{4352aaf43356ab1e7b5e0f4acd3ca8f20259417bde2b3f5bfbabf9c956d2a9c5}$$
+
+### 2.2. Tính tái lập của bộ kiểm thử (Self-Contained Automated Tests)
+Trước đây, bộ kiểm thử replay trực tiếp đọc CSV khiến `flutter test` thất bại nếu clone repo sạch trên CI. Bộ test `test/gps_paired_field_replay_test.dart` đã được tái cấu trúc:
+1. **Safe Fixture Test (Chạy luôn luôn):** Chạy trên một kịch bản 15 điểm GPS chuẩn hóa chứa đầy đủ hành vi: di chuyển, đứng yên, mất sóng $7\text{s}$, hồi phục sóng và điểm lùi timestamp. Test này đảm bảo pipeline parity 100% trong mọi môi trường.
+2. **Field Dataset Replay Test (Chạy điều kiện):** Tự động phát hiện nếu có tệp CSV local, kiểm tra SHA-256 rồi mới replay. Nếu không có file, test gracefully skip và in thông báo, không làm gãy pipeline CI.
+
+### 2.3. Chi tiết 7 phiên thực địa
+| STT | Mã phiên (Workout ID) | Thời gian bắt đầu (UTC) | Thời gian kết thúc (UTC) | Thời lượng | Số raw fixes | Đặc điểm vận động |
 |:---:|---|---|---|:---:|:---:|---|
-| **1** | `6903b3e0-0fa7-4858-9ff2-77169f3ef2fa` | 2026-10-14 10:40:05 UTC | 10:58:16 UTC | 18.2 phút | 1.186 | Đạp xe đô thị, mật độ cao ốc trung bình |
-| **2** | `f808e88a-01df-41c6-9f12-28a48bed8a69` | 2026-10-14 11:06:20 UTC | 11:28:08 UTC | 21.8 phút | 1.173 | Nhiều đoạn che khuất, 16 khoảng ngắt tín hiệu |
-| **3** | `9b9d3c3f-8a41-42f3-971c-72096a0fe013` | 2026-10-14 11:49:02 UTC | 11:50:47 UTC | 1.8 phút | 101 | Phiên cự ly ngắn kiểm tra khởi động nhanh |
-| **4** | `bc34d070-6a7d-4b81-b560-26f0dd4c18bc` | 2026-10-14 11:51:32 UTC | 12:30:30 UTC | 39.0 phút | 2.336 | Hành trình dài liên tục, tín hiệu GPS rất mạnh |
-| **5** | `8fd0afa4-0753-454d-97b2-ce9c0faab6a4` | 2026-10-15 00:25:24 UTC | 00:58:38 UTC | 33.2 phút | 1.957 | Hành trình $11\text{ km}$, 1 nút giao dừng đèn đỏ lớn |
-| **6** | `8674084e-a189-42da-b769-4bab1d9aaa45` | 2026-10-15 10:40:08 UTC | 11:09:49 UTC | 29.7 phút | 1.680 | 8 ngã tư dừng chờ, có 6 điểm lùi timestamp |
-| **7** | `8a554aec-f0d8-4780-b82f-5cdf34848eaf` | 2026-10-15 11:14:00 UTC | 11:58:24 UTC | 44.4 phút | 2.346 | Phiên dài nhất, nhiều tán cây và hẻm đô thị |
-| **TỔNG** | **7 Buổi đạp xe ngoài thực địa** | — | — | **188.1 phút** | **10.779** | **Đầy đủ các tình huống: dừng, cua, gap, jitter** |
+| **1** | `6903b3e0-0fa7-4858-9ff2-77169f3ef2fa` | 2026-10-14 10:40:05 | 10:58:16 | 18.2 phút | 1.186 | Đạp xe đô thị, mật độ cao ốc trung bình |
+| **2** | `f808e88a-01df-41c6-9f12-28a48bed8a69` | 2026-10-14 11:06:20 | 11:28:08 | 21.8 phút | 1.173 | Nhiều đoạn che khuất, tán cây |
+| **3** | `9b9d3c3f-8a41-42f3-971c-72096a0fe013` | 2026-10-14 11:49:02 | 11:50:47 | 1.8 phút | 101 | Cự ly ngắn kiểm tra khởi động nhanh |
+| **4** | `bc34d070-6a7d-4b81-b560-26f0dd4c18bc` | 2026-10-14 11:51:32 | 12:30:30 | 39.0 phút | 2.336 | Hành trình dài liên tục, GPS ổn định |
+| **5** | `8fd0afa4-0753-454d-97b2-ce9c0faab6a4` | 2026-10-15 00:25:24 | 00:58:38 | 33.2 phút | 1.957 | Hành trình $11\text{ km}$, ngã tư dừng lâu |
+| **6** | `8674084e-a189-42da-b769-4bab1d9aaa45` | 2026-10-15 10:40:08 | 11:09:49 | 29.7 phút | 1.680 | 8 ngã tư dừng chờ, có điểm lùi timestamp |
+| **7** | `8a554aec-f0d8-4780-b82f-5cdf34848eaf` | 2026-10-15 11:14:00 | 11:58:24 | 44.4 phút | 2.346 | Phiên dài nhất, hẻm nhỏ và tán cây |
+| **TỔNG** | **7 Buổi đạp xe thực tế** | — | — | **188.1 phút** | **10.779** | **Đầy đủ dừng tĩnh, góc cua, ngắt sóng, jitter** |
 
 ---
 
-## 3. ĐỐI CHIẾU PIPELINE TRƯỚC VÀ SAU PR #15 TRÊN CÙNG DATASET
+## 3. ĐỐI CHIẾU THỰC CHỨNG GIỮA HAI WORKTREE ĐỘC LẬP: PRE-PR #15 VS POST-PR #15
 
-Bằng chứng thực nghiệm khi cho chạy cùng một tập dữ liệu thô qua Pipeline cũ (Pre-PR #15) và Pipeline mới (Post-PR #15):
+Để kiểm chứng tác động thực sự của PR #15 mà không dùng cờ giả lập, bài kiểm tra đã được thực thi độc lập trên:
+- **Worktree A:** Commit `53be32a` (Code trước PR #15).
+- **Worktree B:** Commit `HEAD` trên `fix/gps-step1-raw-signal-gap` (Code sau PR #15).
 
-| Phiên kiểm thử | Số raw fixes | Điểm hợp lệ (Accepted) | Điểm bị lọc (Soft/Hard) | Timestamp lùi bị chặn | Raw Gaps thật (>5s) | Route Gaps (Code cũ Pre-PR #15) | Route Gaps (Code mới Post-PR #15) | Đánh giá cải thiện |
-|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|---|
-| `6903b3e0...` | 1.186 | 710 | 476 | 0 | 2 | **49** (Gãy nát) | **2** (Chính xác) | Khử **47 vết đứt giả** khi dừng xe |
-| `f808e88a...` | 1.173 | 811 | 349 | 13 | 16 | **67** (Gãy nát) | **15** (Chính xác) | Khử **52 vết đứt giả** |
-| `9b9d3c3f...` | 101 | 51 | 50 | 0 | 1 | **8** (Gãy nát) | **1** (Chính xác) | Khử **7 vết đứt giả** |
-| `bc34d070...` | 2.336 | 1.934 | 396 | 6 | 0 | **55** (Gãy nát) | **0** (Hoàn hảo) | **Bảo toàn polyline liền mạch 100%** suốt 39 phút |
-| `8fd0afa4...` | 1.957 | 1.643 | 314 | 0 | 1 | **37** (Gãy nát) | **1** (Chính xác) | Khử **36 vết đứt giả** khi dừng đèn đỏ |
-| `8674084e...` | 1.680 | 1.195 | 479 | 6 | 8 | **78** (Gãy nát) | **8** (Chính xác) | Khử **70 vết đứt giả** |
-| `8a554aec...` | 2.346 | 1.753 | 569 | 24 | 61 | **83** (Gãy nát) | **20** (Chính xác) | Khử **63 vết đứt giả** sau tán cây |
-| **TỔNG CỘNG** | **10.779** | **8.097** | **2.633** | **49** | **89** | **377 vết đứt giả** | **47 gaps thật** | **Triệt tiêu 87.5% các vết cắt tuyến sai lệch** |
+Cả hai cùng nạp tệp `exports/aetron_raw_gps_combined.csv` ($10.779$ fixes).
 
-> [!IMPORTANT]
-> **Phát hiện khoa học quyết định:**  
-> Trước PR #15, bộ đo khoảng cách gap sử dụng `lastAcceptedPositionTime`. Do đó, mỗi khi người dùng dừng đèn đỏ quá 5–20 giây, raw GPS vẫn gửi tọa độ đều đặn 1 Hz nhưng bị lọc do `tinySegment` ($< 1.5\text{m}$), khiến thời gian từ điểm accepted cuối cùng bị đẩy lên cao. Khi người dùng đạp xe tiếp, hệ thống tưởng lầm là vừa bị mất sóng GPS và tự ý bẻ gãy tuyến đường, tạo ra tới **377 vết cắt giả** trên 7 phiên!  
-> Bản sửa PR #15 với `GpsRawSignalContinuity` đã **khắc phục triệt để lỗi này**: số lượng route gaps giảm từ 377 xuống đúng **47 gaps thật**, trùng khớp hoàn hảo với nhịp đập phần cứng của chip GNSS.
+### 3.1. Bảng đối chiếu chi tiết theo từng phiên
+| Phiên kiểm thử | Raw Fixes | Accepted (Pre / Post) | Soft-Rej (Pre / Post) | Hard-Rej (Pre / Post) | Out-of-Order (Pre / Post) | Route Breaks (Pre `53be32a`) | Route Breaks (Post `HEAD`) | Số vết đứt giả được khử |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| `6903b3e0...` | 1.186 | 710 / 710 | 459 / 444 | 17 / 32 | 0 / 0 | **49** | **2** | **-47** |
+| `f808e88a...` | 1.173 | 823 / 811 | 338 / 318 | 12 / 31 | 0 / 13 | **67** | **15** | **-52** |
+| `9b9d3c3f...` | 101 | 51 / 51 | 50 / 49 | 0 / 1 | 0 / 0 | **8** | **1** | **-7** |
+| `bc34d070...` | 2.336 | 1.939 / 1.934 | 380 / 335 | 17 / 61 | 0 / 6 | **55** | **0** | **-55** |
+| `8fd0afa4...` | 1.957 | 1.644 / 1.643 | 299 / 281 | 14 / 33 | 0 / 0 | **37** | **1** | **-36** |
+| `8674084e...` | 1.680 | 1.200 / 1.195 | 464 / 431 | 16 / 48 | 0 / 6 | **78** | **8** | **-70** |
+| `8a554aec...` | 2.346 | 1.770 / 1.753 | 553 / 396 | 23 / 173 | 0 / 24 | **83** | **20** | **-63** |
+| **TỔNG CỘNG** | **10.779** | **8.137 / 8.097** | **2.543 / 2.254** | **99 / 379** | **0 / 49** | **377** | **47** | **-330 (-87.5%)** |
 
 ---
 
-## 4. KẾT QUẢ ĐỐI SÁNH PAIRED REPLAY: FIXED-ALPHA VS EKF 4-STATE
+## 4. KIỂM TOÁN SỐ HỌC (ARITHMETIC RECONCILIATION)
 
-Chạy song song hai biến thể làm mượt trên cùng một chuỗi điểm đã qua thẩm định của 7 phiên:
+### 4.1. Cân bằng tuyệt đối 10.779 điểm của Pipeline mới (Post-PR #15):
+$$\begin{aligned}
+\text{Tổng Raw Fixes} &= \text{Accepted} + \text{Soft-Rejected} + \text{Hard-Rejected} + \text{Out-of-Order} \\
+10.779 &= 8.097 + 2.254 + 379 + 49 \\
+10.779 &= 10.779 \quad (\mathbf{Đúng\ tuyệt\ đối\ 100\%})
+\end{aligned}$$
 
-| Phiên kiểm thử | Quãng đường Live (`live_km`) | Cự ly Polyline Fixed-Alpha (`km`) | Cự ly Polyline EKF 4-State (`km`) | Chênh lệch hình học Polyline ($\Delta L$) | Quãng đường lưu (`saved_km`) | Pipeline Parity Gate |
+- **Accepted ($8.097$):** Các điểm vị trí đạt chuẩn vận tốc, độ chính xác vệ tinh ($\le 35\text{m}$) và khoảng cách di chuyển ($\ge 1.5\text{m}$).
+- **Soft-Rejected ($2.254$):** Các điểm bị lọc do di chuyển dưới ngưỡng ($< 1.5\text{m}$ — hiện tượng đứng yên dừng đèn đỏ) hoặc do tín hiệu suy hao nhẹ nhưng chưa phải bất thường nghiêm trọng.
+- **Hard-Rejected ($379$):** Các điểm có độ chính xác vệ tinh kém ($> 35\text{m}$) hoặc đột biến vận tốc tức thời không hợp lý.
+- **Out-of-Order ($49$):** Các điểm có timestamp lùi về quá khứ hoặc lặp lại do lỗi hàng đợi bộ đệm phần cứng Android/iOS, được `GpsRawSignalContinuity` nhận diện và gạt bỏ ngay từ cửa ngõ.
+
+### 4.2. Giải trình khoa học: Tại sao có 89 Hardware Raw Gaps nhưng chỉ có 47 Route Breaks?
+Trong dữ liệu phần cứng ghi nhận **89 lần khoảng cách thời gian giữa hai bản ghi liên tiếp $> 5.0\text{s}$**, nhưng kết quả tạo polyline chỉ có **47 lần ngắt đoạn tuyến (Route Breaks)**. Nguyên nhân cụ thể:
+1. **Gaps xảy ra trước khi bắt đầu tuyến:** Ở đầu phiên, khi chip GPS chưa khóa vệ tinh (chưa gọi `seedRoute`), các khoảng ngắt tín hiệu thô diễn ra trong giai đoạn chờ, không làm đứt đoạn polyline vì polyline chưa khởi tạo.
+2. **Gaps xảy ra liên tiếp trong cùng một đợt mất sóng:** Khi vận động viên đi vào đoạn che khuất kéo dài (ví dụ: $30\text{s}$), phần cứng có thể ngắt quãng nhiều nhịp (nhịp $6\text{s}$, nhịp $8\text{s}$...), đồng thời các điểm lẻ loi xuất hiện ở giữa lại bị Hard-Rejected do sai số $> 35\text{m}$. Biến `pendingGapDurationSec` giữ nguyên trạng thái mất sóng cho đến khi bắt được điểm hợp lệ đầu tiên. Do đó, toàn bộ đợt mất sóng dài này chỉ kích hoạt **đúng 1 lần ngắt và tái neo tuyến**.
+3. **Gaps ở cuối phiên:** Khi người dùng dừng đạp xe và bấm hoàn thành, khoảng ngắt cuối cùng không nối tiếp vào điểm nào phía sau nên không tạo thêm phân đoạn mới.
+
+### 4.3. Tại sao 330 vết đứt tuyến ở bản Pre-PR #15 chắc chắn là lỗi giả?
+- Trong bản cũ `53be32a`, logic kiểm tra khoảng cách thời gian tính bằng:
+  $$\Delta t = \text{currentTime} - \text{lastAcceptedPositionTime}$$
+- Khi người dùng dừng đèn đỏ $30\text{s}$, GPS phần cứng vẫn gửi tọa độ đều đặn mỗi $1.0\text{s}$ ($\Delta t_{\text{sensor}} = 1.0\text{s}$ — không hề mất sóng). Nhưng vì người dùng đứng yên, các điểm này có $\Delta s < 1.5\text{m}$ nên bị xếp vào `tinySegment` (không cập nhật `lastAcceptedPositionTime`).
+- Khi đèn xanh bật và người dùng di chuyển trở lại, $\Delta t$ từ điểm accepted trước đó đã lên tới $31\text{s} > 5.0\text{s}$, khiến hệ thống lầm tưởng là vừa mất sóng và tự ý bẻ gãy tuyến đường!
+- Việc PR #15 tách riêng `observe(rawTimestamp)` đã sửa tận gốc sai lầm này, cứu lại **330 lần ngắt tuyến giả**.
+
+---
+
+## 5. KẾT QUẢ ĐỐI SÁNH PAIRED REPLAY: FIXED-ALPHA VS EKF 4-STATE
+
+| Phiên kiểm thử | Quãng đường Live (`live_km`) | Cự ly Polyline Fixed-Alpha (`km`) | Cự ly Polyline EKF 4-State (`km`) | Chênh lệch chiều dài ($\Delta L$) | Quãng đường lưu (`saved_km`) | Parity Gate |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|
 | `6903b3e0...` | 5.157 km | 5.074 km | 5.084 km | **+10.0 m** (+0.20%) | 5.089 km | **100% PASS** |
 | `f808e88a...` | 5.757 km | 5.601 km | 5.640 km | **+39.0 m** (+0.70%) | 5.662 km | **100% PASS** |
-| `9b9d3c3f...` | 0.251 km | 0.230 | 0.224 km | **-6.0 m** (-2.61%) | 0.205 km | **100% PASS** |
+| `9b9d3c3f...` | 0.251 km | 0.230 km | 0.224 km | **-6.0 m** (-2.61%) | 0.205 km | **100% PASS** |
 | `bc34d070...` | 14.937 km | 14.762 km | 14.855 km | **+93.0 m** (+0.63%) | 14.893 km | **100% PASS** |
 | `8fd0afa4...` | 11.132 km | 10.918 km | 11.065 km | **+147.0 m** (+1.35%) | 10.921 km | **100% PASS** |
 | `8674084e...` | 8.788 km | 8.637 km | 8.632 km | **-5.0 m** (-0.06%) | 8.559 km | **100% PASS** |
 | `8a554aec...` | 12.412 km | 12.015 km | 12.065 km | **+50.0 m** (+0.42%) | 12.349 km | **100% PASS** |
 | **TỔNG (7 PHIÊN)** | **58.434 km** | **57.237 km** | **57.565 km** | **+328.0 m (+0.57%)** | **57.678 km** | **100% PASS** |
 
-### Nhận xét & Đánh giá chuyên sâu về kết quả Paired:
-1. **Kiểm chứng tính toàn vẹn của Pipeline (Parity Verification):**  
-   Số điểm accepted ($8.097$), soft-rejected ($2.287$), hard-rejected ($346$), cự ly live ($58.434\text{ km}$) và cự ly lưu trữ ($57.678\text{ km}$) của Fixed-Alpha và EKF 4-State **hoàn toàn trùng khớp 100% đến từng số thập phân**. Điều này chứng minh tuyệt đối hai thuật toán được đặt trong cùng một môi trường đánh giá bình đẳng.
-2. **Sự khác biệt hình học giữa Fixed-Alpha và EKF 4-State ($\Delta L = +328.0\text{ m}$):**  
-   - Cự ly polyline sau lọc của EKF 4-State dài hơn Fixed-Alpha trung bình $+0.57\%$ ($+328\text{ m}$ trên $57.2\text{ km}$).
-   - **Nguyên nhân vật lý:** Fixed-Alpha làm mượt bằng cách nội suy tuyến tính giữa điểm cũ và điểm mới với trọng số $\alpha \in \{0.34, 0.52, 0.72\}$. Tại các khúc rẽ 90° hoặc đường cong đô thị, việc kéo điểm vào trong góc cua làm bán kính cong bị co hẹp lại (hiện tượng **Corner Cutting** / Cắt xén góc nhà).
-   - Ngược lại, EKF 4-State trang bị vector trạng thái động học $[x, y, v, \theta]^T$, kết hợp vận tốc và góc hướng để dự báo vị trí ($x_{k|k-1} = x_{k-1} + v \cdot \sin\theta \cdot \Delta t$), giúp vệt chạy ôm sát theo độ cong tự nhiên của lòng đường thay vì vát chéo, bảo toàn chiều dài cung tròn của đường phố.
+### Bản chất kỹ thuật của chênh lệch $\Delta L = +328.0\text{ m}$ (+0.57%):
+- **Hiện tượng Corner Cutting của Fixed-Alpha:** Bộ lọc Fixed-Alpha tính điểm mới bằng cách lấy trung bình có trọng số giữa điểm trước đó và quan trắc GPS:
+  $$p_k = (1 - \alpha) p_{k-1} + \alpha z_k$$
+  Tại các khúc cua đô thị 90°, phép nội suy tuyến tính này luôn kéo điểm ước lượng về phía bên trong góc cua, làm "vát chéo" cung tròn và làm co ngắn chiều dài hình học của polyline.
+- **Hành vi động học của EKF 4-State:** EKF sử dụng mô hình chuyển động phẳng kết hợp vận tốc $v$ và góc hướng $\theta$:
+  $$\begin{bmatrix} x_k \\ y_k \end{bmatrix} = \begin{bmatrix} x_{k-1} + v \sin\theta \Delta t \\ y_{k-1} + v \cos\theta \Delta t \end{bmatrix}$$
+  Nhờ có đạo hàm hướng và quán tính vận tốc, EKF duy trì bán kính cong tự nhiên của cung đường khi ôm cua. Do đó, cự ly polyline sau lọc của EKF dài hơn $+328\text{ m}$ trên tổng số $57.2\text{ km}$.
+- **Cảnh báo khoa học:** Chiều dài polyline dài hơn là **đặc tính hình học của quỹ đạo**, **tuyệt đối không được xem là bằng chứng chứng minh EKF có độ chính xác vị trí cao hơn** khi chưa có thiết bị đo đạc đối chứng mặt đất.
 
 ---
 
-## 5. GIỚI HẠN BẰNG CHỨNG & VẤN ĐỀ GROUND TRUTH ĐỘ LỆCH TỌA ĐỘ (RMSE/P95)
+## 6. PHÂN LOẠI NGUỒN GROUND TRUTH & TÍNH HỢP LỆ CỦA RMSE/P95
 
-> [!WARNING]
-> **Giới hạn khoa học trung thực về 7 phiên GPS thực địa:**  
-> - 7 phiên đạp xe trong `aetron_raw_gps_combined.csv` là dữ liệu thực tế ngoài phố được ghi lại tự do trên smartphone. Tại thời điểm chạy, **không có thiết bị đo đạc trắc địa chuyên dụng (Differential RTK-GNSS) đi kèm để ghi nhận tọa độ mặt đất chuẩn (Ground Truth Latitude/Longitude) theo từng giây timestamp**.
-> - Do đó, theo phương pháp luận khoa học quốc tế, **không được phép tính toán sai số vị trí tuyệt đối (Positional RMSE, P95 Error)** trên 7 phiên này rồi tuyên bố là kết quả đo thực địa.
+Để đảm bảo tính trung thực khoa học cao nhất theo yêu cầu thẩm định, các nguồn dữ liệu đối soát được phân định rõ ràng như sau:
 
-### Các kết quả đo đạc RMSE/P95 đã được kiểm chứng khoa học độc lập:
-Để đánh giá chính xác độ bám tim đường và sai số mét, hệ thống đã thực hiện trên 2 bộ benchmark có Ground Truth đối chiếu rõ ràng:
+| Bộ dữ liệu | Loại hình | Bản chất Ground Truth | Thước đo có hiệu lực khoa học | Có được tính Positional RMSE? |
+|---|---|---|---|:---:|
+| **7 Phiên thực địa (10.779 fixes)** | Đo đạc thực tế trên điện thoại | **KHÔNG CÓ GROUND TRUTH TỌA ĐỘ THEO THỜI GIAN** (Không trang bị trắc địa RTK) | Độ liên tục tuyến, độ ổn định drift dừng, cự ly tích lũy, góc cua | ❌ **KHÔNG** |
+| **OpenStreetMap Q1 (1.15 km — 247 fixes)** | **Mô phỏng nhân tạo (Synthetic)** | Tim đường trích xuất từ dữ liệu vector OSM Lê Duẩn | Positional RMSE, P95, Max Error, Stationary Drift, Turn Lag | ✅ **CÓ (Trên môi trường mô phỏng)** |
+| **Tuyến ITL Bình Tân $\to$ BTTE (11.110 km — 1.966 fixes)** | **Mô phỏng nhân tạo (Synthetic)** | 417 nodes tim đường Google Maps kết hợp nhiễu hạt `DeterministicRandom(1013)` | Positional RMSE, P95, Max Error, Stationary Drift, Turn Lag | ✅ **CÓ (Trên môi trường mô phỏng)** |
 
-1. **Benchmark Synthetic OpenStreetMap Quận 1 (1.15 km — 247 fixes):**
-   - Mốc chuẩn: Tim đường OpenStreetMap Lê Duẩn – Nhà thờ Đức Bà, Quận 1.
-   - Kết quả (`test/osm_gps_ground_truth_benchmark_test.dart`):
-     * **Raw GPS (Thô):** $\text{RMSE} = 6.47\text{ m}$, $\text{P95} = 14.00\text{ m}$, $\text{Max Error} = 25.00\text{ m}$, Drift dừng $= 180.0\text{ m}$, Apex Lag $= 8.0\text{ m}$.
-     * **Fixed-Alpha Baseline:** $\text{RMSE} = 5.51\text{ m}$, $\text{P95} = 12.00\text{ m}$, $\text{Max Error} = 22.00\text{ m}$, Drift dừng $= 53.0\text{ m}$, Apex Lag $= 5.0\text{ m}$.
-     * **EKF 4-State:** $\text{RMSE} = \mathbf{3.59\text{ m}}$ (**giảm 34.8% sai số** so với Baseline), $\text{P95} = \mathbf{7.00\text{ m}}$ (**giảm 41.7%**), $\text{Max Error} = \mathbf{11.00\text{ m}}$ (**giảm 50.0%**), Drift dừng $= \mathbf{13.0\text{ m}}$ (**giảm 75.5%**), Apex Lag $= \mathbf{4.0\text{ m}}$ (**bám cua tốt nhất**).
-
-2. **Benchmark Tuyến Thực Địa Bình Tân ➔ BTTE Đồng Nai (11.110 km — 1.966 fixes):**
-   - Mốc chuẩn: 417 nodes tim đường thực tế đo đạc chuẩn mực trên Google Maps.
-   - Kết quả (`test/itl_route_benchmark_test.dart`):
-     * **Raw GPS (Thô):** $\text{RMSE} = 4.48\text{ m}$, $\text{P95} = 8.00\text{ m}$, $\text{Max Error} = 16.00\text{ m}$, Drift dừng $= 586.0\text{ m}$, Apex Lag $= 16.0\text{ m}$.
-     * **Fixed-Alpha Baseline:** $\text{RMSE} = 3.66\text{ m}$, $\text{P95} = 7.00\text{ m}$, $\text{Max Error} = 16.00\text{ m}$, Drift dừng $= 194.0\text{ m}$, Apex Lag $= 10.0\text{ m}$.
-     * **EKF 4-State:** $\text{RMSE} = \mathbf{2.61\text{ m}}$ (**giảm 28.6% sai số**), $\text{P95} = \mathbf{5.00\text{ m}}$, $\text{Max Error} = \mathbf{9.00\text{ m}}$ (**khử 43.8% đỉnh văng**), Drift dừng $= \mathbf{88.0\text{ m}}$ (**triệt tiêu 54.6% trôi ma**), Apex Lag $= \mathbf{7.0\text{ m}}$ (**ôm cua chuẩn xác**).
+### Kết quả đo lường độ lệch trên môi trường mô phỏng có Ground Truth:
+1. **Benchmark OSM Quận 1 (1.15 km):**
+   - Fixed-Alpha: $\text{RMSE} = 5.51\text{ m}$, $\text{P95} = 12.00\text{ m}$, Drift dừng $= 53.0\text{ m}$, Apex Lag $= 5.0\text{ m}$.
+   - EKF 4-State: $\text{RMSE} = \mathbf{3.59\text{ m}}$ (**-34.8%**), $\text{P95} = \mathbf{7.00\text{ m}}$ (**-41.7%**), Drift dừng $= \mathbf{13.0\text{ m}}$ (**-75.5%**), Apex Lag $= \mathbf{4.0\text{ m}}$.
+2. **Benchmark ITL Tuyến dài (11.110 km):**
+   - Fixed-Alpha: $\text{RMSE} = 3.66\text{ m}$, $\text{P95} = 7.00\text{ m}$, Drift dừng $= 194.0\text{ m}$, Apex Lag $= 10.0\text{ m}$.
+   - EKF 4-State: $\text{RMSE} = \mathbf{2.61\text{ m}}$ (**-28.6%**), $\text{P95} = \mathbf{5.00\text{ m}}$ (**-28.6%**), Drift dừng $= \mathbf{88.0\text{ m}}$ (**-54.6%**), Apex Lag $= \mathbf{7.0\text{ m}}$.
 
 ---
 
-## 6. FIELD SMOKE TEST CHECKLIST TRÊN ĐIỆN THOẠI THẬT (ĐÓNG BƯỚC 1)
+## 7. QUY TRÌNH SMOKE TEST AN TOÀN TRÊN THIẾT BỊ THẬT (ĐÓNG BƯỚC 1)
 
 > [!TIP]
-> **Hướng dẫn an toàn tuyệt đối:**  
-> Người dùng **tuyệt đối không cần và không được đi vào hầm chui, cầu vượt hay khu vực giao thông nguy hiểm** để cố tình làm mất GPS. Bài test được thiết kế an toàn 100% trong công viên, sân trường hoặc khu phố đi bộ an toàn.
+> **Quy tắc an toàn tuyệt đối:**  
+> Không yêu cầu người dùng đi vào hầm đường bộ, nút giao thông phức tạp hay khu vực mất an toàn để giả lập mất sóng. Toàn bộ bài test được thực hiện trong công viên hoặc sân tập thoáng mát.
 
-### 5 bước smoke test thực hiện trong 5–10 phút:
-1. **Bước 1 (Khởi động bình thường):**  
-   - Đứng ở nơi thoáng đãng, bật app Aetron $\to$ Chọn môn Đạp xe hoặc Đi bộ $\to$ Bấm **Start**.
-   - Đi bộ/đạp xe bình thường khoảng 50 mét.
-   - *Kỳ vọng:* Màn hình hiển thị chấm vị trí và đường polyline bắt đầu vẽ ngay từ mét thứ 3–5, không bị đứng đơ.
-2. **Bước 2 (Dừng tĩnh chờ đèn đỏ — An toàn tại vỉa hè):**  
-   - Đứng yên hoàn toàn tại chỗ trong đúng **60 giây** (không cần di chuyển).
-   - *Kỳ vọng:* Quãng đường trên màn hình đứng im, không bị dội số nhảy cự ly ma ($\le 2\text{m}$).
-3. **Bước 3 (Tiếp tục di chuyển sau dừng):**  
-   - Sau 60 giây đứng yên, tiếp tục di chuyển thêm 50 mét.
-   - *Kỳ vọng:* Tuyến đường trên bản đồ nối liền mạch mượt mà từ điểm đang đứng, **không bị vẽ đứt đoạn hay tạo gap ảo**.
-4. **Bước 4 (Mô phỏng mất GPS an toàn bằng phần mềm):**  
-   - Trong khi vẫn đang bật workout, vuốt thanh cài đặt nhanh của điện thoại xuống $\to$ **Tắt tính năng Vị trí (Location Toggle) hoặc bật Chế độ máy bay trong 15 giây** $\to$ Sau đó **Bật lại Vị trí**.
-   - Tiếp tục di chuyển thêm 30 mét.
-   - *Kỳ vọng:* Tuyến đường ngắt quãng trong 15 giây tắt sóng và tái neo an toàn khi có sóng lại, không nối đường chim bay ảo.
-5. **Bước 5 (Stop & Lưu bài tập):**  
-   - Bấm **Pause** $\to$ Bấm **Stop** $\to$ Bấm **Hoàn thành bài tập**.
-   - Vào mục **Lịch sử hoạt động (History)** $\to$ Mở bài tập vừa lưu.
-   - *Kỳ vọng:* Màn hình hiển thị đầy đủ bản đồ, quãng đường đối soát trùng khớp, lưu thành công vào LocalDB và đồng bộ Supabase.
+### Kịch bản 5 phút kiểm tra nghiệm thu Bước 1:
+1. **Khởi động (50m):** Mở app $\to$ Chọn Workout $\to$ Nhấn **Start** $\to$ Đi bộ/đạp xe $50\text{m}$.  
+   *Kỳ vọng:* Polyline vẽ mượt mà ngay từ $3\text{–}5\text{m}$ đầu tiên.
+2. **Dừng tĩnh an toàn (60s):** Đứng yên hoàn toàn tại chỗ trong đúng $60\text{s}$.  
+   *Kỳ vọng:* Quãng đường đứng im, không bị dội số cự ly ảo ($\le 2\text{m}$).
+3. **Tiếp tục di chuyển (50m):** Tiếp tục đi bộ/đạp xe thêm $50\text{m}$.  
+   *Kỳ vọng:* Tuyến đường nối tiếp liền mạch từ điểm dừng, **không bị gãy tuyến hay tạo khoảng trống giả**.
+4. **Giả lập mất sóng bằng phần mềm (15s):** Vuốt cài đặt nhanh điện thoại $\to$ **Tắt Location (hoặc bật Airplane Mode) trong 15s** $\to$ Bật lại Location và di chuyển tiếp $30\text{m}$.  
+   *Kỳ vọng:* Hệ thống tách đoạn tuyến an toàn trong 15s mất sóng và tái neo mượt mà khi có sóng lại, không nối chim bay xuyên nhà.
+5. **Dừng và Lưu:** Nhấn **Pause** $\to$ **Stop** $\to$ **Hoàn thành**.  
+   *Kỳ vọng:* Màn hình lịch sử hiển thị đầy đủ polyline, quãng đường hiển thị và quãng đường lưu trữ trùng khớp.
 
 ---
 
-## 7. KẾT LUẬN CUỐI CÙNG & TRẢ LỜI QUYẾT ĐỊNH
+## 8. KẾT LUẬN & TRẢ LỜI 4 CÂU HỎI QUYẾT ĐỊNH
 
-### 1. Về tính ổn định của GPS Pipeline:
-Hạ tầng GPS Pipeline tại PR #15 đã chứng minh tính ưu việt vượt bậc khi khử sạch **87.5% các vết cắt tuyến giả** trên 10.779 điểm thực tế, độc lập hóa hoàn toàn nhịp cảm biến phần cứng khỏi bộ lọc và bảo đảm sự liền mạch của tuyến đường khi vận động viên dừng đèn đỏ.
+Phù hợp với định hướng rút gọn của đề tài (giữ chắc bằng chứng Phase 0–5 với các quyết định Đạt, HOLD và NO-GO rõ ràng; loại bỏ các phase phức tạp không cần thiết từ Phase 6–12 như DBSCAN, CTRV, Adaptive-Q), kết luận chính thức cho Bước 2 như sau:
 
-### 2. Về thuật toán làm mượt (Smoothing Filter):
-EKF 4-State cho thấy hành vi động học vượt trội so với Baseline Fixed-Alpha:
-- Giữ được độ cong tự nhiên của các góc rẽ, giảm thiểu hiện tượng cắt góc nhà ($+0.57\%$ cự ly hình học cung tròn).
-- Đạt mức giảm sai số toàn diện trên các benchmark có Ground Truth ($\text{RMSE}$ giảm 28.6% – 34.8%, $\text{Apex Lag}$ giảm 30% – 42%, triệt tiêu 75% – 85% trôi tĩnh).
+### 1. Pipeline PR #15 có cải thiện route continuity theo bằng chứng tái lập được không?
+> **CÓ (YES) — XÁC MINH TUYỆT ĐỐI.**  
+> Bằng chứng đối chiếu trên hai worktree độc lập với 10.779 fixes thực tế chứng minh số vết đứt gãy tuyến giảm từ **377 xuống đúng 47 lần ngắt thật**. Pipeline mới đã triệt tiêu **330 vết cắt tuyến giả (giảm 87.5%)** do đứng yên dừng đèn đỏ gây ra. Kết quả kiểm thử tự động đạt 100% PASS và có tính tái lập hoàn toàn.
 
-### 3. Trạng thái nghiệm thu:
-- **Bước 1 (Pipeline Correctness & Gap Handling):** **ĐỦ ĐIỀU KIỆN ĐÓNG NGHIỆM THU** sau khi người dùng thực hiện xong Smoke Test 5 phút trên điện thoại thật theo checklist mục 6.
-- **Bước 2 (Paired Replay):** **HOÀN THÀNH 100% VỚI BẰNG CHỨNG SỐ LIỆU THỰC TẾ TRÊN 7 PHIÊN**. Toàn bộ mã nguồn kiểm thử và dữ liệu đối soát đã được lưu trữ trong repository.
+### 2. EKF có chứng minh cải thiện positional accuracy so với Fixed-Alpha trên dữ liệu thực không?
+> **CHƯA (NO) — TRUNG THỰC VỀ BẰNG CHỨNG.**  
+> Trên 7 phiên dữ liệu thực địa ngoài phố, do không có thiết bị đo đạc trắc địa (RTK-GNSS) đi kèm để lấy tọa độ mặt đất chuẩn theo thời gian, **chưa đủ điều kiện khoa học để khẳng định EKF cải thiện độ chính xác vị trí tuyệt đối trên dữ liệu thực**. Cải thiện RMSE/P95 (từ 28.6% đến 34.8%) chỉ mới được chứng minh trên 2 tập benchmark mô phỏng nhân tạo (Synthetic OSM Q1 và ITL Route). Cự ly polyline dài hơn $+0.57\%$ chỉ phản ánh đặc tính giữ bán kính góc cua động học, không phải thước đo độ chính xác vị trí.
+
+### 3. Bước 2 đã hoàn thành ở mức nào?
+> **HOÀN THÀNH PHẦN PAIRED PIPELINE REPLAY & KIỂM TOÁN SỐ HỌC (PARTIAL COMPLETE / BENCHMARK READY).**  
+> - Đã hoàn thành 100% việc chạy đối chứng paired replay giữa hai bộ lọc trên cùng một pipeline chuẩn hóa.  
+> - Đã hoàn thành 100% kiểm toán số học toàn vẹn ($8.097 + 2.254 + 379 + 49 = 10.779$).  
+> - Đã hoàn thành phân định ranh giới giữa ngắt sóng phần cứng và ngắt đoạn tuyến polyline.  
+> - Phần tính toán sai số vị trí thực địa (Field Positional RMSE/P95) được **HOLD/DỪNG LẠI** theo đúng nguyên tắc khoa học do thiếu Ground Truth RTK.
+
+### 4. Có đủ điều kiện chuyển sang benchmark final hay chưa?
+> **ĐỦ ĐIỀU KIỆN (YES) — VỚI PHẠM VI KHÓA CHẶT.**  
+> Đã đủ điều kiện để tiến hành nghiệm thu đóng Bước 1 (qua bài Smoke test thực tế 5 phút) và tiến hành Final Benchmark so sánh EKF 4-State với Baseline trên các bộ dữ liệu chuẩn hóa đã khóa quy chế. Giữ vững phạm vi cốt lõi Phase 0–5, không bổ sung thêm DBSCAN, CTRV hay Adaptive-Q.
 
 ---
-*Báo cáo được lập bởi: Senior Flutter Engineer & GPS QA Engineer — Aetron Project.*
+*Báo cáo được phê duyệt và hoàn tất bởi: Senior Flutter Engineer & GPS QA Engineer — Dự án Aetron.*
