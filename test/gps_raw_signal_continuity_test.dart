@@ -60,75 +60,86 @@ void main() {
     expect(continuity.lastRawFixTimestamp, t0.add(const Duration(seconds: 60)));
   });
 
-  test('raw continuity tracker retains blackout until a valid route anchor', () {
-    final continuity = GpsRawSignalContinuity(gapThresholdSec: 5.0);
-    expect(continuity.observe(t0), isTrue);
-    expect(continuity.observe(t0.add(const Duration(seconds: 15))), isTrue);
-    expect(continuity.pendingGapDurationSec, 15.0);
+  test(
+    'raw continuity tracker retains blackout until a valid route anchor',
+    () {
+      final continuity = GpsRawSignalContinuity(gapThresholdSec: 5.0);
+      expect(continuity.observe(t0), isTrue);
+      expect(continuity.observe(t0.add(const Duration(seconds: 15))), isTrue);
+      expect(continuity.pendingGapDurationSec, 15.0);
 
-    // A low-quality fix at 15 seconds is rejected by validation; no ACK yet.
-    final bad = decide(
-      fix(15, latitude: 10.0009, accuracy: 50.0),
-      anchor: base,
-      lastAccepted: t0,
-      rawGapSec: continuity.pendingGapDurationSec,
-    );
-    expect(bad.reason, GpsRejectReason.lowAccuracy);
-    expect(continuity.observe(t0.add(const Duration(seconds: 16))), isTrue);
-    expect(continuity.pendingGapDurationSec, 15.0);
+      // A low-quality fix at 15 seconds is rejected by validation; no ACK yet.
+      final bad = decide(
+        fix(15, latitude: 10.0009, accuracy: 50.0),
+        anchor: base,
+        lastAccepted: t0,
+        rawGapSec: continuity.pendingGapDurationSec,
+      );
+      expect(bad.reason, GpsRejectReason.lowAccuracy);
+      expect(continuity.observe(t0.add(const Duration(seconds: 16))), isTrue);
+      expect(continuity.pendingGapDurationSec, 15.0);
 
-    // A replay of an older sensor timestamp must not reset the clock.
-    expect(continuity.observe(t0.add(const Duration(seconds: 14))), isFalse);
-    expect(continuity.lastRawFixTimestamp, t0.add(const Duration(seconds: 16)));
+      // A replay of an older sensor timestamp must not reset the clock.
+      expect(continuity.observe(t0.add(const Duration(seconds: 14))), isFalse);
+      expect(
+        continuity.lastRawFixTimestamp,
+        t0.add(const Duration(seconds: 16)),
+      );
 
-    final good = decide(
-      fix(16, latitude: 10.00091, speed: 3),
-      anchor: base,
-      lastAccepted: t0,
-      rawGapSec: continuity.pendingGapDurationSec,
-    );
-    expect(good.shouldBreakRouteForDisplay, isTrue);
-    continuity.acknowledgeRouteAnchor();
-    expect(continuity.pendingGapDurationSec, 0.0);
-    continuity.reset();
-    expect(continuity.lastRawFixTimestamp, isNull);
-  });
+      final good = decide(
+        fix(16, latitude: 10.00091, speed: 3),
+        anchor: base,
+        lastAccepted: t0,
+        rawGapSec: continuity.pendingGapDurationSec,
+      );
+      expect(good.shouldBreakRouteForDisplay, isTrue);
+      continuity.acknowledgeRouteAnchor();
+      expect(continuity.pendingGapDurationSec, 0.0);
+      continuity.reset();
+      expect(continuity.lastRawFixTimestamp, isNull);
+    },
+  );
 
-  test('finalizer analysis does not invent outages when raw fixes are filtered', () {
-    final positions = <Position>[fix(0)];
-    for (var second = 1; second <= 8; second++) {
-      // Raw fixes arrived each second, but the sensor-reported speed is a spike.
-      positions.add(fix(
-        second,
-        latitude: base.latitude + second * 0.000018,
-        speed: 90.0,
-      ));
-    }
-    positions.add(fix(9, latitude: 10.000162, speed: 2.0));
+  test(
+    'finalizer analysis does not invent outages when raw fixes are filtered',
+    () {
+      final positions = <Position>[fix(0)];
+      for (var second = 1; second <= 8; second++) {
+        // Raw fixes arrived each second, but the sensor-reported speed is a spike.
+        positions.add(
+          fix(second, latitude: base.latitude + second * 0.000018, speed: 90.0),
+        );
+      }
+      positions.add(fix(9, latitude: 10.000162, speed: 2.0));
 
-    final analysis = engine.analyzeGpsWorkout(GpsWorkoutAnalysisInput(
-      rawPositions: positions,
-      activityType: 'cycling',
-      totalDurationSec: 9,
-      fallbackDistanceMeters: 0,
-    ));
-    expect(analysis.gpsGapCount, 0);
-    expect(analysis.gpsGapDurationSec, 0);
-    expect(analysis.validDistanceKm, greaterThan(0.01));
-  });
+      final analysis = engine.analyzeGpsWorkout(
+        GpsWorkoutAnalysisInput(
+          rawPositions: positions,
+          activityType: 'cycling',
+          totalDurationSec: 9,
+          fallbackDistanceMeters: 0,
+        ),
+      );
+      expect(analysis.gpsGapCount, 0);
+      expect(analysis.gpsGapDurationSec, 0);
+      expect(analysis.validDistanceKm, greaterThan(0.01));
+    },
+  );
 
   test('finalizer analysis still detects genuine gaps in the raw stream', () {
-    final analysis = engine.analyzeGpsWorkout(GpsWorkoutAnalysisInput(
-      rawPositions: [
-        fix(0),
-        fix(1, latitude: 10.000018, speed: 2),
-        fix(12, latitude: 10.000198, speed: 2),
-        fix(13, latitude: 10.000216, speed: 2),
-      ],
-      activityType: 'cycling',
-      totalDurationSec: 13,
-      fallbackDistanceMeters: 0,
-    ));
+    final analysis = engine.analyzeGpsWorkout(
+      GpsWorkoutAnalysisInput(
+        rawPositions: [
+          fix(0),
+          fix(1, latitude: 10.000018, speed: 2),
+          fix(12, latitude: 10.000198, speed: 2),
+          fix(13, latitude: 10.000216, speed: 2),
+        ],
+        activityType: 'cycling',
+        totalDurationSec: 13,
+        fallbackDistanceMeters: 0,
+      ),
+    );
     expect(analysis.gpsGapCount, 1);
     expect(analysis.gpsGapDurationSec, 11);
   });
@@ -141,12 +152,7 @@ void main() {
         sec,
         latitude: base.latitude + (sec.isEven ? 0.000002 : -0.000002),
       );
-      final d = decide(
-        jitter,
-        anchor: base,
-        lastAccepted: t0,
-        rawGapSec: 0.0,
-      );
+      final d = decide(jitter, anchor: base, lastAccepted: t0, rawGapSec: 0.0);
       expect(d.type, TrackingGpsDecisionType.skip, reason: 'second $sec');
       expect(d.reason, GpsRejectReason.tinySegment);
     }
@@ -187,17 +193,20 @@ void main() {
     expect(recovered.segmentMeters, 0.0);
   });
 
-  test('first valid fix after blackout re-anchors even if displacement is tiny', () {
-    final recovered = decide(
-      fix(15, latitude: 10.000002, speed: 0.0), // < cycling 1.5m threshold
-      anchor: base,
-      lastAccepted: t0,
-      rawGapSec: 15.0,
-    );
-    expect(recovered.type, TrackingGpsDecisionType.acceptRoute);
-    expect(recovered.shouldBreakRouteForDisplay, isTrue);
-    expect(recovered.shouldAddDistance, isFalse);
-  });
+  test(
+    'first valid fix after blackout re-anchors even if displacement is tiny',
+    () {
+      final recovered = decide(
+        fix(15, latitude: 10.000002, speed: 0.0), // < cycling 1.5m threshold
+        anchor: base,
+        lastAccepted: t0,
+        rawGapSec: 15.0,
+      );
+      expect(recovered.type, TrackingGpsDecisionType.acceptRoute);
+      expect(recovered.shouldBreakRouteForDisplay, isTrue);
+      expect(recovered.shouldAddDistance, isFalse);
+    },
+  );
 
   test('a rejected first recovery fix cannot erase the pending real gap', () {
     final invalid = decide(
@@ -261,78 +270,96 @@ void main() {
     expect(decision.shouldBreakRouteForDisplay, isFalse);
   });
 
-  test('slow cycling movement is accepted after accumulating above min segment', () {
-    final small = decide(
-      fix(1, latitude: 10.000007, speed: 0.8),
-      anchor: base,
-      lastAccepted: t0,
-      rawGapSec: 0,
-    );
-    expect(small.type, TrackingGpsDecisionType.skip);
-    expect(small.reason, GpsRejectReason.tinySegment);
-
-    final accumulated = decide(
-      fix(2, latitude: 10.00002, speed: 0.8),
-      anchor: base,
-      lastAccepted: t0,
-      rawGapSec: 0,
-    );
-    expect(accumulated.type, TrackingGpsDecisionType.acceptRoute);
-    expect(accumulated.shouldBreakRouteForDisplay, isFalse);
-    expect(accumulated.segmentMeters, greaterThan(1.5));
-  });
-
-  test('Fixed-Alpha and EKF use identical prevalidation and route boundaries', () {
-    final fixed = GpsSmoothingService(algorithm: GpsFilterAlgorithm.fixedAlpha);
-    final ekf = GpsSmoothingService(algorithm: GpsFilterAlgorithm.ekf4State);
-    final fixedPipeline = GpsPipeline()..seedRoute(base);
-    final ekfPipeline = GpsPipeline()..seedRoute(base);
-    final variants = [
-      (smoother: fixed, pipeline: fixedPipeline),
-      (smoother: ekf, pipeline: ekfPipeline),
-    ];
-    final latestSmoothed = [base, base];
-
-    for (var sec = 1; sec <= 6; sec++) {
-      final position = fix(sec, latitude: base.latitude + sec * 0.00004, speed: 4);
-      final current = LatLng(position.latitude, position.longitude);
-      final d = decide(
-        position,
-        anchor: LatLng(base.latitude + (sec - 1) * 0.00004, base.longitude),
-        lastAccepted: t0.add(Duration(seconds: sec - 1)),
-        rawGapSec: 0.0,
+  test(
+    'slow cycling movement is accepted after accumulating above min segment',
+    () {
+      final small = decide(
+        fix(1, latitude: 10.000007, speed: 0.8),
+        anchor: base,
+        lastAccepted: t0,
+        rawGapSec: 0,
       );
-      expect(d.type, TrackingGpsDecisionType.acceptRoute);
-      expect(d.shouldBreakRouteForDisplay, isFalse);
+      expect(small.type, TrackingGpsDecisionType.skip);
+      expect(small.reason, GpsRejectReason.tinySegment);
 
-      for (var i = 0; i < variants.length; i++) {
-        final variant = variants[i];
-        final prevAccepted = variant.pipeline.routePoints.last;
-        final smoothed = variant.smoother.smoothAcceptedPoint(
-          activityType: 'cycling',
-          acceptedPoint: current,
-          previousAcceptedPoint: prevAccepted,
-          previousSmoothedPoint: latestSmoothed[i],
-          lastSmoothedRoutePoint: variant.pipeline.smoothedRoutePoints.last,
-          accuracyMeters: position.accuracy,
-          speedMs: position.speed,
-          timeDeltaSec: 1.0,
-          gpsGapDurationSec: 0.0,
+      final accumulated = decide(
+        fix(2, latitude: 10.00002, speed: 0.8),
+        anchor: base,
+        lastAccepted: t0,
+        rawGapSec: 0,
+      );
+      expect(accumulated.type, TrackingGpsDecisionType.acceptRoute);
+      expect(accumulated.shouldBreakRouteForDisplay, isFalse);
+      expect(accumulated.segmentMeters, greaterThan(1.5));
+    },
+  );
+
+  test(
+    'Fixed-Alpha and EKF use identical prevalidation and route boundaries',
+    () {
+      final fixed = GpsSmoothingService(
+        algorithm: GpsFilterAlgorithm.fixedAlpha,
+      );
+      final ekf = GpsSmoothingService(algorithm: GpsFilterAlgorithm.ekf4State);
+      final fixedPipeline = GpsPipeline()..seedRoute(base);
+      final ekfPipeline = GpsPipeline()..seedRoute(base);
+      final variants = [
+        (smoother: fixed, pipeline: fixedPipeline),
+        (smoother: ekf, pipeline: ekfPipeline),
+      ];
+      final latestSmoothed = [base, base];
+
+      for (var sec = 1; sec <= 6; sec++) {
+        final position = fix(
+          sec,
+          latitude: base.latitude + sec * 0.00004,
+          speed: 4,
         );
-        variant.pipeline.appendAcceptedSegment(
-          routeCandidate: current,
-          displayRoutePoint: smoothed.smoothedPoint,
-          shouldBreakRouteForDisplay: false,
-          gpsGapDurationSec: 0.0,
-          shouldAppendSmoothedPoint: smoothed.shouldAppendRoutePoint,
+        final current = LatLng(position.latitude, position.longitude);
+        final d = decide(
+          position,
+          anchor: LatLng(base.latitude + (sec - 1) * 0.00004, base.longitude),
+          lastAccepted: t0.add(Duration(seconds: sec - 1)),
+          rawGapSec: 0.0,
         );
-        latestSmoothed[i] = smoothed.smoothedPoint;
+        expect(d.type, TrackingGpsDecisionType.acceptRoute);
+        expect(d.shouldBreakRouteForDisplay, isFalse);
+
+        for (var i = 0; i < variants.length; i++) {
+          final variant = variants[i];
+          final prevAccepted = variant.pipeline.routePoints.last;
+          final smoothed = variant.smoother.smoothAcceptedPoint(
+            activityType: 'cycling',
+            acceptedPoint: current,
+            previousAcceptedPoint: prevAccepted,
+            previousSmoothedPoint: latestSmoothed[i],
+            lastSmoothedRoutePoint: variant.pipeline.smoothedRoutePoints.last,
+            accuracyMeters: position.accuracy,
+            speedMs: position.speed,
+            timeDeltaSec: 1.0,
+            gpsGapDurationSec: 0.0,
+          );
+          variant.pipeline.appendAcceptedSegment(
+            routeCandidate: current,
+            displayRoutePoint: smoothed.smoothedPoint,
+            shouldBreakRouteForDisplay: false,
+            gpsGapDurationSec: 0.0,
+            shouldAppendSmoothedPoint: smoothed.shouldAppendRoutePoint,
+          );
+          latestSmoothed[i] = smoothed.smoothedPoint;
+        }
       }
-    }
 
-    expect(variants[0].pipeline.routePoints, variants[1].pipeline.routePoints);
-    expect(variants[0].pipeline.routeSegments, variants[1].pipeline.routeSegments);
-    expect(variants[0].pipeline.gpsGapSegments, isEmpty);
-    expect(variants[1].pipeline.gpsGapSegments, isEmpty);
-  });
+      expect(
+        variants[0].pipeline.routePoints,
+        variants[1].pipeline.routePoints,
+      );
+      expect(
+        variants[0].pipeline.routeSegments,
+        variants[1].pipeline.routeSegments,
+      );
+      expect(variants[0].pipeline.gpsGapSegments, isEmpty);
+      expect(variants[1].pipeline.gpsGapSegments, isEmpty);
+    },
+  );
 }

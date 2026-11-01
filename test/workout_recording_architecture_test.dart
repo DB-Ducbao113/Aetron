@@ -134,7 +134,9 @@ void main() {
           position: buildPosition(
             latitude: 10.0002, // ~22.2m displacement
             longitude: 106.0,
-            timestamp: t0.add(const Duration(seconds: 8)), // implied speed 2.78m/s (10km/h)
+            timestamp: t0.add(
+              const Duration(seconds: 8),
+            ), // implied speed 2.78m/s (10km/h)
             accuracy: 6,
             speed: 2.8,
           ),
@@ -327,9 +329,12 @@ void main() {
       expect(result.session.filteredRouteJson, isNot('[]'));
 
       final audit =
-          jsonDecode(result.session.routeMatchMetricsJson) as Map<String, dynamic>;
-      expect(audit['distance_selection_policy'],
-          'raw_valid_then_raw_total_then_live');
+          jsonDecode(result.session.routeMatchMetricsJson)
+              as Map<String, dynamic>;
+      expect(
+        audit['distance_selection_policy'],
+        'raw_valid_then_raw_total_then_live',
+      );
       expect(audit['raw_gps_fix_count'], 0);
       expect(audit['live_distance_km'], 5.0);
       expect(audit['saved_distance_km'], 5.0);

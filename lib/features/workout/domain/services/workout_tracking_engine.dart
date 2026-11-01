@@ -657,8 +657,8 @@ class WorkoutTrackingEngine {
       ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
     final rawSignalGaps = <({DateTime end, double durationSec})>[];
     for (var i = 1; i < rawSorted.length; i++) {
-      final dt = rawSorted[i]
-              .timestamp
+      final dt =
+          rawSorted[i].timestamp
               .difference(rawSorted[i - 1].timestamp)
               .inMilliseconds /
           1000.0;
@@ -713,8 +713,8 @@ class WorkoutTrackingEngine {
       // A long interval between retained fixes is not necessarily an outage.
       // Break only if the original raw stream actually stopped in this span.
       final crossedRawOutage = rawSignalGaps.any(
-        (gap) => gap.end.isAfter(prev.timestamp) &&
-            !gap.end.isAfter(curr.timestamp),
+        (gap) =>
+            gap.end.isAfter(prev.timestamp) && !gap.end.isAfter(curr.timestamp),
       );
       if (crossedRawOutage) {
         _finalizeSegment(

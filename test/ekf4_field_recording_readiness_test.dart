@@ -533,11 +533,16 @@ void main() {
         expect(metrics['source_fingerprint'], isNotEmpty);
         expect(metrics['filtered_route_distance_km'], closeTo(0.03, 0.005));
         expect(metrics['raw_valid_distance_km'], closeTo(0.03, 0.005));
-        expect(metrics['distance_selection_policy'],
-            'raw_valid_then_raw_total_then_live');
+        expect(
+          metrics['distance_selection_policy'],
+          'raw_valid_then_raw_total_then_live',
+        );
         expect(metrics['raw_gps_fix_count'], 11);
         expect(metrics['live_distance_km'], closeTo(0.03, 0.005));
-        expect(metrics['saved_distance_km'], closeTo(result.session.distanceKm, 1e-9));
+        expect(
+          metrics['saved_distance_km'],
+          closeTo(result.session.distanceKm, 1e-9),
+        );
         expect(metrics['saved_minus_live_distance_km'], closeTo(0.0, 0.005));
       },
     );

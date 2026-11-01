@@ -12,7 +12,7 @@ class GpsRawSignalContinuity {
   double _pendingGapDurationSec = 0.0;
 
   GpsRawSignalContinuity({required this.gapThresholdSec})
-      : assert(gapThresholdSec > 0);
+    : assert(gapThresholdSec > 0);
 
   DateTime? get lastRawFixTimestamp => _lastRawFixTimestamp;
   double get pendingGapDurationSec => _pendingGapDurationSec;
