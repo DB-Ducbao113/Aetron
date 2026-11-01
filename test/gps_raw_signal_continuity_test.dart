@@ -232,6 +232,56 @@ void main() {
     expect(bad.reason, GpsRejectReason.gpsSpeedHardSpike);
   });
 
+  test('valid 90-degree turn is not rejected as a heading spike', () {
+    const start = LatLng(10.0, 106.0);
+    const corner = LatLng(10.00004, 106.0);
+    final decision = engine.evaluateGpsUpdate(
+      position: Position(
+        latitude: corner.latitude,
+        longitude: corner.longitude + 0.00004,
+        timestamp: t0.add(const Duration(seconds: 2)),
+        accuracy: 5,
+        altitude: 0,
+        altitudeAccuracy: 0,
+        heading: 90,
+        headingAccuracy: 1,
+        speed: 4,
+        speedAccuracy: 0,
+      ),
+      activityType: 'cycling',
+      routePoints: const [start, corner],
+      currentLatLng: corner,
+      distanceAnchorPoint: corner,
+      lastAcceptedPositionTime: t0.add(const Duration(seconds: 1)),
+      rawGpsGapDurationSec: 0,
+      shouldResetAnchorOnResume: false,
+    );
+    expect(decision.type, TrackingGpsDecisionType.acceptRoute);
+    expect(decision.shouldAddDistance, isTrue);
+    expect(decision.shouldBreakRouteForDisplay, isFalse);
+  });
+
+  test('slow cycling movement is accepted after accumulating above min segment', () {
+    final small = decide(
+      fix(1, latitude: 10.000007, speed: 0.8),
+      anchor: base,
+      lastAccepted: t0,
+      rawGapSec: 0,
+    );
+    expect(small.type, TrackingGpsDecisionType.skip);
+    expect(small.reason, GpsRejectReason.tinySegment);
+
+    final accumulated = decide(
+      fix(2, latitude: 10.00002, speed: 0.8),
+      anchor: base,
+      lastAccepted: t0,
+      rawGapSec: 0,
+    );
+    expect(accumulated.type, TrackingGpsDecisionType.acceptRoute);
+    expect(accumulated.shouldBreakRouteForDisplay, isFalse);
+    expect(accumulated.segmentMeters, greaterThan(1.5));
+  });
+
   test('Fixed-Alpha and EKF use identical prevalidation and route boundaries', () {
     final fixed = GpsSmoothingService(algorithm: GpsFilterAlgorithm.fixedAlpha);
     final ekf = GpsSmoothingService(algorithm: GpsFilterAlgorithm.ekf4State);
