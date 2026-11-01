@@ -127,7 +127,7 @@ void main() {
     );
 
     test(
-      'accumulates distance and preserves route during moderate GPS latency (<= 20s)',
+      'continues route when accepted fixes lag but raw GPS arrived throughout',
       () {
         final t0 = DateTime.utc(2026, 4, 14, 10);
         final decision = engine.evaluateGpsUpdate(
@@ -143,6 +143,8 @@ void main() {
           currentLatLng: const LatLng(10.0, 106.0),
           distanceAnchorPoint: const LatLng(10.0, 106.0),
           lastAcceptedPositionTime: t0,
+          // Intermediate raw fixes arrived each second but were not accepted.
+          rawGpsGapDurationSec: 1.0,
           shouldResetAnchorOnResume: false,
         );
 
