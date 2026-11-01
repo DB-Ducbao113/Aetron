@@ -9,6 +9,7 @@ import 'package:fitness_exercise_application/features/workout/data/local/schema/
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
 import 'package:fitness_exercise_application/features/workout/domain/constants/workout_processing_contract.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/gps_pipeline.dart';
+import 'package:fitness_exercise_application/features/workout/domain/services/gps_raw_signal_continuity.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/gps_smoothing_service.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/gps_validation_models.dart';
 import 'package:fitness_exercise_application/core/providers/app_providers.dart';
@@ -139,10 +140,9 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   double? _heightCm;
   String? _gender;
   DateTime? _lastAcceptedPositionTime;
-  // Raw GPS clock is independent from accepted route fixes.
-  DateTime? _lastRawGpsPositionTime;
-  // Keep an observed outage pending until the next eligible route anchor.
-  double _pendingGpsSignalGapSec = 0.0;
+  final GpsRawSignalContinuity _rawSignalContinuity = GpsRawSignalContinuity(
+    gapThresholdSec: WorkoutTrackingEngine.kStaleSignalGapThresholdSec,
+  );
   DateTime? _lastStepTime;
   int _lastSessionSteps = 0;
   int _pausedStepsOffset = 0;
@@ -867,8 +867,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     _lastRouteSnapshotTime = null;
     _speedSamples.clear();
     _lastAcceptedPositionTime = null;
-    _lastRawGpsPositionTime = null;
-    _pendingGpsSignalGapSec = 0.0;
+    _rawSignalContinuity.reset();
     _lastStepTime = null;
     _lastSessionSteps = 0;
     _pausedStepsOffset = 0;
@@ -1081,8 +1080,8 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     }
 
     if (state.status == RecordingState.paused) {
-      _lastRawGpsPositionTime = position.timestamp;
-      _pendingGpsSignalGapSec = 0.0;
+      _rawSignalContinuity.reset();
+      _rawSignalContinuity.observe(position.timestamp);
       _distanceAnchorPoint = livePoint;
       _lastAcceptedPositionTime = position.timestamp;
       state = state.copyWith(
@@ -1111,24 +1110,14 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     _rawGpsPositions.add(position);
     _environmentController.addPosition(position);
 
-    // Classify actual GPS outages from consecutive raw timestamps, NOT from
-    // the last accepted moving fix (which may be minutes old at a traffic light).
-    // Preserve raw samples, but do not let late/duplicate timestamps change route.
-    final previousRawTime = _lastRawGpsPositionTime;
-    if (previousRawTime != null && !position.timestamp.isAfter(previousRawTime)) {
+    // Compare consecutive raw timestamps; rejected stationary fixes still
+    // prove the GPS stream is healthy. Ignore stale samples for route updates.
+    if (!_rawSignalContinuity.observe(position.timestamp)) {
       if (kDebugMode) {
         debugPrint('[Workout][GPS] ignored out-of-order/duplicate raw fix');
       }
       return;
     }
-    if (previousRawTime != null) {
-      final rawDeltaSec =
-          position.timestamp.difference(previousRawTime).inMilliseconds / 1000.0;
-      if (rawDeltaSec > WorkoutTrackingEngine.kStaleSignalGapThresholdSec) {
-        _pendingGpsSignalGapSec = rawDeltaSec;
-      }
-    }
-    _lastRawGpsPositionTime = position.timestamp;
 
     if (!isGpsPrimary && state.trackingMode == kIndoorMode) {
       state = state.copyWith(
@@ -1159,7 +1148,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       currentLatLng: state.currentLatLng,
       distanceAnchorPoint: _distanceAnchorPoint,
       lastAcceptedPositionTime: _lastAcceptedPositionTime,
-      rawGpsGapDurationSec: _pendingGpsSignalGapSec,
+      rawGpsGapDurationSec: _rawSignalContinuity.pendingGapDurationSec,
       shouldResetAnchorOnResume: _shouldResetGpsAnchorOnResume,
       wasGpsSignalWeak: state.isGpsSignalWeak,
       debugLocationMode: kDebugLocationMode,
@@ -1187,7 +1176,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     }
 
     if (decision.type == TrackingGpsDecisionType.seedRoute) {
-      _pendingGpsSignalGapSec = 0.0;
+      _rawSignalContinuity.acknowledgeRouteAnchor();
       _lastAcceptedPositionTime = position.timestamp;
       _distanceAnchorPoint = decision.livePoint;
       _gpsPipeline.seedRoute(decision.livePoint);
@@ -1220,7 +1209,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     }
 
     if (decision.type == TrackingGpsDecisionType.resetAnchor) {
-      _pendingGpsSignalGapSec = 0.0;
+      _rawSignalContinuity.acknowledgeRouteAnchor();
       _shouldResetGpsAnchorOnResume = false;
       _distanceAnchorPoint = decision.livePoint;
       _lastAcceptedPositionTime = position.timestamp;
@@ -1584,7 +1573,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       _lastModeFlipTime = DateTime.now();
     }
     _lastAcceptedPositionTime = position.timestamp;
-    _pendingGpsSignalGapSec = 0.0;
+    _rawSignalContinuity.acknowledgeRouteAnchor();
     _distanceAnchorPoint = livePoint;
 
     // Update lightweight metrics state (1Hz)
