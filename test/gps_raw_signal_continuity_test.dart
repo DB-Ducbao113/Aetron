@@ -1,4 +1,5 @@
 import 'package:fitness_exercise_application/features/workout/domain/services/gps_pipeline.dart';
+import 'package:fitness_exercise_application/features/workout/domain/services/gps_raw_signal_continuity.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/gps_smoothing_service.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/gps_validation_models.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/workout_tracking_engine.dart';
@@ -48,6 +49,50 @@ void main() {
       shouldResetAnchorOnResume: false,
     );
   }
+
+  test('raw continuity tracker ignores stationary accepted-fix drought', () {
+    final continuity = GpsRawSignalContinuity(gapThresholdSec: 5.0);
+    expect(continuity.observe(t0), isTrue);
+    for (var sec = 1; sec <= 60; sec++) {
+      expect(continuity.observe(t0.add(Duration(seconds: sec))), isTrue);
+      expect(continuity.pendingGapDurationSec, 0.0);
+    }
+    expect(continuity.lastRawFixTimestamp, t0.add(const Duration(seconds: 60)));
+  });
+
+  test('raw continuity tracker retains blackout until a valid route anchor', () {
+    final continuity = GpsRawSignalContinuity(gapThresholdSec: 5.0);
+    expect(continuity.observe(t0), isTrue);
+    expect(continuity.observe(t0.add(const Duration(seconds: 15))), isTrue);
+    expect(continuity.pendingGapDurationSec, 15.0);
+
+    // A low-quality fix at 15 seconds is rejected by validation; no ACK yet.
+    final bad = decide(
+      fix(15, latitude: 10.0009, accuracy: 50.0),
+      anchor: base,
+      lastAccepted: t0,
+      rawGapSec: continuity.pendingGapDurationSec,
+    );
+    expect(bad.reason, GpsRejectReason.lowAccuracy);
+    expect(continuity.observe(t0.add(const Duration(seconds: 16))), isTrue);
+    expect(continuity.pendingGapDurationSec, 15.0);
+
+    // A replay of an older sensor timestamp must not reset the clock.
+    expect(continuity.observe(t0.add(const Duration(seconds: 14))), isFalse);
+    expect(continuity.lastRawFixTimestamp, t0.add(const Duration(seconds: 16)));
+
+    final good = decide(
+      fix(16, latitude: 10.00091, speed: 3),
+      anchor: base,
+      lastAccepted: t0,
+      rawGapSec: continuity.pendingGapDurationSec,
+    );
+    expect(good.shouldBreakRouteForDisplay, isTrue);
+    continuity.acknowledgeRouteAnchor();
+    expect(continuity.pendingGapDurationSec, 0.0);
+    continuity.reset();
+    expect(continuity.lastRawFixTimestamp, isNull);
+  });
 
   test('60s stationary raw stream does not create a false route blackout', () {
     final route = GpsPipeline()..seedRoute(base);
