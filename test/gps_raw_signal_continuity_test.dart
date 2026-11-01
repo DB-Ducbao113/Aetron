@@ -94,6 +94,45 @@ void main() {
     expect(continuity.lastRawFixTimestamp, isNull);
   });
 
+  test('finalizer analysis does not invent outages when raw fixes are filtered', () {
+    final positions = <Position>[fix(0)];
+    for (var second = 1; second <= 8; second++) {
+      // Raw fixes arrived each second, but the sensor-reported speed is a spike.
+      positions.add(fix(
+        second,
+        latitude: base.latitude + second * 0.000018,
+        speed: 90.0,
+      ));
+    }
+    positions.add(fix(9, latitude: 10.000162, speed: 2.0));
+
+    final analysis = engine.analyzeGpsWorkout(GpsWorkoutAnalysisInput(
+      rawPositions: positions,
+      activityType: 'cycling',
+      totalDurationSec: 9,
+      fallbackDistanceMeters: 0,
+    ));
+    expect(analysis.gpsGapCount, 0);
+    expect(analysis.gpsGapDurationSec, 0);
+    expect(analysis.validDistanceKm, greaterThan(0.01));
+  });
+
+  test('finalizer analysis still detects genuine gaps in the raw stream', () {
+    final analysis = engine.analyzeGpsWorkout(GpsWorkoutAnalysisInput(
+      rawPositions: [
+        fix(0),
+        fix(1, latitude: 10.000018, speed: 2),
+        fix(12, latitude: 10.000198, speed: 2),
+        fix(13, latitude: 10.000216, speed: 2),
+      ],
+      activityType: 'cycling',
+      totalDurationSec: 13,
+      fallbackDistanceMeters: 0,
+    ));
+    expect(analysis.gpsGapCount, 1);
+    expect(analysis.gpsGapDurationSec, 11);
+  });
+
   test('60s stationary raw stream does not create a false route blackout', () {
     final route = GpsPipeline()..seedRoute(base);
     // The sensor sends a healthy fix every second; tiny GPS jitter is rejected.
