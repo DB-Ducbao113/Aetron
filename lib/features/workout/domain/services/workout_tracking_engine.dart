@@ -112,6 +112,10 @@ class WorkoutTrackingEngine {
     required LatLng? currentLatLng,
     required LatLng? distanceAnchorPoint,
     required DateTime? lastAcceptedPositionTime,
+    // Real raw-signal interruption duration. Null keeps legacy callers' behavior.
+    // The live recorder passes 0 when raw GPS is flowing, even if validation
+    // has not accepted a moving point for a long stationary interval.
+    double? rawGpsGapDurationSec,
     required bool shouldResetAnchorOnResume,
     bool wasGpsSignalWeak = false,
     bool debugLocationMode = false,
@@ -176,21 +180,6 @@ class WorkoutTrackingEngine {
     );
     final segmentMeters = rawSegmentMeters;
 
-    if (segmentMeters < minSegmentMeters) {
-      return TrackingGpsDecision(
-        type: TrackingGpsDecisionType.skip,
-        livePoint: livePoint,
-        previewPoint: previewPoint,
-        skipReason:
-            'segment=${segmentMeters.toStringAsFixed(2)}m < $minSegmentMeters',
-        segmentMeters: segmentMeters,
-        rawSegmentMeters: rawSegmentMeters,
-        routeSegmentMeters: routeSegmentMeters,
-        outcome: GpsPointOutcome.softRejected,
-        reason: GpsRejectReason.tinySegment,
-      );
-    }
-
     if (position.accuracy > maxAccuracy) {
       return TrackingGpsDecision(
         type: TrackingGpsDecisionType.skip,
@@ -226,7 +215,10 @@ class WorkoutTrackingEngine {
         ? 0.0
         : position.timestamp.difference(previousAcceptedTime).inMilliseconds /
               1000.0;
-    if (timeDeltaSec > kStaleSignalGapThresholdSec) {
+    // Accepted-fix age alone is NOT a signal outage: stationary/filtered fixes
+    // can keep the raw stream healthy. Actual blackout is based on raw fixes.
+    final signalGapSec = rawGpsGapDurationSec ?? timeDeltaSec;
+    if (signalGapSec > kStaleSignalGapThresholdSec) {
       return TrackingGpsDecision(
         type: TrackingGpsDecisionType.acceptRoute,
         livePoint: livePoint,
@@ -237,9 +229,24 @@ class WorkoutTrackingEngine {
         candidateSpeedKmh: 0,
         shouldAddDistance: false,
         shouldBreakRouteForDisplay: true,
-        gpsGapDurationSec: timeDeltaSec,
+        gpsGapDurationSec: signalGapSec,
         outcome: GpsPointOutcome.signalGap,
         reason: GpsRejectReason.staleSignalGap,
+      );
+    }
+
+    if (segmentMeters < minSegmentMeters) {
+      return TrackingGpsDecision(
+        type: TrackingGpsDecisionType.skip,
+        livePoint: livePoint,
+        previewPoint: previewPoint,
+        skipReason:
+            'segment=${segmentMeters.toStringAsFixed(2)}m < $minSegmentMeters',
+        segmentMeters: segmentMeters,
+        rawSegmentMeters: rawSegmentMeters,
+        routeSegmentMeters: routeSegmentMeters,
+        outcome: GpsPointOutcome.softRejected,
+        reason: GpsRejectReason.tinySegment,
       );
     }
 
