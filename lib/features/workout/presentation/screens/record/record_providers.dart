@@ -307,8 +307,9 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   }
 
   bool requestRecenter() {
-    if (state.currentLatLng == null && state.initialPosition == null)
+    if (state.currentLatLng == null && state.initialPosition == null) {
       return false;
+    }
     state = state.copyWith(
       followUser: true,
       recenterRequestId: state.recenterRequestId + 1,
