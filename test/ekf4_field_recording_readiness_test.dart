@@ -61,11 +61,33 @@ void main() {
           shouldResetAnchorOnResume: false,
         );
 
-        expect(decision.type, TrackingGpsDecisionType.seedRoute);
-        expect(decision.outcome, GpsPointOutcome.accepted);
-        expect(decision.reason, GpsRejectReason.none);
+        // Main's cycling first-fix requirement is 20m. The historical
+        // 21.27m row must wait for a better fix, not silently seed a route.
+        expect(decision.type, TrackingGpsDecisionType.skip);
+        expect(decision.reason, GpsRejectReason.waitingForBetterFirstFix);
 
-        pipeline.seedRoute(decision.livePoint);
+        final betterFix = buildPosition(
+          latitude: 10.738082,
+          longitude: 106.625252,
+          timestamp: t0.add(const Duration(seconds: 1)),
+          accuracy: 12.0,
+          speed: 0.0,
+        );
+        final seeded = engine.evaluateGpsUpdate(
+          position: betterFix,
+          activityType: 'cycling',
+          routePoints: const [],
+          currentLatLng: null,
+          distanceAnchorPoint: null,
+          lastAcceptedPositionTime: null,
+          rawGpsGapDurationSec: 0.0,
+          shouldResetAnchorOnResume: false,
+        );
+        expect(seeded.type, TrackingGpsDecisionType.seedRoute);
+        expect(seeded.outcome, GpsPointOutcome.accepted);
+        expect(seeded.reason, GpsRejectReason.none);
+
+        pipeline.seedRoute(seeded.livePoint);
 
         expect(pipeline.routePoints.length, 1);
         expect(pipeline.smoothedRoutePoints.length, 1);
@@ -511,6 +533,12 @@ void main() {
         expect(metrics['source_fingerprint'], isNotEmpty);
         expect(metrics['filtered_route_distance_km'], closeTo(0.03, 0.005));
         expect(metrics['raw_valid_distance_km'], closeTo(0.03, 0.005));
+        expect(metrics['distance_selection_policy'],
+            'raw_valid_then_raw_total_then_live');
+        expect(metrics['raw_gps_fix_count'], 11);
+        expect(metrics['live_distance_km'], closeTo(0.03, 0.005));
+        expect(metrics['saved_distance_km'], closeTo(result.session.distanceKm, 1e-9));
+        expect(metrics['saved_minus_live_distance_km'], closeTo(0.0, 0.005));
       },
     );
 
