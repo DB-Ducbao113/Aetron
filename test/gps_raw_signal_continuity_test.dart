@@ -151,9 +151,11 @@ void main() {
   test('Fixed-Alpha and EKF use identical prevalidation and route boundaries', () {
     final fixed = GpsSmoothingService(algorithm: GpsFilterAlgorithm.fixedAlpha);
     final ekf = GpsSmoothingService(algorithm: GpsFilterAlgorithm.ekf4State);
+    final fixedPipeline = GpsPipeline()..seedRoute(base);
+    final ekfPipeline = GpsPipeline()..seedRoute(base);
     final variants = [
-      (smoother: fixed, pipeline: GpsPipeline()..seedRoute(base)),
-      (smoother: ekf, pipeline: GpsPipeline()..seedRoute(base)),
+      (smoother: fixed, pipeline: fixedPipeline),
+      (smoother: ekf, pipeline: ekfPipeline),
     ];
     final latestSmoothed = [base, base];
 
