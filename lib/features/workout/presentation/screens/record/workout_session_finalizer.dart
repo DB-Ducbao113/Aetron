@@ -95,7 +95,18 @@ class WorkoutSessionFinalizer {
       'filter_branch': 'experiment/ekf4-field-recording',
       'source_revision': kGitRevision,
       'source_fingerprint': kSourceFingerprint,
+      // Explicitly separate live, saved, and displayed-route distance.
+      // Keep historical saved-distance policy unchanged until independently
+      // benchmarked; route smoothing is NOT currently the saved-distance source.
+      'distance_selection_policy': 'raw_valid_then_raw_total_then_live',
+      'raw_gps_fix_count': rawGpsPositions.length,
+      'live_distance_km': state.distanceMeters / 1000.0,
+      'saved_distance_km': distanceKm,
+      'saved_minus_live_distance_km':
+          distanceKm - state.distanceMeters / 1000.0,
       'filtered_route_distance_km': filteredRouteDistanceM / 1000.0,
+      'filtered_minus_saved_distance_km':
+          filteredRouteDistanceM / 1000.0 - distanceKm,
       'raw_valid_distance_km': gpsAnalysis.validDistanceKm,
     };
     final session = WorkoutSession(
