@@ -325,6 +325,18 @@ void main() {
       expect(result.session.routeDistanceSource, 'filtered');
       expect(result.session.matchedRouteJson, '[]');
       expect(result.session.filteredRouteJson, isNot('[]'));
+
+      final audit =
+          jsonDecode(result.session.routeMatchMetricsJson) as Map<String, dynamic>;
+      expect(audit['distance_selection_policy'],
+          'raw_valid_then_raw_total_then_live');
+      expect(audit['raw_gps_fix_count'], 0);
+      expect(audit['live_distance_km'], 5.0);
+      expect(audit['saved_distance_km'], 5.0);
+      expect(audit['saved_minus_live_distance_km'], 0.0);
+      // Displayed route geometry may differ from saved workout distance.
+      expect(audit['filtered_route_distance_km'], lessThan(5.0));
+      expect(audit['filtered_minus_saved_distance_km'], lessThan(0.0));
     });
 
     test('estimates steps from stride when sensor steps are unavailable', () {
