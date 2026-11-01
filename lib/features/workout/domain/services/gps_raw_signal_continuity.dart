@@ -23,7 +23,9 @@ class GpsRawSignalContinuity {
   /// but must not feed stale samples into the accepted route.
   bool observe(DateTime timestamp) {
     final previous = _lastRawFixTimestamp;
-    if (previous != null && !timestamp.isAfter(previous)) return false;
+    if (previous != null && !timestamp.isAfter(previous)) {
+      return false;
+    }
 
     if (previous != null) {
       final dtSec = timestamp.difference(previous).inMilliseconds / 1000.0;
