@@ -651,6 +651,22 @@ class WorkoutTrackingEngine {
   }
 
   WorkoutGpsAnalysis analyzeGpsWorkout(GpsWorkoutAnalysisInput input) {
+    // Diagnose true GPS outages BEFORE filtering: dropped spikes and tiny fixes
+    // must not be reclassified as an unavailable raw sensor stream.
+    final rawSorted = List<Position>.from(input.rawPositions)
+      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    final rawSignalGaps = <({DateTime end, double durationSec})>[];
+    for (var i = 1; i < rawSorted.length; i++) {
+      final dt = rawSorted[i]
+              .timestamp
+              .difference(rawSorted[i - 1].timestamp)
+              .inMilliseconds /
+          1000.0;
+      if (dt > kStaleSignalGapThresholdSec) {
+        rawSignalGaps.add((end: rawSorted[i].timestamp, durationSec: dt));
+      }
+    }
+
     final filtered = _filterRawPositions(input.rawPositions);
     if (filtered.length < 2) {
       final fallbackKm = (input.fallbackDistanceMeters / 1000).clamp(
@@ -673,8 +689,11 @@ class WorkoutTrackingEngine {
     var suspiciousDistanceM = 0.0;
     var invalidDistanceM = 0.0;
     var restDurationSec = 0.0;
-    var gpsGapCount = 0;
-    var gpsGapDurationSec = 0.0;
+    final gpsGapCount = rawSignalGaps.length;
+    final gpsGapDurationSec = rawSignalGaps.fold<double>(
+      0.0,
+      (sum, gap) => sum + gap.durationSec,
+    );
 
     var segmentStartIndex = 0;
     var segmentDistanceM = 0.0;
@@ -691,9 +710,13 @@ class WorkoutTrackingEngine {
         continue;
       }
 
-      if (deltaSec > kStaleSignalGapThresholdSec) {
-        gpsGapCount += 1;
-        gpsGapDurationSec += deltaSec;
+      // A long interval between retained fixes is not necessarily an outage.
+      // Break only if the original raw stream actually stopped in this span.
+      final crossedRawOutage = rawSignalGaps.any(
+        (gap) => gap.end.isAfter(prev.timestamp) &&
+            !gap.end.isAfter(curr.timestamp),
+      );
+      if (crossedRawOutage) {
         _finalizeSegment(
           filtered: filtered,
           startIndex: segmentStartIndex,
