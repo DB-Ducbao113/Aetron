@@ -354,14 +354,16 @@ class WorkoutTrackingEngine {
         ? routeSegmentMeters / timeDeltaSec
         : 0.0;
 
-    if (wasGpsSignalWeak && routeSegmentMeters >= jumpMeters * 0.65) {
-      return true;
-    }
     if (accuracyMeters >= weakAccuracy && routeSegmentMeters >= jumpMeters) {
       return true;
     }
-    if (timeDeltaSec >= 2.0 &&
+    if (timeDeltaSec > 0 &&
         routeSegmentMeters >= jumpMeters &&
+        impliedSpeedMs > plausibleSpeedMs) {
+      return true;
+    }
+    if (wasGpsSignalWeak &&
+        routeSegmentMeters >= jumpMeters * 0.65 &&
         impliedSpeedMs > plausibleSpeedMs) {
       return true;
     }

@@ -50,20 +50,28 @@ class UserProfile with _$UserProfile {
     required double distanceKm,
     double speedKmh = 0,
     int durationSec = 0,
+    int movingDurationSec = 0,
   }) {
     final genderFactor = gender.toLowerCase() == 'female' ? 0.95 : 1.0;
-    if (distanceKm > 0 && _isDistanceBasedActivity(activityType)) {
+    if (_isDistanceBasedActivity(activityType)) {
+      // Distance-based / GPS activities require valid physical displacement.
+      // Elapsed time alone must NEVER accumulate active calories while stationary.
+      if (distanceKm <= 0) return 0.0;
       final k = _getDistanceCalorieFactor(activityType, speedKmh);
       return weightKg * distanceKm * k * genderFactor;
     }
 
-    if (durationSec > 0) {
+    // Non-GPS / non-distance activities (e.g. yoga, gym, strength, etc.)
+    // use MET x active duration.
+    final effectiveDurationSec =
+        movingDurationSec > 0 ? movingDurationSec : durationSec;
+    if (effectiveDurationSec > 0) {
       final met = _getMetForActivity(activityType);
-      final durationHours = durationSec / 3600.0;
+      final durationHours = effectiveDurationSec / 3600.0;
       return met * weightKg * durationHours * genderFactor;
     }
 
-    return 0;
+    return 0.0;
   }
 
   bool _isDistanceBasedActivity(String activityType) {

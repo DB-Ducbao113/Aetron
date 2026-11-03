@@ -8,6 +8,7 @@ import 'package:fitness_exercise_application/core/providers/connectivity_provide
 import 'package:fitness_exercise_application/features/workout/data/local/local_db.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
 import 'package:fitness_exercise_application/features/profile/presentation/providers/user_profile_providers.dart';
+import 'package:fitness_exercise_application/features/workout/domain/services/workout_tracking_engine.dart';
 import 'package:fitness_exercise_application/features/workout/providers/workout_providers_infra.dart';
 import 'package:fitness_exercise_application/core/utils/date_time_helper.dart';
 import 'package:uuid/uuid.dart';
@@ -347,9 +348,41 @@ final workoutRoutePresentationProvider =
           .map((point) => LatLng(point.latitude, point.longitude))
           .toList(growable: false);
 
+      final rawSegments = <List<LatLng>>[];
+      if (points.isNotEmpty) {
+        var currentSegment = <LatLng>[
+          LatLng(points.first.latitude, points.first.longitude),
+        ];
+        for (var i = 1; i < points.length; i++) {
+          final dtSec = points[i]
+                  .timestamp
+                  .difference(points[i - 1].timestamp)
+                  .abs()
+                  .inMilliseconds /
+              1000.0;
+          if (dtSec > WorkoutTrackingEngine.kStaleSignalGapThresholdSec) {
+            if (currentSegment.length >= 2) {
+              rawSegments.add(currentSegment);
+            }
+            currentSegment = [
+              LatLng(points[i].latitude, points[i].longitude),
+            ];
+          } else {
+            currentSegment.add(
+              LatLng(points[i].latitude, points[i].longitude),
+            );
+          }
+        }
+        if (currentSegment.length >= 2) {
+          rawSegments.add(currentSegment);
+        }
+      }
+
       return WorkoutRoutePresentation(
         routePoints: rawRoute,
-        routeSegments: rawRoute.isEmpty ? const <List<LatLng>>[] : [rawRoute],
+        routeSegments: rawSegments.isNotEmpty
+            ? rawSegments
+            : (rawRoute.length >= 2 ? [rawRoute] : const <List<LatLng>>[]),
         source: 'raw',
         matchStatus: workout?.routeMatchStatus ?? 'pending',
         matchConfidence: workout?.routeMatchConfidence,

@@ -242,9 +242,9 @@ class _TrackingMapWidgetState extends State<TrackingMapWidget>
     if (rawSegments.isNotEmpty) {
       final outSegments = <List<LatLng>>[];
       for (final segment in rawSegments) {
-        if (segment.isEmpty) continue;
+        if (segment.length < 2) continue;
         final simplified = _simplifyPoints(segment, tolerance);
-        if (simplified.isNotEmpty) {
+        if (simplified.length >= 2) {
           outSegments.add(simplified);
         }
       }

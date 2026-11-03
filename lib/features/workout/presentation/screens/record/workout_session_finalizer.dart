@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:fitness_exercise_application/core/constants/debug_config.dart';
+import 'package:fitness_exercise_application/features/profile/domain/entities/user_profile.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/workout_metrics_calculator.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/workout_tracking_engine.dart';
@@ -39,6 +40,7 @@ class WorkoutSessionFinalizer {
     required List<Position> rawGpsPositions,
     required List<List<LatLng>> filteredRouteSegments,
     String gpsAlgorithm = 'ekf_4state',
+    UserProfile? userProfile,
   }) {
     final gpsAnalysis = trackingEngine.analyzeGpsWorkout(
       GpsWorkoutAnalysisInput(
@@ -61,6 +63,27 @@ class WorkoutSessionFinalizer {
       distanceKm: distanceKm,
       durationSec: durationSec,
     );
+
+    var resolvedCalories = caloriesBurned;
+    if (userProfile != null) {
+      final recalculated = WorkoutMetricsCalculator.computeCaloriesKcal(
+        profile: userProfile,
+        activityType: state.activityType,
+        distanceMeters: distanceKm * 1000.0,
+        durationSec: durationSec,
+        movingDurationSec: movingTimeSec,
+      );
+      if (distanceKm <= 0 &&
+          userProfile.calculateCalories(
+                activityType: state.activityType,
+                distanceKm: 1.0,
+              ) >
+              0) {
+        resolvedCalories = 0;
+      } else {
+        resolvedCalories = math.max(caloriesBurned, recalculated);
+      }
+    }
 
     var finalSteps = state.stepCount;
     if (finalSteps <= 0 && state.recordingSource != 'step_fallback') {
@@ -122,7 +145,7 @@ class WorkoutSessionFinalizer {
       distanceKm: distanceKm,
       steps: finalSteps,
       avgSpeedKmh: avgSpeedKmh,
-      caloriesKcal: caloriesBurned.toDouble(),
+      caloriesKcal: resolvedCalories.toDouble(),
       mode: state.trackingMode,
       createdAt: finishedAt.toUtc(),
       lapSplits: state.lapSplits,
@@ -136,7 +159,7 @@ class WorkoutSessionFinalizer {
 
     return WorkoutSessionFinalization(
       sessionId: sessionId,
-      caloriesBurned: caloriesBurned,
+      caloriesBurned: resolvedCalories,
       avgSpeedKmh: avgSpeedKmh,
       gpsAnalysis: gpsAnalysis,
       session: session,
