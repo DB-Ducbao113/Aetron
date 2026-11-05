@@ -2,26 +2,30 @@ import '../models/indoor_outdoor_state.dart';
 import '../models/iod_prediction.dart';
 import '../models/iod_sensor_snapshot.dart';
 
-/// Probabilistic transition detection algorithm from:
+/// Literature-inspired transition detection algorithm adapted from:
 /// *Seamless Indoor–Outdoor Localization Through Transition Detection*
 /// (Yoo, Electronics 2025, 14(13), 2598; DOI: 10.3390/electronics14132598).
 ///
-/// Models environmental boundaries explicitly by evaluating:
-/// 1. GNSS Carrier-to-Noise density ratio (C/N0 in dB-Hz).
-/// 2. Active satellite count used in positioning fix.
-/// 3. Motion continuity (pedometer step deltas and acceleration dynamics).
+/// Published Methodology & Adaptations:
+/// - Yoo (2025) models GNSS carrier-to-noise density ratio (C/N0) transitions using
+///   an upper bound of 40 dB-Hz (strong line-of-sight outdoor) and a lower bound of
+///   30 dB-Hz (attenuated indoor), with a linear transition scaling function:
+///   (40 - C/N0) / 10 for the intermediate boundary zone (30 <= C/N0 <= 40 dB-Hz).
+/// - Declared Adaptation: The original publication combines GNSS C/N0 with Wi-Fi/BLE
+///   fingerprinting and a GNSS-IMU Kalman filter. This mobile sensor slice implements
+///   the GNSS C/N0 boundary model and motion continuity, but omits Wi-Fi/BLE mapping.
 ///
 /// Output classifies states into:
-/// - [IndoorOutdoorState.outdoor]: Direct line-of-sight GNSS.
-/// - [IndoorOutdoorState.indoor]: Deeply obstructed signals.
+/// - [IndoorOutdoorState.outdoor]: Direct line-of-sight GNSS (C/N0 >= 40 dB-Hz).
+/// - [IndoorOutdoorState.indoor]: Deeply obstructed signals (C/N0 <= 30 dB-Hz).
 /// - [IndoorOutdoorState.transition]: Boundary zone (building entrance, doorway,
-///   threshold, covered porch, bridge underpass).
+///   threshold, covered porch, bridge underpass: 30 <= C/N0 <= 40 dB-Hz).
 class SeamlessTransitionDetector {
-  static const String modelVersion = 'yoo-transition-2025-v1.0';
+  static const String modelVersion = 'yoo-transition-2025-v1.1';
 
-  // Physical GNSS boundaries from Yoo (2025)
-  static const double kCn0OutdoorMinDbHz = 28.0;
-  static const double kCn0IndoorMaxDbHz = 20.0;
+  // Physical GNSS boundaries from Yoo (Electronics 2025, 14(13), 2598)
+  static const double kCn0UpperThresholdDbHz = 40.0;
+  static const double kCn0LowerThresholdDbHz = 30.0;
   static const int kMinSatellitesOutdoor = 5;
   static const int kMaxSatellitesIndoor = 2;
 
@@ -64,21 +68,24 @@ class SeamlessTransitionDetector {
     final double pIndoor;
     final double pTransition;
 
-    if (currentCn0 >= kCn0OutdoorMinDbHz &&
+    if (currentCn0 >= kCn0UpperThresholdDbHz &&
         currentSatUsed >= kMinSatellitesOutdoor) {
-      // Strong GNSS line-of-sight -> High probability Outdoor
+      // Strong GNSS line-of-sight (C/N0 >= 40 dB-Hz) -> High probability Outdoor
       pOutdoor = 0.85;
       pIndoor = 0.05;
       pTransition = 0.10;
-    } else if (currentCn0 <= kCn0IndoorMaxDbHz || currentSatUsed <= kMaxSatellitesIndoor) {
-      // Heavily attenuated or zero GNSS -> High probability Indoor
+    } else if (currentCn0 <= kCn0LowerThresholdDbHz ||
+        currentSatUsed <= kMaxSatellitesIndoor) {
+      // Heavily attenuated GNSS (C/N0 <= 30 dB-Hz) -> High probability Indoor
       pOutdoor = 0.05;
       pIndoor = 0.85;
       pTransition = 0.10;
     } else {
-      // Intermediate signal region: 20 <= C/N0 < 28 or 3-4 satellites
-      // Evaluate signal gradient + motion continuity
-      double transitionBoost = 0.40;
+      // Intermediate signal region: 30 <= C/N0 <= 40 dB-Hz (Yoo 2025)
+      // Published transitional scaling: (40 - C/N0) / 10
+      final tRatio = (kCn0UpperThresholdDbHz - currentCn0) /
+          (kCn0UpperThresholdDbHz - kCn0LowerThresholdDbHz);
+      double transitionBoost = 0.35 + (tRatio * 0.25);
 
       // Check if user is actively walking (motion continuity)
       final isMoving = snapshot.stepDelta > 0 ||
@@ -106,10 +113,9 @@ class SeamlessTransitionDetector {
 
       pTransition = transitionBoost.clamp(0.0, 0.90);
       final remaining = 1.0 - pTransition;
-      final normalizedCn0 = (currentCn0 - kCn0IndoorMaxDbHz) /
-          (kCn0OutdoorMinDbHz - kCn0IndoorMaxDbHz);
-      pOutdoor = (remaining * normalizedCn0).clamp(0.0, 1.0);
-      pIndoor = (remaining * (1.0 - normalizedCn0)).clamp(0.0, 1.0);
+      final normalizedOutdoorWeight = 1.0 - tRatio;
+      pOutdoor = (remaining * normalizedOutdoorWeight).clamp(0.0, 1.0);
+      pIndoor = (remaining * tRatio).clamp(0.0, 1.0);
     }
 
     // Update gradient history
@@ -133,7 +139,7 @@ class SeamlessTransitionDetector {
 
     stopwatch.stop();
 
-    final reasoning = 'Yoo-2025 cn0=${currentCn0.toStringAsFixed(1)}dB '
+    final reasoning = 'Yoo-2025(Adaptation) cn0=${currentCn0.toStringAsFixed(1)}dB '
         'sats=$currentSatUsed '
         'P(out)=${(pOutdoor * 100).toStringAsFixed(0)}% '
         'P(in)=${(pIndoor * 100).toStringAsFixed(0)}% '
@@ -153,12 +159,12 @@ class SeamlessTransitionDetector {
     );
   }
 
-  /// Mathematical approximation when only Geolocator horizontal accuracy is available.
+  /// Approximation when only Geolocator horizontal accuracy is available.
   double _estimateCn0FromAccuracy(double? accuracyMeters) {
-    if (accuracyMeters == null || accuracyMeters <= 0.0) return 18.0;
-    // Strong accuracy (<10m) corresponds roughly to 30+ dB-Hz C/N0
-    // Poor accuracy (>40m) corresponds to <20 dB-Hz C/N0
-    final estimated = 35.0 - (accuracyMeters * 0.40);
-    return estimated.clamp(12.0, 38.0);
+    if (accuracyMeters == null || accuracyMeters <= 0.0) return 25.0;
+    // Strong accuracy (<5m) maps to ~42 dB-Hz C/N0
+    // Poor accuracy (>40m) maps to <28 dB-Hz C/N0
+    final estimated = 44.0 - (accuracyMeters * 0.40);
+    return estimated.clamp(15.0, 42.0);
   }
 }

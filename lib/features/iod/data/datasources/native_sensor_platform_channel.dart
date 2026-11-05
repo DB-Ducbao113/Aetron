@@ -120,3 +120,4 @@ class NativeSensorPlatformChannel {
     return _lightStream!;
   }
 }
+

@@ -169,3 +169,4 @@ for idx, row in transition_marks.iterrows():
 print(f"\nMean Inference Latency: {df['inference_latency_ms'].mean():.2f} ms")
 print(f"99th Percentile Latency: {np.percentile(df['inference_latency_ms'], 99):.2f} ms")
 ```
+

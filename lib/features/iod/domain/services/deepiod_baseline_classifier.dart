@@ -4,22 +4,18 @@ import '../models/indoor_outdoor_state.dart';
 import '../models/iod_prediction.dart';
 import '../models/iod_sensor_snapshot.dart';
 
-/// Literature-grounded baseline classifier implementing the multi-source fusion
-/// architecture of DeepIOD (Sensors 2024, 24(16), 5125; PMCID: PMC11360063).
+/// Literature-inspired baseline classifier implementing the multi-source fusion
+/// principles of DeepIOD (Sensors 2024, 24(16), 5125; PMCID: PMC11360063).
 ///
-/// Published Architecture:
-/// 1. IMU Module: Inertial & geomagnetic field anomaly analysis.
-/// 2. Light Module: Ambient illuminance (lux) with day/night and pocket awareness.
-/// 3. GPS Module: Satellite fix quality, horizontal accuracy, and kinematics.
-/// 4. Adaptive Majority Voter (AMV): Reliability-weighted consensus dynamically
+/// Published Architecture & Declared Adaptations:
+/// 1. DeepIOD uses proprietary deep neural network models (CNN/LSTM) trained by KAIST.
+///    Because model weights and datasets are unreleased, this class implements an
+///    explicitly labeled Literature Baseline rather than an exact DNN reproduction.
+/// 2. Multi-sensor inputs: 1 Hz normalized epoch, 9-axis IMU, Lux photodiode, GPS.
+/// 3. Adaptive Majority Voter (AMV): Reliability-weighted consensus dynamically
 ///    attenuating degraded sensor streams.
-///
-/// Note on Research Fidelity:
-/// The authors of DeepIOD did not release open-source neural weights or training
-/// checkpoints. This class is an explicitly labeled literature baseline reproducing
-/// the physical sensor thresholds and adaptive majority voting mechanism.
 class DeepIodBaselineClassifier {
-  static const String modelVersion = 'deepiod-baseline-v1.0';
+  static const String modelVersion = 'deepiod-baseline-v1.1';
 
   // Light module constants (lux)
   static const double kLuxOutdoorOvercastThreshold = 1000.0;
@@ -29,8 +25,8 @@ class DeepIodBaselineClassifier {
   // GNSS / GPS module constants
   static const double kGpsAccuracyOutdoorMeters = 15.0;
   static const double kGpsAccuracyIndoorMeters = 40.0;
-  static const double kCn0StrongDbHz = 28.0;
-  static const double kCn0WeakDbHz = 20.0;
+  static const double kCn0StrongDbHz = 35.0;
+  static const double kCn0WeakDbHz = 28.0;
 
   // IMU / Magnetometer constants (microTesla uT)
   // Indoor structures with steel rebars and appliances create high local spatial variance

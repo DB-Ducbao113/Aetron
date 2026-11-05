@@ -22,8 +22,8 @@ void main() {
         satelliteCount: 12,
         usedInFixCount: 8,
         meanCn0DbHz: 31.5,
-        top4Cn0DbHz: 34.0,
-        maxCn0DbHz: 38.0,
+        top4Cn0DbHz: 38.0,
+        maxCn0DbHz: 42.0,
         hasGpsFix: true,
         horizontalAccuracy: 4.5,
         speed: 1.4,
@@ -38,8 +38,8 @@ void main() {
       final pred = classifier.classify(snapshot);
 
       expect(pred.state, equals(IndoorOutdoorState.outdoor));
-      expect(pred.confidence, greaterThanOrEqualTo(0.75));
-      expect(pred.deepIodOutdoorProbability, greaterThan(0.70));
+      expect(pred.confidence, greaterThanOrEqualTo(0.70));
+      expect(pred.deepIodOutdoorProbability, greaterThan(0.75));
       expect(pred.isObservationalOnly, isTrue);
     });
 
@@ -180,14 +180,14 @@ void main() {
       detector = SeamlessTransitionDetector();
     });
 
-    test('Outdoor Clear Line-of-Sight State', () {
+    test('Outdoor Clear Line-of-Sight State (C/N0 >= 40 dB-Hz)', () {
       final snapshot = IodSensorSnapshot(
         timestamp: DateTime.now(),
         hasGnssStatus: true,
-        top4Cn0DbHz: 32.0,
+        top4Cn0DbHz: 41.5,
         usedInFixCount: 7,
         hasGpsFix: true,
-        horizontalAccuracy: 6.0,
+        horizontalAccuracy: 4.0,
       );
 
       final pred = detector.evaluate(snapshot);
@@ -196,11 +196,11 @@ void main() {
       expect(pred.transitionProbability, lessThan(0.25));
     });
 
-    test('Indoor Deep Obstruction State', () {
+    test('Indoor Deep Obstruction State (C/N0 <= 30 dB-Hz)', () {
       final snapshot = IodSensorSnapshot(
         timestamp: DateTime.now(),
         hasGnssStatus: true,
-        top4Cn0DbHz: 15.0,
+        top4Cn0DbHz: 18.0,
         usedInFixCount: 1,
         hasGpsFix: false,
       );
@@ -211,26 +211,26 @@ void main() {
       expect(pred.transitionProbability, lessThan(0.25));
     });
 
-    test('Intermediate Transition Zone: Boundary Signal Gradient + Walking Motion', () {
-      // Step 1: Baseline outdoor reading
+    test('Intermediate Transition Zone: 30 <= C/N0 <= 40 dB-Hz with Signal Drop & Walking', () {
+      // Step 1: Baseline outdoor reading (C/N0 >= 40)
       detector.evaluate(
         IodSensorSnapshot(
           timestamp: DateTime.fromMillisecondsSinceEpoch(1000),
           hasGnssStatus: true,
-          top4Cn0DbHz: 31.0,
+          top4Cn0DbHz: 41.0,
           usedInFixCount: 6,
           hasGpsFix: true,
         ),
       );
 
-      // Step 2: Abrupt transition at building entrance (C/N0 drops to 24 dB-Hz, user is walking)
+      // Step 2: Abrupt transition at building entrance (C/N0 drops into 30-40 zone, user is walking)
       final transitionSnapshot = IodSensorSnapshot(
         timestamp: DateTime.fromMillisecondsSinceEpoch(2000),
         hasGnssStatus: true,
-        top4Cn0DbHz: 23.5, // Intermediate region
+        top4Cn0DbHz: 34.0, // Intermediate region (Yoo 2025)
         usedInFixCount: 4,
         hasGpsFix: true,
-        horizontalAccuracy: 18.0,
+        horizontalAccuracy: 15.0,
         stepDelta: 2, // Active walking motion across doorway
         speed: 1.1,
       );
@@ -254,7 +254,7 @@ void main() {
       final snapshot = IodSensorSnapshot(
         timestamp: DateTime.now(),
         hasGnssStatus: true,
-        top4Cn0DbHz: 32.0,
+        top4Cn0DbHz: 41.0,
         usedInFixCount: 8,
         hasGpsFix: true,
         horizontalAccuracy: 5.0,
