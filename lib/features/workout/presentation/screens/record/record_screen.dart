@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/structured_running_program.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_target.dart';
+import 'package:fitness_exercise_application/features/iod/presentation/widgets/iod_debug_pill.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/record/guided_program_hud.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/record/live_lap_hud_toast.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/record/workout_3d_countdown_overlay.dart';
@@ -930,6 +931,16 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
                 child: LocateButton(
                   isFollowEnabled: state.followUser,
                   onPressed: _onLocatePressed,
+                  isVi: currentLang == AppLanguage.vi,
+                ),
+              ),
+
+            // 5.1. Real-time Indoor-Outdoor Detection Pill (Observational)
+            if (!_isPreparingWorkout && !_isLargeMetricsMode)
+              Positioned(
+                left: 16,
+                bottom: bottomDockHeight + 82,
+                child: IodDebugPill(
                   isVi: currentLang == AppLanguage.vi,
                 ),
               ),

@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'dart:math' as math;
 import 'package:fitness_exercise_application/core/constants/debug_config.dart';
 import 'package:fitness_exercise_application/core/services/environment_detector.dart';
+import 'package:fitness_exercise_application/features/iod/presentation/providers/iod_controller.dart';
 import 'package:fitness_exercise_application/features/profile/domain/entities/user_profile.dart';
 import 'package:fitness_exercise_application/features/workout/data/local/local_db.dart';
 import 'package:fitness_exercise_application/features/workout/data/local/schema/local_gps_point.dart';
@@ -303,6 +304,9 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
         mode: startPlan.trackingMode,
       ),
     );
+
+    // 3. Start Indoor-Outdoor Detection (IOD) observational recording
+    _ref.read(iodControllerProvider.notifier).startSession(startPlan.sessionId);
   }
 
   void onUserDraggedMap() {
@@ -675,6 +679,9 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       } catch (e) {
         debugPrint('[Workout] Error shutting down tracking: $e');
       }
+
+      // Stop Indoor-Outdoor Detection (IOD) recording
+      _ref.read(iodControllerProvider.notifier).stopSession();
 
       final finishedAt = DateTime.now();
       final finalCalories = _computeCalories(
@@ -1148,6 +1155,9 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
         ? 'geolocator_position_stream_recovery'
         : 'geolocator_position_stream';
 
+    // Observational multi-source IOD position update
+    _ref.read(iodControllerProvider.notifier).onPositionUpdate(position);
+
     if (kDebugMode) {
       debugPrint(
         '[Workout][GPS] lat=${position.latitude}, lng=${position.longitude}, '
@@ -1372,6 +1382,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       workoutId: state.sessionId,
     );
     _environmentController.addStepDelta(delta);
+    _ref.read(iodControllerProvider.notifier).onStepDelta(delta);
     state = state.copyWith(stepCount: effectiveSteps);
 
     if (stepDecision.shouldActivateGpsFallback) {
