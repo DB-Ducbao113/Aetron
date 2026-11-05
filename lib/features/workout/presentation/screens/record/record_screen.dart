@@ -376,7 +376,8 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
               style: TextStyle(color: colors.textMuted),
             ),
           ),
-          ?secondaryAction,
+          // ignore: use_null_aware_elements
+          if (secondaryAction != null) secondaryAction,
           ElevatedButton(
             onPressed: () async {
               Navigator.of(ctx).pop();

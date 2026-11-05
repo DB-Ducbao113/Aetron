@@ -15,7 +15,7 @@ extension GetLocalWorkoutCollection on Isar {
 
 const LocalWorkoutSchema = CollectionSchema(
   name: r'LocalWorkout',
-  id: -3038458621972263,
+  id: -3038458621972263742,
   properties: {
     r'activityType': PropertySchema(
       id: 0,
@@ -140,7 +140,7 @@ const LocalWorkoutSchema = CollectionSchema(
   idName: r'id',
   indexes: {
     r'sessionId': IndexSchema(
-      id: 6949518585047923,
+      id: 6949518585047923839,
       name: r'sessionId',
       unique: true,
       replace: true,

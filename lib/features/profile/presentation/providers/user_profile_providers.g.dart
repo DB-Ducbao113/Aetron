@@ -209,7 +209,7 @@ class _UserProfileProviderElement
   String get userId => (origin as UserProfileProvider).userId;
 }
 
-String _$hasUserProfileHash() => r'cae22099ecebd5c86fb0c851ce587a1614a344c5';
+String _$hasUserProfileHash() => r'ae09df46002e6b122d7d00142a0a877dce4d1ffb';
 
 /// See also [hasUserProfile].
 @ProviderFor(hasUserProfile)

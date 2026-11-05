@@ -1,0 +1,23 @@
+session_id,label,activity,raw_points,status,algorithm,filtered_distance_m,live_distance_m,saved_distance_m,accepted_count,soft_rejected_count,hard_rejected_count,route_breaks,stationary_drift_m,processing_time_us,reference_error
+1e26939b-81cb-4903-b109-50c13d270c06,Session 1 (Pre-Fix),cycling,143,Valid (Full),Fixed-Alpha Baseline,987.0,1007.2,1007.2,124,11,8,1,26.9,7991,N/A - No RTK Ground Truth
+1e26939b-81cb-4903-b109-50c13d270c06,Session 1 (Pre-Fix),cycling,143,Valid (Full),EKF 4-State,1029.0,1007.2,1007.2,124,11,8,1,26.9,4438,N/A - No RTK Ground Truth
+1e26939b-81cb-4903-b109-50c13d270c06,Session 1 (Pre-Fix),cycling,143,Valid (Full),EKF + DBSCAN,1029.0,1007.2,1007.2,124,11,8,1,26.9,1519,N/A - No RTK Ground Truth
+e64747d3-9c21-4043-87fe-2cad7f4acedc,Session 2 (Pre-Fix),cycling,143,Valid (Full),Fixed-Alpha Baseline,995.0,1049.4,1049.4,123,20,0,0,2.0,697,N/A - No RTK Ground Truth
+e64747d3-9c21-4043-87fe-2cad7f4acedc,Session 2 (Pre-Fix),cycling,143,Valid (Full),EKF 4-State,1034.0,1049.4,1049.4,123,20,0,0,2.0,880,N/A - No RTK Ground Truth
+e64747d3-9c21-4043-87fe-2cad7f4acedc,Session 2 (Pre-Fix),cycling,143,Valid (Full),EKF + DBSCAN,1034.0,1049.4,1049.4,123,20,0,0,2.0,833,N/A - No RTK Ground Truth
+dd24bacf-dfba-495d-bad7-2a23d9d7363e,Session 3 (Pre-Fix, 8s Gap),cycling,138,Valid (Full),Fixed-Alpha Baseline,966.0,1003.0,1003.0,120,12,6,1,0.0,806,N/A - No RTK Ground Truth
+dd24bacf-dfba-495d-bad7-2a23d9d7363e,Session 3 (Pre-Fix, 8s Gap),cycling,138,Valid (Full),EKF 4-State,1014.0,1003.0,1003.0,120,12,6,1,0.0,847,N/A - No RTK Ground Truth
+dd24bacf-dfba-495d-bad7-2a23d9d7363e,Session 3 (Pre-Fix, 8s Gap),cycling,138,Valid (Full),EKF + DBSCAN,1014.0,1003.0,1003.0,120,12,6,1,0.0,820,N/A - No RTK Ground Truth
+cd4da398-b5d2-48f0-9065-cb6dce5f9cbf,Session 4 (Post-Fix),cycling,9,Partially Valid (Truncated Upload),Fixed-Alpha Baseline,0.0,2.0,2.0,2,4,3,0,2.0,35,N/A - No RTK Ground Truth
+cd4da398-b5d2-48f0-9065-cb6dce5f9cbf,Session 4 (Post-Fix),cycling,9,Partially Valid (Truncated Upload),EKF 4-State,0.0,2.0,2.0,2,4,3,0,2.0,25,N/A - No RTK Ground Truth
+cd4da398-b5d2-48f0-9065-cb6dce5f9cbf,Session 4 (Post-Fix),cycling,9,Partially Valid (Truncated Upload),EKF + DBSCAN,0.0,2.0,2.0,2,4,3,0,2.0,64,N/A - No RTK Ground Truth
+5a777e45-7c8c-4f98-8f69-7b465034682d,Session 5 (Post-Fix),cycling,10,Partially Valid (Truncated Upload),Fixed-Alpha Baseline,8.0,22.5,22.5,4,3,2,0,16.2,37,N/A - No RTK Ground Truth
+5a777e45-7c8c-4f98-8f69-7b465034682d,Session 5 (Post-Fix),cycling,10,Partially Valid (Truncated Upload),EKF 4-State,16.0,22.5,22.5,4,3,2,0,16.2,33,N/A - No RTK Ground Truth
+5a777e45-7c8c-4f98-8f69-7b465034682d,Session 5 (Post-Fix),cycling,10,Partially Valid (Truncated Upload),EKF + DBSCAN,16.0,22.5,22.5,4,3,2,0,16.2,30,N/A - No RTK Ground Truth
+18c54f6e-4c4f-4b93-a114-51fbde02b6e1,Session 6 (Post-Fix),cycling,4,Partially Valid (Truncated Upload),Fixed-Alpha Baseline,0.0,6.0,6.0,2,2,0,0,0.0,33,N/A - No RTK Ground Truth
+18c54f6e-4c4f-4b93-a114-51fbde02b6e1,Session 6 (Post-Fix),cycling,4,Partially Valid (Truncated Upload),EKF 4-State,6.0,6.0,6.0,2,2,0,0,0.0,14,N/A - No RTK Ground Truth
+18c54f6e-4c4f-4b93-a114-51fbde02b6e1,Session 6 (Post-Fix),cycling,4,Partially Valid (Truncated Upload),EKF + DBSCAN,6.0,6.0,6.0,2,2,0,0,0.0,13,N/A - No RTK Ground Truth
+93af3737-54c0-456a-8e2a-62319ce898aa,Session 7 (Post-Fix),cycling,148,Valid (Full),Fixed-Alpha Baseline,956.0,991.3,991.3,120,26,2,0,6.0,421,N/A - No RTK Ground Truth
+93af3737-54c0-456a-8e2a-62319ce898aa,Session 7 (Post-Fix),cycling,148,Valid (Full),EKF 4-State,969.0,991.3,991.3,120,26,2,0,6.0,568,N/A - No RTK Ground Truth
+93af3737-54c0-456a-8e2a-62319ce898aa,Session 7 (Post-Fix),cycling,148,Valid (Full),EKF + DBSCAN,969.0,991.3,991.3,120,26,2,0,6.0,668,N/A - No RTK Ground Truth
+

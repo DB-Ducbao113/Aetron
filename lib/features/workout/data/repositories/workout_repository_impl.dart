@@ -23,6 +23,7 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
   final PendingWorkoutSyncStore _pendingSyncStore;
   final RouteMatchQualityService _routeMatchQualityService =
       const RouteMatchQualityService();
+  bool _isSyncingPendingData = false;
 
   WorkoutRepositoryImpl(
     this._remoteDataSource,
@@ -260,6 +261,8 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
   Future<void> syncPendingData() async {
     final currentUserId = _supabase.auth.currentUser?.id;
     if (currentUserId == null) return;
+    if (_isSyncingPendingData) return;
+    _isSyncingPendingData = true;
 
     try {
       if (!kIsWeb) {
@@ -281,6 +284,10 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
             (workout) => !sessionsPendingDeletion.contains(workout.sessionId),
           ),
         );
+        await _syncAllUnsyncedRawTracking(
+          currentUserId,
+          sessionsPendingDeletion: sessionsPendingDeletion,
+        );
         return;
       }
       final unsyncedWorkouts = await LocalDB.getUnsyncedWorkoutsForUser(
@@ -289,6 +296,8 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
       await _uploadPendingWorkouts(unsyncedWorkouts);
     } catch (e) {
       debugPrint('[Sync] syncPendingData error: $e');
+    } finally {
+      _isSyncingPendingData = false;
     }
   }
 
@@ -391,6 +400,27 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
       await LocalDB.markStepIntervalsAsSynced(
         unsyncedStepIntervals.map((interval) => interval.id).toList(),
       );
+    }
+  }
+
+  Future<void> _syncAllUnsyncedRawTracking(
+    String userId, {
+    Set<String> sessionsPendingDeletion = const {},
+  }) async {
+    final sessionIds = await LocalDB.getSessionIdsWithUnsyncedRawTracking();
+    for (final sessionId in sessionIds) {
+      if (sessionsPendingDeletion.contains(sessionId)) continue;
+      final localWorkout = await LocalDB.getSessionById(sessionId);
+      if (localWorkout != null && localWorkout.userId != userId) {
+        continue;
+      }
+      try {
+        await _syncRawTrackingForSession(sessionId);
+      } catch (e) {
+        debugPrint(
+          '[WorkoutRepository] Failed to sync raw tracking for $sessionId: $e',
+        );
+      }
     }
   }
 

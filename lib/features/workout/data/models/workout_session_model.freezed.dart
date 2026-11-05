@@ -53,9 +53,9 @@ mixin _$WorkoutSessionModel {
       fromJson: _gpsAnalysisFromJson,
       toJson: _gpsAnalysisToJson)
   WorkoutGpsAnalysis get gpsAnalysis => throw _privateConstructorUsedError;
-  @JsonKey(name: 'filtered_route_json')
+  @JsonKey(name: 'filtered_route_json', fromJson: _jsonFieldToString)
   String get filteredRouteJson => throw _privateConstructorUsedError;
-  @JsonKey(name: 'matched_route_json')
+  @JsonKey(name: 'matched_route_json', fromJson: _jsonFieldToString)
   String get matchedRouteJson => throw _privateConstructorUsedError;
   @JsonKey(name: 'route_match_status')
   String get routeMatchStatus => throw _privateConstructorUsedError;
@@ -65,7 +65,8 @@ mixin _$WorkoutSessionModel {
   String get routeDistanceSource => throw _privateConstructorUsedError;
   @JsonKey(name: 'matched_distance_km')
   double? get matchedDistanceKm => throw _privateConstructorUsedError;
-  @JsonKey(name: 'route_match_metrics_json')
+  @JsonKey(
+      name: 'route_match_metrics_json', fromJson: _jsonMetricsFieldToString)
   String get routeMatchMetricsJson => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -104,13 +105,17 @@ abstract class $WorkoutSessionModelCopyWith<$Res> {
           fromJson: _gpsAnalysisFromJson,
           toJson: _gpsAnalysisToJson)
       WorkoutGpsAnalysis gpsAnalysis,
-      @JsonKey(name: 'filtered_route_json') String filteredRouteJson,
-      @JsonKey(name: 'matched_route_json') String matchedRouteJson,
+      @JsonKey(name: 'filtered_route_json', fromJson: _jsonFieldToString)
+      String filteredRouteJson,
+      @JsonKey(name: 'matched_route_json', fromJson: _jsonFieldToString)
+      String matchedRouteJson,
       @JsonKey(name: 'route_match_status') String routeMatchStatus,
       @JsonKey(name: 'route_match_confidence') double? routeMatchConfidence,
       @JsonKey(name: 'route_distance_source') String routeDistanceSource,
       @JsonKey(name: 'matched_distance_km') double? matchedDistanceKm,
-      @JsonKey(name: 'route_match_metrics_json') String routeMatchMetricsJson});
+      @JsonKey(
+          name: 'route_match_metrics_json', fromJson: _jsonMetricsFieldToString)
+      String routeMatchMetricsJson});
 }
 
 /// @nodoc
@@ -274,13 +279,17 @@ abstract class _$$WorkoutSessionModelImplCopyWith<$Res>
           fromJson: _gpsAnalysisFromJson,
           toJson: _gpsAnalysisToJson)
       WorkoutGpsAnalysis gpsAnalysis,
-      @JsonKey(name: 'filtered_route_json') String filteredRouteJson,
-      @JsonKey(name: 'matched_route_json') String matchedRouteJson,
+      @JsonKey(name: 'filtered_route_json', fromJson: _jsonFieldToString)
+      String filteredRouteJson,
+      @JsonKey(name: 'matched_route_json', fromJson: _jsonFieldToString)
+      String matchedRouteJson,
       @JsonKey(name: 'route_match_status') String routeMatchStatus,
       @JsonKey(name: 'route_match_confidence') double? routeMatchConfidence,
       @JsonKey(name: 'route_distance_source') String routeDistanceSource,
       @JsonKey(name: 'matched_distance_km') double? matchedDistanceKm,
-      @JsonKey(name: 'route_match_metrics_json') String routeMatchMetricsJson});
+      @JsonKey(
+          name: 'route_match_metrics_json', fromJson: _jsonMetricsFieldToString)
+      String routeMatchMetricsJson});
 }
 
 /// @nodoc
@@ -437,14 +446,17 @@ class _$WorkoutSessionModelImpl extends _WorkoutSessionModel {
           fromJson: _gpsAnalysisFromJson,
           toJson: _gpsAnalysisToJson)
       this.gpsAnalysis = const WorkoutGpsAnalysis(),
-      @JsonKey(name: 'filtered_route_json') this.filteredRouteJson = '[]',
-      @JsonKey(name: 'matched_route_json') this.matchedRouteJson = '[]',
+      @JsonKey(name: 'filtered_route_json', fromJson: _jsonFieldToString)
+      this.filteredRouteJson = '[]',
+      @JsonKey(name: 'matched_route_json', fromJson: _jsonFieldToString)
+      this.matchedRouteJson = '[]',
       @JsonKey(name: 'route_match_status') this.routeMatchStatus = 'pending',
       @JsonKey(name: 'route_match_confidence') this.routeMatchConfidence,
       @JsonKey(name: 'route_distance_source')
       this.routeDistanceSource = 'filtered',
       @JsonKey(name: 'matched_distance_km') this.matchedDistanceKm,
-      @JsonKey(name: 'route_match_metrics_json')
+      @JsonKey(
+          name: 'route_match_metrics_json', fromJson: _jsonMetricsFieldToString)
       this.routeMatchMetricsJson = '{}'})
       : _lapSplits = lapSplits,
         super._();
@@ -507,10 +519,10 @@ class _$WorkoutSessionModelImpl extends _WorkoutSessionModel {
       toJson: _gpsAnalysisToJson)
   final WorkoutGpsAnalysis gpsAnalysis;
   @override
-  @JsonKey(name: 'filtered_route_json')
+  @JsonKey(name: 'filtered_route_json', fromJson: _jsonFieldToString)
   final String filteredRouteJson;
   @override
-  @JsonKey(name: 'matched_route_json')
+  @JsonKey(name: 'matched_route_json', fromJson: _jsonFieldToString)
   final String matchedRouteJson;
   @override
   @JsonKey(name: 'route_match_status')
@@ -525,7 +537,8 @@ class _$WorkoutSessionModelImpl extends _WorkoutSessionModel {
   @JsonKey(name: 'matched_distance_km')
   final double? matchedDistanceKm;
   @override
-  @JsonKey(name: 'route_match_metrics_json')
+  @JsonKey(
+      name: 'route_match_metrics_json', fromJson: _jsonMetricsFieldToString)
   final String routeMatchMetricsJson;
 
   @override
@@ -647,14 +660,17 @@ abstract class _WorkoutSessionModel extends WorkoutSessionModel {
           fromJson: _gpsAnalysisFromJson,
           toJson: _gpsAnalysisToJson)
       final WorkoutGpsAnalysis gpsAnalysis,
-      @JsonKey(name: 'filtered_route_json') final String filteredRouteJson,
-      @JsonKey(name: 'matched_route_json') final String matchedRouteJson,
+      @JsonKey(name: 'filtered_route_json', fromJson: _jsonFieldToString)
+      final String filteredRouteJson,
+      @JsonKey(name: 'matched_route_json', fromJson: _jsonFieldToString)
+      final String matchedRouteJson,
       @JsonKey(name: 'route_match_status') final String routeMatchStatus,
       @JsonKey(name: 'route_match_confidence')
       final double? routeMatchConfidence,
       @JsonKey(name: 'route_distance_source') final String routeDistanceSource,
       @JsonKey(name: 'matched_distance_km') final double? matchedDistanceKm,
-      @JsonKey(name: 'route_match_metrics_json')
+      @JsonKey(
+          name: 'route_match_metrics_json', fromJson: _jsonMetricsFieldToString)
       final String routeMatchMetricsJson}) = _$WorkoutSessionModelImpl;
   const _WorkoutSessionModel._() : super._();
 
@@ -710,10 +726,10 @@ abstract class _WorkoutSessionModel extends WorkoutSessionModel {
       toJson: _gpsAnalysisToJson)
   WorkoutGpsAnalysis get gpsAnalysis;
   @override
-  @JsonKey(name: 'filtered_route_json')
+  @JsonKey(name: 'filtered_route_json', fromJson: _jsonFieldToString)
   String get filteredRouteJson;
   @override
-  @JsonKey(name: 'matched_route_json')
+  @JsonKey(name: 'matched_route_json', fromJson: _jsonFieldToString)
   String get matchedRouteJson;
   @override
   @JsonKey(name: 'route_match_status')
@@ -728,7 +744,8 @@ abstract class _WorkoutSessionModel extends WorkoutSessionModel {
   @JsonKey(name: 'matched_distance_km')
   double? get matchedDistanceKm;
   @override
-  @JsonKey(name: 'route_match_metrics_json')
+  @JsonKey(
+      name: 'route_match_metrics_json', fromJson: _jsonMetricsFieldToString)
   String get routeMatchMetricsJson;
   @override
   @JsonKey(ignore: true)

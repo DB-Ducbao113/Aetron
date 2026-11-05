@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 
 import 'package:fitness_exercise_application/features/workout/data/datasources/remote/raw_tracking_remote_datasource.dart';
 import 'package:fitness_exercise_application/features/workout/data/local/schema/local_gps_point.dart';
@@ -61,10 +60,10 @@ class LocalDB {
     late final Directory dir;
     try {
       dir = await getApplicationDocumentsDirectory();
-    } on MissingPluginException catch (e) {
-      // No platform channel for the path provider (e.g. the Android app process
-      // was restarted in the background, or a headless isolate). Nothing is
-      // broken — `init()` retries once the engine is back.
+    } catch (e) {
+      // No platform channel for the path provider (e.g. headless unit tests,
+      // background process, or platform isolate). Nothing is broken — `init()`
+      // retries once the engine is back.
       debugPrint('[LocalDB] no document directory yet: $e');
       return;
     }
@@ -317,7 +316,14 @@ class LocalDB {
     if (kIsWeb) return;
     await init();
     final isar = _isar;
-    if (isar == null) return;
+    if (isar == null) {
+      debugPrint(
+        '[LocalDB] CRITICAL: Isar is unavailable; cannot save workout session ${workout.sessionId}',
+      );
+      throw StateError(
+        'LocalDB Isar instance is unavailable for saving workout session',
+      );
+    }
     await isar.writeTxn(() async {
       await isar.localWorkouts.put(workout);
     });
@@ -628,7 +634,14 @@ class LocalDB {
     if (kIsWeb) return;
     await init();
     final isar = _isar;
-    if (isar == null) return;
+    if (isar == null) {
+      debugPrint(
+        '[LocalDB] CRITICAL: Isar is unavailable; cannot persist raw GPS point for session ${point.sessionId}',
+      );
+      throw StateError(
+        'LocalDB Isar instance is unavailable for raw GPS persistence',
+      );
+    }
     await isar.writeTxn(() async {
       await isar.localGPSPoints.put(point);
     });
@@ -715,6 +728,27 @@ class LocalDB {
     });
   }
 
+  static Future<void> markGpsPointsAsSyncedForSession(
+    String sessionId, {
+    DateTime? upToTimestamp,
+  }) async {
+    if (kIsWeb) return;
+    await init();
+    final isar = _isar;
+    if (isar == null) return;
+    final unsynced = await getUnsyncedGpsPointsForSession(sessionId);
+    final targetPoints = upToTimestamp == null
+        ? unsynced
+        : unsynced.where((p) => !p.timestamp.isAfter(upToTimestamp)).toList();
+    if (targetPoints.isEmpty) return;
+    await isar.writeTxn(() async {
+      for (final point in targetPoints) {
+        point.isSynced = true;
+      }
+      await isar.localGPSPoints.putAll(targetPoints);
+    });
+  }
+
   static RawGpsPointPayload rawGpsPointToPayload(LocalGPSPoint point) {
     return RawGpsPointPayload(
       workoutId: point.sessionId,
@@ -733,7 +767,14 @@ class LocalDB {
     if (kIsWeb) return;
     await init();
     final isar = _isar;
-    if (isar == null) return;
+    if (isar == null) {
+      debugPrint(
+        '[LocalDB] CRITICAL: Isar is unavailable; cannot persist step interval for session ${interval.sessionId}',
+      );
+      throw StateError(
+        'LocalDB Isar instance is unavailable for raw step interval persistence',
+      );
+    }
     await isar.writeTxn(() async {
       await isar.localStepIntervals.put(interval);
     });
@@ -768,6 +809,52 @@ class LocalDB {
         }
       }
     });
+  }
+
+  static Future<void> markStepIntervalsAsSyncedForSession(
+    String sessionId, {
+    DateTime? upToTimestamp,
+  }) async {
+    if (kIsWeb) return;
+    await init();
+    final isar = _isar;
+    if (isar == null) return;
+    final unsynced = await getUnsyncedStepIntervalsForSession(sessionId);
+    final targetIntervals = upToTimestamp == null
+        ? unsynced
+        : unsynced
+            .where((i) => !i.intervalEnd.isAfter(upToTimestamp))
+            .toList();
+    if (targetIntervals.isEmpty) return;
+    await isar.writeTxn(() async {
+      for (final interval in targetIntervals) {
+        interval.isSynced = true;
+      }
+      await isar.localStepIntervals.putAll(targetIntervals);
+    });
+  }
+
+  static Future<List<String>> getSessionIdsWithUnsyncedRawTracking() async {
+    if (kIsWeb) return const [];
+    await init();
+    final isar = _isar;
+    if (isar == null) return const [];
+    final unsyncedPoints = await isar.localGPSPoints
+        .filter()
+        .isSyncedEqualTo(false)
+        .findAll();
+    final unsyncedSteps = await isar.localStepIntervals
+        .filter()
+        .isSyncedEqualTo(false)
+        .findAll();
+    final sessionIds = <String>{};
+    for (final p in unsyncedPoints) {
+      if (p.sessionId.isNotEmpty) sessionIds.add(p.sessionId);
+    }
+    for (final s in unsyncedSteps) {
+      if (s.sessionId.isNotEmpty) sessionIds.add(s.sessionId);
+    }
+    return sessionIds.toList();
   }
 
   static Future<void> updateRouteMatchResult(RouteMatchResult result) async {

@@ -1,0 +1,20 @@
+metric,baseline_fixed_alpha,ekf_4state,ekf_plus_dbscan,delta_ekf_vs_baseline,scientific_evidence
+Total Raw Fixes Ingested,595,595,595,0 (100% Parity),Exact single source of truth from aetron_7_new_sessions_raw.csv
+Total Accepted Fixes,495,495,495,0 (100% Parity),Identical shared prevalidation across all candidates
+Total Soft-Rejected Fixes,78,78,78,0 (100% Parity),Identical tiny segment and stationary velocity gating
+Total Hard-Rejected Fixes,21,21,21,0 (100% Parity),Identical satellite accuracy (>35m) and speed spike filters
+Total Out-of-Order / Duplicates,1,1,1,0 (100% Parity),Identical GpsRawSignalContinuity chronological sequence guard
+Total Filtered Distance (All 7 Sessions),3912.0 m,4068.0 m,4068.0 m,+156.0 m (+3.99%),EKF maintains velocity/heading curve radius while Fixed-Alpha cuts corners
+Total Filtered Distance (4 Full Sessions),3904.0 m,4046.0 m,4046.0 m,+142.0 m (+3.64%),Assessed on Sessions 1, 2, 3, and 7 (138-148 points each)
+Positional RMSE (Field Real Sessions),N/A,N/A,N/A,N/A,No RTK-GNSS ground truth hardware present in field
+Positional RMSE (Synthetic OSM Q1 1.15km),5.51 m,3.59 m,3.59 m,-1.92 m (-34.8%),Measured against OpenStreetMap centerline reference
+Positional RMSE (Synthetic ITL 11.11km),3.66 m,2.61 m,2.61 m,-1.05 m (-28.6%),Measured against 417 road centerline nodes with simulated noise
+Hardware Raw GPS Gaps (>5.0s),2,2,2,0,Session 1 (5.4s gap) and Session 3 (8.0s gap)
+Route Break Segmentations,2,2,2,0,Identical safe segmentation on both raw gaps; 0 distance bridged
+False Route Breaks Eliminated,0,0,0,0,Post-PR15 architecture prevents stationary pauses from triggering gaps
+Stationary Drift Accumulated,53.1 m,53.1 m,53.1 m,0.0 m (100% Parity),Identical zero-speed distance suppression
+DBSCAN Dwell Clusters Detected,N/A,N/A,0 clusters,0 clusters,Continuous cycling motion (>15 km/h) has no stationary dwell clusters
+DBSCAN Phantom Drift Removed,N/A,N/A,0.0 m,0.0 m,Zero impact on active cycling routes; introduces unwanted algorithmic overhead
+Replay Execution Processing Time (Warm JIT),1.87 ms,3.06 ms,3.49 ms,+1.19 ms,Warm steady-state processing time across all 7 replay iterations (~3-5 us/fix)
+Production Readiness / Regression Suite,PASS (26/26),PASS (26/26),Not integrated,0 regressions,All stationary calorie and watchdog recovery tests pass
+

@@ -825,19 +825,22 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       );
     }
 
-    // Raw tracking flush runs independently (may throw on web due to no Isar);
-    // route snapshot must not be blocked by it.
-    unawaited(
-      _recordingCoordinator
+    // Ensure remote shell is flagged ready BEFORE flushing so points can be sent
+    _recordingCoordinator.markRemoteWorkoutShellReady();
+
+    // Raw tracking flush is awaited with a 15-second timeout so early screen exit
+    // does not discard pending points. Any unsynced points remain safely in LocalDB.
+    try {
+      await _recordingCoordinator
           .flushPendingRawTracking(
             workoutId: finalization.sessionId,
             force: true,
           )
-          .catchError(
-            (e) => debugPrint('[Workout] RawTracking flush error: $e'),
-          ),
-    );
-    _recordingCoordinator.markRemoteWorkoutShellReady();
+          .timeout(const Duration(seconds: 15));
+    } catch (e) {
+      debugPrint('[Workout] RawTracking flush error: $e');
+    }
+
     _recordingCoordinator.queueLiveRouteSnapshot(
       workoutId: finalization.sessionId,
       routeSegments: routeSegments,
