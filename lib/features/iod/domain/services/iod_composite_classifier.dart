@@ -46,21 +46,13 @@ class IodCompositeClassifier {
     stopwatch.stop();
     final latency = stopwatch.elapsedMilliseconds;
 
-    // Fused resolution logic:
-    // If Yoo transition detector recognizes an entrance/exit boundary with high confidence (>= 0.50),
-    // transition state takes precedence.
-    IndoorOutdoorState resolvedState;
-    double resolvedConfidence;
-
-    final yooTransitionProb = yooPred.transitionProbability ?? 0.0;
-    if (yooTransitionProb >= 0.50) {
-      resolvedState = IndoorOutdoorState.transition;
-      resolvedConfidence = yooTransitionProb;
-    } else {
-      // Defer to DeepIOD Neural prediction
-      resolvedState = neuralPred.state;
-      resolvedConfidence = neuralPred.confidence;
-    }
+    // Primary application-level classification path:
+    // Follows the validated primary DeepIOD neural classifier (Model C).
+    // Yoo's transition detector is preserved as a separately reported experimental signal
+    // without unconditionally hijacking the primary Indoor/Outdoor classification.
+    final IndoorOutdoorState resolvedState = neuralPred.state;
+    final double resolvedConfidence = neuralPred.confidence;
+    final double yooTransitionProb = yooPred.transitionProbability ?? 0.0;
 
     // Merge sensor availability
     final availability = Map<String, bool>.from(neuralPred.sensorAvailability)
@@ -70,7 +62,7 @@ class IodCompositeClassifier {
         'Ensemble: [State=${resolvedState.code.toUpperCase()}] '
         'NeuralModelC=${neuralPred.state.code}(${(neuralPred.confidence * 100).toStringAsFixed(0)}%, '
         'P(Out)=${((neuralPred.deepIodOutdoorProbability ?? 0.0) * 100).toStringAsFixed(1)}%) | '
-        'YooTrans=${(yooTransitionProb * 100).toStringAsFixed(0)}% | '
+        'YooExperimentalTrans=${(yooTransitionProb * 100).toStringAsFixed(0)}% | '
         'Baseline=${heuristicPred.state.code}';
 
     return IodPrediction(

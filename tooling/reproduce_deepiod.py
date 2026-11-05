@@ -623,7 +623,126 @@ def main():
     print(f"Actual Indoor             {amv_m['tn']:6d}             {amv_m['fp']:6d}")
     print(f"Actual Outdoor            {amv_m['fn']:6d}             {amv_m['tp']:6d}")
 
-    # 8. Breakdown by Daytime vs Nighttime
+    # Confusion matrix for Model C (DWS-CNN)
+    c_m = results['Model C (DWS-CNN)']
+    print(f"\n#### Model C (DWS-CNN) Confusion Matrix on Held-Out Test:")
+    print(f"                Predicted Indoor   Predicted Outdoor")
+    print(f"Actual Indoor             {c_m['tn']:6d}             {c_m['fp']:6d}")
+    print(f"Actual Outdoor            {c_m['fn']:6d}             {c_m['tp']:6d}")
+
+    # 8. Feature Ablation Analysis on Held-Out Test Set (Using Model C)
+    print("\n" + "=" * 70)
+    print("      FEATURE ABLATION ANALYSIS ON HELD-OUT TEST (MODEL C DWS-CNN)")
+    print("=" * 70)
+    print("Evaluating the degradation when specific sensors are missing/unprivileged on mobile:")
+
+    # Ablation 1: Missing Cellular PHY (No RSRP, No RSRQ) -> imputed to training mean (0.0)
+    X_test_no_cell = X_test.copy()
+    X_test_no_cell[:, :, [0, 1]] = 0.0
+    ds_no_cell = CiodSessionDataset(X_test_no_cell, y_test, ids_test, dt_test)
+    p_c_no_cell = predict_loader(model_c, DataLoader(ds_no_cell, batch_size=args.batch_size, shuffle=False))
+    m_no_cell = compute_metrics(y_test, (p_c_no_cell >= 0.5).astype(int))
+
+    # Ablation 2: Missing Sound & Proximity -> imputed to training mean (0.0)
+    X_test_no_audio_prox = X_test.copy()
+    X_test_no_audio_prox[:, :, [5, 6]] = 0.0
+    ds_no_audio_prox = CiodSessionDataset(X_test_no_audio_prox, y_test, ids_test, dt_test)
+    p_c_no_audio_prox = predict_loader(model_c, DataLoader(ds_no_audio_prox, batch_size=args.batch_size, shuffle=False))
+    m_no_audio_prox = compute_metrics(y_test, (p_c_no_audio_prox >= 0.5).astype(int))
+
+    # Ablation 3: Realistic Mobile Inputs (Missing RSRP, RSRQ, Sound, Proximity; only Light, Mag, Acc, Daytime active)
+    X_test_mob_inputs = X_test.copy()
+    X_test_mob_inputs[:, :, [0, 1, 5, 6]] = 0.0
+    ds_mob_inputs = CiodSessionDataset(X_test_mob_inputs, y_test, ids_test, dt_test)
+    p_c_mob_inputs = predict_loader(model_c, DataLoader(ds_mob_inputs, batch_size=args.batch_size, shuffle=False))
+    m_mob_inputs = compute_metrics(y_test, (p_c_mob_inputs >= 0.5).astype(int))
+
+    ablation_results = {
+        'Model C (All 8 Features Complete)': c_m,
+        'Model C (No Cellular RSRP/RSRQ)': m_no_cell,
+        'Model C (No Sound / Proximity)': m_no_audio_prox,
+        'Model C (Realistic Mobile: Only Light, Mag, Acc, Day)': m_mob_inputs,
+    }
+
+    print("\n| Configuration | Accuracy | Macro-F1 | Indoor Prec | Indoor Rec | Outdoor Prec | Outdoor Rec | Outdoor F1 |")
+    print("| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |")
+    for name, m in ablation_results.items():
+        print(
+            f"| **{name}** | **{m['accuracy'] * 100:.2f}%** | **{m['macro_f1'] * 100:.2f}%** | "
+            f"{m['precision_in'] * 100:.1f}% | {m['recall_in'] * 100:.1f}% | "
+            f"{m['precision_out'] * 100:.1f}% | {m['recall_out'] * 100:.1f}% | {m['f1_out'] * 100:.1f}% |"
+        )
+
+    # 9. Train & Evaluate Dedicated Mobile-Compatible Model C (4 Features: Light, Mag, Acc, Daytime)
+    print("\n" + "=" * 70)
+    print("      TRAINING DEDICATED MOBILE-COMPATIBLE MODEL C (4 SENSORS)")
+    print("=" * 70)
+    print("Features: ['Light', 'Mag', 'Acc', 'Daytime'] (Zero dependency on unprivileged or proxy features)")
+
+    # Extract 4-channel mobile subsets: indices [2, 3, 4, 7]
+    mob_indices = [2, 3, 4, 7]
+    # Re-normalize using independent 4-feature scaler on train sessions
+    all_train_raw = np.concatenate([s['features'][:, mob_indices] * std[mob_indices] + mean[mob_indices] for s in train_sessions], axis=0)
+    mean_mob = np.mean(all_train_raw, axis=0)
+    std_mob = np.std(all_train_raw, axis=0)
+    std_mob[std_mob < 1e-6] = 1.0
+
+    def make_mob_windows(sess_list):
+        feats_list = []
+        labels_list = []
+        ids_list = []
+        dts_list = []
+        for s_idx, s in enumerate(sess_list):
+            raw = s['features'][:, mob_indices] * std[mob_indices] + mean[mob_indices]
+            norm_raw = (raw - mean_mob) / std_mob
+            lbls = s['labels']
+            dts = s['daytimes']
+            n = len(norm_raw)
+            if n < args.window_size:
+                continue
+            windows_in_sess = 0
+            for i in range(0, n - args.window_size + 1, 2):
+                feats_list.append(norm_raw[i : i + args.window_size])
+                labels_list.append(lbls[i + args.window_size - 1])
+                ids_list.append(s_idx)
+                dts_list.append(dts[i + args.window_size - 1])
+                windows_in_sess += 1
+                if args.max_windows_per_session > 0 and windows_in_sess >= args.max_windows_per_session:
+                    break
+        return np.array(feats_list, dtype=np.float32), np.array(labels_list, dtype=np.float32), ids_list, np.array(dts_list, dtype=np.float32)
+
+    X_train_mob, y_train_mob, ids_train_mob, dt_train_mob = make_mob_windows(train_sessions)
+    X_val_mob, y_val_mob, ids_val_mob, dt_val_mob = make_mob_windows(val_sessions)
+    X_test_mob, y_test_mob, ids_test_mob, dt_test_mob = make_mob_windows(test_sessions)
+
+    train_ds_mob = CiodSessionDataset(X_train_mob, y_train_mob, ids_train_mob, dt_train_mob)
+    val_ds_mob = CiodSessionDataset(X_val_mob, y_val_mob, ids_val_mob, dt_val_mob)
+    test_ds_mob = CiodSessionDataset(X_test_mob, y_test_mob, ids_test_mob, dt_test_mob)
+
+    train_loader_mob = DataLoader(train_ds_mob, batch_size=args.batch_size, shuffle=True)
+    val_loader_mob = DataLoader(val_ds_mob, batch_size=args.batch_size, shuffle=False)
+    test_loader_mob = DataLoader(test_ds_mob, batch_size=args.batch_size, shuffle=False)
+
+    model_c_mobile = ModelC_DepthwiseSeparableCnn()
+    model_c_mobile, w_c_mob = train_single_model(
+        model_c_mobile, train_loader_mob, val_loader_mob, epochs=args.epochs, lr=args.lr, device=device, model_name="Model C-Mobile (4-Sensor DWS-CNN)"
+    )
+
+    p_c_mob_test = predict_loader(model_c_mobile, test_loader_mob)
+    m_c_mob = compute_metrics(y_test_mob, (p_c_mob_test >= 0.5).astype(int))
+
+    print("\n### Performance of Dedicated Model C-Mobile on Held-Out Test Set (4 Genuine Mobile Sensors)")
+    print(f"Accuracy:    **{m_c_mob['accuracy'] * 100:.2f}%**")
+    print(f"Macro-F1:    **{m_c_mob['macro_f1'] * 100:.2f}%**")
+    print(f"Indoor:      Precision {m_c_mob['precision_in'] * 100:.1f}%, Recall {m_c_mob['recall_in'] * 100:.1f}%, F1 {m_c_mob['f1_in'] * 100:.1f}%")
+    print(f"Outdoor:     Precision {m_c_mob['precision_out'] * 100:.1f}%, Recall {m_c_mob['recall_out'] * 100:.1f}%, F1 {m_c_mob['f1_out'] * 100:.1f}%")
+
+    print(f"\n#### Model C-Mobile Confusion Matrix on Held-Out Test:")
+    print(f"                Predicted Indoor   Predicted Outdoor")
+    print(f"Actual Indoor             {m_c_mob['tn']:6d}             {m_c_mob['fp']:6d}")
+    print(f"Actual Outdoor            {m_c_mob['fn']:6d}             {m_c_mob['tp']:6d}")
+
+    # 10. Breakdown by Daytime vs Nighttime
     print("\n" + "=" * 70)
     print("             DAYTIME VS NIGHTTIME CONTEXTUAL BREAKDOWN")
     print("=" * 70)
@@ -751,13 +870,14 @@ def main():
 
     # Verify folded numpy forward pass against PyTorch model_c on test samples
     def folded_forward_numpy(w: dict, x_mat: np.ndarray) -> float:
-        # x_mat: (10, 8)
+        # x_mat: (10, width)
+        width = x_mat.shape[1]
         x_pad = np.pad(x_mat, ((1, 1), (1, 1)), mode='constant')
-        h1 = np.zeros((10, 8), dtype=np.float32)
+        h1 = np.zeros((10, width), dtype=np.float32)
         k1 = np.array(w['dws1_depth_w'], dtype=np.float32)
         b1 = float(w['dws1_depth_b'])
         for t in range(10):
-            for s in range(8):
+            for s in range(width):
                 patch = x_pad[t:t+3, s:s+3]
                 h1[t, s] = max(0.0, float(b1 + np.sum(patch * k1)))
 
@@ -767,20 +887,20 @@ def main():
 
         k3 = np.array(w['dws2_depth_w'], dtype=np.float32)
         b3 = np.array(w['dws2_depth_b'], dtype=np.float32)
-        h3 = np.zeros((32, 10, 8), dtype=np.float32)
+        h3 = np.zeros((32, 10, width), dtype=np.float32)
         for c in range(32):
             c_pad = np.pad(h2[c], ((1, 1), (1, 1)), mode='constant')
             kc = k3[c]
             bc = float(b3[c])
             for t in range(10):
-                for s in range(8):
+                for s in range(width):
                     patch = c_pad[t:t+3, s:s+3]
                     h3[c, t, s] = max(0.0, float(bc + np.sum(patch * kc)))
 
         w4 = np.array(w['dws2_point_w'], dtype=np.float32)
         b4 = np.array(w['dws2_point_b'], dtype=np.float32)
-        h3_flat = h3.reshape(32, 80)
-        h4 = np.maximum(0.0, (w4 @ h3_flat + b4[:, None])).reshape(32, 10, 8)
+        h3_flat = h3.reshape(32, 10 * width)
+        h4 = np.maximum(0.0, (w4 @ h3_flat + b4[:, None])).reshape(32, 10, width)
 
         # MaxPool (2x1)
         h5 = np.maximum(h4[:, 0::2, :], h4[:, 1::2, :])
@@ -834,6 +954,112 @@ def main():
     script_model_c = torch.jit.trace(model_c, dummy_input)
     script_path = f"{args.out_dir}/deepiod_model_c.ptc"
     script_model_c.save(script_path)
+
+    # 11. Fold Weights & Export Model C-Mobile (4-Sensor Dedicated Mobile Model)
+    print("\n" + "=" * 70)
+    print("      EXPORTING DEDICATED MODEL C-MOBILE WEIGHTS & PARITY")
+    print("=" * 70)
+
+    model_c_mobile.eval()
+    with torch.no_grad():
+        gamma1_m = model_c_mobile.bn1.weight.cpu().numpy()
+        beta1_m = model_c_mobile.bn1.bias.cpu().numpy()
+        mean1_m = model_c_mobile.bn1.running_mean.cpu().numpy()
+        var1_m = model_c_mobile.bn1.running_var.cpu().numpy()
+        eps1_m = model_c_mobile.bn1.eps
+        scale1_m = gamma1_m / np.sqrt(var1_m + eps1_m)
+
+        w1_point_m = model_c_mobile.dws1_point.weight.cpu().numpy().squeeze()
+        b1_point_m = model_c_mobile.dws1_point.bias.cpu().numpy() if model_c_mobile.dws1_point.bias is not None else np.zeros(32)
+        w1_point_folded_m = w1_point_m * scale1_m
+        b1_point_folded_m = (b1_point_m - mean1_m) * scale1_m + beta1_m
+
+        gamma2_m = model_c_mobile.bn2.weight.cpu().numpy()
+        beta2_m = model_c_mobile.bn2.bias.cpu().numpy()
+        mean2_m = model_c_mobile.bn2.running_mean.cpu().numpy()
+        var2_m = model_c_mobile.bn2.running_var.cpu().numpy()
+        eps2_m = model_c_mobile.bn2.eps
+        scale2_m = gamma2_m / np.sqrt(var2_m + eps2_m)
+
+        w2_point_m = model_c_mobile.dws2_point.weight.cpu().numpy().squeeze()
+        b2_point_m = model_c_mobile.dws2_point.bias.cpu().numpy() if model_c_mobile.dws2_point.bias is not None else np.zeros(32)
+        w2_point_folded_m = w2_point_m * scale2_m[:, None]
+        b2_point_folded_m = (b2_point_m - mean2_m) * scale2_m + beta2_m
+
+        folded_mob_weights = {
+            'dws1_depth_w': model_c_mobile.dws1_depth.weight.cpu().numpy().squeeze().tolist(),
+            'dws1_depth_b': float(model_c_mobile.dws1_depth.bias.cpu().numpy()[0]),
+            'dws1_point_w': w1_point_folded_m.tolist(),
+            'dws1_point_b': b1_point_folded_m.tolist(),
+            'dws2_depth_w': model_c_mobile.dws2_depth.weight.cpu().numpy().squeeze().tolist(),
+            'dws2_depth_b': model_c_mobile.dws2_depth.bias.cpu().numpy().tolist(),
+            'dws2_point_w': w2_point_folded_m.tolist(),
+            'dws2_point_b': b2_point_folded_m.tolist(),
+            'dense1_w': model_c_mobile.dense1.weight.cpu().numpy().tolist(),
+            'dense1_b': model_c_mobile.dense1.bias.cpu().numpy().tolist(),
+            'out_w': model_c_mobile.out.weight.cpu().numpy().squeeze().tolist(),
+            'out_b': float(model_c_mobile.out.bias.cpu().numpy()[0]),
+            'mean': mean_mob.tolist(),
+            'std': std_mob.tolist(),
+            'feature_names': ['Light', 'Mag', 'Acc', 'Daytime'],
+        }
+
+    mob_weights_path = f"{args.out_dir}/deepiod_model_c_mobile_weights.json"
+    with open(mob_weights_path, 'w') as f:
+        json.dump(folded_mob_weights, f)
+
+    with open(f"{flutter_model_dir}/deepiod_model_c_mobile_weights.json", 'w') as f:
+        json.dump(folded_mob_weights, f)
+
+    os.makedirs("assets/models", exist_ok=True)
+    with open("assets/models/deepiod_model_c_mobile_weights.json", 'w') as f:
+        json.dump(folded_mob_weights, f)
+
+    # Write Dart constant file
+    dart_mob_code = (
+        "// Autogenerated trained weights for DeepIOD Model C-Mobile (4-Sensor variant).\n"
+        "// Features: ['Light', 'Mag', 'Acc', 'Daytime'].\n"
+        "// Exported from Cambridge CIOD trained checkpoint with bit-level verification.\n\n"
+        f"const Map<String, dynamic> kDeepIodModelCMobileWeights = {json.dumps(folded_mob_weights)};\n"
+    )
+    with open("lib/features/iod/data/models/deepiod_model_c_mobile_weights.dart", 'w') as f:
+        f.write(dart_mob_code)
+
+    print(f"Exported Model C-Mobile weights to: {mob_weights_path} and Dart constant file.")
+
+    # Parity check on 100 samples for Model C-Mobile
+    sample_indices_m = np.random.choice(len(X_test_mob), size=min(100, len(X_test_mob)), replace=False)
+    diffs_m = []
+    with torch.no_grad():
+        for idx in sample_indices_m:
+            x_t = torch.tensor(X_test_mob[idx:idx+1], dtype=torch.float32).to(device)
+            ref_val = float(model_c_mobile(x_t).cpu().numpy().flatten()[0])
+            numpy_val = folded_forward_numpy(folded_mob_weights, X_test_mob[idx])
+            diffs_m.append(abs(ref_val - numpy_val))
+
+    max_diff_m = max(diffs_m)
+    mean_diff_m = sum(diffs_m) / len(diffs_m)
+    print(f"NumPy Model C-Mobile Parity: Max diff = {max_diff_m:.8e}, Mean diff = {mean_diff_m:.8e}")
+    assert max_diff_m < 1e-4, f"Parity failed for Model C-Mobile: {max_diff_m}"
+
+    # Export 500 test vectors for Model C-Mobile
+    num_vectors_m = min(500, len(X_test_mob))
+    test_vecs_m = []
+    with torch.no_grad():
+        for i in range(num_vectors_m):
+            x_t = torch.tensor(X_test_mob[i:i+1], dtype=torch.float32).to(device)
+            prob_pytorch = float(model_c_mobile(x_t).cpu().numpy().flatten()[0])
+            test_vecs_m.append({
+                'window': X_test_mob[i].tolist(),
+                'label': int(y_test_mob[i]),
+                'prob_pytorch': prob_pytorch,
+                'session_id': int(ids_test_mob[i]),
+            })
+
+    parity_vec_path_m = f"{args.out_dir}/parity_test_vectors_mobile.json"
+    with open(parity_vec_path_m, 'w') as f:
+        json.dump(test_vecs_m, f)
+    print(f"Exported {len(test_vecs_m)} mobile test vectors to: {parity_vec_path_m}")
 
     print("\n" + "=" * 70)
     print("      DEEPIOD REPRODUCTION PIPELINE FINISHED SUCCESSFULLY")

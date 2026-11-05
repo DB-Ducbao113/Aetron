@@ -74,21 +74,24 @@ class DeepIodModelC {
     );
   }
 
-  /// Evaluates a 10x8 normalized temporal window and returns P(Outdoor) in [0.0, 1.0].
+  /// Evaluates a 10xW normalized temporal window and returns P(Outdoor) in [0.0, 1.0].
+  /// Supports both complete 8-feature windows and mobile-compatible 4-feature windows.
   double predict(List<List<double>> window) {
-    assert(window.length == 10 && window[0].length == 8, 'Window must be 10x8');
+    assert(window.length == 10, 'Window must have 10 temporal steps');
+    final int width = window[0].length;
+    assert(width == 8 || width == 4, 'Window width must be 8 (complete) or 4 (mobile)');
 
     // Layer 1: DWS Conv2D (3x3), in_ch=1, out_ch=1, pad=1
-    final h1 = List.generate(10, (_) => Float64List(8));
+    final h1 = List.generate(10, (_) => Float64List(width));
     for (int t = 0; t < 10; t++) {
-      for (int s = 0; s < 8; s++) {
+      for (int s = 0; s < width; s++) {
         double sum = dws1DepthB;
         for (int di = -1; di <= 1; di++) {
           final pt = t + di;
           if (pt < 0 || pt >= 10) continue;
           for (int dj = -1; dj <= 1; dj++) {
             final ps = s + dj;
-            if (ps < 0 || ps >= 8) continue;
+            if (ps < 0 || ps >= width) continue;
             sum += window[pt][ps] * dws1DepthW[di + 1][dj + 1];
           }
         }
@@ -97,12 +100,12 @@ class DeepIodModelC {
     }
 
     // Layer 2: Pointwise Conv2D (32, 1x1) with folded BN
-    final h2 = List.generate(32, (_) => List.generate(10, (_) => Float64List(8)));
+    final h2 = List.generate(32, (_) => List.generate(10, (_) => Float64List(width)));
     for (int c = 0; c < 32; c++) {
       final wc = dws1PointW[c];
       final bc = dws1PointB[c];
       for (int t = 0; t < 10; t++) {
-        for (int s = 0; s < 8; s++) {
+        for (int s = 0; s < width; s++) {
           final val = bc + wc * h1[t][s];
           h2[c][t][s] = val > 0.0 ? val : 0.0; // ReLU
         }
@@ -110,19 +113,19 @@ class DeepIodModelC {
     }
 
     // Layer 3: DWS Conv2D (3x3), 32 channels, groups=32, pad=1
-    final h3 = List.generate(32, (_) => List.generate(10, (_) => Float64List(8)));
+    final h3 = List.generate(32, (_) => List.generate(10, (_) => Float64List(width)));
     for (int c = 0; c < 32; c++) {
       final bc = dws2DepthB[c];
       final kw = dws2DepthW[c];
       for (int t = 0; t < 10; t++) {
-        for (int s = 0; s < 8; s++) {
+        for (int s = 0; s < width; s++) {
           double sum = bc;
           for (int di = -1; di <= 1; di++) {
             final pt = t + di;
             if (pt < 0 || pt >= 10) continue;
             for (int dj = -1; dj <= 1; dj++) {
               final ps = s + dj;
-              if (ps < 0 || ps >= 8) continue;
+              if (ps < 0 || ps >= width) continue;
               sum += h2[c][pt][ps] * kw[di + 1][dj + 1];
             }
           }
@@ -132,12 +135,12 @@ class DeepIodModelC {
     }
 
     // Layer 4: Pointwise Conv2D (32, 1x1, in_channels 32) with folded BN
-    final h4 = List.generate(32, (_) => List.generate(10, (_) => Float64List(8)));
+    final h4 = List.generate(32, (_) => List.generate(10, (_) => Float64List(width)));
     for (int c = 0; c < 32; c++) {
       final bc = dws2PointB[c];
       final wRow = dws2PointW[c];
       for (int t = 0; t < 10; t++) {
-        for (int s = 0; s < 8; s++) {
+        for (int s = 0; s < width; s++) {
           double sum = bc;
           for (int k = 0; k < 32; k++) {
             sum += wRow[k] * h3[k][t][s];
@@ -147,20 +150,21 @@ class DeepIodModelC {
       }
     }
 
-    // Layer 5: MaxPool2D (2, 1) -> shape 32 x 5 x 8
-    // Followed by Global Average Pooling across the 5 x 8 = 40 entries
+    // Layer 5: MaxPool2D (2, 1) -> shape 32 x 5 x width
+    // Followed by Global Average Pooling across the 5 x width entries
     final gap = Float64List(32);
+    final double gapNorm = 5.0 * width;
     for (int c = 0; c < 32; c++) {
       double sum = 0.0;
       for (int t = 0; t < 5; t++) {
         final t2 = t * 2;
-        for (int s = 0; s < 8; s++) {
+        for (int s = 0; s < width; s++) {
           final v1 = h4[c][t2][s];
           final v2 = h4[c][t2 + 1][s];
           sum += v1 > v2 ? v1 : v2;
         }
       }
-      gap[c] = sum / 40.0;
+      gap[c] = sum / gapNorm;
     }
 
     // Dense 1 (32 -> 32) + ReLU

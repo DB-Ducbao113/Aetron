@@ -396,7 +396,7 @@ void main() {
       );
       print(ciodDeepIodBinaryMetrics.toMarkdownTable());
 
-      // 3. DeepIOD Neural Classifier (Model C DWS-Conv2D Trained Network) on Cambridge CIOD
+      // 3. DeepIOD Neural Classifier (Model C DWS-Conv2D Trained Network - Complete 8 Sensors)
       final ciodNeuralResults = <IodBenchmarkResult>[];
       final deepIodNeuralClassifier = DeepIodNeuralClassifier();
       for (final s in ciodSamples) {
@@ -405,12 +405,40 @@ void main() {
       }
       final ciodNeuralMetrics = IodEvaluationMetrics.compute(
         datasetName: 'Cambridge CIOD (Real Smartphone Sensors)',
-        modelName: 'DeepIOD Neural Model C (DWS-Conv2D Trained Weights)',
+        modelName: 'DeepIOD Neural Model C (8-Sensor Complete Network)',
         results: ciodNeuralResults,
       );
       print(ciodNeuralMetrics.toMarkdownTable());
 
-      // 4. Yoo SeamlessTransitionDetector on Cambridge CIOD (Preserves missing GNSS as missing)
+      // 4. Dedicated Model C-Mobile (4-Sensor Genuine Mobile Network: Light, Mag, Acc, Daytime)
+      final ciodMobileResults = <IodBenchmarkResult>[];
+      final deepIodMobileClassifier = DeepIodNeuralClassifier.mobile();
+      for (final s in ciodSamples) {
+        final pred = deepIodMobileClassifier.classify(s.snapshot);
+        ciodMobileResults.add(IodBenchmarkResult(sample: s, prediction: pred));
+      }
+      final ciodMobileMetrics = IodEvaluationMetrics.compute(
+        datasetName: 'Cambridge CIOD (Real Smartphone Sensors)',
+        modelName: 'DeepIOD Model C-Mobile (4-Sensor Dedicated Mobile Network)',
+        results: ciodMobileResults,
+      );
+      print(ciodMobileMetrics.toMarkdownTable());
+
+      // 5. Application-Level IodCompositeClassifier (Ensemble with Yoo experimental transition signal)
+      final ciodCompositeResults = <IodBenchmarkResult>[];
+      final compositeClassifier = IodCompositeClassifier();
+      for (final s in ciodSamples) {
+        final pred = compositeClassifier.predict(s.snapshot);
+        ciodCompositeResults.add(IodBenchmarkResult(sample: s, prediction: pred));
+      }
+      final ciodCompositeMetrics = IodEvaluationMetrics.compute(
+        datasetName: 'Cambridge CIOD (Real Smartphone Sensors)',
+        modelName: 'Aetron IOD Composite Classifier (Application Output)',
+        results: ciodCompositeResults,
+      );
+      print(ciodCompositeMetrics.toMarkdownTable());
+
+      // 6. Yoo SeamlessTransitionDetector on Cambridge CIOD (Preserves missing GNSS as missing)
       final ciodYooResults = <IodBenchmarkResult>[];
       final ciodYoo = SeamlessTransitionDetector();
       for (final s in ciodSamples) {
@@ -425,10 +453,18 @@ void main() {
       print(ciodYooMetrics.toMarkdownTable());
 
       await IodEvaluationMetrics.exportToCsv(
-        '${outDir.path}/ciod_deepiod_binary_predictions.csv',
-        ciodDeepIodBinaryResults,
+        '${outDir.path}/ciod_deepiod_model_c_predictions.csv',
+        ciodNeuralResults,
       );
-      print('Cambridge CIOD prediction CSV exported to: ${outDir.path}/ciod_deepiod_binary_predictions.csv');
+      await IodEvaluationMetrics.exportToCsv(
+        '${outDir.path}/ciod_deepiod_mobile_predictions.csv',
+        ciodMobileResults,
+      );
+      await IodEvaluationMetrics.exportToCsv(
+        '${outDir.path}/ciod_composite_predictions.csv',
+        ciodCompositeResults,
+      );
+      print('Cambridge CIOD prediction CSVs exported to ${outDir.path}');
     } else {
       print('Cambridge CIOD CSV not found at: ${ciodFile.path}');
     }

@@ -34,6 +34,8 @@ class CiodDatasetAdapter {
     // Identify key column indices
     int newSeqIdx = -1;
     int labelIdx = -1;
+    int rsrpIdx = -1;
+    int rsrqIdx = -1;
     int luxIdx = -1;
     int magScalarIdx = -1;
     int accScalarIdx = -1;
@@ -51,6 +53,10 @@ class CiodDatasetAdapter {
         newSeqIdx = i;
       } else if (h == 'io' || h == 'label' || h == 'target' || h == 'class' || h == 'environment') {
         labelIdx = i;
+      } else if (h == 'rsrp') {
+        rsrpIdx = i;
+      } else if (h == 'rsrq') {
+        rsrqIdx = i;
       } else if (h == 'light' || h == 'lux') {
         luxIdx = i;
       } else if (h == 'mag') {
@@ -128,6 +134,16 @@ class CiodDatasetAdapter {
         groundTruth = IndoorOutdoorState.unknown;
       }
 
+      // Parse cellular PHY (RSRP/RSRQ)
+      double? rsrp;
+      if (rsrpIdx != -1 && rsrpIdx < parts.length) {
+        rsrp = double.tryParse(parts[rsrpIdx]);
+      }
+      double? rsrq;
+      if (rsrqIdx != -1 && rsrqIdx < parts.length) {
+        rsrq = double.tryParse(parts[rsrqIdx]);
+      }
+
       // Parse light (lux)
       double? lux;
       if (luxIdx != -1 && luxIdx < parts.length) {
@@ -186,10 +202,13 @@ class CiodDatasetAdapter {
         isNight = dt == 0.0;
       }
 
+      double? proximityVal;
       bool isPocket = false;
       if (proximityIdx != -1 && proximityIdx < parts.length) {
-        final prox = double.tryParse(parts[proximityIdx]) ?? 5.0;
-        isPocket = prox < 2.0; // Covered proximity sensor
+        proximityVal = double.tryParse(parts[proximityIdx]);
+        if (proximityVal != null) {
+          isPocket = proximityVal < 2.0; // Covered proximity sensor
+        }
       }
 
       final hasImu = accMag != null || magMag != null || gyrMag != null;
@@ -220,6 +239,11 @@ class CiodDatasetAdapter {
         stepDelta: 1,
         isNightTime: isNight,
         isScreenOff: isPocket,
+        hasTelephonyLte: rsrp != null && rsrq != null,
+        lteRsrpDbm: rsrp,
+        lteRsrqDb: rsrq,
+        hasProximitySensor: proximityVal != null,
+        proximityCm: proximityVal,
       );
 
       samples.add(IodBenchmarkSample(

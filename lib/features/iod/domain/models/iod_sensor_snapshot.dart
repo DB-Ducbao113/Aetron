@@ -39,6 +39,19 @@ class IodSensorSnapshot {
   final double? magneticMagnitudeMean;
   final double? magneticVariance;
 
+  // Telephony LTE PHY Telemetry (TelephonyManager.getAllCellInfo())
+  // Only available if device has active cellular radio and granted ACCESS_FINE_LOCATION.
+  // Never inferred from GNSS C/N0 or other proxy signals.
+  final bool hasTelephonyLte;
+  final double? lteRsrpDbm;
+  final double? lteRsrqDb;
+
+  // Optical Proximity Telemetry (Sensor.TYPE_PROXIMITY)
+  // Distance in cm (typically 0.0 cm for near, >= 5.0 cm for far).
+  // Never inferred from screen power state.
+  final bool hasProximitySensor;
+  final double? proximityCm;
+
   // Pedometer Telemetry
   final int stepDelta;
 
@@ -69,6 +82,11 @@ class IodSensorSnapshot {
     this.gyroMagnitudeMean,
     this.magneticMagnitudeMean,
     this.magneticVariance,
+    this.hasTelephonyLte = false,
+    this.lteRsrpDbm,
+    this.lteRsrqDb,
+    this.hasProximitySensor = false,
+    this.proximityCm,
     this.stepDelta = 0,
     this.isNightTime = false,
     this.isScreenOff = false,
