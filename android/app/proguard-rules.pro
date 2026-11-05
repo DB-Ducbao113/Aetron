@@ -16,3 +16,6 @@
 # Desugaring & Kotlin Coroutines
 -dontwarn java.time.**
 -dontwarn org.codehaus.mojo.animal_sniffer.**
+
+# Flutter Deferred Components & Play Core
+-dontwarn com.google.android.play.core.**
