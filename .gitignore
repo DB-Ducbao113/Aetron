@@ -87,3 +87,5 @@ GEMINI.md
 
 # Local research and GPS exports
 exports/
+tooling/data/
+*.zip

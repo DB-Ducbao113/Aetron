@@ -96,8 +96,8 @@ class IodSensorSnapshot {
   bool get isDaylightStrong => (ambientLux ?? 0.0) >= 1000.0;
 
   /// Checks if GNSS carrier-to-noise ratio indicates strong direct satellite line-of-sight.
-  /// (> 28 dB-Hz typical outdoor threshold in Yoo 2025).
-  bool get hasStrongSatelliteSignals => (top4Cn0DbHz ?? 0.0) >= 28.0;
+  /// (>= 35 dB-Hz threshold for strong line-of-sight signals).
+  bool get hasStrongSatelliteSignals => (top4Cn0DbHz ?? 0.0) >= 35.0;
 
   /// Checks if GPS fix has high uncertainty radius (> 35 meters).
   bool get isGpsWeak =>
