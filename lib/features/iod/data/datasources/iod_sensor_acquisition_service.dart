@@ -139,6 +139,9 @@ class IodSensorAcquisitionService {
     _epochTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       _emitCurrentEpochSnapshot();
     });
+
+    // 7. Ensure genuine BLE scanner is active on Android (Yoo 2025)
+    _nativeChannel.startBleScan();
   }
 
   /// Ingests a new GPS Position update from the location provider.
@@ -169,6 +172,9 @@ class IodSensorAcquisitionService {
     _gnssSub = null;
     _lightSub?.cancel();
     _lightSub = null;
+
+    // Release native BLE scanning and clear volatile cache
+    _nativeChannel.stopBleScan();
 
     _clearBuffers();
   }

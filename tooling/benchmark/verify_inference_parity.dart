@@ -214,7 +214,7 @@ double _computeBayesianBinomialAmv({
   required double pA,
   required double pB,
   required double pC,
-  double priorOutdoor = 0.20,
+  double priorOutdoor = 0.181,
 }) {
   final bool voteA = pA >= 0.50;
   final bool voteB = pB >= 0.50;

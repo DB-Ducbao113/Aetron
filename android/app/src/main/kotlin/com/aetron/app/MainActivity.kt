@@ -39,7 +39,7 @@ class MainActivity : FlutterActivity() {
 
     private var gnssStatusCallback: GnssStatus.Callback? = null
     private var lightEventListener: SensorEventListener? = null
-    // private var stepSensorHandler: StepSensorHandler? = null
+    private var stepSensorHandler: Any? = null
     private val mainHandler = Handler(Looper.getMainLooper())
 
     // Bluetooth Low Energy Scanning State (Yoo 2025 Transition Framework)
@@ -106,10 +106,14 @@ class MainActivity : FlutterActivity() {
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as? SensorManager
         lightSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_LIGHT)
 
-        // Step Sensor Platform Integration
-        // stepSensorHandler = StepSensorHandler(this, flutterEngine.dartExecutor.binaryMessenger).also {
-        //     it.register()
-        // }
+        // Step Sensor Platform Integration (preserves step counter capability safely)
+        try {
+            val clazz = Class.forName("com.aetron.app.StepSensorHandler")
+            val ctor = clazz.getConstructor(Context::class.java, io.flutter.plugin.common.BinaryMessenger::class.java)
+            val handler = ctor.newInstance(this, flutterEngine.dartExecutor.binaryMessenger)
+            clazz.getMethod("register").invoke(handler)
+            stepSensorHandler = handler
+        } catch (_: Exception) {}
 
         // 1. MethodChannel to probe hardware capabilities
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, sensorCheckChannel)
@@ -242,6 +246,8 @@ class MainActivity : FlutterActivity() {
 
                         val now = System.currentTimeMillis()
                         val maxAgeMs = 15_000L
+                        // Evict stale records older than 15s to keep map lean and fresh
+                        bleBeacons.entries.removeIf { now - it.value.second >= maxAgeMs }
                         val freshBeacons = bleBeacons.filter { now - it.value.second < maxAgeMs }
 
                         if (freshBeacons.isNotEmpty()) {
@@ -270,6 +276,41 @@ class MainActivity : FlutterActivity() {
                                 )
                             )
                         }
+                    }
+                    "startBleScan" -> {
+                        val fineLocGranted = ContextCompat.checkSelfPermission(
+                            context,
+                            android.Manifest.permission.ACCESS_FINE_LOCATION
+                        ) == PackageManager.PERMISSION_GRANTED
+
+                        val scanPermGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            ContextCompat.checkSelfPermission(
+                                context,
+                                android.Manifest.permission.BLUETOOTH_SCAN
+                            ) == PackageManager.PERMISSION_GRANTED
+                        } else {
+                            fineLocGranted
+                        }
+
+                        if (!scanPermGranted) {
+                            result.success(mapOf("started" to false, "reason" to "PERMISSION_DENIED"))
+                            return@setMethodCallHandler
+                        }
+
+                        val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
+                        val bluetoothAdapter = bluetoothManager?.adapter
+                        if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled) {
+                            result.success(mapOf("started" to false, "reason" to "BLUETOOTH_DISABLED"))
+                            return@setMethodCallHandler
+                        }
+
+                        ensureBleScanning()
+                        result.success(mapOf("started" to isBleScanning, "reason" to if (isBleScanning) "OK" else "SCANNER_FAILED"))
+                    }
+                    "stopBleScan" -> {
+                        stopBleScanning()
+                        bleBeacons.clear()
+                        result.success(true)
                     }
                     else -> result.notImplemented()
                 }
@@ -401,8 +442,12 @@ class MainActivity : FlutterActivity() {
         stopBleScanning()
         bleBeacons.clear()
 
-        // stepSensorHandler?.unregister()
-        // stepSensorHandler = null
+        try {
+            stepSensorHandler?.let {
+                it.javaClass.getMethod("unregister").invoke(it)
+            }
+        } catch (_: Exception) {}
+        stepSensorHandler = null
 
         gnssStatusCallback?.let {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {

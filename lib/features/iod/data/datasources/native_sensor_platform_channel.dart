@@ -61,6 +61,7 @@ class WifiScanData {
   final double? meanRssiDbm;
   final Map<String, double> fingerprint; // BSSID -> RSSI (dBm)
   final DateTime timestamp;
+  final String? reason;
 
   const WifiScanData({
     required this.hasScan,
@@ -68,6 +69,7 @@ class WifiScanData {
     this.meanRssiDbm,
     this.fingerprint = const {},
     required this.timestamp,
+    this.reason,
   });
 
   factory WifiScanData.fromMap(Map<dynamic, dynamic> map) {
@@ -88,6 +90,7 @@ class WifiScanData {
       timestamp: DateTime.fromMillisecondsSinceEpoch(
         (map['timestamp'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
       ),
+      reason: map['reason'] as String?,
     );
   }
 }
@@ -141,11 +144,16 @@ class NativeSensorPlatformChannel {
   static const _lightChannel = EventChannel('com.aetron.app/light_sensor');
   static const _checkChannel = MethodChannel('com.aetron.app/sensors_check');
 
+  final bool? _isAndroidOverride;
+
+  NativeSensorPlatformChannel({bool? isAndroidOverride})
+      : _isAndroidOverride = isAndroidOverride;
+
   Stream<GnssSatelliteData>? _gnssStream;
   Stream<LightSensorData>? _lightStream;
 
   bool get isAndroid =>
-      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+      _isAndroidOverride ?? (!kIsWeb && defaultTargetPlatform == TargetPlatform.android);
 
   /// Probes hardware sensor availability via Android native channel.
   Future<Map<String, bool>> checkAvailability() async {
@@ -225,6 +233,30 @@ class NativeSensorPlatformChannel {
       debugPrint('[NativeSensorChannel] getLatestBleScan error: $e');
     }
     return null;
+  }
+
+  /// Starts genuine BLE beacon scanning on Android (Yoo 2025).
+  Future<bool> startBleScan() async {
+    if (!isAndroid) return false;
+    try {
+      final res = await _checkChannel.invokeMapMethod<String, dynamic>('startBleScan');
+      return res?['started'] as bool? ?? false;
+    } catch (e) {
+      debugPrint('[NativeSensorChannel] startBleScan error: $e');
+      return false;
+    }
+  }
+
+  /// Stops genuine BLE beacon scanning and clears volatile cache on Android (Yoo 2025).
+  Future<bool> stopBleScan() async {
+    if (!isAndroid) return false;
+    try {
+      final res = await _checkChannel.invokeMethod<bool>('stopBleScan');
+      return res ?? false;
+    } catch (e) {
+      debugPrint('[NativeSensorChannel] stopBleScan error: $e');
+      return false;
+    }
   }
 }
 

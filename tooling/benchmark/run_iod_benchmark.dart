@@ -202,112 +202,121 @@ void main() {
 
     // ================================================================
     // PART 2: VERIFIED GROUND-TRUTH SUBSET EVALUATION
-    // (Excluding the 304 unverified synthetic doorway transition epochs)
+    // (Filtering strictly by LabelProvenance.verifiedGroundTruth: S1 & S4 Outdoor Only)
     // ================================================================
     print('\n======================================================================');
-    print('  PART 2: VERIFIED GROUND-TRUTH EVALUATION (6,178 VERIFIED EPOCHS)');
-    print('  (Filtering out 304 unverified doorway transition labels)');
+    print('  PART 2: VERIFIED GROUND-TRUTH EVALUATION (3,180 VERIFIED OUTDOOR EPOCHS)');
+    print('  (Filtering strictly by LabelProvenance.verifiedGroundTruth: S1 & S4)');
     print('======================================================================');
 
-    final verifiedBinaryIndices = <int>[];
+    final verifiedIndices = <int>[];
     for (int i = 0; i < allZenodoSamples.length; i++) {
-      if (allZenodoSamples[i].groundTruth != IndoorOutdoorState.transition) {
-        verifiedBinaryIndices.add(i);
+      if (allZenodoSamples[i].labelProvenance == LabelProvenance.verifiedGroundTruth) {
+        verifiedIndices.add(i);
       }
     }
 
-    final verifiedAlwaysOut = verifiedBinaryIndices.map((i) => alwaysOutdoorResults[i]).toList();
-    final verifiedYoo = verifiedBinaryIndices.map((i) => yooResults[i]).toList();
-    final verifiedDeepIodTernary = verifiedBinaryIndices.map((i) => deepIodTernaryResults[i]).toList();
-    final verifiedDeepIodBinary = verifiedBinaryIndices.map((i) => deepIodBinaryResults[i]).toList();
-    final verifiedComposite = verifiedBinaryIndices.map((i) => compositeResults[i]).toList();
+    final verifiedAlwaysOut = verifiedIndices.map((i) => alwaysOutdoorResults[i]).toList();
+    final verifiedYoo = verifiedIndices.map((i) => yooResults[i]).toList();
+    final verifiedDeepIodTernary = verifiedIndices.map((i) => deepIodTernaryResults[i]).toList();
+    final verifiedDeepIodBinary = verifiedIndices.map((i) => deepIodBinaryResults[i]).toList();
+    final verifiedComposite = verifiedIndices.map((i) => compositeResults[i]).toList();
 
     print(IodEvaluationMetrics.compute(
-      datasetName: 'Zenodo Nantes (Verified Ground Truth: 6,178 Epochs)',
+      datasetName: 'Zenodo Nantes (Verified Ground Truth: 3,180 Epochs — S1 & S4)',
       modelName: 'Always-Outdoor Majority Baseline',
       results: verifiedAlwaysOut,
     ).toMarkdownTable());
 
     print(IodEvaluationMetrics.compute(
-      datasetName: 'Zenodo Nantes (Verified Ground Truth: 6,178 Epochs)',
+      datasetName: 'Zenodo Nantes (Verified Ground Truth: 3,180 Epochs — S1 & S4)',
       modelName: 'SeamlessTransitionDetector (Yoo 2025)',
       results: verifiedYoo,
     ).toMarkdownTable());
 
     print(IodEvaluationMetrics.compute(
-      datasetName: 'Zenodo Nantes (Verified Ground Truth: 6,178 Epochs)',
+      datasetName: 'Zenodo Nantes (Verified Ground Truth: 3,180 Epochs — S1 & S4)',
       modelName: 'DeepIOD Baseline (Aetron 3-State Ternary)',
       results: verifiedDeepIodTernary,
     ).toMarkdownTable());
 
     print(IodEvaluationMetrics.compute(
-      datasetName: 'Zenodo Nantes (Verified Ground Truth: 6,178 Epochs)',
+      datasetName: 'Zenodo Nantes (Verified Ground Truth: 3,180 Epochs — S1 & S4)',
       modelName: 'DeepIOD Baseline (Native Published Binary Rule P>=0.5)',
       results: verifiedDeepIodBinary,
     ).toMarkdownTable());
 
     print(IodEvaluationMetrics.compute(
-      datasetName: 'Zenodo Nantes (Verified Ground Truth: 6,178 Epochs)',
+      datasetName: 'Zenodo Nantes (Verified Ground Truth: 3,180 Epochs — S1 & S4)',
       modelName: 'IodCompositeClassifier (Aetron Ensemble v1.0)',
       results: verifiedComposite,
     ).toMarkdownTable());
 
     // ================================================================
-    // PART 3: SCENARIO-BY-SCENARIO BREAKDOWN & FALSE TRANSITIONS
+    // PART 3: EXPLORATORY SCENARIO EVALUATION (INFERRED MACRO SCENARIOS S2, S3, S5)
+    // (Notice: S2, S3, and S5 scenario labels are macro-inferred and lack
+    // micro-timestamped doorway ground truth. These are exploratory diagnostics.)
     // ================================================================
     print('\n======================================================================');
-    print('       PART 3: SCENARIO-BY-SCENARIO ACCURACY & FALSE TRANSITIONS');
+    print('  PART 3: EXPLORATORY EVALUATION OF INFERRED MACRO SCENARIOS (S2, S3, S5)');
+    print('  (DISCLOSURE: Macro-scenario annotations without certified doorway ground truth)');
     print('======================================================================');
 
-    for (final scenario in ['S1', 'S4', 'S2', 'S3', 'S5']) {
-      final samples = samplesByScenario[scenario]!;
-      if (samples.isEmpty) continue;
+    void evaluateScenarioGroup(String title, List<String> groupScenarios) {
+      print('\n--- $title ---');
+      for (final scenario in groupScenarios) {
+        final samples = samplesByScenario[scenario]!;
+        if (samples.isEmpty) continue;
 
-      int alwaysOutCorrect = 0;
-      int yooCorrect = 0;
-      int yooPredTrans = 0;
-      int deepIodTernaryCorrect = 0;
-      int deepIodTernaryPredTrans = 0;
-      int deepIodBinaryCorrect = 0;
-      int compositeCorrect = 0;
-      int compositePredTrans = 0;
+        int alwaysOutCorrect = 0;
+        int yooCorrect = 0;
+        int yooPredTrans = 0;
+        int deepIodTernaryCorrect = 0;
+        int deepIodTernaryPredTrans = 0;
+        int deepIodBinaryCorrect = 0;
+        int compositeCorrect = 0;
+        int compositePredTrans = 0;
 
-      final yooLocal = SeamlessTransitionDetector();
-      final ensLocal = IodCompositeClassifier();
+        final yooLocal = SeamlessTransitionDetector();
+        final ensLocal = IodCompositeClassifier();
 
-      for (final s in samples) {
-        // Majority
-        if (s.groundTruth == IndoorOutdoorState.outdoor) alwaysOutCorrect++;
+        for (final s in samples) {
+          // Majority
+          if (s.groundTruth == IndoorOutdoorState.outdoor) alwaysOutCorrect++;
 
-        // Yoo
-        final yp = yooLocal.evaluate(s.snapshot);
-        if (yp.state == s.groundTruth) yooCorrect++;
-        if (yp.state == IndoorOutdoorState.transition) yooPredTrans++;
+          // Yoo
+          final yp = yooLocal.evaluate(s.snapshot);
+          if (yp.state == s.groundTruth) yooCorrect++;
+          if (yp.state == IndoorOutdoorState.transition) yooPredTrans++;
 
-        // DeepIOD Ternary
-        final dpTernary = deepIodClassifier.classify(s.snapshot);
-        if (dpTernary.state == s.groundTruth) deepIodTernaryCorrect++;
-        if (dpTernary.state == IndoorOutdoorState.transition) deepIodTernaryPredTrans++;
+          // DeepIOD Ternary
+          final dpTernary = deepIodClassifier.classify(s.snapshot);
+          if (dpTernary.state == s.groundTruth) deepIodTernaryCorrect++;
+          if (dpTernary.state == IndoorOutdoorState.transition) deepIodTernaryPredTrans++;
 
-        // DeepIOD Binary
-        final pOut = dpTernary.deepIodOutdoorProbability ?? 0.5;
-        final bState = pOut >= 0.50 ? IndoorOutdoorState.outdoor : IndoorOutdoorState.indoor;
-        if (bState == s.groundTruth) deepIodBinaryCorrect++;
+          // DeepIOD Binary
+          final pOut = dpTernary.deepIodOutdoorProbability ?? 0.5;
+          final bState = pOut >= 0.50 ? IndoorOutdoorState.outdoor : IndoorOutdoorState.indoor;
+          if (bState == s.groundTruth) deepIodBinaryCorrect++;
 
-        // Composite
-        final cp = ensLocal.predict(s.snapshot);
-        if (cp.state == s.groundTruth) compositeCorrect++;
-        if (cp.state == IndoorOutdoorState.transition) compositePredTrans++;
+          // Composite
+          final cp = ensLocal.predict(s.snapshot);
+          if (cp.state == s.groundTruth) compositeCorrect++;
+          if (cp.state == IndoorOutdoorState.transition) compositePredTrans++;
+        }
+
+        final n = samples.length;
+        print('Scenario $scenario ($n epochs):');
+        print('  - Always-Outdoor:        ${(alwaysOutCorrect / n * 100).toStringAsFixed(2)}%');
+        print('  - Yoo 2025 Adaptation:   ${(yooCorrect / n * 100).toStringAsFixed(2)}% (Predicted Transition: $yooPredTrans epochs)');
+        print('  - DeepIOD 3-State:       ${(deepIodTernaryCorrect / n * 100).toStringAsFixed(2)}% (Predicted Transition: $deepIodTernaryPredTrans epochs)');
+        print('  - DeepIOD Native Binary: ${(deepIodBinaryCorrect / n * 100).toStringAsFixed(2)}%');
+        print('  - Aetron Ensemble v1.0:  ${(compositeCorrect / n * 100).toStringAsFixed(2)}% (Predicted Transition: $compositePredTrans epochs)');
       }
-
-      final n = samples.length;
-      print('Scenario $scenario ($n epochs):');
-      print('  - Always-Outdoor:        ${(alwaysOutCorrect / n * 100).toStringAsFixed(2)}%');
-      print('  - Yoo 2025 Adaptation:   ${(yooCorrect / n * 100).toStringAsFixed(2)}% (Predicted Transition: $yooPredTrans epochs)');
-      print('  - DeepIOD 3-State:       ${(deepIodTernaryCorrect / n * 100).toStringAsFixed(2)}% (Predicted Transition: $deepIodTernaryPredTrans epochs)');
-      print('  - DeepIOD Native Binary: ${(deepIodBinaryCorrect / n * 100).toStringAsFixed(2)}%');
-      print('  - Aetron Ensemble v1.0:  ${(compositeCorrect / n * 100).toStringAsFixed(2)}% (Predicted Transition: $compositePredTrans epochs)');
     }
+
+    evaluateScenarioGroup('VERIFIED GROUND-TRUTH SCENARIOS (Certified 100% Outdoor)', ['S1', 'S4']);
+    evaluateScenarioGroup('EXPLORATORY INFERRED SCENARIOS (Macro Inferred — Doorway Boundaries Unverified)', ['S2', 'S3', 'S5']);
 
     // Export CSVs
     await IodEvaluationMetrics.exportToCsv(

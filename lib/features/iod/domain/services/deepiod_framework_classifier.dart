@@ -213,16 +213,18 @@ class DeepIodFrameworkClassifier {
   ///
   /// Parameter Provenance & Justification:
   /// - True Positive Rates (Sensitivities under Outdoor ground truth):
-  ///   TPR_A = 0.65, TPR_B = 0.62, TPR_C = 0.88 derived from empirical validation split (Sessions 60..71)
+  ///   TPR_A = 0.65, TPR_B = 0.62, TPR_C = 0.88 derived strictly from validation split (Sessions 60..71)
   /// - True Negative Rates (Specificities under Indoor ground truth):
-  ///   TNR_A = 0.99, TNR_B = 0.99, TNR_C = 0.99 derived from empirical validation split (Sessions 60..71)
+  ///   TNR_A = 0.99, TNR_B = 0.99, TNR_C = 0.99 derived strictly from validation split (Sessions 60..71)
   /// - Prior Probability:
-  ///   priorOutdoor = 0.20 reflects the held-out split class imbalance (~19.0% outdoor support).
+  ///   priorOutdoor = 0.181 reflects the empirical validation split class distribution
+  ///   (Sessions 60..71: 1,600 Outdoor / 8,838 total = 18.10%), with ZERO reference to
+  ///   held-out test set proportions, strictly preventing test partition data leakage.
   double computeAetronBayesianFusion({
     required double pA,
     required double pB,
     required double pC,
-    double priorOutdoor = 0.20,
+    double priorOutdoor = 0.181,
   }) {
     final bool voteA = pA >= 0.50;
     final bool voteB = pB >= 0.50;
@@ -263,7 +265,7 @@ class DeepIodFrameworkClassifier {
     required double pA,
     required double pB,
     required double pC,
-    double priorOutdoor = 0.20,
+    double priorOutdoor = 0.181,
   }) =>
       computeAetronBayesianFusion(pA: pA, pB: pB, pC: pC, priorOutdoor: priorOutdoor);
 
