@@ -4,6 +4,9 @@ import 'dart:io';
 
 import 'package:fitness_exercise_application/features/iod/domain/models/indoor_outdoor_state.dart';
 import 'package:fitness_exercise_application/features/iod/domain/models/iod_prediction.dart';
+import 'package:fitness_exercise_application/features/iod/domain/models/iod_sensor_snapshot.dart';
+import 'package:fitness_exercise_application/features/iod/domain/models/radio_map.dart';
+import 'package:fitness_exercise_application/features/iod/domain/models/transition_handover_event.dart';
 import 'package:fitness_exercise_application/features/iod/domain/services/deepiod_baseline_classifier.dart';
 import 'package:fitness_exercise_application/features/iod/domain/services/deepiod_framework_classifier.dart';
 import 'package:fitness_exercise_application/features/iod/domain/services/deepiod_neural_classifier.dart';
@@ -16,7 +19,9 @@ import 'iod_benchmark_models.dart';
 import 'mimir_dataset_adapter.dart';
 
 void main() {
-  test('IOD Benchmark Suite on Published Datasets (Zenodo & Cambridge CIOD)', () async {
+  test(
+    'IOD Benchmark Suite on Published Datasets (Zenodo & Cambridge CIOD)',
+    () async {
     print('================================================================');
     print('       AETRON INDOOR-OUTDOOR DETECTION BENCHMARK HARNESS       ');
     print('================================================================\n');
@@ -501,6 +506,27 @@ void main() {
       );
       print(ciodAmvMetrics.toMarkdownTable());
 
+      // Model 4b: DeepIOD Neural AMV (Published Bayesian/Binomial Formulation — PMC11360063 Eq. 7-10)
+      final ciodAmvBayesResults = <IodBenchmarkResult>[];
+      final deepIodFrameworkBayes = DeepIodFrameworkClassifier(
+        amvMethod: DeepIodAmvMethod.publishedBayesianBinomial,
+      );
+      String? lastSessIdAmvB;
+      for (final s in ciodHeldOutSamples) {
+        if (s.sessionId != lastSessIdAmvB) {
+          deepIodFrameworkBayes.reset();
+          lastSessIdAmvB = s.sessionId;
+        }
+        final pred = deepIodFrameworkBayes.classifyNeuralAmv(s.snapshot);
+        ciodAmvBayesResults.add(IodBenchmarkResult(sample: s, prediction: pred));
+      }
+      final ciodAmvBayesMetrics = IodEvaluationMetrics.compute(
+        datasetName: 'Cambridge CIOD Held-Out (Sessions 72..84)',
+        modelName: 'DeepIOD Neural AMV (Published Bayesian/Binomial)',
+        results: ciodAmvBayesResults,
+      );
+      print(ciodAmvBayesMetrics.toMarkdownTable());
+
       // Model 5: DeepIOD Full Framework (AMV of A, B, C + Adaptive Light + GPS Modules)
       final ciodFullFrameworkResults = <IodBenchmarkResult>[];
       deepIodFramework.reset();
@@ -519,6 +545,25 @@ void main() {
         results: ciodFullFrameworkResults,
       );
       print(ciodFullFrameworkMetrics.toMarkdownTable());
+
+      // Model 5b: DeepIOD Full Framework (Published Bayesian AMV + Light + GPS)
+      final ciodFullBayesResults = <IodBenchmarkResult>[];
+      deepIodFrameworkBayes.reset();
+      String? lastSessIdFullB;
+      for (final s in ciodHeldOutSamples) {
+        if (s.sessionId != lastSessIdFullB) {
+          deepIodFrameworkBayes.reset();
+          lastSessIdFullB = s.sessionId;
+        }
+        final pred = deepIodFrameworkBayes.classify(s.snapshot);
+        ciodFullBayesResults.add(IodBenchmarkResult(sample: s, prediction: pred));
+      }
+      final ciodFullBayesMetrics = IodEvaluationMetrics.compute(
+        datasetName: 'Cambridge CIOD Held-Out (Sessions 72..84)',
+        modelName: 'DeepIOD Full Framework (Published Bayesian AMV)',
+        results: ciodFullBayesResults,
+      );
+      print(ciodFullBayesMetrics.toMarkdownTable());
 
       // Model 6: Dedicated Model C-Mobile (4-Sensor Dedicated Mobile Network — Deployed Adapted Baseline)
       final ciodMobileResults = <IodBenchmarkResult>[];
@@ -594,8 +639,16 @@ void main() {
         ciodAmvResults,
       );
       await IodEvaluationMetrics.exportToCsv(
+        '${outDir.path}/ciod_held_out_amv_bayes_predictions.csv',
+        ciodAmvBayesResults,
+      );
+      await IodEvaluationMetrics.exportToCsv(
         '${outDir.path}/ciod_held_out_full_framework_predictions.csv',
         ciodFullFrameworkResults,
+      );
+      await IodEvaluationMetrics.exportToCsv(
+        '${outDir.path}/ciod_held_out_full_bayes_predictions.csv',
+        ciodFullBayesResults,
       );
       await IodEvaluationMetrics.exportToCsv(
         '${outDir.path}/ciod_held_out_mobile_predictions.csv',
@@ -653,8 +706,178 @@ void main() {
       print('Cambridge CIOD CSV not found at: ${ciodFile.path}');
     }
 
+    // ================================================================
+    // PART 5: YOO SEAMLESS TRANSITION FRAMEWORK MULTI-SOURCE BENCHMARK
+    // (Doorway Proximity + Wi-Fi/BLE Radio Map + Handover & Transition Delay)
+    // ================================================================
+    print('======================================================================');
+    print('  PART 5: YOO SEAMLESS TRANSITION FRAMEWORK VALIDATION (Electronics 2025)');
+    print('  (GNSS Distribution + Doorway Proximity + Wi-Fi/BLE Radio Map Fusion)');
+    print('======================================================================');
+
+    final transitionRadioMap = const RadioMap(
+      id: 'hymn_facility_map',
+      buildingName: 'Transition Facility Complex',
+      points: [
+        RadioFingerprintPoint(
+          id: 'fp_plaza_outdoor',
+          name: 'Outdoor Entrance Plaza',
+          state: IndoorOutdoorState.outdoor,
+          latitude: 10.7775,
+          longitude: 106.7015,
+          wifiRssiDbm: {'AP_OUTDOOR_1': -50.0, 'AP_OUTDOOR_2': -55.0, 'AP_INDOOR_1': -92.0},
+        ),
+        RadioFingerprintPoint(
+          id: 'fp_doorway_foyer',
+          name: 'Building Glass Entrance Foyer',
+          state: IndoorOutdoorState.transition,
+          latitude: 10.7769,
+          longitude: 106.7009,
+          wifiRssiDbm: {'AP_OUTDOOR_1': -70.0, 'AP_OUTDOOR_2': -75.0, 'AP_INDOOR_1': -68.0},
+          bleRssiDbm: {'BEACON_FOYER': -62.0},
+        ),
+        RadioFingerprintPoint(
+          id: 'fp_indoor_hall',
+          name: 'Main Hallway 1st Floor',
+          state: IndoorOutdoorState.indoor,
+          latitude: 10.7765,
+          longitude: 106.7005,
+          wifiRssiDbm: {'AP_OUTDOOR_1': -98.0, 'AP_OUTDOOR_2': -100.0, 'AP_INDOOR_1': -45.0},
+        ),
+      ],
+    );
+
+    final transitionDoorway = const BuildingTransitionPoint(
+      id: 'door_foyer',
+      name: 'Glass Entrance Foyer Doorway',
+      latitude: 10.7769,
+      longitude: 106.7009,
+      radiusMeters: 5.0,
+    );
+
+    final yooFullDetector = SeamlessTransitionDetector(
+      transitionPoints: [transitionDoorway],
+      radioMap: transitionRadioMap,
+    );
+
+    final tBase = DateTime(2026, 6, 1, 14, 0, 0);
+    final transitionBenchmarkSamples = <IodBenchmarkSample>[];
+
+    // Phase A: Epochs 0..9 -> Clear outdoor walking in plaza towards entrance
+    for (int i = 0; i < 10; i++) {
+      final t = tBase.add(Duration(seconds: i));
+      transitionBenchmarkSamples.add(IodBenchmarkSample(
+        timestamp: t,
+        groundTruth: IndoorOutdoorState.outdoor,
+        sessionId: 'trans_corridor_01',
+        sequenceIndex: i,
+        environmentType: 'plaza_outdoor',
+        snapshot: IodSensorSnapshot(
+          timestamp: t,
+          hasGpsFix: true,
+          latitude: 10.7775 - (i * 0.00004),
+          longitude: 106.7015 - (i * 0.00004),
+          horizontalAccuracy: 4.0,
+          hasGnssStatus: true,
+          top4Cn0DbHz: 42.0,
+          usedInFixCount: 9,
+          hasWifiScan: true,
+          wifiFingerprint: {'AP_OUTDOOR_1': -51.0, 'AP_OUTDOOR_2': -56.0, 'AP_INDOOR_1': -91.0},
+          stepDelta: 2,
+          speed: 1.2,
+        ),
+      ));
+    }
+
+    // Phase B: Epochs 10..19 -> Crossing glass doorway foyer (Transition zone)
+    final doorwayEntryTime = tBase.add(const Duration(seconds: 10));
+    for (int i = 10; i < 20; i++) {
+      final t = tBase.add(Duration(seconds: i));
+      transitionBenchmarkSamples.add(IodBenchmarkSample(
+        timestamp: t,
+        groundTruth: IndoorOutdoorState.transition,
+        sessionId: 'trans_corridor_01',
+        sequenceIndex: i,
+        environmentType: 'doorway_foyer_transition',
+        snapshot: IodSensorSnapshot(
+          timestamp: t,
+          hasGpsFix: true,
+          latitude: 10.7769,
+          longitude: 106.7009,
+          horizontalAccuracy: 12.0,
+          hasGnssStatus: true,
+          top4Cn0DbHz: 35.0, // intermediate C/N0 in transition
+          usedInFixCount: 4,
+          hasWifiScan: true,
+          wifiFingerprint: {'AP_OUTDOOR_1': -71.0, 'AP_OUTDOOR_2': -74.0, 'AP_INDOOR_1': -67.0},
+          hasBleScan: true,
+          bleFingerprint: {'BEACON_FOYER': -61.0},
+          stepDelta: 2,
+          speed: 1.0,
+        ),
+      ));
+    }
+
+    // Phase C: Epochs 20..29 -> Deep indoor hallway (Indoor zone)
+    for (int i = 20; i < 30; i++) {
+      final t = tBase.add(Duration(seconds: i));
+      transitionBenchmarkSamples.add(IodBenchmarkSample(
+        timestamp: t,
+        groundTruth: IndoorOutdoorState.indoor,
+        sessionId: 'trans_corridor_01',
+        sequenceIndex: i,
+        environmentType: 'deep_indoor_hallway',
+        snapshot: IodSensorSnapshot(
+          timestamp: t,
+          hasGpsFix: false,
+          latitude: 10.7765,
+          longitude: 106.7005,
+          horizontalAccuracy: 45.0,
+          hasGnssStatus: true,
+          top4Cn0DbHz: 21.0, // blocked GNSS inside building
+          usedInFixCount: 1,
+          hasWifiScan: true,
+          wifiFingerprint: {'AP_OUTDOOR_1': -99.0, 'AP_OUTDOOR_2': -100.0, 'AP_INDOOR_1': -44.0},
+          stepDelta: 2,
+          speed: 1.1,
+        ),
+      ));
+    }
+
+    final yooFullResults = <IodBenchmarkResult>[];
+    DateTime? firstTransitionDetectedTime;
+
+    for (final s in transitionBenchmarkSamples) {
+      final pred = yooFullDetector.evaluate(s.snapshot);
+      yooFullResults.add(IodBenchmarkResult(sample: s, prediction: pred));
+      if (pred.state == IndoorOutdoorState.transition && firstTransitionDetectedTime == null) {
+        firstTransitionDetectedTime = s.timestamp;
+      }
+    }
+
+    final yooFullMetrics = IodEvaluationMetrics.compute(
+      datasetName: 'Yoo Multi-Source Transition Scenario (30 Epochs)',
+      modelName: 'SeamlessTransitionDetector (Full Multi-Source Fusion)',
+      results: yooFullResults,
+    );
+    print(yooFullMetrics.toMarkdownTable());
+
+    final transitionDelaySec = firstTransitionDetectedTime != null
+        ? firstTransitionDetectedTime.difference(doorwayEntryTime).inSeconds
+        : -1;
+    print('\n- Transition Detection Delay: ${transitionDelaySec}s');
+    print('- Handover Events Logged:     ${yooFullDetector.handoverEvents.length}');
+    for (final ev in yooFullDetector.handoverEvents) {
+      print('  * ${ev.timestamp.toIso8601String()}: ${ev.fromState.code.toUpperCase()} -> ${ev.toState.code.toUpperCase()} (${ev.triggerReason})');
+    }
+
+    await IodEvaluationMetrics.exportToCsv(
+      '${outDir.path}/yoo_transition_framework_predictions.csv',
+      yooFullResults,
+    );
+
     print('\n================================================================');
     print('               ALL BENCHMARKS COMPLETED SUCCESSFULLY            ');
     print('================================================================');
-  });
+  }, timeout: const Timeout(Duration(minutes: 5)));
 }

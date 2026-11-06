@@ -10,6 +10,15 @@ import 'deepiod_model_a.dart';
 import 'deepiod_model_b.dart';
 import 'deepiod_model_c.dart';
 
+/// Supported decision fusion methods for the DeepIOD Adaptive Majority Voter.
+enum DeepIodAmvMethod {
+  /// Validation-F1 normalized weighted linear averaging (PMC11360063 Eq. 29).
+  validationF1Weighted,
+
+  /// Published Bayesian / Binomial Profile Aggregation (PMC11360063 Section 3.3, Eq. 7-10).
+  publishedBayesianBinomial,
+}
+
 /// Full reproduction of the DeepIOD Context-Aware Framework (KAIST; Sensors 2024, 24(16), 5125; PMC11360063).
 ///
 /// Implements the complete multi-source decision architecture:
@@ -22,7 +31,7 @@ import 'deepiod_model_c.dart';
 /// 3. GPS Accuracy Module:
 ///    - Published 5-meter horizontal accuracy threshold and satellite carrier-to-noise density (C/N0).
 /// 4. Adaptive Majority Voting (AMV) Consensus Rule:
-///    `Context_pred = argmax_j sum_i (w_i * P_i,j)` (PMC11360063 Eq. 29).
+///    - Supports both validation-F1 weighted averaging and published Bayesian/Binomial generating functions.
 class DeepIodFrameworkClassifier {
   static const String modelVersion = 'deepiod-full-framework-v1.0';
 
@@ -30,6 +39,7 @@ class DeepIodFrameworkClassifier {
   final DeepIodModelB modelB;
   final DeepIodModelC modelC;
   final int windowSize;
+  final DeepIodAmvMethod amvMethod;
 
   // Normalized AMV consensus weights for neural models derived from validation F1
   final double weightA;
@@ -43,6 +53,7 @@ class DeepIodFrameworkClassifier {
     DeepIodModelB? modelB,
     DeepIodModelC? modelC,
     this.windowSize = 10,
+    this.amvMethod = DeepIodAmvMethod.validationF1Weighted,
     this.weightA = 0.345367,
     this.weightB = 0.320728,
     this.weightC = 0.333905,
@@ -179,6 +190,55 @@ class DeepIodFrameworkClassifier {
     );
   }
 
+  /// Computes the published Bayesian Binomial AMV posterior probability (PMC11360063 Section 3.3, Eq. 7-10):
+  ///
+  /// P(Out | y_A, y_B, y_C) =
+  ///   (prod_i P(y_i | Out) * P(Out)) / (prod_i P(y_i | Out) * P(Out) + prod_i P(y_i | In) * P(In))
+  ///
+  /// Evaluated using empirical validation sensitivities (TPR) and specificities (TNR):
+  /// - Model A: TPR_A = 0.65, TNR_A = 0.99
+  /// - Model B: TPR_B = 0.62, TNR_B = 0.99
+  /// - Model C: TPR_C = 0.88, TNR_C = 0.99
+  double computeBayesianBinomialAmv({
+    required double pA,
+    required double pB,
+    required double pC,
+    double priorOutdoor = 0.20,
+  }) {
+    final bool voteA = pA >= 0.50;
+    final bool voteB = pB >= 0.50;
+    final bool voteC = pC >= 0.50;
+
+    // Sensitivities (True Positive Rates under Outdoor ground truth)
+    const double tprA = 0.65;
+    const double tprB = 0.62;
+    const double tprC = 0.88;
+
+    // Specificities (True Negative Rates under Indoor ground truth)
+    const double tnrA = 0.99;
+    const double tnrB = 0.99;
+    const double tnrC = 0.99;
+
+    // Likelihoods given Outdoor
+    final double lOutA = voteA ? tprA : (1.0 - tprA);
+    final double lOutB = voteB ? tprB : (1.0 - tprB);
+    final double lOutC = voteC ? tprC : (1.0 - tprC);
+    final double likelihoodOutdoor = lOutA * lOutB * lOutC;
+
+    // Likelihoods given Indoor
+    final double lInA = voteA ? (1.0 - tnrA) : tnrA;
+    final double lInB = voteB ? (1.0 - tnrB) : tnrB;
+    final double lInC = voteC ? (1.0 - tnrC) : tnrC;
+    final double likelihoodIndoor = lInA * lInB * lInC;
+
+    final double priorIndoor = 1.0 - priorOutdoor;
+    final double numerator = likelihoodOutdoor * priorOutdoor;
+    final double denominator = numerator + (likelihoodIndoor * priorIndoor);
+
+    if (denominator <= 0.0) return 0.50;
+    return numerator / denominator;
+  }
+
   /// Evaluates the Neural AMV Consensus of Models A, B, and C.
   IodPrediction classifyNeuralAmv(IodSensorSnapshot snapshot) {
     final sw = Stopwatch()..start();
@@ -195,7 +255,9 @@ class DeepIodFrameworkClassifier {
     final pA = modelA.predict(evalWindow);
     final pB = modelB.predict(evalWindow);
     final pC = modelC.predict(evalWindow);
-    final pNeural = (weightA * pA) + (weightB * pB) + (weightC * pC);
+    final double pNeural = amvMethod == DeepIodAmvMethod.publishedBayesianBinomial
+        ? computeBayesianBinomialAmv(pA: pA, pB: pB, pC: pC)
+        : (weightA * pA) + (weightB * pB) + (weightC * pC);
     sw.stop();
     final isOut = pNeural >= 0.50;
     return IodPrediction(
@@ -206,7 +268,7 @@ class DeepIodFrameworkClassifier {
       modelVersion: 'deepiod-neural-amv-v1.0',
       inferenceLatencyMs: sw.elapsedMilliseconds,
       sensorAvailability: _buildAvailability(snapshot),
-      reasoningSummary: 'DeepIOD Neural AMV P(Out)=${(pNeural * 100).toStringAsFixed(1)}% [A=${(pA * 100).toStringAsFixed(0)}%, B=${(pB * 100).toStringAsFixed(0)}%, C=${(pC * 100).toStringAsFixed(0)}%]',
+      reasoningSummary: 'DeepIOD Neural AMV (${amvMethod.name}) P(Out)=${(pNeural * 100).toStringAsFixed(1)}% [A=${(pA * 100).toStringAsFixed(0)}%, B=${(pB * 100).toStringAsFixed(0)}%, C=${(pC * 100).toStringAsFixed(0)}%]',
       isObservationalOnly: true,
     );
   }
@@ -231,7 +293,9 @@ class DeepIodFrameworkClassifier {
     final double pA = modelA.predict(evalWindow);
     final double pB = modelB.predict(evalWindow);
     final double pC = modelC.predict(evalWindow);
-    final double pNeural = (weightA * pA) + (weightB * pB) + (weightC * pC);
+    final double pNeural = amvMethod == DeepIodAmvMethod.publishedBayesianBinomial
+        ? computeBayesianBinomialAmv(pA: pA, pB: pB, pC: pC)
+        : (weightA * pA) + (weightB * pB) + (weightC * pC);
     final double wNeural = 0.50; // Baseline neural reliability weight
 
     // 2. Evaluate Adaptive Light-Intensity Module

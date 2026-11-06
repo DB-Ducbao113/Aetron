@@ -254,3 +254,4 @@ class DeepIodModelB {
     return _sigmoid(logit);
   }
 }
+

@@ -79,3 +79,4 @@ class TransitionHandoverEvent {
         triggerReason: json['trigger_reason'] as String? ?? '',
       );
 }
+

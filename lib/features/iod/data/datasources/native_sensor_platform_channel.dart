@@ -54,6 +54,44 @@ class LightSensorData {
   }
 }
 
+/// Telemetry from genuine Android Wi-Fi scan query (Yoo 2025).
+class WifiScanData {
+  final bool hasScan;
+  final int count;
+  final double? meanRssiDbm;
+  final Map<String, double> fingerprint; // BSSID -> RSSI (dBm)
+  final DateTime timestamp;
+
+  const WifiScanData({
+    required this.hasScan,
+    required this.count,
+    this.meanRssiDbm,
+    this.fingerprint = const {},
+    required this.timestamp,
+  });
+
+  factory WifiScanData.fromMap(Map<dynamic, dynamic> map) {
+    final rawFp = map['fingerprint'] as Map<dynamic, dynamic>?;
+    final fp = <String, double>{};
+    if (rawFp != null) {
+      for (final entry in rawFp.entries) {
+        if (entry.value is num) {
+          fp[entry.key.toString()] = (entry.value as num).toDouble();
+        }
+      }
+    }
+    return WifiScanData(
+      hasScan: map['hasScan'] as bool? ?? false,
+      count: (map['count'] as num?)?.toInt() ?? 0,
+      meanRssiDbm: (map['meanRssiDbm'] as num?)?.toDouble(),
+      fingerprint: fp,
+      timestamp: DateTime.fromMillisecondsSinceEpoch(
+        (map['timestamp'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
+      ),
+    );
+  }
+}
+
 /// Platform channel bridge interfacing with Android native hardware sensors.
 ///
 /// Gracefully degrades on non-Android platforms, desktop, web, or test environments.
@@ -118,6 +156,20 @@ class NativeSensorPlatformChannel {
           debugPrint('[NativeSensorChannel] Light sensor error: $error');
         });
     return _lightStream!;
+  }
+
+  /// Queries latest genuine Wi-Fi scan results from Android WifiManager (Yoo 2025).
+  Future<WifiScanData?> getLatestWifiScan() async {
+    if (!isAndroid) return null;
+    try {
+      final res = await _checkChannel.invokeMapMethod<String, dynamic>('getWifiScan');
+      if (res != null) {
+        return WifiScanData.fromMap(res);
+      }
+    } catch (e) {
+      debugPrint('[NativeSensorChannel] getLatestWifiScan error: $e');
+    }
+    return null;
   }
 }
 

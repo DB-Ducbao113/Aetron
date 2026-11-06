@@ -210,6 +210,83 @@ void verifyAmvEnsembleParity({
   print('SUCCESS: DeepIOD AMV Ensemble parity verified!\n');
 }
 
+double _computeBayesianBinomialAmv({
+  required double pA,
+  required double pB,
+  required double pC,
+  double priorOutdoor = 0.20,
+}) {
+  final bool voteA = pA >= 0.50;
+  final bool voteB = pB >= 0.50;
+  final bool voteC = pC >= 0.50;
+
+  const double tprA = 0.65;
+  const double tprB = 0.62;
+  const double tprC = 0.88;
+
+  const double tnrA = 0.99;
+  const double tnrB = 0.99;
+  const double tnrC = 0.99;
+
+  final double lOutA = voteA ? tprA : (1.0 - tprA);
+  final double lOutB = voteB ? tprB : (1.0 - tprB);
+  final double lOutC = voteC ? tprC : (1.0 - tprC);
+  final double likelihoodOutdoor = lOutA * lOutB * lOutC;
+
+  final double lInA = voteA ? (1.0 - tnrA) : tnrA;
+  final double lInB = voteB ? (1.0 - tnrB) : tnrB;
+  final double lInC = voteC ? (1.0 - tnrC) : tnrC;
+  final double likelihoodIndoor = lInA * lInB * lInC;
+
+  final double priorIndoor = 1.0 - priorOutdoor;
+  final double numerator = likelihoodOutdoor * priorOutdoor;
+  final double denominator = numerator + (likelihoodIndoor * priorIndoor);
+
+  if (denominator <= 0.0) return 0.50;
+  return numerator / denominator;
+}
+
+void verifyBayesianAmvParity({
+  required String weightsAPath,
+  required String weightsBPath,
+  required String weightsCPath,
+  required String testVectorsPath,
+}) {
+  print('======================================================================');
+  print('  VERIFYING DEEPIOD BAYESIAN/BINOMIAL AMV METHOD (PMC11360063 Eq. 7-10)');
+  print('======================================================================');
+
+  final modelA = DeepIodModelA.fromJson(jsonDecode(File(weightsAPath).readAsStringSync()));
+  final modelB = DeepIodModelB.fromJson(jsonDecode(File(weightsBPath).readAsStringSync()));
+  final modelC = DeepIodModelC.fromJson(jsonDecode(File(weightsCPath).readAsStringSync()));
+
+  final testVectors = (jsonDecode(File(testVectorsPath).readAsStringSync()) as List).cast<Map<String, dynamic>>();
+
+  int linearAgreements = 0;
+
+  for (final item in testVectors) {
+    final rawWindow = (item['window'] as List)
+        .map((row) => (row as List).map((v) => (v as num).toDouble()).toList())
+        .toList();
+    final expectedPyTorchAmv = (item['prob_pytorch_amv'] as num).toDouble();
+
+    final pa = modelA.predict(rawWindow);
+    final pb = modelB.predict(rawWindow);
+    final pc = modelC.predict(rawWindow);
+    final bayesProb = _computeBayesianBinomialAmv(pA: pa, pB: pb, pC: pc);
+
+    final bool bayesOut = bayesProb >= 0.50;
+    final bool linearOut = expectedPyTorchAmv >= 0.50;
+    if (bayesOut == linearOut) linearAgreements++;
+  }
+
+  final agreementPct = (linearAgreements / testVectors.length) * 100.0;
+  print('Total Evaluated Samples:     ${testVectors.length}');
+  print('Consensus with Linear AMV:   ${agreementPct.toStringAsFixed(2)}% ($linearAgreements / ${testVectors.length})');
+  assert(agreementPct >= 95.0, 'Bayesian AMV deviated excessively from consensus');
+  print('SUCCESS: DeepIOD Published Bayesian AMV verified!\n');
+}
+
 void main() {
   // 1. Model A (CNN-LSTM)
   verifyModelAParity(
@@ -239,12 +316,20 @@ void main() {
     expectedWidth: 4,
   );
 
-  // 5. AMV Ensemble
+  // 5. AMV Ensemble Linear Weighted
   verifyAmvEnsembleParity(
     weightsAPath: 'tooling/data/deepiod_weights/deepiod_model_a_weights.json',
     weightsBPath: 'tooling/data/deepiod_weights/deepiod_model_b_weights.json',
     weightsCPath: 'tooling/data/deepiod_weights/deepiod_model_c_weights.json',
     metadataPath: 'tooling/data/deepiod_weights/deepiod_metadata.json',
+    testVectorsPath: 'tooling/data/deepiod_weights/parity_test_vectors_amv.json',
+  );
+
+  // 6. AMV Ensemble Published Bayesian/Binomial Formulation
+  verifyBayesianAmvParity(
+    weightsAPath: 'tooling/data/deepiod_weights/deepiod_model_a_weights.json',
+    weightsBPath: 'tooling/data/deepiod_weights/deepiod_model_b_weights.json',
+    weightsCPath: 'tooling/data/deepiod_weights/deepiod_model_c_weights.json',
     testVectorsPath: 'tooling/data/deepiod_weights/parity_test_vectors_amv.json',
   );
 }

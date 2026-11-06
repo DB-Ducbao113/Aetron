@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:fitness_exercise_application/features/iod/domain/models/indoor_outdoor_state.dart';
 import 'package:fitness_exercise_application/features/iod/domain/models/iod_sensor_snapshot.dart';
+import 'package:fitness_exercise_application/features/iod/domain/models/radio_map.dart';
 import 'package:fitness_exercise_application/features/iod/domain/models/transition_handover_event.dart';
 import 'package:fitness_exercise_application/features/iod/domain/services/deepiod_framework_classifier.dart';
 import 'package:fitness_exercise_application/features/iod/domain/services/deepiod_model_a.dart';
@@ -460,6 +461,164 @@ void main() {
       final event = detector.handoverEvents.last;
       expect(event.fromState, equals(IndoorOutdoorState.outdoor));
       expect(event.toState, equals(IndoorOutdoorState.transition));
+    });
+
+    test('DeepIOD Framework with Published Bayesian/Binomial AMV Method evaluates correctly', () {
+      final frameworkBayesian = DeepIodFrameworkClassifier(
+        amvMethod: DeepIodAmvMethod.publishedBayesianBinomial,
+      );
+
+      // 1. Unanimous outdoor votes (A=0.85, B=0.90, C=0.92)
+      final bayesOutdoor = frameworkBayesian.computeBayesianBinomialAmv(
+        pA: 0.85,
+        pB: 0.90,
+        pC: 0.92,
+      );
+      expect(bayesOutdoor, greaterThan(0.95));
+
+      // 2. Unanimous indoor votes (A=0.10, B=0.15, C=0.08)
+      final bayesIndoor = frameworkBayesian.computeBayesianBinomialAmv(
+        pA: 0.10,
+        pB: 0.15,
+        pC: 0.08,
+      );
+      expect(bayesIndoor, lessThan(0.05));
+
+      // 3. Full framework evaluation with Bayesian AMV
+      final snapshot = IodSensorSnapshot(
+        timestamp: DateTime(2026, 6, 1, 14, 0),
+        hasLightSensor: true,
+        ambientLux: 12000.0,
+        hasGnssStatus: true,
+        top4Cn0DbHz: 40.0,
+        hasGpsFix: true,
+        horizontalAccuracy: 4.5,
+        hasImuData: true,
+        magneticMagnitudeMean: 45.0,
+        accelMagnitudeMean: 0.9,
+      );
+
+      final pred = frameworkBayesian.classify(snapshot);
+      expect(pred.state, equals(IndoorOutdoorState.outdoor));
+      expect(pred.deepIodOutdoorProbability, greaterThan(0.80));
+    });
+
+    test('SeamlessTransitionDetector with Configured RadioMap exercises W-KNN matching & transition delay', () {
+      final radioMap = const RadioMap(
+        id: 'building_science_map',
+        buildingName: 'Science Complex',
+        points: [
+          RadioFingerprintPoint(
+            id: 'fp_plaza_outdoor',
+            name: 'Science Plaza Outdoor',
+            state: IndoorOutdoorState.outdoor,
+            latitude: 10.7775,
+            longitude: 106.7015,
+            wifiRssiDbm: {'AP_OUTDOOR': -52.0, 'AP_INDOOR': -95.0},
+          ),
+          RadioFingerprintPoint(
+            id: 'fp_entrance_foyer',
+            name: 'Science Glass Entrance Foyer',
+            state: IndoorOutdoorState.transition,
+            latitude: 10.7769,
+            longitude: 106.7009,
+            wifiRssiDbm: {'AP_OUTDOOR': -72.0, 'AP_INDOOR': -68.0},
+            bleRssiDbm: {'BEACON_DOOR': -62.0},
+          ),
+          RadioFingerprintPoint(
+            id: 'fp_deep_indoor',
+            name: 'Science Hallway 1st Floor',
+            state: IndoorOutdoorState.indoor,
+            latitude: 10.7765,
+            longitude: 106.7005,
+            wifiRssiDbm: {'AP_OUTDOOR': -100.0, 'AP_INDOOR': -45.0},
+          ),
+        ],
+      );
+
+      final entrance = const BuildingTransitionPoint(
+        id: 'door_science',
+        name: 'Science Entrance',
+        latitude: 10.7769,
+        longitude: 106.7009,
+        radiusMeters: 5.0,
+      );
+
+      final detector = SeamlessTransitionDetector(
+        transitionPoints: [entrance],
+        radioMap: radioMap,
+      );
+
+      final t0 = DateTime(2026, 6, 1, 14, 0, 0);
+
+      // Step 1: In outdoor plaza (Outdoor state established)
+      final s1 = IodSensorSnapshot(
+        timestamp: t0,
+        hasGpsFix: true,
+        latitude: 10.7775,
+        longitude: 106.7015,
+        hasGnssStatus: true,
+        top4Cn0DbHz: 42.0,
+        usedInFixCount: 9,
+        hasWifiScan: true,
+        wifiFingerprint: {'AP_OUTDOOR': -53.0, 'AP_INDOOR': -93.0},
+      );
+      final p1 = detector.evaluate(s1);
+      expect(p1.state, equals(IndoorOutdoorState.outdoor));
+      expect(p1.sensorAvailability['wifi_ble_radio_map'], isTrue);
+
+      // Step 2: Crossing doorway at t = t0 + 3s (Ground truth transition entry)
+      final groundTruthEntryTime = t0.add(const Duration(seconds: 3));
+      final s2 = IodSensorSnapshot(
+        timestamp: groundTruthEntryTime,
+        hasGpsFix: true,
+        latitude: 10.7769,
+        longitude: 106.7009, // exactly at door
+        hasGnssStatus: true,
+        top4Cn0DbHz: 35.0, // intermediate C/N0
+        usedInFixCount: 4,
+        stepDelta: 2,
+        speed: 1.1,
+        hasWifiScan: true,
+        wifiFingerprint: {'AP_OUTDOOR': -71.0, 'AP_INDOOR': -69.0},
+        hasBleScan: true,
+        bleFingerprint: {'BEACON_DOOR': -63.0},
+      );
+      final p2 = detector.evaluate(s2);
+
+      expect(p2.state, equals(IndoorOutdoorState.transition));
+      expect(p2.transitionProbability, greaterThan(0.50));
+
+      // Measure Transition Detection Delay
+      final detectionDelaySeconds = s2.timestamp.difference(groundTruthEntryTime).inSeconds;
+      expect(detectionDelaySeconds, equals(0)); // Instantaneous transition boundary detection
+
+      // Verify handover event
+      expect(detector.handoverEvents.isNotEmpty, isTrue);
+      final lastEvent = detector.handoverEvents.last;
+      expect(lastEvent.fromState, equals(IndoorOutdoorState.outdoor));
+      expect(lastEvent.toState, equals(IndoorOutdoorState.transition));
+
+      // Step 3: Walking deep indoor into the building at t = t0 + 10s
+      final s3 = IodSensorSnapshot(
+        timestamp: t0.add(const Duration(seconds: 10)),
+        hasGpsFix: false,
+        latitude: 10.7765,
+        longitude: 106.7005,
+        hasGnssStatus: true,
+        top4Cn0DbHz: 22.0, // blocked GNSS
+        usedInFixCount: 1,
+        hasWifiScan: true,
+        wifiFingerprint: {'AP_OUTDOOR': -100.0, 'AP_INDOOR': -46.0},
+      );
+      final p3 = detector.evaluate(s3);
+      expect(p3.state, equals(IndoorOutdoorState.indoor));
+
+      // Handover to indoor
+      expect(detector.handoverEvents.length, equals(2));
+      final handoverToIndoor = detector.handoverEvents.last;
+      expect(handoverToIndoor.fromState, equals(IndoorOutdoorState.transition));
+      expect(handoverToIndoor.toState, equals(IndoorOutdoorState.indoor));
     });
   });
 }

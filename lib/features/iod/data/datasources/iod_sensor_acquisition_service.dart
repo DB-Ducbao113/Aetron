@@ -32,8 +32,10 @@ class IodSensorAcquisitionService {
 
   // Latest hardware state
   GnssSatelliteData? _latestGnss;
+  WifiScanData? _latestWifiScan;
   Position? _latestPosition;
   int _stepDeltaSinceLastEpoch = 0;
+  int _wifiPollCounter = 0;
   bool _isRunning = false;
 
   final _snapshotController = StreamController<IodSensorSnapshot>.broadcast();
@@ -254,6 +256,10 @@ class IodSensorAcquisitionService {
       gyroMagnitudeMean: gyroMean,
       magneticMagnitudeMean: magMean,
       magneticVariance: magVar,
+      hasWifiScan: _latestWifiScan?.hasScan ?? false,
+      meanWifiRssiDbm: _latestWifiScan?.meanRssiDbm,
+      wifiAccessPointCount: _latestWifiScan?.count,
+      wifiFingerprint: _latestWifiScan?.fingerprint,
       stepDelta: _stepDeltaSinceLastEpoch,
       isNightTime: isNight,
     );
@@ -261,6 +267,17 @@ class IodSensorAcquisitionService {
 
   void _emitCurrentEpochSnapshot() {
     if (!_isRunning || _snapshotController.isClosed) return;
+
+    // Periodically poll Wi-Fi scan on Android every 5 seconds
+    _wifiPollCounter++;
+    if (_wifiPollCounter % 5 == 0 && _nativeChannel.isAndroid) {
+      _nativeChannel.getLatestWifiScan().then((wifiData) {
+        if (wifiData != null) {
+          _latestWifiScan = wifiData;
+        }
+      }).catchError((_) {});
+    }
+
     final snapshot = snapshotNow();
     _snapshotController.add(snapshot);
 

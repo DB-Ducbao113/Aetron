@@ -56,9 +56,11 @@ class IodSensorSnapshot {
   final bool hasWifiScan;
   final double? meanWifiRssiDbm;
   final int? wifiAccessPointCount;
+  final Map<String, double>? wifiFingerprint; // BSSID -> RSSI (dBm)
   final bool hasBleScan;
   final double? meanBleRssiDbm;
   final int? bleBeaconCount;
+  final Map<String, double>? bleFingerprint; // Beacon ID/MAC -> RSSI (dBm)
 
   // Pedometer Telemetry
   final int stepDelta;
@@ -98,9 +100,11 @@ class IodSensorSnapshot {
     this.hasWifiScan = false,
     this.meanWifiRssiDbm,
     this.wifiAccessPointCount,
+    this.wifiFingerprint,
     this.hasBleScan = false,
     this.meanBleRssiDbm,
     this.bleBeaconCount,
+    this.bleFingerprint,
     this.stepDelta = 0,
     this.isNightTime = false,
     this.isScreenOff = false,

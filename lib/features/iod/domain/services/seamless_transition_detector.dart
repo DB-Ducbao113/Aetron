@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import '../models/indoor_outdoor_state.dart';
 import '../models/iod_prediction.dart';
 import '../models/iod_sensor_snapshot.dart';
+import '../models/radio_map.dart';
 import '../models/transition_handover_event.dart';
 
 /// Research implementation of the probabilistic transition detection and handover framework
@@ -43,6 +44,9 @@ class SeamlessTransitionDetector {
   // Configured building transition points (optional)
   final List<BuildingTransitionPoint> transitionPoints;
 
+  /// Configured surveyed radio map for Wi-Fi / BLE fingerprinting (optional)
+  final RadioMap? radioMap;
+
   // Handover event history
   final List<TransitionHandoverEvent> _handoverEvents = [];
   List<TransitionHandoverEvent> get handoverEvents => List.unmodifiable(_handoverEvents);
@@ -54,6 +58,7 @@ class SeamlessTransitionDetector {
 
   SeamlessTransitionDetector({
     List<BuildingTransitionPoint>? transitionPoints,
+    this.radioMap,
   }) : transitionPoints = transitionPoints ?? const [];
 
   void reset() {
@@ -69,8 +74,8 @@ class SeamlessTransitionDetector {
 
     final bool hasGnss = snapshot.hasGnssStatus && snapshot.top4Cn0DbHz != null;
     final bool hasGps = snapshot.hasGpsFix && snapshot.latitude != null && snapshot.longitude != null;
-    final bool hasWifi = snapshot.hasWifiScan && snapshot.meanWifiRssiDbm != null;
-    final bool hasBle = snapshot.hasBleScan && snapshot.meanBleRssiDbm != null;
+    final bool hasWifi = snapshot.hasWifiScan && (snapshot.meanWifiRssiDbm != null || (snapshot.wifiFingerprint?.isNotEmpty ?? false));
+    final bool hasBle = snapshot.hasBleScan && (snapshot.meanBleRssiDbm != null || (snapshot.bleFingerprint?.isNotEmpty ?? false));
 
     final Map<String, bool> availability = {
       'gnss_status': snapshot.hasGnssStatus,
@@ -81,7 +86,7 @@ class SeamlessTransitionDetector {
       'wifi_scan': hasWifi,
       'ble_scan': hasBle,
       'building_transition_points': transitionPoints.isNotEmpty,
-      'wifi_ble_radio_map': false, // BLOCKED on live mobile without pre-surveyed building radio map
+      'wifi_ble_radio_map': radioMap != null && radioMap!.isNotEmpty,
     };
 
     if (!snapshot.hasGnssStatus && !snapshot.hasGpsFix && !hasWifi && !hasBle) {
@@ -274,7 +279,8 @@ class SeamlessTransitionDetector {
     return _DistributionResult(pOutdoor: pOut, pIndoor: pIn, pTransition: pTrans, weight: 0.30);
   }
 
-  /// Wi-Fi / BLE RSSI Model (Section 3.1).
+  /// Wi-Fi / BLE RSSI Model (Section 3.1): Weighted k-Nearest Neighbors (W-KNN)
+  /// against surveyed reference fingerprints.
   _DistributionResult _evaluateRssiModel(IodSensorSnapshot snapshot) {
     if (!snapshot.hasWifiScan && !snapshot.hasBleScan) {
       return const _DistributionResult(pOutdoor: 0.33, pIndoor: 0.33, pTransition: 0.34, weight: 0.0);
@@ -282,7 +288,106 @@ class SeamlessTransitionDetector {
 
     // In the absence of a pre-surveyed building radio map on unconstrained mobile devices,
     // this component cleanly abstains (w_rssi = 0.0) rather than fabricating fake fingerprints.
-    return const _DistributionResult(pOutdoor: 0.33, pIndoor: 0.33, pTransition: 0.34, weight: 0.0);
+    if (radioMap == null || radioMap!.isEmpty) {
+      return const _DistributionResult(pOutdoor: 0.33, pIndoor: 0.33, pTransition: 0.34, weight: 0.0);
+    }
+
+    final obsWifi = snapshot.wifiFingerprint ?? {};
+    final obsBle = snapshot.bleFingerprint ?? {};
+    final hasObsWifi = obsWifi.isNotEmpty;
+    final hasObsBle = obsBle.isNotEmpty;
+
+    double weightOutdoor = 0.0;
+    double weightIndoor = 0.0;
+    double weightTransition = 0.0;
+
+    for (final refPoint in radioMap!.points) {
+      double sumSq = 0.0;
+      int matchCount = 0;
+
+      // 1. Wi-Fi comparison
+      if (hasObsWifi && refPoint.wifiRssiDbm.isNotEmpty) {
+        for (final entry in refPoint.wifiRssiDbm.entries) {
+          final obsVal = obsWifi[entry.key];
+          if (obsVal != null) {
+            final diff = obsVal - entry.value;
+            sumSq += diff * diff;
+            matchCount++;
+          } else {
+            // Unobserved AP penalty (assumed attenuated below sensitivity threshold -100 dBm)
+            final diff = -100.0 - entry.value;
+            sumSq += (diff * diff) * 0.5;
+            matchCount++;
+          }
+        }
+      }
+
+      // 2. BLE comparison
+      if (hasObsBle && refPoint.bleRssiDbm.isNotEmpty) {
+        for (final entry in refPoint.bleRssiDbm.entries) {
+          final obsVal = obsBle[entry.key];
+          if (obsVal != null) {
+            final diff = obsVal - entry.value;
+            sumSq += diff * diff;
+            matchCount++;
+          } else {
+            final diff = -100.0 - entry.value;
+            sumSq += (diff * diff) * 0.5;
+            matchCount++;
+          }
+        }
+      }
+
+      // 3. Fallback to mean RSSI if raw fingerprints are unpopulated
+      if (matchCount == 0) {
+        if (snapshot.meanWifiRssiDbm != null && refPoint.wifiRssiDbm.isNotEmpty) {
+          final refMean = refPoint.wifiRssiDbm.values.reduce((a, b) => a + b) / refPoint.wifiRssiDbm.length;
+          final diff = snapshot.meanWifiRssiDbm! - refMean;
+          sumSq += diff * diff;
+          matchCount++;
+        }
+        if (snapshot.meanBleRssiDbm != null && refPoint.bleRssiDbm.isNotEmpty) {
+          final refMean = refPoint.bleRssiDbm.values.reduce((a, b) => a + b) / refPoint.bleRssiDbm.length;
+          final diff = snapshot.meanBleRssiDbm! - refMean;
+          sumSq += diff * diff;
+          matchCount++;
+        }
+      }
+
+      if (matchCount > 0) {
+        final dist = math.sqrt(sumSq / matchCount);
+        final weight = 1.0 / (dist + 1.0);
+        switch (refPoint.state) {
+          case IndoorOutdoorState.outdoor:
+            weightOutdoor += weight;
+            break;
+          case IndoorOutdoorState.indoor:
+            weightIndoor += weight;
+            break;
+          case IndoorOutdoorState.transition:
+            weightTransition += weight;
+            break;
+          case IndoorOutdoorState.unknown:
+            break;
+        }
+      }
+    }
+
+    final totalRssiWeight = weightOutdoor + weightIndoor + weightTransition;
+    if (totalRssiWeight <= 0.0) {
+      return const _DistributionResult(pOutdoor: 0.33, pIndoor: 0.33, pTransition: 0.34, weight: 0.0);
+    }
+
+    final pOut = weightOutdoor / totalRssiWeight;
+    final pIn = weightIndoor / totalRssiWeight;
+    final pTrans = weightTransition / totalRssiWeight;
+
+    return _DistributionResult(
+      pOutdoor: pOut,
+      pIndoor: pIn,
+      pTransition: pTrans,
+      weight: 0.35, // Published Yoo sensor weight for radio map positioning
+    );
   }
 
   static double _haversineDistanceMeters(double lat1, double lon1, double lat2, double lon2) {

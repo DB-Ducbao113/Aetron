@@ -1,5 +1,7 @@
 package com.aetron.app
 
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.hardware.Sensor
@@ -8,6 +10,7 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.location.GnssStatus
 import android.location.LocationManager
+import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -46,10 +49,82 @@ class MainActivity : FlutterActivity() {
                     "checkSensorAvailability" -> {
                         val hasLight = lightSensor != null
                         val hasGnss = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && locationManager != null
+                        val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
+                        val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
+                        val bluetoothAdapter = bluetoothManager?.adapter
                         result.success(
                             mapOf(
                                 "hasLightSensor" to hasLight,
-                                "hasGnssStatus" to hasGnss
+                                "hasGnssStatus" to hasGnss,
+                                "hasWifi" to (wifiManager != null),
+                                "hasBluetooth" to (bluetoothAdapter != null)
+                            )
+                        )
+                    }
+                    "getWifiScan" -> {
+                        val fineLocGranted = ContextCompat.checkSelfPermission(
+                            context,
+                            android.Manifest.permission.ACCESS_FINE_LOCATION
+                        ) == PackageManager.PERMISSION_GRANTED
+
+                        if (!fineLocGranted) {
+                            result.success(mapOf("hasScan" to false, "reason" to "PERMISSION_DENIED"))
+                            return@setMethodCallHandler
+                        }
+
+                        val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
+                        if (wifiManager == null) {
+                            result.success(mapOf("hasScan" to false, "reason" to "WIFI_UNAVAILABLE"))
+                            return@setMethodCallHandler
+                        }
+
+                        try {
+                            val scanResults = wifiManager.scanResults ?: emptyList()
+                            val fingerprint = mutableMapOf<String, Double>()
+                            var sumRssi = 0.0
+                            for (sr in scanResults) {
+                                fingerprint[sr.BSSID] = sr.level.toDouble()
+                                sumRssi += sr.level
+                            }
+                            val meanRssi = if (scanResults.isNotEmpty()) sumRssi / scanResults.size else null
+                            result.success(
+                                mapOf(
+                                    "hasScan" to scanResults.isNotEmpty(),
+                                    "count" to scanResults.size,
+                                    "meanRssiDbm" to meanRssi,
+                                    "fingerprint" to fingerprint,
+                                    "timestamp" to System.currentTimeMillis()
+                                )
+                            )
+                        } catch (e: Exception) {
+                            result.success(mapOf("hasScan" to false, "reason" to (e.message ?: "UNKNOWN_ERROR")))
+                        }
+                    }
+                    "getBleScan" -> {
+                        val fineLocGranted = ContextCompat.checkSelfPermission(
+                            context,
+                            android.Manifest.permission.ACCESS_FINE_LOCATION
+                        ) == PackageManager.PERMISSION_GRANTED
+
+                        if (!fineLocGranted) {
+                            result.success(mapOf("hasScan" to false, "reason" to "PERMISSION_DENIED"))
+                            return@setMethodCallHandler
+                        }
+
+                        val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
+                        val bluetoothAdapter = bluetoothManager?.adapter
+                        if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled) {
+                            result.success(mapOf("hasScan" to false, "reason" to "BLUETOOTH_DISABLED"))
+                            return@setMethodCallHandler
+                        }
+
+                        // Opportunistic BLE query returning device capability
+                        result.success(
+                            mapOf(
+                                "hasScan" to false,
+                                "count" to 0,
+                                "reason" to "IDLE",
+                                "timestamp" to System.currentTimeMillis()
                             )
                         )
                     }
