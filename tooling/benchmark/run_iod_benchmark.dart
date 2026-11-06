@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:fitness_exercise_application/features/iod/domain/models/indoor_outdoor_state.dart';
 import 'package:fitness_exercise_application/features/iod/domain/models/iod_prediction.dart';
 import 'package:fitness_exercise_application/features/iod/domain/services/deepiod_baseline_classifier.dart';
+import 'package:fitness_exercise_application/features/iod/domain/services/deepiod_framework_classifier.dart';
 import 'package:fitness_exercise_application/features/iod/domain/services/deepiod_neural_classifier.dart';
 import 'package:fitness_exercise_application/features/iod/domain/services/iod_composite_classifier.dart';
 import 'package:fitness_exercise_application/features/iod/domain/services/seamless_transition_detector.dart';
@@ -424,7 +425,45 @@ void main() {
       );
       print(ciodHeuristicMetrics.toMarkdownTable());
 
-      // Model 1: DeepIOD Neural Model C (8-Sensor Complete Network - Held-Out)
+      // Model 1: DeepIOD Model A (1D-CNN + LSTM Sequence Decoder - Held-Out)
+      final ciodModelAResults = <IodBenchmarkResult>[];
+      final deepIodFramework = DeepIodFrameworkClassifier();
+      String? lastSessIdA;
+      for (final s in ciodHeldOutSamples) {
+        if (s.sessionId != lastSessIdA) {
+          deepIodFramework.reset();
+          lastSessIdA = s.sessionId;
+        }
+        final pred = deepIodFramework.classifyModelA(s.snapshot);
+        ciodModelAResults.add(IodBenchmarkResult(sample: s, prediction: pred));
+      }
+      final ciodModelAMetrics = IodEvaluationMetrics.compute(
+        datasetName: 'Cambridge CIOD Held-Out (Sessions 72..84)',
+        modelName: 'DeepIOD Model A (1D-CNN + LSTM)',
+        results: ciodModelAResults,
+      );
+      print(ciodModelAMetrics.toMarkdownTable());
+
+      // Model 2: DeepIOD Model B (1D-CNN + Multi-Head Attention - Held-Out)
+      final ciodModelBResults = <IodBenchmarkResult>[];
+      deepIodFramework.reset();
+      String? lastSessIdB;
+      for (final s in ciodHeldOutSamples) {
+        if (s.sessionId != lastSessIdB) {
+          deepIodFramework.reset();
+          lastSessIdB = s.sessionId;
+        }
+        final pred = deepIodFramework.classifyModelB(s.snapshot);
+        ciodModelBResults.add(IodBenchmarkResult(sample: s, prediction: pred));
+      }
+      final ciodModelBMetrics = IodEvaluationMetrics.compute(
+        datasetName: 'Cambridge CIOD Held-Out (Sessions 72..84)',
+        modelName: 'DeepIOD Model B (1D-CNN + MHA)',
+        results: ciodModelBResults,
+      );
+      print(ciodModelBMetrics.toMarkdownTable());
+
+      // Model 3: DeepIOD Neural Model C (8-Sensor Complete Network - Held-Out)
       final ciodNeuralCompleteResults = <IodBenchmarkResult>[];
       final deepIodCompleteClassifier = DeepIodNeuralClassifier.complete();
       String? lastSessId1;
@@ -443,7 +482,45 @@ void main() {
       );
       print(ciodNeuralCompleteMetrics.toMarkdownTable());
 
-      // Model 2: Dedicated Model C-Mobile (4-Sensor Dedicated Mobile Network — Deployed Default)
+      // Model 4: DeepIOD Neural AMV Ensemble (Consensus of Models A, B, C)
+      final ciodAmvResults = <IodBenchmarkResult>[];
+      deepIodFramework.reset();
+      String? lastSessIdAmv;
+      for (final s in ciodHeldOutSamples) {
+        if (s.sessionId != lastSessIdAmv) {
+          deepIodFramework.reset();
+          lastSessIdAmv = s.sessionId;
+        }
+        final pred = deepIodFramework.classifyNeuralAmv(s.snapshot);
+        ciodAmvResults.add(IodBenchmarkResult(sample: s, prediction: pred));
+      }
+      final ciodAmvMetrics = IodEvaluationMetrics.compute(
+        datasetName: 'Cambridge CIOD Held-Out (Sessions 72..84)',
+        modelName: 'DeepIOD Neural AMV Ensemble (Models A+B+C)',
+        results: ciodAmvResults,
+      );
+      print(ciodAmvMetrics.toMarkdownTable());
+
+      // Model 5: DeepIOD Full Framework (AMV of A, B, C + Adaptive Light + GPS Modules)
+      final ciodFullFrameworkResults = <IodBenchmarkResult>[];
+      deepIodFramework.reset();
+      String? lastSessIdFull;
+      for (final s in ciodHeldOutSamples) {
+        if (s.sessionId != lastSessIdFull) {
+          deepIodFramework.reset();
+          lastSessIdFull = s.sessionId;
+        }
+        final pred = deepIodFramework.classify(s.snapshot);
+        ciodFullFrameworkResults.add(IodBenchmarkResult(sample: s, prediction: pred));
+      }
+      final ciodFullFrameworkMetrics = IodEvaluationMetrics.compute(
+        datasetName: 'Cambridge CIOD Held-Out (Sessions 72..84)',
+        modelName: 'DeepIOD Full Framework (Neural + Light + GPS AMV)',
+        results: ciodFullFrameworkResults,
+      );
+      print(ciodFullFrameworkMetrics.toMarkdownTable());
+
+      // Model 6: Dedicated Model C-Mobile (4-Sensor Dedicated Mobile Network — Deployed Adapted Baseline)
       final ciodMobileResults = <IodBenchmarkResult>[];
       final deepIodMobileClassifier = DeepIodNeuralClassifier.mobile();
       String? lastSessId2;
@@ -462,7 +539,7 @@ void main() {
       );
       print(ciodMobileMetrics.toMarkdownTable());
 
-      // Model 3: Aetron IOD Composite Classifier (Application Output — Model C-Mobile Default)
+      // Model 7: Aetron IOD Composite Classifier (Application Output — Model C-Mobile Default)
       final ciodCompositeResults = <IodBenchmarkResult>[];
       final compositeClassifier = IodCompositeClassifier();
       String? lastSessId3;
@@ -481,7 +558,7 @@ void main() {
       );
       print(ciodCompositeMetrics.toMarkdownTable());
 
-      // Baseline D: Yoo SeamlessTransitionDetector (Held-Out, cleanly abstains on missing GNSS)
+      // Baseline H: Yoo SeamlessTransitionDetector (Held-Out, cleanly abstains on missing GNSS)
       final ciodYooResults = <IodBenchmarkResult>[];
       final ciodYoo = SeamlessTransitionDetector();
       String? lastSessId4;
@@ -501,8 +578,24 @@ void main() {
       print(ciodYooMetrics.toMarkdownTable());
 
       await IodEvaluationMetrics.exportToCsv(
+        '${outDir.path}/ciod_held_out_model_a_predictions.csv',
+        ciodModelAResults,
+      );
+      await IodEvaluationMetrics.exportToCsv(
+        '${outDir.path}/ciod_held_out_model_b_predictions.csv',
+        ciodModelBResults,
+      );
+      await IodEvaluationMetrics.exportToCsv(
         '${outDir.path}/ciod_held_out_model_c_predictions.csv',
         ciodNeuralCompleteResults,
+      );
+      await IodEvaluationMetrics.exportToCsv(
+        '${outDir.path}/ciod_held_out_amv_neural_predictions.csv',
+        ciodAmvResults,
+      );
+      await IodEvaluationMetrics.exportToCsv(
+        '${outDir.path}/ciod_held_out_full_framework_predictions.csv',
+        ciodFullFrameworkResults,
       );
       await IodEvaluationMetrics.exportToCsv(
         '${outDir.path}/ciod_held_out_mobile_predictions.csv',
@@ -511,6 +604,10 @@ void main() {
       await IodEvaluationMetrics.exportToCsv(
         '${outDir.path}/ciod_held_out_composite_predictions.csv',
         ciodCompositeResults,
+      );
+      await IodEvaluationMetrics.exportToCsv(
+        '${outDir.path}/ciod_held_out_yoo_predictions.csv',
+        ciodYooResults,
       );
       print('Cambridge CIOD held-out prediction CSVs exported to: ${outDir.path}\n');
 

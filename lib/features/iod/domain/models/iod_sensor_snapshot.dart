@@ -52,6 +52,14 @@ class IodSensorSnapshot {
   final bool hasProximitySensor;
   final double? proximityCm;
 
+  // Wi-Fi / BLE RSSI Telemetry (for multi-technology transition datasets e.g. HYMN / Yoo 2025)
+  final bool hasWifiScan;
+  final double? meanWifiRssiDbm;
+  final int? wifiAccessPointCount;
+  final bool hasBleScan;
+  final double? meanBleRssiDbm;
+  final int? bleBeaconCount;
+
   // Pedometer Telemetry
   final int stepDelta;
 
@@ -87,6 +95,12 @@ class IodSensorSnapshot {
     this.lteRsrqDb,
     this.hasProximitySensor = false,
     this.proximityCm,
+    this.hasWifiScan = false,
+    this.meanWifiRssiDbm,
+    this.wifiAccessPointCount,
+    this.hasBleScan = false,
+    this.meanBleRssiDbm,
+    this.bleBeaconCount,
     this.stepDelta = 0,
     this.isNightTime = false,
     this.isScreenOff = false,
