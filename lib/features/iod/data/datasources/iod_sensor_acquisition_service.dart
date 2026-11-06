@@ -33,6 +33,7 @@ class IodSensorAcquisitionService {
   // Latest hardware state
   GnssSatelliteData? _latestGnss;
   WifiScanData? _latestWifiScan;
+  BleScanData? _latestBleScan;
   Position? _latestPosition;
   int _stepDeltaSinceLastEpoch = 0;
   int _wifiPollCounter = 0;
@@ -260,6 +261,10 @@ class IodSensorAcquisitionService {
       meanWifiRssiDbm: _latestWifiScan?.meanRssiDbm,
       wifiAccessPointCount: _latestWifiScan?.count,
       wifiFingerprint: _latestWifiScan?.fingerprint,
+      hasBleScan: _latestBleScan?.hasScan ?? false,
+      meanBleRssiDbm: _latestBleScan?.meanRssiDbm,
+      bleBeaconCount: _latestBleScan?.count,
+      bleFingerprint: _latestBleScan?.fingerprint,
       stepDelta: _stepDeltaSinceLastEpoch,
       isNightTime: isNight,
     );
@@ -268,12 +273,18 @@ class IodSensorAcquisitionService {
   void _emitCurrentEpochSnapshot() {
     if (!_isRunning || _snapshotController.isClosed) return;
 
-    // Periodically poll Wi-Fi scan on Android every 5 seconds
+    // Periodically poll Wi-Fi and BLE scans on Android every 5 seconds
     _wifiPollCounter++;
     if (_wifiPollCounter % 5 == 0 && _nativeChannel.isAndroid) {
       _nativeChannel.getLatestWifiScan().then((wifiData) {
         if (wifiData != null) {
           _latestWifiScan = wifiData;
+        }
+      }).catchError((_) {});
+
+      _nativeChannel.getLatestBleScan().then((bleData) {
+        if (bleData != null) {
+          _latestBleScan = bleData;
         }
       }).catchError((_) {});
     }

@@ -2,6 +2,10 @@ package com.aetron.app
 
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
+import android.bluetooth.le.BluetoothLeScanner
+import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanResult
+import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.content.pm.PackageManager
 import android.hardware.Sensor
@@ -14,6 +18,7 @@ import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import androidx.annotation.NonNull
 import androidx.core.content.ContextCompat
 import io.flutter.embedding.android.FlutterActivity
@@ -21,6 +26,7 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import java.util.concurrent.ConcurrentHashMap
 
 class MainActivity : FlutterActivity() {
     private val gnssStatusChannel = "com.aetron.app/gnss_status"
@@ -33,7 +39,65 @@ class MainActivity : FlutterActivity() {
 
     private var gnssStatusCallback: GnssStatus.Callback? = null
     private var lightEventListener: SensorEventListener? = null
+    // private var stepSensorHandler: StepSensorHandler? = null
     private val mainHandler = Handler(Looper.getMainLooper())
+
+    // Bluetooth Low Energy Scanning State (Yoo 2025 Transition Framework)
+    private var bluetoothLeScanner: BluetoothLeScanner? = null
+    private var isBleScanning = false
+    private val bleBeacons = ConcurrentHashMap<String, Pair<Double, Long>>() // address -> (rssiDbm, timestampMs)
+    private val bleScanCallback = object : ScanCallback() {
+        override fun onScanResult(callbackType: Int, result: ScanResult?) {
+            result?.let {
+                val address = it.device?.address ?: return
+                val rssi = it.rssi.toDouble()
+                bleBeacons[address] = Pair(rssi, System.currentTimeMillis())
+            }
+        }
+        override fun onBatchScanResults(results: MutableList<ScanResult>?) {
+            results?.forEach {
+                val address = it.device?.address ?: return@forEach
+                bleBeacons[address] = Pair(it.rssi.toDouble(), System.currentTimeMillis())
+            }
+        }
+        override fun onScanFailed(errorCode: Int) {
+            // Non-fatal scan failure
+        }
+    }
+
+    private fun ensureBleScanning() {
+        if (isBleScanning) return
+        val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
+        val adapter = bluetoothManager?.adapter ?: return
+        if (!adapter.isEnabled) return
+
+        val scanPerm = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            ContextCompat.checkSelfPermission(this, android.Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED
+        } else {
+            ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        }
+        if (!scanPerm) return
+
+        try {
+            bluetoothLeScanner = adapter.bluetoothLeScanner
+            val settings = ScanSettings.Builder()
+                .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+                .build()
+            bluetoothLeScanner?.startScan(null, settings, bleScanCallback)
+            isBleScanning = true
+        } catch (_: Exception) {
+            isBleScanning = false
+        }
+    }
+
+    private fun stopBleScanning() {
+        if (!isBleScanning) return
+        try {
+            bluetoothLeScanner?.stopScan(bleScanCallback)
+        } catch (_: Exception) {}
+        isBleScanning = false
+        bluetoothLeScanner = null
+    }
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -41,6 +105,11 @@ class MainActivity : FlutterActivity() {
         locationManager = getSystemService(Context.LOCATION_SERVICE) as? LocationManager
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as? SensorManager
         lightSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_LIGHT)
+
+        // Step Sensor Platform Integration
+        // stepSensorHandler = StepSensorHandler(this, flutterEngine.dartExecutor.binaryMessenger).also {
+        //     it.register()
+        // }
 
         // 1. MethodChannel to probe hardware capabilities
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, sensorCheckChannel)
@@ -78,24 +147,51 @@ class MainActivity : FlutterActivity() {
                             return@setMethodCallHandler
                         }
 
+                        // Opportunistically request scan start (safe against throttling on Android 9+)
+                        try {
+                            wifiManager.startScan()
+                        } catch (_: Exception) {}
+
                         try {
                             val scanResults = wifiManager.scanResults ?: emptyList()
-                            val fingerprint = mutableMapOf<String, Double>()
-                            var sumRssi = 0.0
-                            for (sr in scanResults) {
-                                fingerprint[sr.BSSID] = sr.level.toDouble()
-                                sumRssi += sr.level
+                            val nowElapsedMicros = SystemClock.elapsedRealtime() * 1000L
+                            val maxAgeMicros = 30_000_000L // 30 seconds
+
+                            val freshResults = scanResults.filter { sr ->
+                                if (sr.timestamp > 0) {
+                                    (nowElapsedMicros - sr.timestamp) < maxAgeMicros
+                                } else {
+                                    true
+                                }
                             }
-                            val meanRssi = if (scanResults.isNotEmpty()) sumRssi / scanResults.size else null
-                            result.success(
-                                mapOf(
-                                    "hasScan" to scanResults.isNotEmpty(),
-                                    "count" to scanResults.size,
-                                    "meanRssiDbm" to meanRssi,
-                                    "fingerprint" to fingerprint,
-                                    "timestamp" to System.currentTimeMillis()
+
+                            if (freshResults.isNotEmpty()) {
+                                val fingerprint = mutableMapOf<String, Double>()
+                                var sumRssi = 0.0
+                                for (sr in freshResults) {
+                                    fingerprint[sr.BSSID] = sr.level.toDouble()
+                                    sumRssi += sr.level
+                                }
+                                val meanRssi = sumRssi / freshResults.size
+                                result.success(
+                                    mapOf(
+                                        "hasScan" to true,
+                                        "count" to freshResults.size,
+                                        "meanRssiDbm" to meanRssi,
+                                        "fingerprint" to fingerprint,
+                                        "timestamp" to System.currentTimeMillis()
+                                    )
                                 )
-                            )
+                            } else {
+                                result.success(
+                                    mapOf(
+                                        "hasScan" to false,
+                                        "count" to 0,
+                                        "reason" to "NO_FRESH_WIFI_SCANS",
+                                        "timestamp" to System.currentTimeMillis()
+                                    )
+                                )
+                            }
                         } catch (e: Exception) {
                             result.success(mapOf("hasScan" to false, "reason" to (e.message ?: "UNKNOWN_ERROR")))
                         }
@@ -106,27 +202,74 @@ class MainActivity : FlutterActivity() {
                             android.Manifest.permission.ACCESS_FINE_LOCATION
                         ) == PackageManager.PERMISSION_GRANTED
 
-                        if (!fineLocGranted) {
-                            result.success(mapOf("hasScan" to false, "reason" to "PERMISSION_DENIED"))
+                        val scanPermGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            ContextCompat.checkSelfPermission(
+                                context,
+                                android.Manifest.permission.BLUETOOTH_SCAN
+                            ) == PackageManager.PERMISSION_GRANTED
+                        } else {
+                            fineLocGranted
+                        }
+
+                        if (!scanPermGranted) {
+                            result.success(
+                                mapOf(
+                                    "hasScan" to false,
+                                    "count" to 0,
+                                    "reason" to "PERMISSION_DENIED",
+                                    "timestamp" to System.currentTimeMillis()
+                                )
+                            )
                             return@setMethodCallHandler
                         }
 
                         val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
                         val bluetoothAdapter = bluetoothManager?.adapter
                         if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled) {
-                            result.success(mapOf("hasScan" to false, "reason" to "BLUETOOTH_DISABLED"))
+                            result.success(
+                                mapOf(
+                                    "hasScan" to false,
+                                    "count" to 0,
+                                    "reason" to "BLUETOOTH_DISABLED",
+                                    "timestamp" to System.currentTimeMillis()
+                                )
+                            )
                             return@setMethodCallHandler
                         }
 
-                        // Opportunistic BLE query returning device capability
-                        result.success(
-                            mapOf(
-                                "hasScan" to false,
-                                "count" to 0,
-                                "reason" to "IDLE",
-                                "timestamp" to System.currentTimeMillis()
+                        // Ensure background BLE scanner is listening
+                        ensureBleScanning()
+
+                        val now = System.currentTimeMillis()
+                        val maxAgeMs = 15_000L
+                        val freshBeacons = bleBeacons.filter { now - it.value.second < maxAgeMs }
+
+                        if (freshBeacons.isNotEmpty()) {
+                            val fingerprint = freshBeacons.mapValues { it.value.first }
+                            var sumRssi = 0.0
+                            for (v in fingerprint.values) {
+                                sumRssi += v
+                            }
+                            val meanRssi = sumRssi / fingerprint.size
+                            result.success(
+                                mapOf(
+                                    "hasScan" to true,
+                                    "count" to fingerprint.size,
+                                    "meanRssiDbm" to meanRssi,
+                                    "fingerprint" to fingerprint,
+                                    "timestamp" to now
+                                )
                             )
-                        )
+                        } else {
+                            result.success(
+                                mapOf(
+                                    "hasScan" to false,
+                                    "count" to 0,
+                                    "reason" to "NO_BEACONS_DETECTED",
+                                    "timestamp" to now
+                                )
+                            )
+                        }
                     }
                     else -> result.notImplemented()
                 }
@@ -255,6 +398,12 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onDestroy() {
+        stopBleScanning()
+        bleBeacons.clear()
+
+        // stepSensorHandler?.unregister()
+        // stepSensorHandler = null
+
         gnssStatusCallback?.let {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 locationManager?.unregisterGnssStatusCallback(it)

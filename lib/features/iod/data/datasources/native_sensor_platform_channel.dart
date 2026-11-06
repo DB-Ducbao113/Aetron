@@ -92,6 +92,47 @@ class WifiScanData {
   }
 }
 
+/// Telemetry from genuine Android BLE beacon scan query (Yoo 2025).
+class BleScanData {
+  final bool hasScan;
+  final int count;
+  final double? meanRssiDbm;
+  final Map<String, double> fingerprint; // Beacon address/UUID -> RSSI (dBm)
+  final DateTime timestamp;
+  final String? reason;
+
+  const BleScanData({
+    required this.hasScan,
+    required this.count,
+    this.meanRssiDbm,
+    this.fingerprint = const {},
+    required this.timestamp,
+    this.reason,
+  });
+
+  factory BleScanData.fromMap(Map<dynamic, dynamic> map) {
+    final rawFp = map['fingerprint'] as Map<dynamic, dynamic>?;
+    final fp = <String, double>{};
+    if (rawFp != null) {
+      for (final entry in rawFp.entries) {
+        if (entry.value is num) {
+          fp[entry.key.toString()] = (entry.value as num).toDouble();
+        }
+      }
+    }
+    return BleScanData(
+      hasScan: map['hasScan'] as bool? ?? false,
+      count: (map['count'] as num?)?.toInt() ?? 0,
+      meanRssiDbm: (map['meanRssiDbm'] as num?)?.toDouble(),
+      fingerprint: fp,
+      timestamp: DateTime.fromMillisecondsSinceEpoch(
+        (map['timestamp'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
+      ),
+      reason: map['reason'] as String?,
+    );
+  }
+}
+
 /// Platform channel bridge interfacing with Android native hardware sensors.
 ///
 /// Gracefully degrades on non-Android platforms, desktop, web, or test environments.
@@ -168,6 +209,20 @@ class NativeSensorPlatformChannel {
       }
     } catch (e) {
       debugPrint('[NativeSensorChannel] getLatestWifiScan error: $e');
+    }
+    return null;
+  }
+
+  /// Queries latest genuine BLE beacon scan results from Android BluetoothLeScanner (Yoo 2025).
+  Future<BleScanData?> getLatestBleScan() async {
+    if (!isAndroid) return null;
+    try {
+      final res = await _checkChannel.invokeMapMethod<String, dynamic>('getBleScan');
+      if (res != null) {
+        return BleScanData.fromMap(res);
+      }
+    } catch (e) {
+      debugPrint('[NativeSensorChannel] getLatestBleScan error: $e');
     }
     return null;
   }

@@ -35,6 +35,7 @@ void main() {
           LocalGPSPointSchema,
           LocalStepIntervalSchema,
         ],
+        name: 'isar_investigation_success_test',
         directory: tempDir.path,
         inspector: false,
       );
@@ -71,6 +72,7 @@ void main() {
       expect(
         () async => await Isar.open(
           [truncatedLocalWorkoutSchema],
+          name: 'isar_investigation_fail_test',
           directory: tempDir.path,
           inspector: false,
         ),

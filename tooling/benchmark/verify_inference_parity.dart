@@ -253,7 +253,9 @@ void verifyBayesianAmvParity({
   required String testVectorsPath,
 }) {
   print('======================================================================');
-  print('  VERIFYING DEEPIOD BAYESIAN/BINOMIAL AMV METHOD (PMC11360063 Eq. 7-10)');
+  print('  VERIFYING AETRON EXPERIMENTAL BAYESIAN FUSION EXTENSION');
+  print('  (Note: DeepIOD Eq. 9 published inference is linear weighted voting;');
+  print('   this tests Aetron\'s auxiliary empirical Bayesian likelihood fusion)');
   print('======================================================================');
 
   final modelA = DeepIodModelA.fromJson(jsonDecode(File(weightsAPath).readAsStringSync()));
@@ -283,8 +285,8 @@ void verifyBayesianAmvParity({
   final agreementPct = (linearAgreements / testVectors.length) * 100.0;
   print('Total Evaluated Samples:     ${testVectors.length}');
   print('Consensus with Linear AMV:   ${agreementPct.toStringAsFixed(2)}% ($linearAgreements / ${testVectors.length})');
-  assert(agreementPct >= 95.0, 'Bayesian AMV deviated excessively from consensus');
-  print('SUCCESS: DeepIOD Published Bayesian AMV verified!\n');
+  assert(agreementPct >= 95.0, 'Bayesian fusion deviated excessively from consensus');
+  print('SUCCESS: Aetron Experimental Bayesian Fusion verified!\n');
 }
 
 void main() {

@@ -463,13 +463,13 @@ void main() {
       expect(event.toState, equals(IndoorOutdoorState.transition));
     });
 
-    test('DeepIOD Framework with Published Bayesian/Binomial AMV Method evaluates correctly', () {
+    test('DeepIOD Framework with Aetron Experimental Bayesian Fusion evaluates correctly', () {
       final frameworkBayesian = DeepIodFrameworkClassifier(
-        amvMethod: DeepIodAmvMethod.publishedBayesianBinomial,
+        amvMethod: DeepIodAmvMethod.aetronBayesianFusion,
       );
 
       // 1. Unanimous outdoor votes (A=0.85, B=0.90, C=0.92)
-      final bayesOutdoor = frameworkBayesian.computeBayesianBinomialAmv(
+      final bayesOutdoor = frameworkBayesian.computeAetronBayesianFusion(
         pA: 0.85,
         pB: 0.90,
         pC: 0.92,
@@ -477,14 +477,14 @@ void main() {
       expect(bayesOutdoor, greaterThan(0.95));
 
       // 2. Unanimous indoor votes (A=0.10, B=0.15, C=0.08)
-      final bayesIndoor = frameworkBayesian.computeBayesianBinomialAmv(
+      final bayesIndoor = frameworkBayesian.computeAetronBayesianFusion(
         pA: 0.10,
         pB: 0.15,
         pC: 0.08,
       );
       expect(bayesIndoor, lessThan(0.05));
 
-      // 3. Full framework evaluation with Bayesian AMV
+      // 3. Full framework evaluation with Bayesian fusion
       final snapshot = IodSensorSnapshot(
         timestamp: DateTime(2026, 6, 1, 14, 0),
         hasLightSensor: true,

@@ -501,15 +501,15 @@ void main() {
       }
       final ciodAmvMetrics = IodEvaluationMetrics.compute(
         datasetName: 'Cambridge CIOD Held-Out (Sessions 72..84)',
-        modelName: 'DeepIOD Neural AMV Ensemble (Models A+B+C)',
+        modelName: 'DeepIOD Neural AMV (Published Eq. 9 Weighted Linear Voting)',
         results: ciodAmvResults,
       );
       print(ciodAmvMetrics.toMarkdownTable());
 
-      // Model 4b: DeepIOD Neural AMV (Published Bayesian/Binomial Formulation — PMC11360063 Eq. 7-10)
+      // Model 4b: Aetron Experimental Bayesian Likelihood Fusion (Aetron Extension)
       final ciodAmvBayesResults = <IodBenchmarkResult>[];
       final deepIodFrameworkBayes = DeepIodFrameworkClassifier(
-        amvMethod: DeepIodAmvMethod.publishedBayesianBinomial,
+        amvMethod: DeepIodAmvMethod.aetronBayesianFusion,
       );
       String? lastSessIdAmvB;
       for (final s in ciodHeldOutSamples) {
@@ -522,12 +522,12 @@ void main() {
       }
       final ciodAmvBayesMetrics = IodEvaluationMetrics.compute(
         datasetName: 'Cambridge CIOD Held-Out (Sessions 72..84)',
-        modelName: 'DeepIOD Neural AMV (Published Bayesian/Binomial)',
+        modelName: 'Aetron Experimental Bayesian Fusion (Auxiliary Extension)',
         results: ciodAmvBayesResults,
       );
       print(ciodAmvBayesMetrics.toMarkdownTable());
 
-      // Model 5: DeepIOD Full Framework (AMV of A, B, C + Adaptive Light + GPS Modules)
+      // Model 5: DeepIOD Full Framework (Published Eq. 9 AMV + Light Eq. 7 + GPS Eq. 8)
       final ciodFullFrameworkResults = <IodBenchmarkResult>[];
       deepIodFramework.reset();
       String? lastSessIdFull;
@@ -541,12 +541,12 @@ void main() {
       }
       final ciodFullFrameworkMetrics = IodEvaluationMetrics.compute(
         datasetName: 'Cambridge CIOD Held-Out (Sessions 72..84)',
-        modelName: 'DeepIOD Full Framework (Neural + Light + GPS AMV)',
+        modelName: 'DeepIOD Full Framework (Published Eq. 9 AMV + Light Eq. 7 + GPS Eq. 8)',
         results: ciodFullFrameworkResults,
       );
       print(ciodFullFrameworkMetrics.toMarkdownTable());
 
-      // Model 5b: DeepIOD Full Framework (Published Bayesian AMV + Light + GPS)
+      // Model 5b: Aetron Full Framework (Aetron Bayesian Fusion + Light Eq. 7 + GPS Eq. 8)
       final ciodFullBayesResults = <IodBenchmarkResult>[];
       deepIodFrameworkBayes.reset();
       String? lastSessIdFullB;
@@ -560,7 +560,7 @@ void main() {
       }
       final ciodFullBayesMetrics = IodEvaluationMetrics.compute(
         datasetName: 'Cambridge CIOD Held-Out (Sessions 72..84)',
-        modelName: 'DeepIOD Full Framework (Published Bayesian AMV)',
+        modelName: 'Aetron Full Framework (Bayesian Fusion + Light + GPS)',
         results: ciodFullBayesResults,
       );
       print(ciodFullBayesMetrics.toMarkdownTable());
@@ -707,12 +707,14 @@ void main() {
     }
 
     // ================================================================
-    // PART 5: YOO SEAMLESS TRANSITION FRAMEWORK MULTI-SOURCE BENCHMARK
-    // (Doorway Proximity + Wi-Fi/BLE Radio Map + Handover & Transition Delay)
+    // PART 5: SYNTHETIC INTEGRATION TEST — YOO TRANSITION STATE MACHINE & W-KNN LOGIC
+    // (SYNTHETIC UNIT/INTEGRATION TEST ONLY — NOT SCIENTIFIC BENCHMARK CLAIM)
     // ================================================================
     print('======================================================================');
-    print('  PART 5: YOO SEAMLESS TRANSITION FRAMEWORK VALIDATION (Electronics 2025)');
-    print('  (GNSS Distribution + Doorway Proximity + Wi-Fi/BLE Radio Map Fusion)');
+    print('  PART 5: SYNTHETIC INTEGRATION TEST — YOO TRANSITION STATE MACHINE & W-KNN');
+    print('  (NOTICE: 30 handcrafted epochs + mock RadioMap verify algorithm logic');
+    print('   and handover delay under ideal conditions. THIS IS A SYNTHETIC INTEGRATION');
+    print('   TEST AND MUST NOT BE CITED AS A REAL-WORLD DATASET BENCHMARK RESULT.)');
     print('======================================================================');
 
     final transitionRadioMap = const RadioMap(
@@ -856,8 +858,8 @@ void main() {
     }
 
     final yooFullMetrics = IodEvaluationMetrics.compute(
-      datasetName: 'Yoo Multi-Source Transition Scenario (30 Epochs)',
-      modelName: 'SeamlessTransitionDetector (Full Multi-Source Fusion)',
+      datasetName: 'Synthetic Integration Scenario (30 Mock Epochs — Logic Verification)',
+      modelName: 'SeamlessTransitionDetector (Synthetic W-KNN + Handover Verification)',
       results: yooFullResults,
     );
     print(yooFullMetrics.toMarkdownTable());

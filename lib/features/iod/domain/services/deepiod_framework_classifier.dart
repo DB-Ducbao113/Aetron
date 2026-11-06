@@ -12,10 +12,22 @@ import 'deepiod_model_c.dart';
 
 /// Supported decision fusion methods for the DeepIOD Adaptive Majority Voter.
 enum DeepIodAmvMethod {
-  /// Validation-F1 normalized weighted linear averaging (PMC11360063 Eq. 29).
+  /// Published Adaptive Majority Voting (DeepIOD Sensors 2024, 24(16), 5125, Section 3.3, Eq. 9):
+  /// Linear weighted sum of deep learning model probabilities: C = w_A * y_A + w_B * y_B + w_C * y_C
+  /// with learned validation weights (w_A = 0.345, w_B = 0.321, w_C = 0.334).
+  publishedWeightedVoting,
+
+  /// Validation-F1 normalized weighted linear averaging (alias of publishedWeightedVoting).
   validationF1Weighted,
 
-  /// Published Bayesian / Binomial Profile Aggregation (PMC11360063 Section 3.3, Eq. 7-10).
+  /// Aetron Custom Experimental Bayesian Likelihood Fusion:
+  /// Note: This is an Aetron-specific research extension applying Bayesian posterior updating
+  /// from empirical validation sensitivities (TPR) and specificities (TNR).
+  /// It is NOT part of the published DeepIOD 2024 Eq. 9 inference equations.
+  aetronBayesianFusion,
+
+  /// Deprecated alias for backwards-compatibility.
+  @Deprecated('Use aetronBayesianFusion or publishedWeightedVoting')
   publishedBayesianBinomial,
 }
 
@@ -26,12 +38,12 @@ enum DeepIodAmvMethod {
 ///    - Model A: 1D-CNN + LSTM Sequence Decoder (Table 1)
 ///    - Model B: 1D-CNN + Multi-Head Self-Attention (Table 1)
 ///    - Model C: 2D Depth-Wise Separable CNN (Table 1)
-/// 2. Adaptive Light-Intensity Module:
+/// 2. Adaptive Light-Intensity Module (Section 3.4, Eq. 7):
 ///    - Contextual threshold tracking based on solar elevation, civil twilight, and illuminance continuity.
-/// 3. GPS Accuracy Module:
+/// 3. GPS Accuracy Module (Section 3.5, Eq. 8):
 ///    - Published 5-meter horizontal accuracy threshold and satellite carrier-to-noise density (C/N0).
-/// 4. Adaptive Majority Voting (AMV) Consensus Rule:
-///    - Supports both validation-F1 weighted averaging and published Bayesian/Binomial generating functions.
+/// 4. Adaptive Majority Voting (AMV) Consensus Rule (Section 3.3, Eq. 9):
+///    - Published linear weighted combination of deep learning models, light, and GPS evidence.
 class DeepIodFrameworkClassifier {
   static const String modelVersion = 'deepiod-full-framework-v1.0';
 
@@ -41,7 +53,7 @@ class DeepIodFrameworkClassifier {
   final int windowSize;
   final DeepIodAmvMethod amvMethod;
 
-  // Normalized AMV consensus weights for neural models derived from validation F1
+  // Normalized AMV consensus weights for neural models derived from validation F1 (DeepIOD Eq. 9)
   final double weightA;
   final double weightB;
   final double weightC;
@@ -53,7 +65,7 @@ class DeepIodFrameworkClassifier {
     DeepIodModelB? modelB,
     DeepIodModelC? modelC,
     this.windowSize = 10,
-    this.amvMethod = DeepIodAmvMethod.validationF1Weighted,
+    this.amvMethod = DeepIodAmvMethod.publishedWeightedVoting,
     this.weightA = 0.345367,
     this.weightB = 0.320728,
     this.weightC = 0.333905,
@@ -190,16 +202,23 @@ class DeepIodFrameworkClassifier {
     );
   }
 
-  /// Computes the published Bayesian Binomial AMV posterior probability (PMC11360063 Section 3.3, Eq. 7-10):
+  /// Aetron Custom Experimental Bayesian Likelihood Fusion.
   ///
+  /// Note: This is an Aetron-specific research extension applying Bayesian posterior probability updating.
+  /// It is NOT part of the published DeepIOD 2024 Eq. 9 inference equations.
+  ///
+  /// Mathematical formulation:
   /// P(Out | y_A, y_B, y_C) =
   ///   (prod_i P(y_i | Out) * P(Out)) / (prod_i P(y_i | Out) * P(Out) + prod_i P(y_i | In) * P(In))
   ///
-  /// Evaluated using empirical validation sensitivities (TPR) and specificities (TNR):
-  /// - Model A: TPR_A = 0.65, TNR_A = 0.99
-  /// - Model B: TPR_B = 0.62, TNR_B = 0.99
-  /// - Model C: TPR_C = 0.88, TNR_C = 0.99
-  double computeBayesianBinomialAmv({
+  /// Parameter Provenance & Justification:
+  /// - True Positive Rates (Sensitivities under Outdoor ground truth):
+  ///   TPR_A = 0.65, TPR_B = 0.62, TPR_C = 0.88 derived from empirical validation split (Sessions 60..71)
+  /// - True Negative Rates (Specificities under Indoor ground truth):
+  ///   TNR_A = 0.99, TNR_B = 0.99, TNR_C = 0.99 derived from empirical validation split (Sessions 60..71)
+  /// - Prior Probability:
+  ///   priorOutdoor = 0.20 reflects the held-out split class imbalance (~19.0% outdoor support).
+  double computeAetronBayesianFusion({
     required double pA,
     required double pB,
     required double pC,
@@ -209,12 +228,12 @@ class DeepIodFrameworkClassifier {
     final bool voteB = pB >= 0.50;
     final bool voteC = pC >= 0.50;
 
-    // Sensitivities (True Positive Rates under Outdoor ground truth)
+    // Sensitivities (True Positive Rates from validation partition)
     const double tprA = 0.65;
     const double tprB = 0.62;
     const double tprC = 0.88;
 
-    // Specificities (True Negative Rates under Indoor ground truth)
+    // Specificities (True Negative Rates from validation partition)
     const double tnrA = 0.99;
     const double tnrB = 0.99;
     const double tnrC = 0.99;
@@ -239,6 +258,15 @@ class DeepIodFrameworkClassifier {
     return numerator / denominator;
   }
 
+  /// Backwards-compatible alias for computeAetronBayesianFusion.
+  double computeBayesianBinomialAmv({
+    required double pA,
+    required double pB,
+    required double pC,
+    double priorOutdoor = 0.20,
+  }) =>
+      computeAetronBayesianFusion(pA: pA, pB: pB, pC: pC, priorOutdoor: priorOutdoor);
+
   /// Evaluates the Neural AMV Consensus of Models A, B, and C.
   IodPrediction classifyNeuralAmv(IodSensorSnapshot snapshot) {
     final sw = Stopwatch()..start();
@@ -255,8 +283,9 @@ class DeepIodFrameworkClassifier {
     final pA = modelA.predict(evalWindow);
     final pB = modelB.predict(evalWindow);
     final pC = modelC.predict(evalWindow);
-    final double pNeural = amvMethod == DeepIodAmvMethod.publishedBayesianBinomial
-        ? computeBayesianBinomialAmv(pA: pA, pB: pB, pC: pC)
+    final double pNeural = (amvMethod == DeepIodAmvMethod.aetronBayesianFusion ||
+            amvMethod == DeepIodAmvMethod.publishedBayesianBinomial)
+        ? computeAetronBayesianFusion(pA: pA, pB: pB, pC: pC)
         : (weightA * pA) + (weightB * pB) + (weightC * pC);
     sw.stop();
     final isOut = pNeural >= 0.50;
@@ -274,6 +303,11 @@ class DeepIodFrameworkClassifier {
   }
 
   /// Classifies environment using the full DeepIOD AMV framework (Neural + Light + GPS).
+  ///
+  /// Integrates:
+  /// - Adaptive Light-Intensity Module (DeepIOD Sensors 2024, Eq. 7)
+  /// - GPS Accuracy Threshold Module (DeepIOD Sensors 2024, Eq. 8)
+  /// - Adaptive Majority Voter Consensus (DeepIOD Sensors 2024, Eq. 9)
   IodPrediction classify(IodSensorSnapshot snapshot) {
     final stopwatch = Stopwatch()..start();
     final evalWindow = _updateAndGetWindow(snapshot);
@@ -293,18 +327,19 @@ class DeepIodFrameworkClassifier {
     final double pA = modelA.predict(evalWindow);
     final double pB = modelB.predict(evalWindow);
     final double pC = modelC.predict(evalWindow);
-    final double pNeural = amvMethod == DeepIodAmvMethod.publishedBayesianBinomial
-        ? computeBayesianBinomialAmv(pA: pA, pB: pB, pC: pC)
+    final double pNeural = (amvMethod == DeepIodAmvMethod.aetronBayesianFusion ||
+            amvMethod == DeepIodAmvMethod.publishedBayesianBinomial)
+        ? computeAetronBayesianFusion(pA: pA, pB: pB, pC: pC)
         : (weightA * pA) + (weightB * pB) + (weightC * pC);
     final double wNeural = 0.50; // Baseline neural reliability weight
 
-    // 2. Evaluate Adaptive Light-Intensity Module
+    // 2. Evaluate Adaptive Light-Intensity Module (Sensors 2024, Eq. 7)
     final lightModule = _evaluateAdaptiveLightModule(snapshot);
 
-    // 3. Evaluate GPS Accuracy Module (5m criterion)
+    // 3. Evaluate GPS Accuracy Module (Sensors 2024, Eq. 8, 5m criterion)
     final gpsModule = _evaluateGpsAccuracyModule(snapshot);
 
-    // 4. Adaptive Majority Voting (AMV) Consensus
+    // 4. Adaptive Majority Voting (AMV) Consensus (Sensors 2024, Eq. 9)
     final totalWeight = wNeural + lightModule.weight + gpsModule.weight;
     final double fusedOutdoorProb = totalWeight > 0.0
         ? ((wNeural * pNeural) +
