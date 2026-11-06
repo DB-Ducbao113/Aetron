@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:sensors_plus/sensors_plus.dart';
@@ -209,13 +210,26 @@ class IodSensorAcquisitionService {
         ? _computeMean(_recentLuxReadings)
         : null;
 
-    // Contextual day/night indicator (Hour < 6 or > 18.5)
-    final hour = now.hour + (now.minute / 60.0);
-    final isNight = hour < 6.0 || hour >= 18.5;
-
     // GPS fix
     final pos = _latestPosition;
     final hasFix = pos != null;
+
+    // Contextual day/night indicator:
+    // When GPS coordinates are available, computes astronomical solar elevation angle.
+    // If solar elevation > -6.0 degrees (civil twilight boundary), daytime is active.
+    // When GPS is unacquired, falls back to local wall-clock window [06:00, 18:30].
+    final bool isNight;
+    if (pos != null && pos.latitude != 0.0 && pos.longitude != 0.0) {
+      final solarElev = calculateSolarElevationDeg(
+        latitude: pos.latitude,
+        longitude: pos.longitude,
+        utcTime: now.toUtc(),
+      );
+      isNight = solarElev <= -6.0;
+    } else {
+      final hour = now.hour + (now.minute / 60.0);
+      isNight = hour < 6.0 || hour >= 18.5;
+    }
 
     return IodSensorSnapshot(
       timestamp: now,
@@ -275,5 +289,46 @@ class IodSensorAcquisitionService {
       sumSquaredDiff += diff * diff;
     }
     return sumSquaredDiff / (values.length - 1);
+  }
+
+  /// Day of year calculation (1..366)
+  static int _dayOfYear(DateTime date) {
+    const daysBeforeMonth = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+    final isLeap = (date.year % 4 == 0 && date.year % 100 != 0) || (date.year % 400 == 0);
+    int doy = daysBeforeMonth[date.month - 1] + date.day;
+    if (isLeap && date.month > 2) doy++;
+    return doy;
+  }
+
+  /// Computes approximate solar elevation angle in degrees above the horizon.
+  ///
+  /// Elevation > -6.0 deg defines civil daylight; <= -6.0 deg defines civil twilight / night.
+  static double calculateSolarElevationDeg({
+    required double latitude,
+    required double longitude,
+    required DateTime utcTime,
+  }) {
+    final doy = _dayOfYear(utcTime);
+    final fractionalHour = utcTime.hour + (utcTime.minute / 60.0) + (utcTime.second / 3600.0);
+
+    // Solar declination (degrees)
+    final b = 2.0 * math.pi * (doy - 81) / 365.0;
+    final declinationRad = math.asin(math.sin(23.44 * math.pi / 180.0) * math.sin(b));
+
+    // Equation of time in minutes
+    final eotMinutes = 9.87 * math.sin(2.0 * b) - 7.53 * math.cos(b) - 1.5 * math.sin(b);
+
+    // True solar time in hours
+    final solarTimeHours = fractionalHour + (longitude / 15.0) + (eotMinutes / 60.0);
+
+    // Solar hour angle in radians
+    final hourAngleRad = (solarTimeHours - 12.0) * 15.0 * math.pi / 180.0;
+
+    final latRad = latitude * math.pi / 180.0;
+    final sinElev = math.sin(latRad) * math.sin(declinationRad) +
+        math.cos(latRad) * math.cos(declinationRad) * math.cos(hourAngleRad);
+
+    final elevRad = math.asin(sinElev.clamp(-1.0, 1.0));
+    return elevRad * 180.0 / math.pi;
   }
 }

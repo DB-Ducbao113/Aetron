@@ -19,11 +19,36 @@ import 'seamless_transition_detector.dart';
 /// - [IndoorOutdoorState.transition]
 /// - [IndoorOutdoorState.unknown]
 class IodCompositeClassifier {
-  static const String modelVersion = 'aetron-iod-ensemble-v1.0';
+  static const String modelVersion = 'aetron-iod-composite-v1.0';
 
-  final DeepIodNeuralClassifier _neuralClassifier = DeepIodNeuralClassifier();
-  final DeepIodBaselineClassifier _heuristicBaseline = DeepIodBaselineClassifier();
-  final SeamlessTransitionDetector _yooTransition = SeamlessTransitionDetector();
+  final DeepIodNeuralClassifier _neuralClassifier;
+  final DeepIodBaselineClassifier _heuristicBaseline;
+  final SeamlessTransitionDetector _yooTransition;
+
+  /// Deploys the dedicated 4-sensor Model C-Mobile as the default production classifier
+  /// using genuinely available smartphone telemetry: ['Light', 'Mag', 'Acc', 'Daytime'].
+  IodCompositeClassifier({
+    DeepIodNeuralClassifier? neuralClassifier,
+    DeepIodBaselineClassifier? heuristicBaseline,
+    SeamlessTransitionDetector? yooTransition,
+  })  : _neuralClassifier = neuralClassifier ?? DeepIodNeuralClassifier.mobile(),
+        _heuristicBaseline = heuristicBaseline ?? DeepIodBaselineClassifier(),
+        _yooTransition = yooTransition ?? SeamlessTransitionDetector();
+
+  /// Factory constructor for offline research evaluation using the complete 8-channel Model C.
+  factory IodCompositeClassifier.research8Channel({
+    DeepIodBaselineClassifier? heuristicBaseline,
+    SeamlessTransitionDetector? yooTransition,
+  }) =>
+      IodCompositeClassifier(
+        neuralClassifier: DeepIodNeuralClassifier.complete(),
+        heuristicBaseline: heuristicBaseline,
+        yooTransition: yooTransition,
+      );
+
+  DeepIodNeuralClassifier get neuralClassifier => _neuralClassifier;
+  SeamlessTransitionDetector get yooTransition => _yooTransition;
+  DeepIodBaselineClassifier get heuristicBaseline => _heuristicBaseline;
 
   void reset() {
     _neuralClassifier.reset();

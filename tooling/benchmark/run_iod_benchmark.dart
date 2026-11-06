@@ -326,47 +326,75 @@ void main() {
     // (Bakirtzis et al., DOI: 10.17863/CAM.82668; 1.47M rows, 85 sessions)
     // ================================================================
     print('\n======================================================================');
-    print('  PART 4: UNIVERSITY OF CAMBRIDGE CIOD BENCHMARK (MULTI-SESSION REPLAY)');
+    print('  PART 4A: UNIVERSITY OF CAMBRIDGE CIOD — HELD-OUT INDEPENDENT TEST SET');
+    print('  (SESSIONS 72..84, 13 UNSEEN SESSIONS, 10,400 EPOCHS)');
     print('======================================================================');
 
     final ciodFile = File('tooling/data/ciod/Data_Supporting_IOD_DL_MTSC_JIoT.csv');
     if (ciodFile.existsSync()) {
-      print('Loading Cambridge CIOD sessions (first 30 independent sessions)...');
-      final ciodSamples = await CiodDatasetAdapter.parseCsvFile(
+      // 1. Load strictly held-out sessions (72..84)
+      final heldOutSessionIds = Set<int>.from(List.generate(13, (i) => 72 + i));
+      print('Loading Cambridge CIOD held-out test sessions (Sessions 72..84)...');
+      final ciodHeldOutSamples = await CiodDatasetAdapter.parseCsvFile(
         file: ciodFile,
-        maxSessions: 30,
-        maxSamplesPerSession: 400,
+        targetSessionIndices: heldOutSessionIds,
+        maxSamplesPerSession: 800,
       );
-      print('Loaded ${ciodSamples.length} samples across Cambridge CIOD sessions.');
+      print('Loaded ${ciodHeldOutSamples.length} samples across 13 held-out Cambridge CIOD sessions.');
 
-      // 1. Majority Baseline on Cambridge CIOD
-      final ciodMajorityResults = <IodBenchmarkResult>[];
-      for (final s in ciodSamples) {
-        ciodMajorityResults.add(IodBenchmarkResult(
+      // Baseline A: Always-Indoor Majority Baseline (Held-Out)
+      final ciodAlwaysIndoorResults = <IodBenchmarkResult>[];
+      for (final s in ciodHeldOutSamples) {
+        ciodAlwaysIndoorResults.add(IodBenchmarkResult(
+          sample: s,
+          prediction: IodPrediction(
+            state: IndoorOutdoorState.indoor,
+            confidence: 1.0,
+            nativeClass: 'indoor',
+            modelVersion: 'majority-always-indoor',
+            inferenceLatencyMs: 0,
+            sensorAvailability: const {},
+            reasoningSummary: 'Always-Indoor baseline (held-out test)',
+            isObservationalOnly: true,
+          ),
+        ));
+      }
+      final ciodAlwaysIndoorMetrics = IodEvaluationMetrics.compute(
+        datasetName: 'Cambridge CIOD Held-Out (Sessions 72..84)',
+        modelName: 'Always-Indoor Majority Baseline',
+        results: ciodAlwaysIndoorResults,
+      );
+      print(ciodAlwaysIndoorMetrics.toMarkdownTable());
+
+      // Baseline B: Always-Outdoor Baseline (Held-Out)
+      final ciodAlwaysOutdoorResults = <IodBenchmarkResult>[];
+      for (final s in ciodHeldOutSamples) {
+        ciodAlwaysOutdoorResults.add(IodBenchmarkResult(
           sample: s,
           prediction: IodPrediction(
             state: IndoorOutdoorState.outdoor,
             confidence: 1.0,
             nativeClass: 'outdoor',
-            modelVersion: 'majority-outdoor',
+            modelVersion: 'majority-always-outdoor',
             inferenceLatencyMs: 0,
             sensorAvailability: const {},
-            reasoningSummary: 'Always outdoor baseline',
+            reasoningSummary: 'Always-Outdoor baseline (held-out test)',
             isObservationalOnly: true,
           ),
         ));
       }
-      final ciodMajorityMetrics = IodEvaluationMetrics.compute(
-        datasetName: 'Cambridge CIOD (Real Smartphone Sensors)',
+      final ciodAlwaysOutdoorMetrics = IodEvaluationMetrics.compute(
+        datasetName: 'Cambridge CIOD Held-Out (Sessions 72..84)',
         modelName: 'Always-Outdoor Baseline',
-        results: ciodMajorityResults,
+        results: ciodAlwaysOutdoorResults,
       );
-      print(ciodMajorityMetrics.toMarkdownTable());
+      print(ciodAlwaysOutdoorMetrics.toMarkdownTable());
 
-      // 2. DeepIOD Native Binary on Cambridge CIOD
-      final ciodDeepIodBinaryResults = <IodBenchmarkResult>[];
-      for (final s in ciodSamples) {
-        final pred = deepIodClassifier.classify(s.snapshot);
+      // Baseline C: DeepIOD Literature Heuristic Baseline (Held-Out)
+      final ciodHeuristicResults = <IodBenchmarkResult>[];
+      final ciodHeuristicClassifier = DeepIodBaselineClassifier();
+      for (final s in ciodHeldOutSamples) {
+        final pred = ciodHeuristicClassifier.classify(s.snapshot);
         final pOut = pred.deepIodOutdoorProbability ?? 0.5;
         final isOutdoor = pOut >= 0.50;
         final bState = isOutdoor ? IndoorOutdoorState.outdoor : IndoorOutdoorState.indoor;
@@ -374,14 +402,14 @@ void main() {
             ? ((pOut - 0.5) * 2.0).clamp(0.0, 1.0)
             : (((1.0 - pOut) - 0.5) * 2.0).clamp(0.0, 1.0);
 
-        ciodDeepIodBinaryResults.add(IodBenchmarkResult(
+        ciodHeuristicResults.add(IodBenchmarkResult(
           sample: s,
           prediction: IodPrediction(
             state: bState,
             confidence: bConf,
             deepIodOutdoorProbability: pOut,
             nativeClass: bState.code,
-            modelVersion: 'deepiod-binary-ciod',
+            modelVersion: 'deepiod-baseline-heuristic',
             inferenceLatencyMs: pred.inferenceLatencyMs,
             sensorAvailability: pred.sensorAvailability,
             reasoningSummary: pred.reasoningSummary,
@@ -389,82 +417,141 @@ void main() {
           ),
         ));
       }
-      final ciodDeepIodBinaryMetrics = IodEvaluationMetrics.compute(
-        datasetName: 'Cambridge CIOD (Real Smartphone Sensors)',
-        modelName: 'DeepIOD Baseline (Native Binary Rule P>=0.5)',
-        results: ciodDeepIodBinaryResults,
+      final ciodHeuristicMetrics = IodEvaluationMetrics.compute(
+        datasetName: 'Cambridge CIOD Held-Out (Sessions 72..84)',
+        modelName: 'DeepIOD Literature Heuristic Baseline',
+        results: ciodHeuristicResults,
       );
-      print(ciodDeepIodBinaryMetrics.toMarkdownTable());
+      print(ciodHeuristicMetrics.toMarkdownTable());
 
-      // 3. DeepIOD Neural Classifier (Model C DWS-Conv2D Trained Network - Complete 8 Sensors)
-      final ciodNeuralResults = <IodBenchmarkResult>[];
-      final deepIodNeuralClassifier = DeepIodNeuralClassifier();
-      for (final s in ciodSamples) {
-        final pred = deepIodNeuralClassifier.classify(s.snapshot);
-        ciodNeuralResults.add(IodBenchmarkResult(sample: s, prediction: pred));
+      // Model 1: DeepIOD Neural Model C (8-Sensor Complete Network - Held-Out)
+      final ciodNeuralCompleteResults = <IodBenchmarkResult>[];
+      final deepIodCompleteClassifier = DeepIodNeuralClassifier.complete();
+      String? lastSessId1;
+      for (final s in ciodHeldOutSamples) {
+        if (s.sessionId != lastSessId1) {
+          deepIodCompleteClassifier.reset();
+          lastSessId1 = s.sessionId;
+        }
+        final pred = deepIodCompleteClassifier.classify(s.snapshot);
+        ciodNeuralCompleteResults.add(IodBenchmarkResult(sample: s, prediction: pred));
       }
-      final ciodNeuralMetrics = IodEvaluationMetrics.compute(
-        datasetName: 'Cambridge CIOD (Real Smartphone Sensors)',
+      final ciodNeuralCompleteMetrics = IodEvaluationMetrics.compute(
+        datasetName: 'Cambridge CIOD Held-Out (Sessions 72..84)',
         modelName: 'DeepIOD Neural Model C (8-Sensor Complete Network)',
-        results: ciodNeuralResults,
+        results: ciodNeuralCompleteResults,
       );
-      print(ciodNeuralMetrics.toMarkdownTable());
+      print(ciodNeuralCompleteMetrics.toMarkdownTable());
 
-      // 4. Dedicated Model C-Mobile (4-Sensor Genuine Mobile Network: Light, Mag, Acc, Daytime)
+      // Model 2: Dedicated Model C-Mobile (4-Sensor Dedicated Mobile Network — Deployed Default)
       final ciodMobileResults = <IodBenchmarkResult>[];
       final deepIodMobileClassifier = DeepIodNeuralClassifier.mobile();
-      for (final s in ciodSamples) {
+      String? lastSessId2;
+      for (final s in ciodHeldOutSamples) {
+        if (s.sessionId != lastSessId2) {
+          deepIodMobileClassifier.reset();
+          lastSessId2 = s.sessionId;
+        }
         final pred = deepIodMobileClassifier.classify(s.snapshot);
         ciodMobileResults.add(IodBenchmarkResult(sample: s, prediction: pred));
       }
       final ciodMobileMetrics = IodEvaluationMetrics.compute(
-        datasetName: 'Cambridge CIOD (Real Smartphone Sensors)',
-        modelName: 'DeepIOD Model C-Mobile (4-Sensor Dedicated Mobile Network)',
+        datasetName: 'Cambridge CIOD Held-Out (Sessions 72..84)',
+        modelName: 'DeepIOD Model C-Mobile (4-Sensor Dedicated Mobile Network — Deployed)',
         results: ciodMobileResults,
       );
       print(ciodMobileMetrics.toMarkdownTable());
 
-      // 5. Application-Level IodCompositeClassifier (Ensemble with Yoo experimental transition signal)
+      // Model 3: Aetron IOD Composite Classifier (Application Output — Model C-Mobile Default)
       final ciodCompositeResults = <IodBenchmarkResult>[];
       final compositeClassifier = IodCompositeClassifier();
-      for (final s in ciodSamples) {
+      String? lastSessId3;
+      for (final s in ciodHeldOutSamples) {
+        if (s.sessionId != lastSessId3) {
+          compositeClassifier.reset();
+          lastSessId3 = s.sessionId;
+        }
         final pred = compositeClassifier.predict(s.snapshot);
         ciodCompositeResults.add(IodBenchmarkResult(sample: s, prediction: pred));
       }
       final ciodCompositeMetrics = IodEvaluationMetrics.compute(
-        datasetName: 'Cambridge CIOD (Real Smartphone Sensors)',
+        datasetName: 'Cambridge CIOD Held-Out (Sessions 72..84)',
         modelName: 'Aetron IOD Composite Classifier (Application Output)',
         results: ciodCompositeResults,
       );
       print(ciodCompositeMetrics.toMarkdownTable());
 
-      // 6. Yoo SeamlessTransitionDetector on Cambridge CIOD (Preserves missing GNSS as missing)
+      // Baseline D: Yoo SeamlessTransitionDetector (Held-Out, cleanly abstains on missing GNSS)
       final ciodYooResults = <IodBenchmarkResult>[];
       final ciodYoo = SeamlessTransitionDetector();
-      for (final s in ciodSamples) {
+      String? lastSessId4;
+      for (final s in ciodHeldOutSamples) {
+        if (s.sessionId != lastSessId4) {
+          ciodYoo.reset();
+          lastSessId4 = s.sessionId;
+        }
         final pred = ciodYoo.evaluate(s.snapshot);
         ciodYooResults.add(IodBenchmarkResult(sample: s, prediction: pred));
       }
       final ciodYooMetrics = IodEvaluationMetrics.compute(
-        datasetName: 'Cambridge CIOD (Real Smartphone Sensors)',
+        datasetName: 'Cambridge CIOD Held-Out (Sessions 72..84)',
         modelName: 'SeamlessTransitionDetector (Yoo 2025)',
         results: ciodYooResults,
       );
       print(ciodYooMetrics.toMarkdownTable());
 
       await IodEvaluationMetrics.exportToCsv(
-        '${outDir.path}/ciod_deepiod_model_c_predictions.csv',
-        ciodNeuralResults,
+        '${outDir.path}/ciod_held_out_model_c_predictions.csv',
+        ciodNeuralCompleteResults,
       );
       await IodEvaluationMetrics.exportToCsv(
-        '${outDir.path}/ciod_deepiod_mobile_predictions.csv',
+        '${outDir.path}/ciod_held_out_mobile_predictions.csv',
         ciodMobileResults,
       );
       await IodEvaluationMetrics.exportToCsv(
-        '${outDir.path}/ciod_composite_predictions.csv',
+        '${outDir.path}/ciod_held_out_composite_predictions.csv',
         ciodCompositeResults,
       );
-      print('Cambridge CIOD prediction CSVs exported to ${outDir.path}');
+      print('Cambridge CIOD held-out prediction CSVs exported to: ${outDir.path}\n');
+
+      // ================================================================
+      // PART 4B: TRAINING-SET DIAGNOSTIC REPLAY (SESSIONS 0..29)
+      // (FOR OVERFITTING AUDIT & REPRODUCIBILITY VERIFICATION ONLY)
+      // ================================================================
+      print('======================================================================');
+      print('  PART 4B: CAMBRIDGE CIOD — TRAINING-SET DIAGNOSTIC REPLAY (SESSIONS 0..29)');
+      print('  (DIAGNOSTIC AUDIT ONLY — NOT INDEPENDENT VALIDATION)');
+      print('======================================================================');
+
+      final trainSessionIds = Set<int>.from(List.generate(30, (i) => i));
+      final ciodTrainSamples = await CiodDatasetAdapter.parseCsvFile(
+        file: ciodFile,
+        targetSessionIndices: trainSessionIds,
+        maxSamplesPerSession: 400,
+      );
+      print('Loaded ${ciodTrainSamples.length} diagnostic training samples across 30 sessions.');
+
+      final trainNeuralResults = <IodBenchmarkResult>[];
+      final trainClassifier = DeepIodNeuralClassifier.mobile();
+      String? lastTrainSessId;
+      for (final s in ciodTrainSamples) {
+        if (s.sessionId != lastTrainSessId) {
+          trainClassifier.reset();
+          lastTrainSessId = s.sessionId;
+        }
+        final pred = trainClassifier.classify(s.snapshot);
+        trainNeuralResults.add(IodBenchmarkResult(sample: s, prediction: pred));
+      }
+      final trainMetrics = IodEvaluationMetrics.compute(
+        datasetName: 'Cambridge CIOD Training-Set Replay (Sessions 0..29)',
+        modelName: 'DeepIOD Model C-Mobile (Diagnostic Training Replay)',
+        results: trainNeuralResults,
+      );
+      print(trainMetrics.toMarkdownTable());
+      await IodEvaluationMetrics.exportToCsv(
+        '${outDir.path}/ciod_train_diagnostic_predictions.csv',
+        trainNeuralResults,
+      );
     } else {
       print('Cambridge CIOD CSV not found at: ${ciodFile.path}');
     }

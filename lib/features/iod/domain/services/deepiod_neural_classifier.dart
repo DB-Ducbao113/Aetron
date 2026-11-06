@@ -44,13 +44,15 @@ class DeepIodNeuralClassifier {
     this.windowSize = 10,
     DeepIodVariant? variant,
   })  : _model = model ??
-            (variant == DeepIodVariant.mobile4Channel
-                ? DeepIodModelC.fromJson(kDeepIodModelCMobileWeights)
-                : DeepIodModelC.fromJson(kDeepIodModelCWeights)),
+            (variant == DeepIodVariant.complete8Channel
+                ? DeepIodModelC.fromJson(kDeepIodModelCWeights)
+                : DeepIodModelC.fromJson(kDeepIodModelCMobileWeights)),
         variant = variant ??
-            ((model?.mean.length ?? (variant == DeepIodVariant.mobile4Channel ? 4 : 8)) == 4
-                ? DeepIodVariant.mobile4Channel
-                : DeepIodVariant.complete8Channel);
+            (model != null
+                ? (model.mean.length == 8
+                    ? DeepIodVariant.complete8Channel
+                    : DeepIodVariant.mobile4Channel)
+                : DeepIodVariant.mobile4Channel);
 
   factory DeepIodNeuralClassifier.mobile({int windowSize = 10}) =>
       DeepIodNeuralClassifier(

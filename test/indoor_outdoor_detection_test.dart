@@ -268,7 +268,7 @@ void main() {
 
       expect(pred.state, equals(IndoorOutdoorState.outdoor));
       expect(pred.inferenceLatencyMs, lessThanOrEqualTo(10));
-      expect(pred.modelVersion, equals('aetron-iod-ensemble-v1.0'));
+      expect(pred.modelVersion, equals(IodCompositeClassifier.modelVersion));
       expect(pred.isObservationalOnly, isTrue);
     });
   });

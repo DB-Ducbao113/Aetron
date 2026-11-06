@@ -25,6 +25,7 @@ void main() {
         satelliteCount: 14,
         hasImuData: true,
         magneticMagnitudeMean: 45.0,
+        accelMagnitudeMean: 0.85, // Linear acceleration without gravity (m/s^2)
         magneticVariance: 2.1,
         isNightTime: false,
       );
@@ -33,9 +34,9 @@ void main() {
 
       expect(pred.state, equals(IndoorOutdoorState.outdoor));
       expect(pred.confidence, greaterThanOrEqualTo(0.50));
-      expect(pred.deepIodOutdoorProbability, greaterThan(0.70));
+      expect(pred.deepIodOutdoorProbability, greaterThan(0.60));
       expect(pred.isObservationalOnly, isTrue);
-      expect(pred.modelVersion, equals('deepiod-neural-c-v1.0'));
+      expect(pred.modelVersion, equals('deepiod-neural-c-mobile-v1.0'));
     });
 
     test('Confirmed Indoor Condition: Artificial Illumination + Shielded GNSS -> Predicts Indoor', () {
@@ -48,6 +49,7 @@ void main() {
         satelliteCount: 2,
         hasImuData: true,
         magneticMagnitudeMean: 58.0,
+        accelMagnitudeMean: 0.25, // Quiescent linear acceleration at rest
         magneticVariance: 25.0, // Structural steel distortion
         isNightTime: false,
       );
@@ -70,6 +72,7 @@ void main() {
         satelliteCount: 6,
         hasImuData: true,
         magneticMagnitudeMean: 44.5,
+        accelMagnitudeMean: 0.85,
         magneticVariance: 3.5,
         isNightTime: false,
       );
@@ -81,6 +84,7 @@ void main() {
     });
 
     test('Missing Sensors: Hardware lacking photodiode handles missing features with genuine LTE', () {
+      final completeClassifier = DeepIodNeuralClassifier.complete();
       final snapshot = IodSensorSnapshot(
         timestamp: DateTime(2026, 6, 1, 14, 0),
         hasLightSensor: false,
@@ -93,11 +97,12 @@ void main() {
         satelliteCount: 12,
         hasImuData: true,
         magneticMagnitudeMean: 45.0,
+        accelMagnitudeMean: 0.85,
         magneticVariance: 2.0,
         isNightTime: false,
       );
 
-      final pred = classifier.classify(snapshot);
+      final pred = completeClassifier.classify(snapshot);
 
       expect(pred.state, equals(IndoorOutdoorState.outdoor));
       expect(pred.sensorAvailability['light'], isFalse);
@@ -146,7 +151,7 @@ void main() {
         ambientLux: 15000.0,
         hasImuData: true,
         magneticMagnitudeMean: 46.0,
-        accelMagnitudeMean: 9.81,
+        accelMagnitudeMean: 0.85, // Linear acceleration without gravity (m/s^2)
         isNightTime: false,
       );
 

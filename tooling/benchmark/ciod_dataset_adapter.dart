@@ -20,10 +20,15 @@ import 'iod_benchmark_models.dart';
 ///   * Missing signals: GNSS C/N0 is not recorded in CIOD; strictly preserved as missing (null/false).
 class CiodDatasetAdapter {
   /// Parses Cambridge CIOD CSV file and returns benchmark samples grouped by independent sessions.
+  ///
+  /// [targetSessionIndices]: 0-indexed session IDs e.g. {72..84} for the 13 held-out test sessions,
+  /// or {0..29} for training-set diagnostic replay. If null, sequentially reads sessions.
+  /// [maxSamplesPerSession]: Sample cap per session (defaults to 800 for fast, representative execution).
   static Future<List<IodBenchmarkSample>> parseCsvFile({
     required File file,
-    int maxSessions = 50, // evaluate first N sessions or all if 0
-    int maxSamplesPerSession = 500, // sample cap per session for fast benchmark execution
+    Set<int>? targetSessionIndices,
+    int maxSessions = 0,
+    int maxSamplesPerSession = 800,
   }) async {
     final lines = await file.readAsLines();
     if (lines.isEmpty) return [];
@@ -91,11 +96,16 @@ class CiodDatasetAdapter {
     if (labelIdx == -1) labelIdx = headers.length - 1;
 
     final samples = <IodBenchmarkSample>[];
-    int currentSessionId = 1;
+    int currentSessionIndex = 0; // 0-indexed session IDs (0..84)
     int sampleIdxInSession = 0;
     int samplesInCurrentSession = 0;
+    int rowsInCurrentSession = 0;
     DateTime simulatedTime = DateTime.utc(2022, 7, 1, 10, 0, 0);
     final recentMags = <double>[];
+
+    final maxTargetSession = targetSessionIndices != null && targetSessionIndices.isNotEmpty
+        ? targetSessionIndices.reduce(math.max)
+        : -1;
 
     for (int i = 1; i < lines.length; i++) {
       final line = lines[i].trim();
@@ -107,18 +117,30 @@ class CiodDatasetAdapter {
       // Check session boundary
       if (newSeqIdx != -1 && newSeqIdx < parts.length) {
         final seqVal = double.tryParse(parts[newSeqIdx]) ?? 0;
-        if (seqVal == 1.0 && i > 1) {
-          currentSessionId++;
+        if (seqVal == 1.0 && rowsInCurrentSession > 0) {
+          currentSessionIndex++;
           sampleIdxInSession = 0;
           samplesInCurrentSession = 0;
+          rowsInCurrentSession = 0;
           recentMags.clear();
-          if (maxSessions > 0 && currentSessionId > maxSessions) {
+
+          if (maxTargetSession != -1 && currentSessionIndex > maxTargetSession) {
+            break; // Past all requested target sessions
+          }
+          if (maxSessions > 0 && currentSessionIndex >= maxSessions) {
             break; // Finished requested session quota
           }
         }
       }
 
-      // Check per-session sample limit to avoid quadratic memory and runtime
+      rowsInCurrentSession++;
+
+      // Check session filter
+      if (targetSessionIndices != null && !targetSessionIndices.contains(currentSessionIndex)) {
+        continue;
+      }
+
+      // Check per-session sample limit to avoid excessive runtime
       if (maxSamplesPerSession > 0 && samplesInCurrentSession >= maxSamplesPerSession) {
         continue;
       }
@@ -247,7 +269,7 @@ class CiodDatasetAdapter {
       );
 
       samples.add(IodBenchmarkSample(
-        sessionId: 'CIOD_session_$currentSessionId',
+        sessionId: 'CIOD_session_${currentSessionIndex + 1}',
         sequenceIndex: sampleIdxInSession++,
         timestamp: snapshot.timestamp,
         snapshot: snapshot,

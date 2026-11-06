@@ -24,7 +24,8 @@ This phase achieved the complete, rigorous reproduction of the published **DeepI
    - *Key Scientific Finding:* Unconditionally evaluating an 8-channel model on mobile without genuine cellular telemetry significantly degrades performance; the 95–97% headline benchmark cannot be claimed on mobile devices without all 8 measured features.
 3. **Dedicated Mobile-Compatible Variant (`Model C-Mobile`):**
    - Retrained Model C strictly on the 4 genuinely available mobile channels (`['Light', 'Mag', 'Acc', 'Daytime']`) across 60 training sessions without temporal leakage.
-   - Evaluated on 13 held-out test sessions (10,400 windows): achieves **87.57% Accuracy**, **77.48% Macro-F1** (Indoor F1: 92.6%, Outdoor F1: 62.4%, Outdoor Precision: 86.1%).
+   - Evaluated on 13 held-out test sessions (Sessions 72..84, 10,400 windows with session boundary resets): achieves **89.66% Accuracy**, **79.80% Macro-F1** (Indoor F1: 93.9%, Outdoor F1: 65.7%, Outdoor Precision: 89.1%, Indoor Recall: 98.5%, Outdoor Recall: 52.0%).
+   - Deployed as the default classifier in `IodCompositeClassifier` (`DeepIodNeuralClassifier.mobile()`, model version `aetron-iod-composite-v1.0`).
 4. **Application-Level Composite Output Correction:**
    - Removed Yoo's unconditional Transition override from the primary Indoor/Outdoor classification path.
    - Application-level `state` and `confidence` are driven directly by the validated neural model (`neuralPred.state`, `neuralPred.confidence`).
@@ -47,10 +48,10 @@ This phase achieved the complete, rigorous reproduction of the published **DeepI
 | **`RSRQ`** | LTE Reference Signal Received Quality | $[-20, -3] \text{ dB}$ | `TelephonyManager.getAllCellInfo()` $\to$ `CellInfoLte.getCellSignalStrength().getRsrq()` | Same as RSRP. | Marked missing (`availability['rsrq'] = false`) when unavailable; imputed with population mean ($0.0$). Never proxied from GNSS. |
 | **`Light`** | Photodiode Illuminance | $[0, 100000] \text{ lux}$ | `SensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)` | Unprivileged (`NORMAL` permission). Absent on some entry-level devices and emulators. | Directly normalized if available; imputed with population mean if sensor absent. |
 | **`Mag`** | Geomagnetic Field Magnitude | $[0, 200] \ \mu\text{T}$ | `SensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)` | Unprivileged. Available on almost all smartphones. | Vector magnitude $\sqrt{B_x^2 + B_y^2 + B_z^2}$ normalized using training scalar statistics. |
-| **`Acc`** | Accelerometer Magnitude | $[0, 40] \text{ m/s}^2$ | `SensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)` | Unprivileged. Standard on all mobile hardware. | Magnitude $\sqrt{a_x^2 + a_y^2 + a_z^2}$ normalized using training scalar statistics. |
+| **`Acc`** | Linear Accelerometer Magnitude (Excludes Gravity) | $[0, 5+] \text{ m/s}^2$ (Mean: $0.85$, Med: $0.27$) | `SensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)` | Unprivileged. Standard on all mobile hardware. | **Empirically verified:** Cambridge CIOD `Acc` is user dynamic motion without $1g$ gravity. Aetron captures this via `sensors_plus.userAccelerometerEventStream()`. Magnitude $\sqrt{a_x^2 + a_y^2 + a_z^2}$ is normalized using training scalar statistics. |
 | **`Sound`** | Ambient Audio Pressure | Relative dB | `AudioRecord` / `MediaRecorder` | Requires `RECORD_AUDIO` dangerous permission. High battery drain and user privacy concern. | **Omitted by design** for privacy. Imputed with population mean ($0.0$). |
 | **`Proximity`** | Hardware Object Distance | $[0, 5+] \text{ cm}$ | `SensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY)` | Unprivileged. Often binary (0.0 vs 5.0 cm). | Genuine hardware distance used when present. Never inferred from screen power state (`isScreenOff`). |
-| **`Daytime`** | Solar Elevation / Diurnal State | Binary $\{0, 1\}$ | Astronomical solar elevation calculation from device UTC time & location | No permissions required; computed mathematically. | $1.0$ for daytime (solar elev $> -6^\circ$), $0.0$ for nighttime. |
+| **`Daytime`** | Solar Elevation / Diurnal State | Binary $\{0, 1\}$ | Astronomical solar elevation calculation (`calculateSolarElevationDeg()`) using device UTC time & location | No extra permissions required; computed mathematically. | $1.0$ for daytime (solar elevation $\alpha > -6^\circ$, civil twilight threshold), $0.0$ for nighttime. Falls back to diurnal hour if coordinates are absent. |
 
 ---
 
@@ -111,30 +112,45 @@ Parity verification was executed across both deployed models using [`tooling/ben
 
 ## 6. End-to-End Multi-Dataset Benchmark Evaluation
 
-Executing [`tooling/benchmark/run_iod_benchmark.dart`](file:///Users/baobungbu/Aetron/tooling/benchmark/run_iod_benchmark.dart) evaluates the full system across both Zenodo Android GNSS/IMU (Grenier et al., 2024; 6,482 epochs) and Cambridge CIOD (11,291 real smartphone epochs):
+Executing [`tooling/benchmark/run_iod_benchmark.dart`](file:///Users/baobungbu/Aetron/tooling/benchmark/run_iod_benchmark.dart) evaluates the full system across both Zenodo Android GNSS/IMU (Grenier et al., 2024; 6,482 epochs) and Cambridge CIOD with strict split isolation:
 
-### Cambridge CIOD Benchmark Results (11,291 Real Smartphone Epochs):
+### Part A: Independent Held-Out Benchmark on Unseen Sessions (Sessions 72..84)
+- **Dataset:** Cambridge CIOD held-out test partition (Sessions 72..84, never seen during training or validation).
+- **Epoch Count:** 10,400 independent real smartphone epochs (8,422 Indoor, 1,978 Outdoor).
+- **Temporal Resetting:** Classifier state reset on each session boundary (`classifier.reset()`).
 
-| Evaluated System | Evaluated Epochs | Coverage | Accuracy | Macro-F1 | Indoor F1 | Outdoor F1 |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Always-Outdoor Majority Baseline** | 11,291 | 100.0% | 4.23% | 4.06% | 0.0% | 8.1% |
-| **DeepIOD Literature Heuristic Baseline** | 11,291 | 100.0% | 6.51% | 6.51% | 6.2% | 6.9% |
-| **DeepIOD Neural Model C (8-Sensor Complete)** | 11,291 | 100.0% | **95.16%** | **79.80%** | **97.4%** | **62.2%** |
-| **DeepIOD Model C-Mobile (4-Sensor Dedicated)** | 11,291 | 100.0% | **89.07%** | **67.80%** | **94.0%** | **41.6%** |
-| **Aetron IOD Composite Classifier (Application Output)** | 11,291 | 100.0% | **95.16%** | **79.80%** | **97.4%** | **62.2%** |
-| **SeamlessTransitionDetector (Yoo 2025)** | 11,291 | 0.00% | 0.00% | 0.00% | 0.0% | 0.0% (Cleanly abstains on missing GNSS) |
+| Evaluated System | Evaluated Epochs | Accuracy | Macro-F1 | Indoor Prec | Indoor Rec | Indoor F1 | Outdoor Prec | Outdoor Rec | Outdoor F1 |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Always-Indoor Majority Baseline** | 10,400 | 80.98% | 44.75% | 80.98% | 100.0% | 89.49% | 0.00% | 0.00% | 0.00% |
+| **Always-Outdoor Baseline** | 10,400 | 19.02% | 15.98% | 0.00% | 0.00% | 0.00% | 19.02% | 100.0% | 31.96% |
+| **DeepIOD Literature Heuristic Baseline** | 10,400 | 80.98% | 44.75% | 80.98% | 100.0% | 89.49% | 0.00% | 0.00% | 0.00% |
+| **DeepIOD Neural Model C (8-Sensor Complete)** | 10,400 | **96.93%** | **94.82%** | **96.99%** | **99.28%** | **98.12%** | **96.68%** | **86.91%** | **91.53%** |
+| **DeepIOD Model C-Mobile (4-Sensor Dedicated Mobile)** | 10,400 | **89.66%** | **79.80%** | **89.75%** | **98.50%** | **93.92%** | **89.12%** | **52.02%** | **65.69%** |
+| **Aetron IOD Composite Classifier (Application Default)** | 10,400 | **89.66%** | **79.80%** | **89.75%** | **98.50%** | **93.92%** | **89.12%** | **52.02%** | **65.69%** |
+| **SeamlessTransitionDetector (Yoo 2025)** | 10,400 | 0.00% | 0.00% | — | — | — | — | — | — (Cleanly abstains on missing GNSS) |
 
-#### Aetron IOD Composite Classifier Confusion Matrix (Cambridge CIOD):
+#### Aetron IOD Composite Classifier Confusion Matrix (Held-Out Sessions 72..84):
 ```
 | Ground Truth \ Pred | Indoor | Outdoor | Transition | Unknown |
 | :--- | :--- | :--- | :--- | :--- |
-| **INDOOR** (10,813) | 10,296 | 517 | 0 | 0 |
-| **OUTDOOR** (478)    | 29     | 449 | 0 | 0 |
-| **TRANSITION** (0)   | 0      | 0   | 0 | 0 |
+| **INDOOR** (8,422)  | 8,296  | 126     | 0          | 0       |
+| **OUTDOOR** (1,978) | 949    | 1,029   | 0          | 0       |
+| **TRANSITION** (0)  | 0      | 0       | 0          | 0       |
 ```
-- **False Transition Alarms:** **0** (completely resolved from the previous 2,344 false transitions).
-- **Outdoor Recall:** **93.93%** (449 out of 478 outdoor epochs correctly identified).
-- **Indoor Precision:** **99.72%** (10,296 correct indoor predictions out of 10,325 total indoor predictions).
+- **False Transition Alarms:** **0** (Yoo transition override removed from primary state decision).
+- **Outdoor Precision:** **89.12%** (1,029 correct outdoor classifications out of 1,155 total outdoor predictions).
+- **Indoor Recall:** **98.50%** (8,296 out of 8,422 indoor epochs correctly identified).
+- **Indoor Specificity:** **98.50%** (only 126 false outdoor alarms across 8,422 indoor samples).
+
+---
+
+### Part B: Training-Set Diagnostic Replay (Sessions 0..29)
+*Notice: This diagnostic replay evaluates sessions that overlapped with the training set (Sessions 0..59) to verify convergence and temporal stability during continuous sequential processing. It is explicitly demarcated as diagnostic and NOT used for generalization claims.*
+- **Dataset:** Cambridge CIOD Sessions 0..29 (first 30 recording sessions).
+- **Epoch Count:** 11,291 continuous epochs (10,813 Indoor, 478 Outdoor).
+- **Model C (8-Sensor Complete):** **95.16% Accuracy**, **79.80% Macro-F1** (Indoor F1: 97.4%, Outdoor F1: 62.2%).
+- **Model C-Mobile (4-Sensor Dedicated):** **89.07% Accuracy**, **67.80% Macro-F1** (Indoor F1: 94.0%, Outdoor F1: 41.6%).
+- **Composite Classifier (Application Output):** **89.07% Accuracy**, **67.80% Macro-F1**, 0 False Transitions.
 
 ---
 
@@ -151,7 +167,7 @@ Executing [`tooling/benchmark/run_iod_benchmark.dart`](file:///Users/baobungbu/A
 
 ---
 
-## 8. Dataset Licensing & Legal Compliance
+## 8. Dataset Licensing, Scientific Boundaries & Remaining Limitations
 
 > [!IMPORTANT]
 > **CC BY-NC-SA 4.0 Compliance Boundaries:**
@@ -159,3 +175,9 @@ Executing [`tooling/benchmark/run_iod_benchmark.dart`](file:///Users/baobungbu/A
 > - **Permitted Scope:** Academic evaluation, non-commercial benchmarking, internal algorithm validation, and open-source research.
 > - **Commercial Limitation:** Neural weights trained exclusively on Cambridge CIOD cannot be shipped in closed-source proprietary commercial applications without licensing arrangements with the University of Cambridge.
 > - **Aetron Architecture Safeguard:** The IOD subsystem is isolated as an observational research module (`isObservationalOnly: true`). The core workout tracking engine uses standard on-device sensor fusion (EKF) and GPS kinematics, ensuring independent production operation.
+
+> [!WARNING]
+> **Remaining Scientific Limitations (Transition Ground Truth):**
+> 1. **No Transition Ground Truth in Public Datasets:** Cambridge CIOD contains binary ground-truth labels (`Indoor`, `Outdoor`). It contains zero annotated semi-open or transitional ground-truth labels.
+> 2. **Abstention from Unverified Transition Claims:** Although the composite classifier preserves Yoo's transition detector as an auxiliary signal (`transitionProbability`), no transition detection accuracy claim is made. Claiming transition accuracy without verified ground truth is scientifically invalid.
+> 3. **Physical Hardware Verification Remaining:** While numerical parity (100% agreement, $< 10^{-6}$ max AE) and unit tests pass in Flutter/Dart, battery life and OS-level background throttling of `TelephonyManager` on physical Android 14+ devices require on-device field testing.
