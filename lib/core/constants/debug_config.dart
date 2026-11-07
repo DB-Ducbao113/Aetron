@@ -32,6 +32,20 @@ const bool kEnableTrajectoryPreprocessingShadowMode = bool.fromEnvironment(
   defaultValue: false,
 );
 
+/// Enables research-based GNSS error correction (Phase 2: Sukhenko et al., 2025; Groves, 2013).
+/// When enabled, incorporates Normalized Innovation Squared (Mahalanobis) gating,
+/// adaptive measurement covariance inflation, and centripetal turn process noise scaling.
+const bool kEnableGnssCorrection = bool.fromEnvironment(
+  'FLOWFIT_ENABLE_GNSS_CORRECTION',
+  defaultValue: false,
+);
+
+/// Enables shadow comparison logging for Phase 2 GNSS error correction diagnostics.
+const bool kEnableGnssCorrectionShadowMode = bool.fromEnvironment(
+  'FLOWFIT_GNSS_CORRECTION_SHADOW',
+  defaultValue: false,
+);
+
 /// Compile-time git revision for experiment provenance.
 /// Injected dynamically via --dart-define=GIT_COMMIT_SHA=... during build.
 const String kGitRevision = String.fromEnvironment(
