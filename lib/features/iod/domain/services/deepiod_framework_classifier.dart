@@ -13,16 +13,21 @@ import 'deepiod_model_c.dart';
 /// Supported decision fusion methods for the DeepIOD Adaptive Majority Voter.
 enum DeepIodAmvMethod {
   /// Published Adaptive Majority Voting (DeepIOD Sensors 2024, 24(16), 5125, Section 3.3, Eq. 9):
-  /// Linear weighted sum of deep learning model probabilities: C = w_A * y_A + w_B * y_B + w_C * y_C
-  /// with learned validation weights (w_A = 0.345, w_B = 0.321, w_C = 0.334).
+  /// Probability-weighted linear combination: C = \argmax_j \sum_{i=1}^n w_i * p_{i,j}
+  /// which for binary outdoor prediction reduces to: p_neural = w_A * p_A + w_B * p_B + w_C * p_C
+  /// with validation-F1 normalized weights (w_A = 0.345367, w_B = 0.320728, w_C = 0.333905).
   publishedWeightedVoting,
+
+  /// Discrete Hard Majority Voting across binary thresholded predictions:
+  /// C_hard = w_A * I(p_A >= 0.5) + w_B * I(p_B >= 0.5) + w_C * I(p_C >= 0.5)
+  hardMajorityVoting,
 
   /// Validation-F1 normalized weighted linear averaging (alias of publishedWeightedVoting).
   validationF1Weighted,
 
   /// Aetron Custom Experimental Bayesian Likelihood Fusion:
   /// Note: This is an Aetron-specific research extension applying Bayesian posterior updating
-  /// from empirical validation sensitivities (TPR) and specificities (TNR).
+  /// from empirical validation sensitivities (TPR), specificities (TNR), and prior P(Out)=0.181.
   /// It is NOT part of the published DeepIOD 2024 Eq. 9 inference equations.
   aetronBayesianFusion,
 
@@ -285,10 +290,27 @@ class DeepIodFrameworkClassifier {
     final pA = modelA.predict(evalWindow);
     final pB = modelB.predict(evalWindow);
     final pC = modelC.predict(evalWindow);
-    final double pNeural = (amvMethod == DeepIodAmvMethod.aetronBayesianFusion ||
-            amvMethod == DeepIodAmvMethod.publishedBayesianBinomial)
-        ? computeAetronBayesianFusion(pA: pA, pB: pB, pC: pC)
-        : (weightA * pA) + (weightB * pB) + (weightC * pC);
+    final double pNeural;
+    switch (amvMethod) {
+      case DeepIodAmvMethod.publishedWeightedVoting:
+      case DeepIodAmvMethod.validationF1Weighted:
+        // DeepIOD Sensors 2024, Eq. 9: argmax_j sum_i w_i * p_{i,j}
+        // Continuous probability-weighted consensus
+        pNeural = (weightA * pA) + (weightB * pB) + (weightC * pC);
+        break;
+      case DeepIodAmvMethod.hardMajorityVoting:
+        // Discrete hard voting across binary thresholded predictions
+        final double voteA = pA >= 0.50 ? 1.0 : 0.0;
+        final double voteB = pB >= 0.50 ? 1.0 : 0.0;
+        final double voteC = pC >= 0.50 ? 1.0 : 0.0;
+        pNeural = (weightA * voteA) + (weightB * voteB) + (weightC * voteC);
+        break;
+      case DeepIodAmvMethod.aetronBayesianFusion:
+      case DeepIodAmvMethod.publishedBayesianBinomial:
+        // Aetron experimental Bayesian posterior update
+        pNeural = computeAetronBayesianFusion(pA: pA, pB: pB, pC: pC);
+        break;
+    }
     sw.stop();
     final isOut = pNeural >= 0.50;
     return IodPrediction(
@@ -329,10 +351,23 @@ class DeepIodFrameworkClassifier {
     final double pA = modelA.predict(evalWindow);
     final double pB = modelB.predict(evalWindow);
     final double pC = modelC.predict(evalWindow);
-    final double pNeural = (amvMethod == DeepIodAmvMethod.aetronBayesianFusion ||
-            amvMethod == DeepIodAmvMethod.publishedBayesianBinomial)
-        ? computeAetronBayesianFusion(pA: pA, pB: pB, pC: pC)
-        : (weightA * pA) + (weightB * pB) + (weightC * pC);
+    final double pNeural;
+    switch (amvMethod) {
+      case DeepIodAmvMethod.publishedWeightedVoting:
+      case DeepIodAmvMethod.validationF1Weighted:
+        pNeural = (weightA * pA) + (weightB * pB) + (weightC * pC);
+        break;
+      case DeepIodAmvMethod.hardMajorityVoting:
+        final double voteA = pA >= 0.50 ? 1.0 : 0.0;
+        final double voteB = pB >= 0.50 ? 1.0 : 0.0;
+        final double voteC = pC >= 0.50 ? 1.0 : 0.0;
+        pNeural = (weightA * voteA) + (weightB * voteB) + (weightC * voteC);
+        break;
+      case DeepIodAmvMethod.aetronBayesianFusion:
+      case DeepIodAmvMethod.publishedBayesianBinomial:
+        pNeural = computeAetronBayesianFusion(pA: pA, pB: pB, pC: pC);
+        break;
+    }
     final double wNeural = 0.50; // Baseline neural reliability weight
 
     // 2. Evaluate Adaptive Light-Intensity Module (Sensors 2024, Eq. 7)

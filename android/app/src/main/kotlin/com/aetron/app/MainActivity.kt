@@ -113,7 +113,12 @@ class MainActivity : FlutterActivity() {
             val handler = ctor.newInstance(this, flutterEngine.dartExecutor.binaryMessenger)
             clazz.getMethod("register").invoke(handler)
             stepSensorHandler = handler
-        } catch (_: Exception) {}
+            android.util.Log.i("MainActivity", "StepSensorHandler successfully initialized and registered.")
+        } catch (e: ClassNotFoundException) {
+            android.util.Log.i("MainActivity", "StepSensorHandler not found on classpath (clean checkout mode).")
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "StepSensorHandler initialization/registration failed", e)
+        }
 
         // 1. MethodChannel to probe hardware capabilities
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, sensorCheckChannel)
@@ -445,8 +450,11 @@ class MainActivity : FlutterActivity() {
         try {
             stepSensorHandler?.let {
                 it.javaClass.getMethod("unregister").invoke(it)
+                android.util.Log.i("MainActivity", "StepSensorHandler successfully unregistered.")
             }
-        } catch (_: Exception) {}
+        } catch (e: Exception) {
+            android.util.Log.w("MainActivity", "Failed to unregister StepSensorHandler: ${e.message}")
+        }
         stepSensorHandler = null
 
         gnssStatusCallback?.let {

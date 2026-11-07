@@ -510,12 +510,33 @@ void main() {
       }
       final ciodAmvMetrics = IodEvaluationMetrics.compute(
         datasetName: 'Cambridge CIOD Held-Out (Sessions 72..84)',
-        modelName: 'DeepIOD Neural AMV (Published Eq. 9 Weighted Linear Voting)',
+        modelName: 'DeepIOD Neural AMV (Published Eq. 9 Probability-Weighted Linear Voting)',
         results: ciodAmvResults,
       );
       print(ciodAmvMetrics.toMarkdownTable());
 
-      // Model 4b: Aetron Experimental Bayesian Likelihood Fusion (Aetron Extension)
+      // Model 4b: Discrete Hard Majority Voting (Binary Decision Consensus)
+      final ciodHardAmvResults = <IodBenchmarkResult>[];
+      final deepIodFrameworkHard = DeepIodFrameworkClassifier(
+        amvMethod: DeepIodAmvMethod.hardMajorityVoting,
+      );
+      String? lastSessIdHard;
+      for (final s in ciodHeldOutSamples) {
+        if (s.sessionId != lastSessIdHard) {
+          deepIodFrameworkHard.reset();
+          lastSessIdHard = s.sessionId;
+        }
+        final pred = deepIodFrameworkHard.classifyNeuralAmv(s.snapshot);
+        ciodHardAmvResults.add(IodBenchmarkResult(sample: s, prediction: pred));
+      }
+      final ciodHardAmvMetrics = IodEvaluationMetrics.compute(
+        datasetName: 'Cambridge CIOD Held-Out (Sessions 72..84)',
+        modelName: 'DeepIOD Neural AMV (Discrete Hard Majority Voting)',
+        results: ciodHardAmvResults,
+      );
+      print(ciodHardAmvMetrics.toMarkdownTable());
+
+      // Model 4c: Aetron Experimental Bayesian Likelihood Fusion (Aetron Extension)
       final ciodAmvBayesResults = <IodBenchmarkResult>[];
       final deepIodFrameworkBayes = DeepIodFrameworkClassifier(
         amvMethod: DeepIodAmvMethod.aetronBayesianFusion,
@@ -646,6 +667,10 @@ void main() {
       await IodEvaluationMetrics.exportToCsv(
         '${outDir.path}/ciod_held_out_amv_neural_predictions.csv',
         ciodAmvResults,
+      );
+      await IodEvaluationMetrics.exportToCsv(
+        '${outDir.path}/ciod_held_out_amv_hard_predictions.csv',
+        ciodHardAmvResults,
       );
       await IodEvaluationMetrics.exportToCsv(
         '${outDir.path}/ciod_held_out_amv_bayes_predictions.csv',

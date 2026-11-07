@@ -24,7 +24,7 @@ This report establishes the research-faithful reproduction, rigorous held-out be
    - Integrated the Adaptive Light-Intensity module (Eq. 7) and GPS Accuracy module ($5\text{ m}$ threshold, Eq. 8), yielding **91.66% Accuracy** and **83.61% Macro-F1**.
    - Proved bit-level numerical parity against PyTorch ($< 1.4 \times 10^{-6}$ max absolute error, **100.00% classification agreement** across 500 held-out vectors).
 2. **Aetron Experimental Bayesian Fusion Extension (Auxiliary Research):**
-   - Formulated a Bayesian likelihood combination combining empirical sensitivity ($TPR_A = 0.65, TPR_B = 0.62, TPR_C = 0.88$), specificity ($TNR = 0.99$), and prior ($P_{\text{out}} = 0.20$) derived strictly from the validation partition (Sessions 60..71) without test set tuning.
+   - Formulated a Bayesian likelihood combination combining empirical sensitivity ($TPR_A = 0.65, TPR_B = 0.62, TPR_C = 0.88$), specificity ($TNR = 0.99$), and prior ($P_{\text{out}} = 0.181$) derived strictly from the validation partition (Sessions 60..71) without test set tuning.
    - Evaluated as an optional auxiliary mode in Aetron, achieving **97.29% Accuracy** and **95.46% Macro-F1** on held-out test data. Clearly documented as an Aetron extension, not the published DeepIOD Eq. 9 formula.
 3. **Yoo Probabilistic Transition Handover & Radio Map Framework (Electronics 2025):**
    - Implemented three-distribution probabilistic fusion: GNSS carrier-to-noise ratio ($30 \le C/N_0 \le 40\text{ dB-Hz}$, Eq. 1–3), Position distribution via Gaussian doorway proximity kernel ($\sigma = 15\text{ m}$, Eq. 4–5), and full W-KNN Radio Map fingerprint matching ($K=3$) for Wi-Fi and BLE RSSI signals (Eq. 6–8).
@@ -60,7 +60,7 @@ Every research component from DeepIOD (2024) and Yoo (2025) has been audited, ma
 | **DeepIOD (2024)** | **Published Linear AMV Decision Rule** | Sensors 2024, Section 3.3, Eq. 9 | [`lib/features/iod/domain/services/deepiod_framework_classifier.dart`](file:///Users/baobungbu/Aetron/lib/features/iod/domain/services/deepiod_framework_classifier.dart) | **COMPLETE** | Exact linear weighted combination $C = \sum_{m} w_m y_m$ with learned validation weights ($w_A=0.345, w_B=0.321, w_C=0.334$). Bit-level parity with PyTorch verified ($1.3 \times 10^{-6}$ max AE). |
 | **DeepIOD (2024)** | **Adaptive Light-Intensity Module** | Sensors 2024, Section 3.4, Eq. 7 | [`lib/features/iod/domain/services/deepiod_framework_classifier.dart`](file:///Users/baobungbu/Aetron/lib/features/iod/domain/services/deepiod_framework_classifier.dart) | **COMPLETE** | Adaptive light threshold based on astronomical solar elevation ($\alpha > -6^\circ$). Applies pocket stowing downweighting ($lux = 0$, screen off) and nighttime suppression. |
 | **DeepIOD (2024)** | **GPS Accuracy Module** | Sensors 2024, Section 3.5, Eq. 8 | [`lib/features/iod/domain/services/deepiod_framework_classifier.dart`](file:///Users/baobungbu/Aetron/lib/features/iod/domain/services/deepiod_framework_classifier.dart) | **COMPLETE** | Evaluates horizontal estimated accuracy against $5\text{ m}$ threshold. Overrides neural predictions to Outdoor when GPS fix is strong and high-precision. |
-| **Aetron Extension** | **Experimental Bayesian Fusion AMV** | Research Extension (Auxiliary) | [`lib/features/iod/domain/services/deepiod_framework_classifier.dart`](file:///Users/baobungbu/Aetron/lib/features/iod/domain/services/deepiod_framework_classifier.dart) | **ADAPTED** | Likelihood product using empirical parameters derived from validation split ($TPR_A=0.65, TPR_B=0.62, TPR_C=0.88, TNR=0.99, P_{\text{prior}}=0.20$). Not part of published DeepIOD Eq. 9. |
+| **Aetron Extension** | **Experimental Bayesian Fusion AMV** | Research Extension (Auxiliary) | [`lib/features/iod/domain/services/deepiod_framework_classifier.dart`](file:///Users/baobungbu/Aetron/lib/features/iod/domain/services/deepiod_framework_classifier.dart) | **ADAPTED** | Likelihood product using empirical parameters derived from validation split ($TPR_A=0.65, TPR_B=0.62, TPR_C=0.88, TNR=0.99, P_{\text{prior}}=0.181$). Not part of published DeepIOD Eq. 9. |
 | **DeepIOD (2024)** | **Dedicated Mobile Variant** (`Model C-Mobile`) | Research Extension | [`lib/features/iod/domain/services/deepiod_neural_classifier.dart`](file:///Users/baobungbu/Aetron/lib/features/iod/domain/services/deepiod_neural_classifier.dart) | **ADAPTED** | Retrained strictly on 4 unprivileged smartphone sensors (`['Light', 'Mag', 'Acc', 'Daytime']`). Explicitly labeled as adapted mobile baseline, never represented as complete DeepIOD. |
 | **Yoo (2025)** | **GNSS Distribution Model** | Electronics 2025, Eq. 1–3 | [`lib/features/iod/domain/services/seamless_transition_detector.dart`](file:///Users/baobungbu/Aetron/lib/features/iod/domain/services/seamless_transition_detector.dart) | **COMPLETE** | Implements $C/N_0$ upper threshold ($40\text{ dB-Hz}$), lower threshold ($30\text{ dB-Hz}$), linear transition scaling $\frac{40 - C/N_0}{10}$, satellite count, and signal drop rate. |
 | **Yoo (2025)** | **Position Distribution Model** (Doorway Proximity) | Electronics 2025, Eq. 4–5 | [`lib/features/iod/domain/services/seamless_transition_detector.dart`](file:///Users/baobungbu/Aetron/lib/features/iod/domain/services/seamless_transition_detector.dart) | **COMPLETE** | Gaussian doorway proximity kernel: $P_{\text{tr}}^{\text{pos}} = \exp\left(-\frac{d_{\min}^2}{2\sigma^2}\right)$ with $\sigma = 15\text{ m}$. Cleanly abstains ($w_{\text{pos}} = 0$) when building points are unconfigured. |
@@ -87,11 +87,40 @@ Every research component from DeepIOD (2024) and Yoo (2025) has been audited, ma
   $$y_C = \sigma(\mathbf{W}_2 \text{ReLU}(\mathbf{W}_1 \text{Flatten}(\text{MaxPool}(\mathbf{F}_{\text{pointwise}})) + \mathbf{b}_1) + b_2)$$
 
 #### Published Adaptive Majority Voting (Sensors 2024 Section 3.3, Eq. 9)
-The operational decision rule in DeepIOD Section 3.3 is the linear weighted consensus across deep learning models:
-$$C = \sum_{m=1}^{M} w_m y_m$$
-Where $M=3$ (Models A, B, and C) and weights $w_m$ are determined by validation set reliability:
-$$w_A = 0.345, \quad w_B = 0.321, \quad w_C = 0.334 \quad \left(\sum w_m = 1.0\right)$$
-If $C \ge 0.50$, the consensus vote is `Outdoor` ($1$); otherwise `Indoor` ($0$).
+The exact mathematical formulation of the Adaptive Majority Voting consensus in DeepIOD (Sensors 2024, 24(16), 5125, Section 3.3, Eq. 9) is defined as:
+$$\widehat{C} = \arg\max_{j} \sum_{i=1}^{n} w_i p_{i,j}$$
+Where:
+- $\widehat{C} \in \{\text{Indoor}, \text{Outdoor}\}$ represents the consensus environmental context.
+- $j \in \{0, 1\}$ indexes the context classes ($0 = \text{Indoor}, 1 = \text{Outdoor}$).
+- $n = 3$ is the number of participating neural models (Model A, Model B, Model C).
+- $w_i$ is the normalized reliability weight assigned to the $i$-th model, derived strictly from validation set Macro-F1 performance.
+- $p_{i,j}$ is the continuous probability assigned to class $j$ by model $i$.
+
+For binary indoor/outdoor classification where $p_{i, 1} = p_i$ (outdoor probability) and $\sum_{i=1}^n w_i = 1.0$, the decision boundary evaluates:
+$$P_{\text{AMV}}(\text{Outdoor}) = \sum_{i=1}^{n} w_i p_i \ge 0.50 \implies \text{Outdoor, else Indoor}$$
+
+##### Direct Comparison: Probability-Weighted Voting vs. Discrete Hard Voting vs. Bayesian Fusion
+1. **Probability-Weighted AMV (Published Eq. 9):**
+   $$P_{\text{AMV}} = w_A p_A + w_B p_B + w_C p_C$$
+   - Retains fine-grained output confidence.
+   - **Held-Out Test Results (Sessions 72..84, 10,400 windows):** **91.65% Accuracy**, **83.60% Macro-F1**.
+2. **Discrete Hard Majority Voting (`DeepIodAmvMethod.hardMajorityVoting`):**
+   $$C_{\text{hard}} = w_A \cdot \mathbb{I}(p_A \ge 0.5) + w_B \cdot \mathbb{I}(p_B \ge 0.5) + w_C \cdot \mathbb{I}(p_C \ge 0.5)$$
+   - Evaluates discrete model consensus decisions.
+   - **Held-Out Test Results:** **91.69% Accuracy**, **83.72% Macro-F1**.
+3. **Aetron Experimental Bayesian Fusion (`DeepIodAmvMethod.aetronBayesianFusion`):**
+   - Applies Bayesian likelihood updating with validation split prior ($P_{\text{out}}=0.181$), achieving **97.29% Accuracy**, **95.46% Macro-F1**.
+   - Formally designated as an Aetron auxiliary extension, clearly separated from published Eq. 9.
+
+##### Scientific Reconciliation of Weights and Metric Claims:
+- **Consensus Reliability Weights:**
+  Derived strictly on the independent validation partition (Sessions 60..71) from validation Macro-F1:
+  $$w_A = 0.345367, \quad w_B = 0.320728, \quad w_C = 0.333905 \quad (\sum w_i = 1.0)$$
+  *Reconciliation Note:* Any informal text references to $w_A=0.35, w_B=0.30, w_C=0.35$ in chat summaries were preliminary approximations and are formally superseded by the exact validation-derived metadata weights ($0.345367, 0.320728, 0.333905$).
+- **Held-Out Macro-F1 Verification:**
+  - Published Eq. 9 Probability-Weighted AMV produces **83.60% Macro-F1** (and **91.65% Accuracy**).
+  - Discrete Hard Majority Voting produces **83.72% Macro-F1** (and **91.69% Accuracy**).
+  *Reconciliation Note:* An earlier assistant statement citing "85.27% Macro-F1" for AMV was an erroneous transcription conflating Model A's standalone performance ($85.17\%$ in test, $85.50\%$ in metadata) with the AMV ensemble. The true held-out AMV Macro-F1 is confirmed and reproducible at **83.60%** across both PyTorch and pure Dart.
 
 #### Published Adaptive Light-Intensity Module (Sensors 2024 Section 3.4, Eq. 7)
 $$\theta_{\text{light}} = \text{Threshold}(\text{SolarElevation})$$
@@ -172,7 +201,8 @@ Inference for Models A, B, and C is executed natively in pure Dart using closed-
 | **DeepIOD Model A (CNN-LSTM)** | 10,400 | **92.34%** | **85.17%** | 91.0% | 99.9% | **95.5%** | **99.5%** | 59.8% | **74.9%** |
 | **DeepIOD Model B (CNN-MHA)** | 10,400 | **91.65%** | **83.66%** | 90.8% | 99.8% | **95.1%** | **98.3%** | 57.1% | **72.2%** |
 | **DeepIOD Model C (8-Sensor Complete Network)** | 10,400 | **96.93%** | **94.82%** | 97.0% | 99.3% | **98.1%** | **96.6%** | 86.9% | **91.5%** |
-| **DeepIOD Neural AMV (Published Eq. 9 Weighted Linear Voting)** | 10,400 | **91.65%** | **83.60%** | 90.8% | 99.9% | **95.1%** | **98.9%** | 56.7% | **72.1%** |
+| **DeepIOD Neural AMV (Published Eq. 9 Probability-Weighted Voting)** | 10,400 | **91.65%** | **83.60%** | 90.8% | 99.9% | **95.1%** | **98.9%** | 56.7% | **72.1%** |
+| **DeepIOD Neural AMV (Discrete Hard Majority Voting)** | 10,400 | **91.69%** | **83.72%** | 90.8% | 99.8% | **95.1%** | **98.7%** | 57.1% | **72.3%** |
 | **DeepIOD Full Framework (Published Eq. 9 AMV + Light + GPS)** | 10,400 | **91.66%** | **83.61%** | 90.8% | 99.9% | **95.1%** | **99.0%** | 56.7% | **72.1%** |
 | **Aetron Experimental Bayesian Fusion Extension** | 10,400 | **97.29%** | **95.46%** | 97.4% | 99.3% | **98.3%** | **96.6%** | 88.8% | **92.6%** |
 | **Aetron Full Framework (Bayesian Fusion + Light + GPS)** | 10,400 | **97.29%** | **95.46%** | 97.4% | 99.3% | **98.3%** | **96.6%** | 88.8% | **92.6%** |
@@ -182,7 +212,7 @@ Inference for Models A, B, and C is executed natively in pure Dart using closed-
 
 #### Confusion Matrix Comparison (Held-Out Test Set: 8,422 Indoor / 1,978 Outdoor):
 
-##### Published DeepIOD Neural AMV (Sensors 2024 Section 3.3, Eq. 9 Linear Voting):
+##### Published DeepIOD Neural AMV (Sensors 2024 Section 3.3, Eq. 9 Probability-Weighted Voting):
 ```
                  Predicted Indoor   Predicted Outdoor
 Actual Indoor                8410                  12
@@ -193,6 +223,18 @@ Actual Outdoor                856                1122
 - **Outdoor Precision:** **98.94%** (1,122 / 1,134).
 - **Outdoor Recall:** **56.72%** (1,122 / 1,978).
 - **Indoor Specificity:** **99.86%** (8,410 / 8,422; only 12 false outdoor predictions across 8,422 indoor samples).
+
+##### Discrete Hard Majority Voting (Binary Model Consensus):
+```
+                 Predicted Indoor   Predicted Outdoor
+Actual Indoor                8407                  15
+Actual Outdoor                849                1129
+```
+- **Overall Accuracy:** **91.69%** (9,536 / 10,400).
+- **Macro-F1:** **83.72%** (Indoor F1: 95.1%, Outdoor F1: 72.3%).
+- **Outdoor Precision:** **98.69%** (1,129 / 1,144).
+- **Outdoor Recall:** **57.08%** (1,129 / 1,978).
+- **Indoor Specificity:** **99.82%** (8,407 / 8,422).
 
 ##### Aetron Experimental Bayesian Fusion Extension:
 ```
@@ -295,6 +337,27 @@ To provide genuine inputs for Yoo's W-KNN radio map without blocking the UI or d
 - **API:** `WifiManager.scanResults`.
 - **Freshness Gate:** Each `ScanResult` timestamp is evaluated against `SystemClock.elapsedRealtime() * 1000L`. If all results are older than 30 seconds, returns `hasScan: false, reason: "NO_FRESH_WIFI_SCANS"`.
 - **Throttling Resilience:** Opportunistically invokes `wifiManager.startScan()`, catching security exceptions and respecting Android OS background scan limits (4 scans every 2 minutes). Handles missing permissions with `PERMISSION_DENIED`.
+
+### 6.3 StepSensorHandler Native Integration, R8 Verification & Release Safety
+- **R8 Proguard Governance (`android/app/proguard-rules.pro`):**
+  Because `android/app/build.gradle.kts` enables release shrinking and minification (`isMinifyEnabled = true, isShrinkResources = true`), classes invoked dynamically via reflection would otherwise be tree-shaken and stripped by R8. Explicit keep rules protect `StepSensorHandler` and its public entry points:
+  ```proguard
+  -keep class com.aetron.app.StepSensorHandler {
+      public <init>(android.content.Context, io.flutter.plugin.common.BinaryMessenger);
+      public void register();
+      public void unregister();
+      public *;
+  }
+  -dontwarn com.aetron.app.StepSensorHandler
+  ```
+- **Non-Silent Exception Handling (`MainActivity.kt`):**
+  Class-loading and method-invocation failures are no longer silently swallowed:
+  - `ClassNotFoundException`: Logged as informational (`"StepSensorHandler not found on classpath (clean checkout mode)"`), allowing clean checkouts from git without uncommitted step work to run cleanly.
+  - Unexpected Reflection / Runtime Exceptions (`NoSuchMethodException`, `InvocationTargetException`, `SecurityException`): Logged at ERROR level with full stack trace (`Log.e("MainActivity", "StepSensorHandler initialization/registration failed", e)`).
+  - Teardown: `onDestroy()` unregisters the listener and logs any unexpected failure.
+- **Clean Checkout vs. Workspace Capabilities:**
+  - *Clean Checkout Mode:* All core IOD capabilities are active (`com.aetron.app/gnss_status`, `com.aetron.app/light_sensor`, `com.aetron.app/sensors_check` covering BLE, Wi-Fi, LTE, proximity, and screen state). `StepSensorHandler` cleanly logs its absence and falls back without crashing.
+  - *Developer Workspace Mode:* `StepSensorHandler.kt` is compiled into dex, protected from R8 stripping, and dynamically registered via method channels (`com.aetron.app/step_sensor` and `com.aetron.app/step_sensor_events`).
 
 ---
 
