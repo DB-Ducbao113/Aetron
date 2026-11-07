@@ -220,6 +220,7 @@ def main():
         ("tooling/data/benchmark_results/ciod_full_held_out_mobile_predictions.csv", "DeepIOD Model C-Mobile Baseline (Full 201K)", 201731),
         ("tooling/data/benchmark_results/ciod_full_held_out_mobile_calibrated_predictions.csv", "DeepIOD Model C-Mobile Calibrated (theta=0.25, Full 201K)", 201731),
         ("tooling/data/benchmark_results/ciod_full_held_out_mobile_hysteresis_predictions.csv", "DeepIOD Model C-Mobile Hysteresis [0.40, 0.20] (Full 201K)", 201731),
+        ("tooling/data/benchmark_results/ciod_full_held_out_mobile_weighted_bce_predictions.csv", "Retrained C-Mobile Weighted BCE (Full 201K)", 201731),
         ("tooling/data/benchmark_results/ciod_full_held_out_gnss_assisted_exp_predictions.csv", "Aetron Composite GNSS-Assisted Exp Mode (Full 201K)", 201731),
         ("tooling/data/benchmark_results/ciod_full_held_out_model_c_predictions.csv", "DeepIOD Model C (8-Ch, Full 201K)", 201731),
     ]
@@ -232,6 +233,7 @@ def main():
     benchmarks_zenodo = [
         ("tooling/data/benchmark_results/zenodo_gnss_assisted_exp_predictions.csv", "Zenodo Outdoor Walking (GNSS Available, 3.18K)", 3180),
         ("tooling/data/benchmark_results/zenodo_gnss_ablated_predictions.csv", "Zenodo Outdoor Walking (GNSS Ablated/Outage, 3.18K)", 3180),
+        ("tooling/data/benchmark_results/zenodo_mixed_indoor_outdoor_gnss_predictions.csv", "Zenodo Mixed Indoor/Outdoor GNSS Audit (Pixel 7, 4.65K)", 4657),
     ]
 
     all_metrics = {}
