@@ -89,13 +89,32 @@ class WorkoutSessionFinalizer {
                   state.distanceMeters,
                 ));
 
+    double filteredRouteDistanceM = 0.0;
+    for (final segment in filteredRouteSegments) {
+      for (var i = 1; i < segment.length; i++) {
+        filteredRouteDistanceM += Geolocator.distanceBetween(
+          segment[i - 1].latitude,
+          segment[i - 1].longitude,
+          segment[i].latitude,
+          segment[i].longitude,
+        );
+      }
+    }
+
     final double distanceKm;
     final String distanceSelectionPolicy;
-    if (enableTrajectoryPreprocessing &&
-        preprocessorResult != null &&
-        preprocessorResult.cleanDistanceMeters > 0) {
-      distanceKm = preprocessorResult.cleanDistanceMeters / 1000.0;
-      distanceSelectionPolicy = 'preprocessed_clean_then_raw_valid_then_live';
+    if (enableTrajectoryPreprocessing) {
+      if (filteredRouteDistanceM > 0) {
+        distanceKm = filteredRouteDistanceM / 1000.0;
+        distanceSelectionPolicy = 'aekf_filtered_then_preprocessed_clean';
+      } else if (preprocessorResult != null &&
+          preprocessorResult.cleanDistanceMeters > 0) {
+        distanceKm = preprocessorResult.cleanDistanceMeters / 1000.0;
+        distanceSelectionPolicy = 'preprocessed_clean_then_raw_valid_then_live';
+      } else {
+        distanceKm = legacyDistanceKm;
+        distanceSelectionPolicy = 'raw_valid_then_raw_total_then_live';
+      }
     } else {
       distanceKm = legacyDistanceKm;
       distanceSelectionPolicy = 'raw_valid_then_raw_total_then_live';
@@ -142,18 +161,6 @@ class WorkoutSessionFinalizer {
         ? state.sessionId!
         : const Uuid().v4();
 
-    double filteredRouteDistanceM = 0.0;
-    for (final segment in filteredRouteSegments) {
-      for (var i = 1; i < segment.length; i++) {
-        filteredRouteDistanceM += Geolocator.distanceBetween(
-          segment[i - 1].latitude,
-          segment[i - 1].longitude,
-          segment[i].latitude,
-          segment[i].longitude,
-        );
-      }
-    }
-
     final routeMetrics = <String, dynamic>{
       'gps_algorithm': gpsAlgorithm,
       'dbscan_enabled': false,
@@ -198,6 +205,8 @@ class WorkoutSessionFinalizer {
             preprocessorResult.latencyPerSampleUs,
         'legacy_vs_clean_delta_km':
             legacyDistanceKm - (preprocessorResult.cleanDistanceMeters / 1000.0),
+        'aekf_vs_clean_delta_km':
+            (filteredRouteDistanceM - preprocessorResult.cleanDistanceMeters) / 1000.0,
       },
     };
     final session = WorkoutSession(

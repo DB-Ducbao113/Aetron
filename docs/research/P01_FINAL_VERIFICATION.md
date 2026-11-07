@@ -261,14 +261,25 @@ When `kEnableTrajectoryPreprocessingShadowMode` is enabled via `--dart-define=FL
   [GPS-SHADOW-DIVERGENCE] #12 legacy=acceptRoute(accepted) vs preprocessor=reject({accelerationSpike})
   ```
 
-### 6.4. Distance Consistency & Legacy Overwrite Prevention
+### 6.4. Distance Consistency & AEKF Overwrite Prevention
 A comprehensive audit of `WorkoutTrackingEngine`, `record_providers.dart`, and `WorkoutSessionFinalizer` was conducted to reconcile live, finalized, and persisted distances:
 1. **Raw GPS Persistence:** 100% of raw GPS fixes are stored in Isar `LocalGPSPoint` and queued for Supabase sync before filtering.
-2. **Reconciled Distance Selection Policy:**
-   - When preprocessing is **OFF**: `distance_selection_policy: 'raw_valid_then_raw_total_then_live'`.
-   - When preprocessing is **ON**: `distance_selection_policy: 'preprocessed_clean_then_raw_valid_then_live'`.
-   - `session.distanceKm` is assigned `preprocessorResult.cleanDistanceMeters / 1000.0` when clean distance is valid, preventing the new preprocessed distance from being silently overwritten by legacy `gpsAnalysis.validDistanceKm`.
-   - `avgSpeedKmh` and `caloriesKcal` are computed consistently from the selected `distanceKm`.
+2. **Reconciled Distance Selection Hierarchy:**
+   - **When Preprocessing is OFF (`false`, Safe Default):**
+     - `distance_selection_policy: 'raw_valid_then_raw_total_then_live'`.
+     - `session.distanceKm = legacyDistanceKm` (`gpsAnalysis.validDistanceKm`).
+     - Guarantees 100% bit-for-bit backward compatibility with historical tracking.
+   - **When Preprocessing is ON (`true`):**
+     - **Primary Tier (`filteredRouteDistanceM > 0`):**
+       - Policy: `'aekf_filtered_then_preprocessed_clean'`.
+       - `session.distanceKm = filteredRouteDistanceM / 1000.0` (AEKF smoothed route distance).
+       - **Solves the AEKF Overwrite Problem:** Previously, `preprocessed_clean_then_raw_valid_then_live` assigned distance from `preprocessorResult.cleanDistanceMeters` (the pre-EKF clean raw point displacement), which unintentionally threw away the -14.3% error reduction achieved by the 4-State Adaptive EKF in the OSM circuit (1,181 m vs 1,340 m) and the 38 m stationary drift suppression in Session `5a777e45` (32 m vs 70 m).
+       - **Map & Metric Parity:** `filtered_minus_saved_distance_km == 0.0`. What the athlete sees on the map polyline matches the big distance counter, average speed, pace, and active calories to $\pm 0.0\text{ m}$.
+     - **Secondary Tier (Headless fallback without route segments):**
+       - Policy: `'preprocessed_clean_then_raw_valid_then_live'`.
+       - `session.distanceKm = preprocessorResult.cleanDistanceMeters / 1000.0`.
+     - **Tertiary Tier (Edge case fallback):**
+       - Policy: `'raw_valid_then_raw_total_then_live'`.
 3. **No Double-Filtering or Double-Counting:** The preprocessor and 4-State AEKF form a strict pipeline where raw fixes are checked once, accepted fixes are smoothed, and clean segment displacements are accumulated without duplicate summation.
 
 ---
@@ -281,7 +292,7 @@ A comprehensive audit of `WorkoutTrackingEngine`, `record_providers.dart`, and `
 flutter test test/trajectory_preprocessing_unit_test.dart \
              test/trajectory_preprocessing_dataset_benchmark_test.dart \
              test/trajectory_preprocessing_runtime_integration_test.dart
-# Result: 00:01 +16: All tests passed!
+# Result: 00:01 +18: All tests passed!
 
 # Suite 2: Workout Recording Architecture & Continuity Tests
 flutter test test/workout_recording_architecture_test.dart \
@@ -309,14 +320,14 @@ flutter test test/step_counting_and_cadence_test.dart \
 
 # Static Analyzer Gate
 flutter analyze
-# Result: No issues found! (ran in 1.7s)
+# Result: No issues found! (ran in 1.6s)
 
 # Full Repository Test Suite
 flutter test
-# Result: 00:15 +474 ~1: All tests passed! (474 passed, 1 skipped, 0 failures)
+# Result: 00:13 +475 ~1: All tests passed! (475 passed, 1 skipped: widget_test.dart, 0 failures)
 ```
 
-**Total Active Test Count:** Exactly **474 automated tests** executed in the repository test suite — **100% Green, 0 Failures, 0 Analyzer Warnings**.
+**Total Active Test Count:** Exactly **475 automated tests** executed in the repository test suite — **100% Green, 0 Failures, 1 Skipped (`test/widget_test.dart`), 0 Analyzer Warnings**.
 
 ---
 
@@ -340,8 +351,18 @@ To maintain scientific credibility, the following limitations are formally docum
 - **Gate 1 (Academic Traceability):** **PASS** — Direct attribution to Zheng (2015) and Zheng et al. (2009); 3-tier parameter classification into Published, Reproduced, and Aetron-Adapted.
 - **Gate 2 (Algorithmic Implementation):** **PASS** — Real-time streaming and batch preprocessing implemented without mutating raw data; verified raw persistence in Isar and Supabase.
 - **Gate 3 (Empirical Dataset Validation & Ablation):** **PASS** — Certified ground truth on OSM circuit (1,113.0 m path); full ablation study; deconstructed 10,779 historical dataset from 124.86 km calculation bug to 61.98 km raw $\to$ 56.08 km clean; honest disclosure of unverified field ground truth.
-- **Gate 4 (Zero Regression & Code Quality):** **PASS** — 474 repository tests passing (100% green); zero analyzer issues (`flutter analyze` 0 issues).
-- **Gate 5 (Production Runtime Integration):** **PASS** — Fully integrated in `record_providers.dart` (`WorkoutSessionNotifier._onPosition`) and `workout_session_finalizer.dart` (`WorkoutSessionFinalizer.finalize`) with feature flag safe default `false`, shadow divergence comparison, and `'preprocessed_clean_then_raw_valid_then_live'` distance consistency policy.
+- **Gate 4 (Zero Regression & Code Quality):** **PASS** — 475 repository tests passing (100% green); zero analyzer issues (`flutter analyze` 0 issues).
+- **Gate 5 (Production Runtime Integration):** **PASS** — Fully integrated in `record_providers.dart` (`WorkoutSessionNotifier._onPosition`) and `workout_session_finalizer.dart` (`WorkoutSessionFinalizer.finalize`) with feature flag safe default `false`, shadow divergence comparison, and `'aekf_filtered_then_preprocessed_clean'` distance consistency hierarchy.
 
-**Phase 1 (P01) — Research-Based Trajectory Data Preprocessing is formally verified, fully integrated, hardened, and accepted.**
+---
+
+## 10. Research Freeze & Release Safety Conclusion
+
+1. **P01 Research Status: FROZEN & COMPLETE.**
+   - All academic reproduction, algorithmic formulation, and multi-dataset benchmarks for Trajectory Preprocessing are concluded and locked.
+   - No further optimization cycles or parameter refactorings are permitted in P01.
+2. **GPS Runtime Release Status: GATED & PROTECTED.**
+   - The new preprocessing pipeline is default-disabled (`kEnableTrajectoryPreprocessing = false`).
+   - Shadow mode (`kEnableTrajectoryPreprocessingShadowMode = false`) is available for live validation without impacting user metrics.
+   - Release gating separates research completion from production enablement: the default switch to `true` is reserved for staged canary release following real-world shadow validation.
 

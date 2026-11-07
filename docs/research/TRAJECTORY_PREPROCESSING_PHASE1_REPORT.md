@@ -288,10 +288,10 @@ flutter analyze
 
 # 7. Full Repository Suite
 flutter test
-# Output: 00:15 +474 ~1: All tests passed! (474 passed, 1 skipped, 0 failures)
+# Output: 00:13 +475 ~1: All tests passed! (475 passed, 1 skipped: widget_test.dart, 0 failures)
 ```
 
-**Total Active Test Suite:** **474 automated tests** executed in the repository test suite — **100% Green, 0 Failures, 0 Analyzer Issues**.
+**Total Active Test Suite:** **475 automated tests** executed in the repository test suite — **100% Green, 0 Failures, 1 Skipped (`test/widget_test.dart`), 0 Analyzer Issues**.
 
 ---
 
@@ -304,8 +304,8 @@ In accordance with strict verification criteria, each completion gate is evaluat
 | **Gate 1: Academic Traceability** | Clear attribution between survey (Li et al., 2025) and foundational primary research (Zheng, 2015; Zheng et al., 2009). No custom thresholds falsely ascribed to literature. | Traceability matrix (Section 2) categorizes every parameter into Published, Reproduced, or Aetron-Adapted. | **PASS** |
 | **Gate 2: Algorithmic Implementation** | Independent implementation of kinematic outlier detection, Zheng stay-point dwell segmentation, sliding-window median filter, and outage gap partitioning without destroying raw data. | Implemented in `lib/features/workout/domain/services/trajectory_preprocessing/`. 7 unit tests pass in `test/trajectory_preprocessing_unit_test.dart`. Raw persistence 100% verified. | **PASS** |
 | **Gate 3: Empirical Dataset Validation & Ablation** | Multi-dataset benchmarks with reconciled ground truth (1,113.0 m path, 1,131.0 m centerline), full ablation study, deconstruction of historical dataset (61.98 km raw $\to$ 56.08 km clean), and honest disclosure of unverified field ground truth. | Evaluated across OSM Circuit (247 pts), Authentic 7 Sessions (595 pts), and Historical Dataset (10,779 pts). Discrepancies explained, audit deconstructed, and resolved. | **PASS** |
-| **Gate 4: Zero Regression & Code Quality** | Existing AEKF, IOD, and SCC subsystems remain 100% operational with 0 analyzer issues. | 474 repository tests pass (100% green); `flutter analyze` reports 0 issues. | **PASS** |
-| **Gate 5: Production Runtime Integration** | Preprocessing layer actively invoked in live recording stream (`record_providers.dart`) and workout session finalizer (`workout_session_finalizer.dart`), protected by feature flags (`false` default), distance consistency policy, and shadow comparison. | Wired into `WorkoutSessionNotifier._onPosition` with feature flags `kEnableTrajectoryPreprocessing` (default: `false`) and shadow mode; wired into `WorkoutSessionFinalizer.finalize` enforcing `preprocessed_clean_then_raw_valid_then_live` distance selection policy; verified by `test/trajectory_preprocessing_runtime_integration_test.dart`. | **PASS** |
+| **Gate 4: Zero Regression & Code Quality** | Existing AEKF, IOD, and SCC subsystems remain 100% operational with 0 analyzer issues. | 475 repository tests pass (100% green); `flutter analyze` reports 0 issues. | **PASS** |
+| **Gate 5: Production Runtime Integration** | Preprocessing layer actively invoked in live recording stream (`record_providers.dart`) and workout session finalizer (`workout_session_finalizer.dart`), protected by feature flags (`false` default), distance consistency policy, and shadow comparison. | Wired into `WorkoutSessionNotifier._onPosition` with feature flags `kEnableTrajectoryPreprocessing` (default: `false`) and shadow mode; wired into `WorkoutSessionFinalizer.finalize` enforcing `aekf_filtered_then_preprocessed_clean` distance selection hierarchy; verified by `test/trajectory_preprocessing_runtime_integration_test.dart`. | **PASS** |
 
 ---
 

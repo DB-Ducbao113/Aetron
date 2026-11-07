@@ -88,14 +88,76 @@ void main() {
       final metrics = jsonDecode(finalization.session.routeMatchMetricsJson) as Map<String, dynamic>;
 
       expect(metrics['preprocessing_enabled'], isTrue);
-      expect(metrics['distance_selection_policy'], equals('preprocessed_clean_then_raw_valid_then_live'));
+      expect(metrics['distance_selection_policy'], equals('aekf_filtered_then_preprocessed_clean'));
+      expect(metrics['filtered_minus_saved_distance_km'], closeTo(0.0, 1e-6));
       expect(metrics.containsKey('preprocessing_clean_distance_km'), isTrue);
       expect(metrics.containsKey('preprocessing_drift_eliminated_m'), isTrue);
       expect(metrics.containsKey('preprocessing_stay_points_count'), isTrue);
       expect(metrics.containsKey('preprocessing_accepted_count'), isTrue);
       expect(metrics.containsKey('preprocessing_rejected_count'), isTrue);
       expect(metrics.containsKey('legacy_vs_clean_delta_km'), isTrue);
+      expect(metrics.containsKey('aekf_vs_clean_delta_km'), isTrue);
       expect(metrics['preprocessing_accepted_count'], greaterThanOrEqualTo(2));
+    });
+
+    test('Finalizer falls back to preprocessed clean distance when filteredRouteSegments is empty', () {
+      const finalizer = WorkoutSessionFinalizer();
+      const trackingEngine = WorkoutTrackingEngine();
+
+      final now = DateTime.utc(2026, 11, 7, 10, 0, 0);
+      final rawPositions = <Position>[
+        Position(
+          latitude: 10.750000,
+          longitude: 106.650000,
+          timestamp: now,
+          altitude: 5.0,
+          accuracy: 5.0,
+          heading: 0.0,
+          speed: 2.0,
+          speedAccuracy: 0.5,
+          altitudeAccuracy: 1.0,
+          headingAccuracy: 1.0,
+        ),
+        Position(
+          latitude: 10.750100,
+          longitude: 106.650000,
+          timestamp: now.add(const Duration(seconds: 5)),
+          altitude: 5.0,
+          accuracy: 5.0,
+          heading: 0.0,
+          speed: 2.2,
+          speedAccuracy: 0.5,
+          altitudeAccuracy: 1.0,
+          headingAccuracy: 1.0,
+        ),
+      ];
+
+      final state = WorkoutSessionState(
+        status: RecordingState.stopping,
+        sessionId: '00000000-0000-0000-0000-000000000003',
+        activityType: 'Running',
+        trackingMode: 'outdoor',
+        recordingSource: 'gps',
+        durationSeconds: 10,
+        distanceMeters: 11.1,
+      );
+
+      final finalization = finalizer.finalize(
+        state: state,
+        userId: 'test-user-id',
+        finishedAt: now.add(const Duration(seconds: 10)),
+        caloriesBurned: 15,
+        fallbackStrideLengthMeters: 0.75,
+        trackingEngine: trackingEngine,
+        rawGpsPositions: rawPositions,
+        filteredRouteSegments: const [], // Empty route segments fallback
+        enableTrajectoryPreprocessing: true,
+      );
+
+      final metrics = jsonDecode(finalization.session.routeMatchMetricsJson) as Map<String, dynamic>;
+      expect(metrics['preprocessing_enabled'], isTrue);
+      expect(metrics['distance_selection_policy'], equals('preprocessed_clean_then_raw_valid_then_live'));
+      expect(finalization.session.distanceKm, closeTo(0.011, 0.005));
     });
 
     test('Finalizer defaults safely to legacy policy when preprocessing flag is disabled', () {

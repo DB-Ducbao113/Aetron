@@ -342,11 +342,11 @@ class Zip64Streamer:
 # 3. MULTI-MODAL PREPROCESSING & SENSOR INTEGRITY
 # -------------------------------------------------------------------------
 
-def process_single_csv(raw_csv_bytes: bytes, filename: str = "") -> List[Dict]:
+def process_single_csv(raw_csv_bytes: bytes, filename: str = "") -> Tuple[List[Dict], int]:
     """
     Parses a raw 60Hz phone sensor recording into 1-second aggregated epochs.
     Strictly verifies:
-      - Timestamp monotonicity and validity.
+      - Timestamp validity (detects non-monotonic sensor queue flush jitter).
       - Never silently replaces missing Light with 0 lux.
       - Never silently replaces missing Proximity with 5 cm.
       - Preserves explicit presence flags (light_missing, proxi_missing).
@@ -357,6 +357,7 @@ def process_single_csv(raw_csv_bytes: bytes, filename: str = "") -> List[Dict]:
 
     prev_time = -1.0
     row_count = 0
+    jitter_count = 0
 
     for row in reader:
         row_count += 1
@@ -366,8 +367,11 @@ def process_single_csv(raw_csv_bytes: bytes, filename: str = "") -> List[Dict]:
                 raise ValueError(f"Empty timestamp at row {row_count} in {filename}")
             t = float(t_str)
             if t < prev_time:
-                raise ValueError(f"Malformed non-monotonic timestamp at row {row_count}: {t} < {prev_time}")
-            prev_time = t
+                # If backwards jump is severe (>2.0s), raise corruption error
+                if (prev_time - t) > 2.0:
+                    raise ValueError(f"Severe backwards timestamp leap at row {row_count} in {filename}: {t} < {prev_time} (delta = {prev_time - t:.3f}s)")
+                jitter_count += 1
+            prev_time = max(prev_time, t)
             sec = int(t)
 
             light_str = row.get("Light", "")
@@ -434,7 +438,7 @@ def process_single_csv(raw_csv_bytes: bytes, filename: str = "") -> List[Dict]:
             "step": step_val,
         })
 
-    return epochs
+    return epochs, jitter_count
 
 
 # -------------------------------------------------------------------------
@@ -495,7 +499,7 @@ def extract_full_cohort_480(streamer: Zip64Streamer) -> Tuple[List[Dict], Dict]:
 
             try:
                 raw_bytes, sha256_hex, crc, uncomp_sz = streamer.fetch_file_verified(key)
-                ep_list = process_single_csv(raw_bytes, filename=key)
+                ep_list, jitter_count = process_single_csv(raw_bytes, filename=key)
 
                 # Count missing and zero sensors
                 light_miss_count = sum(1 for ep in ep_list if ep["light_missing"] == 1)
@@ -542,6 +546,7 @@ def extract_full_cohort_480(streamer: Zip64Streamer) -> Tuple[List[Dict], Dict]:
                     "uncomp_size": uncomp_sz,
                     "sha256": sha256_hex,
                     "epochs_count": len(ep_list),
+                    "timestamp_jitter_count": jitter_count,
                     "light_missing_count": light_miss_count,
                     "light_zero_count": light_zero_count,
                     "proxi_missing_count": proxi_miss_count,
@@ -584,7 +589,9 @@ def extract_full_cohort_480(streamer: Zip64Streamer) -> Tuple[List[Dict], Dict]:
                         for r in reader:
                             light_val = float(r["light_lux"]) if r["light_lux"] != "" else None
                             proxi_val = float(r["proxi_cm"]) if r["proxi_cm"] != "" else None
-                            obs_val = int(r["proxi_obstacle_near"]) if r["proxi_obstacle_near"] != "" else None
+                            obs_val = int(r["proxi_obstacle_near"]) if r.get("proxi_obstacle_near", "") != "" else None
+                            light_miss = int(r["light_missing"]) if r.get("light_missing", "") != "" else (1 if light_val is None else 0)
+                            proxi_miss = int(r["proxi_missing"]) if r.get("proxi_missing", "") != "" else (1 if proxi_val is None else 0)
 
                             full_dataset.append({
                                 "subject_id": int(r["subject_id"]),
@@ -595,11 +602,11 @@ def extract_full_cohort_480(streamer: Zip64Streamer) -> Tuple[List[Dict], Dict]:
                                 "ground_truth": int(r["ground_truth"]),
                                 "second": int(r["second"]),
                                 "light_lux": light_val,
-                                "light_missing": int(r["light_missing"]),
+                                "light_missing": light_miss,
                                 "mag_norm": float(r["mag_norm"]),
                                 "acc_norm": float(r["acc_norm"]),
                                 "proxi_cm": proxi_val,
-                                "proxi_missing": int(r["proxi_missing"]),
+                                "proxi_missing": proxi_miss,
                                 "proxi_obstacle_near": obs_val,
                                 "step": float(r["step"]),
                             })
