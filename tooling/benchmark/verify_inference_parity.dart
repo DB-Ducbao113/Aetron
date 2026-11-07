@@ -49,8 +49,14 @@ void verifyModelAParity({
   print('Maximum Absolute Error:      ${maxAbsError.toStringAsExponential(6)}');
   print('Mean Absolute Error:         ${meanAbsError.toStringAsExponential(6)}');
   print('Classification Agreement:    ${agreementPct.toStringAsFixed(2)}% ($agreements / ${testVectors.length})');
-  assert(maxAbsError < 1e-4, 'Model A Max error too high');
-  assert(agreementPct == 100.0, 'Model A classification mismatch');
+  if (maxAbsError >= 1e-4) {
+    stderr.writeln('FATAL ERROR: Model A max absolute error exceeds tolerance ($maxAbsError >= 1e-4)');
+    exit(1);
+  }
+  if (agreementPct != 100.0) {
+    stderr.writeln('FATAL ERROR: Model A classification mismatch ($agreementPct% != 100.0%)');
+    exit(1);
+  }
   print('SUCCESS: Model A (CNN-LSTM) parity verified!\n');
 }
 
@@ -97,8 +103,14 @@ void verifyModelBParity({
   print('Maximum Absolute Error:      ${maxAbsError.toStringAsExponential(6)}');
   print('Mean Absolute Error:         ${meanAbsError.toStringAsExponential(6)}');
   print('Classification Agreement:    ${agreementPct.toStringAsFixed(2)}% ($agreements / ${testVectors.length})');
-  assert(maxAbsError < 1e-4, 'Model B Max error too high');
-  assert(agreementPct == 100.0, 'Model B classification mismatch');
+  if (maxAbsError >= 1e-4) {
+    stderr.writeln('FATAL ERROR: Model B max absolute error exceeds tolerance ($maxAbsError >= 1e-4)');
+    exit(1);
+  }
+  if (agreementPct != 100.0) {
+    stderr.writeln('FATAL ERROR: Model B classification mismatch ($agreementPct% != 100.0%)');
+    exit(1);
+  }
   print('SUCCESS: Model B (CNN-MHA) parity verified!\n');
 }
 
@@ -148,8 +160,14 @@ void verifyModelCParity({
   print('Maximum Absolute Error:      ${maxAbsError.toStringAsExponential(6)}');
   print('Mean Absolute Error:         ${meanAbsError.toStringAsExponential(6)}');
   print('Classification Agreement:    ${agreementPct.toStringAsFixed(2)}% ($agreements / ${testVectors.length})');
-  assert(maxAbsError < 1e-4, '$modelName Max error too high');
-  assert(agreementPct >= 99.9, '$modelName classification mismatch');
+  if (maxAbsError >= 1e-4) {
+    stderr.writeln('FATAL ERROR: $modelName max absolute error exceeds tolerance ($maxAbsError >= 1e-4)');
+    exit(1);
+  }
+  if (agreementPct < 99.9) {
+    stderr.writeln('FATAL ERROR: $modelName classification mismatch ($agreementPct% < 99.9%)');
+    exit(1);
+  }
   print('SUCCESS: $modelName parity verified!\n');
 }
 
@@ -205,8 +223,14 @@ void verifyAmvEnsembleParity({
   print('Maximum Absolute Error:      ${maxAbsError.toStringAsExponential(6)}');
   print('Mean Absolute Error:         ${meanAbsError.toStringAsExponential(6)}');
   print('Classification Agreement:    ${agreementPct.toStringAsFixed(2)}% ($agreements / ${testVectors.length})');
-  assert(maxAbsError < 1e-4, 'AMV Max error too high');
-  assert(agreementPct == 100.0, 'AMV classification mismatch');
+  if (maxAbsError >= 1e-4) {
+    stderr.writeln('FATAL ERROR: AMV ensemble max absolute error exceeds tolerance ($maxAbsError >= 1e-4)');
+    exit(1);
+  }
+  if (agreementPct != 100.0) {
+    stderr.writeln('FATAL ERROR: AMV classification mismatch ($agreementPct% != 100.0%)');
+    exit(1);
+  }
   print('SUCCESS: DeepIOD AMV Ensemble parity verified!\n');
 }
 
@@ -285,7 +309,10 @@ void verifyBayesianAmvParity({
   final agreementPct = (linearAgreements / testVectors.length) * 100.0;
   print('Total Evaluated Samples:     ${testVectors.length}');
   print('Consensus with Linear AMV:   ${agreementPct.toStringAsFixed(2)}% ($linearAgreements / ${testVectors.length})');
-  assert(agreementPct >= 95.0, 'Bayesian fusion deviated excessively from consensus');
+  if (agreementPct < 95.0) {
+    stderr.writeln('FATAL ERROR: Bayesian fusion deviated excessively from consensus ($agreementPct% < 95.0%)');
+    exit(1);
+  }
   print('SUCCESS: Aetron Experimental Bayesian Fusion verified!\n');
 }
 
