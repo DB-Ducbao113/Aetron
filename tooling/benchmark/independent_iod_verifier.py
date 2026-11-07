@@ -3,6 +3,7 @@
 Independent IOD Benchmark Verifier for Aetron.
 
 Independently reads exported per-sample prediction CSVs and calculates:
+- Partition Isolation (verifies 0 overlap with training/validation splits)
 - Confusion Matrix (Actual rows vs Predicted columns)
 - Accuracy
 - Macro-F1
@@ -18,8 +19,16 @@ import os
 import sys
 from collections import defaultdict
 
+# 1-indexed session boundaries corresponding to 0-indexed indices:
+# Train: 00..59 -> 1..60
+# Val:   60..71 -> 61..72
+# Test:  72..84 -> 73..85
+TRAIN_SESSIONS = {f"CIOD_session_{i}" for i in range(1, 61)}
+VAL_SESSIONS = {f"CIOD_session_{i}" for i in range(61, 73)}
+HELD_OUT_SESSIONS = {f"CIOD_session_{i}" for i in range(73, 86)}
 
-def verify_file(csv_path: str, model_label: str):
+
+def verify_file(csv_path: str, model_label: str, expected_samples: int = 0):
     if not os.path.exists(csv_path):
         print(f"ERROR: Prediction CSV not found at: {csv_path}", file=sys.stderr)
         sys.exit(1)
@@ -36,8 +45,9 @@ def verify_file(csv_path: str, model_label: str):
     total_samples = len(rows)
     print(f"Total Rows Loaded: {total_samples}")
 
-    if total_samples != 10400:
-        print(f"WARNING: Expected 10,400 held-out samples, found {total_samples}", file=sys.stderr)
+    if expected_samples > 0 and total_samples != expected_samples:
+        print(f"FATAL ERROR: Expected {expected_samples:,} samples, found {total_samples:,}", file=sys.stderr)
+        sys.exit(1)
 
     # Class mappings
     # Cambridge CIOD is binary (indoor vs outdoor)
@@ -53,6 +63,7 @@ def verify_file(csv_path: str, model_label: str):
     })
 
     model_versions = set()
+    loaded_session_ids = set()
 
     for r in rows:
         gt = r.get('ground_truth', '').lower().strip()
@@ -61,6 +72,7 @@ def verify_file(csv_path: str, model_label: str):
         mv = r.get('model_version', '').strip()
         if mv:
             model_versions.add(mv)
+        loaded_session_ids.add(sess)
 
         if gt not in confusion:
             confusion[gt] = {p: 0 for p in classes + ['transition', 'unknown']}
@@ -87,6 +99,23 @@ def verify_file(csv_path: str, model_label: str):
             stats['indoor_pred'] += 1
         elif pred == 'outdoor':
             stats['outdoor_pred'] += 1
+
+    # Strict Partition Isolation Audit
+    train_overlap = loaded_session_ids.intersection(TRAIN_SESSIONS)
+    val_overlap = loaded_session_ids.intersection(VAL_SESSIONS)
+    if train_overlap:
+        print(f"FATAL ERROR: Training session leakage detected: {train_overlap}", file=sys.stderr)
+        sys.exit(1)
+    if val_overlap:
+        print(f"FATAL ERROR: Validation session leakage detected: {val_overlap}", file=sys.stderr)
+        sys.exit(1)
+    
+    unexpected_sessions = loaded_session_ids.difference(HELD_OUT_SESSIONS)
+    if unexpected_sessions:
+        print(f"FATAL ERROR: Unexpected session IDs found: {unexpected_sessions}", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"Partition Isolation: 100% Verified. Sessions: {len(loaded_session_ids)} / 13 expected. 0 train/val overlap.")
 
     # Print model version provenance
     if model_versions:
@@ -124,15 +153,15 @@ def verify_file(csv_path: str, model_label: str):
     print("\n#### Independently Calculated Metrics:")
     print(f"| Metric | Raw Ratio | Calculated Value |")
     print(f"| :--- | :--- | :--- |")
-    print(f"| **Evaluated Samples** | {total_evaluated} / {total_samples} | 100.0% |")
-    print(f"| **Overall Accuracy** | {correct_count} / {total_evaluated} | **{accuracy * 100.0:.2f}%** |")
+    print(f"| **Evaluated Samples** | {total_evaluated:,} / {total_samples:,} | 100.0% |")
+    print(f"| **Overall Accuracy** | {correct_count:,} / {total_evaluated:,} | **{accuracy * 100.0:.2f}%** |")
     print(f"| **Macro-F1 Score** | - | **{macro_f1 * 100.0:.2f}%** |")
-    print(f"| **Indoor Precision** | {indoor_tp} / {indoor_tp + indoor_fp} | **{indoor_prec * 100.0:.2f}%** |")
-    print(f"| **Indoor Recall** | {indoor_tp} / {indoor_support} | **{indoor_rec * 100.0:.2f}%** |")
-    print(f"| **Indoor Specificity** | {outdoor_tp} / {outdoor_tp + outdoor_fp} | **{indoor_spec * 100.0:.2f}%** |")
+    print(f"| **Indoor Precision** | {indoor_tp:,} / {indoor_tp + indoor_fp:,} | **{indoor_prec * 100.0:.2f}%** |")
+    print(f"| **Indoor Recall** | {indoor_tp:,} / {indoor_support:,} | **{indoor_rec * 100.0:.2f}%** |")
+    print(f"| **Indoor Specificity** | {outdoor_tp:,} / {outdoor_tp + outdoor_fp:,} | **{indoor_spec * 100.0:.2f}%** |")
     print(f"| **Indoor F1-Score** | - | **{indoor_f1 * 100.0:.2f}%** |")
-    print(f"| **Outdoor Precision** | {outdoor_tp} / {outdoor_tp + outdoor_fp} | **{outdoor_prec * 100.0:.2f}%** |")
-    print(f"| **Outdoor Recall** | {outdoor_tp} / {outdoor_support} | **{outdoor_rec * 100.0:.2f}%** |")
+    print(f"| **Outdoor Precision** | {outdoor_tp:,} / {outdoor_tp + outdoor_fp:,} | **{outdoor_prec * 100.0:.2f}%** |")
+    print(f"| **Outdoor Recall** | {outdoor_tp:,} / {outdoor_support:,} | **{outdoor_rec * 100.0:.2f}%** |")
     print(f"| **Outdoor F1-Score** | - | **{outdoor_f1 * 100.0:.2f}%** |")
 
     print("\n#### Confusion Matrix (Actual rows vs Predicted columns):")
@@ -154,7 +183,7 @@ def verify_file(csv_path: str, model_label: str):
         acc_s = (s['correct'] / s['total'] * 100.0) if s['total'] > 0 else 0.0
         in_rec_s = (s['indoor_tp'] / s['indoor_gt'] * 100.0) if s['indoor_gt'] > 0 else 100.0
         out_rec_s = (s['outdoor_tp'] / s['outdoor_gt'] * 100.0) if s['outdoor_gt'] > 0 else 100.0
-        print(f"| `{s_id}` | {s['total']} | {s['indoor_gt']} | {s['outdoor_gt']} | {s['correct']} | {acc_s:.1f}% | {in_rec_s:.1f}% | {out_rec_s:.1f}% |")
+        print(f"| `{s_id}` | {s['total']:,} | {s['indoor_gt']:,} | {s['outdoor_gt']:,} | {s['correct']:,} | {acc_s:.1f}% | {in_rec_s:.1f}% | {out_rec_s:.1f}% |")
 
     return {
         'total_samples': total_samples,
@@ -172,24 +201,40 @@ def verify_file(csv_path: str, model_label: str):
 
 
 def main():
-    benchmarks = [
-        ("tooling/data/benchmark_results/ciod_held_out_composite_predictions.csv", "Aetron IodCompositeClassifier (Deployed Default: Model C-Mobile)"),
-        ("tooling/data/benchmark_results/ciod_held_out_mobile_predictions.csv", "DeepIOD Model C-Mobile (4-Sensor Dedicated)"),
-        ("tooling/data/benchmark_results/ciod_held_out_model_a_predictions.csv", "DeepIOD Model A (1D-CNN + LSTM, 8 Channels)"),
-        ("tooling/data/benchmark_results/ciod_held_out_model_b_predictions.csv", "DeepIOD Model B (1D-CNN + MHA, 8 Channels)"),
-        ("tooling/data/benchmark_results/ciod_held_out_model_c_predictions.csv", "DeepIOD Model C (2D DWS-CNN, 8 Channels)"),
-        ("tooling/data/benchmark_results/ciod_held_out_amv_neural_predictions.csv", "DeepIOD Neural AMV (Published Eq. 9 Probability-Weighted)"),
-        ("tooling/data/benchmark_results/ciod_held_out_amv_bayes_predictions.csv", "Aetron Experimental Bayesian Fusion Extension"),
+    benchmarks_capped = [
+        ("tooling/data/benchmark_results/ciod_held_out_composite_predictions.csv", "Aetron Composite Default (Model C-Mobile, 800-Cap)", 10400),
+        ("tooling/data/benchmark_results/ciod_held_out_mobile_predictions.csv", "DeepIOD Model C-Mobile (800-Cap)", 10400),
+        ("tooling/data/benchmark_results/ciod_held_out_model_a_predictions.csv", "DeepIOD Model A (8-Ch, 800-Cap)", 10400),
+        ("tooling/data/benchmark_results/ciod_held_out_model_b_predictions.csv", "DeepIOD Model B (8-Ch, 800-Cap)", 10400),
+        ("tooling/data/benchmark_results/ciod_held_out_model_c_predictions.csv", "DeepIOD Model C (8-Ch, 800-Cap)", 10400),
+        ("tooling/data/benchmark_results/ciod_held_out_amv_neural_predictions.csv", "DeepIOD Neural AMV (Published Eq. 9, 800-Cap)", 10400),
+        ("tooling/data/benchmark_results/ciod_held_out_amv_bayes_predictions.csv", "Aetron Bayesian Fusion Extension (800-Cap)", 10400),
+    ]
+
+    benchmarks_full = [
+        ("tooling/data/benchmark_results/ciod_full_held_out_composite_predictions.csv", "Aetron Composite Default (Model C-Mobile, Full 201K)", 201731),
+        ("tooling/data/benchmark_results/ciod_full_held_out_mobile_predictions.csv", "DeepIOD Model C-Mobile (Full 201K)", 201731),
+        ("tooling/data/benchmark_results/ciod_full_held_out_model_c_predictions.csv", "DeepIOD Model C (8-Ch, Full 201K)", 201731),
     ]
 
     all_metrics = {}
-    for path, label in benchmarks:
-        all_metrics[label] = verify_file(path, label)
+    print("\n" + "#"*78)
+    print("  SECTION 1: UNIFORM 800-SAMPLES/SESSION BENCHMARKS (10,400 EPOCHS)")
+    print("#"*78)
+    for path, label, expected in benchmarks_capped:
+        all_metrics[label] = verify_file(path, label, expected_samples=expected)
+
+    if os.path.exists(benchmarks_full[0][0]):
+        print("\n" + "#"*78)
+        print("  SECTION 2: UNCAPPED FULL-SESSION BENCHMARKS (201,731 EPOCHS)")
+        print("#"*78)
+        for path, label, expected in benchmarks_full:
+            all_metrics[label] = verify_file(path, label, expected_samples=expected)
 
     print("\n" + "="*78)
-    print("  SUMMARY BENCHMARK COMPARISON TABLE (ALL MODELS SEPARATE)")
+    print("  SUMMARY BENCHMARK COMPARISON TABLE (ALL EVALUATIONS)")
     print("="*78)
-    print("| Model / Mode | Samples | Accuracy | Macro-F1 | Indoor F1 | Outdoor F1 | Outdoor Prec | Outdoor Rec | Indoor Rec |")
+    print("| Model / Evaluation Mode | Samples | Accuracy | Macro-F1 | Indoor F1 | Outdoor F1 | Outdoor Prec | Outdoor Rec | Indoor Rec |")
     print("| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |")
     for label, m in all_metrics.items():
         print(f"| **{label}** | {m['total_samples']:,} | **{m['accuracy']*100:.2f}%** | **{m['macro_f1']*100:.2f}%** | {m['indoor_f1']*100:.1f}% | {m['outdoor_f1']*100:.1f}% | {m['outdoor_precision']*100:.1f}% | {m['outdoor_recall']*100:.1f}% | {m['indoor_recall']*100:.1f}% |")
@@ -197,4 +242,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
