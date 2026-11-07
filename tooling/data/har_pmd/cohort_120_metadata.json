@@ -1,0 +1,602 @@
+{
+  "1": {
+    "subject_id": 1,
+    "device": "Galaxy S21",
+    "os_version": "11"
+  },
+  "2": {
+    "subject_id": 2,
+    "device": "Galaxy A8",
+    "os_version": "9"
+  },
+  "3": {
+    "subject_id": 3,
+    "device": "Galaxy Z Flip 3",
+    "os_version": "12"
+  },
+  "4": {
+    "subject_id": 4,
+    "device": "Galaxy S22+",
+    "os_version": "12"
+  },
+  "5": {
+    "subject_id": 5,
+    "device": "Galaxy Note 9",
+    "os_version": "10"
+  },
+  "6": {
+    "subject_id": 6,
+    "device": "Galaxy Note 9",
+    "os_version": "10"
+  },
+  "7": {
+    "subject_id": 7,
+    "device": "Galaxy S22",
+    "os_version": "11"
+  },
+  "8": {
+    "subject_id": 8,
+    "device": "Galaxy Z Flip 3",
+    "os_version": "12"
+  },
+  "9": {
+    "subject_id": 9,
+    "device": "Galaxy A9 Pro",
+    "os_version": "10"
+  },
+  "10": {
+    "subject_id": 10,
+    "device": "Galaxy S21 Ultra",
+    "os_version": "12"
+  },
+  "11": {
+    "subject_id": 11,
+    "device": "Galaxy A71 5G",
+    "os_version": "11"
+  },
+  "12": {
+    "subject_id": 12,
+    "device": "Galaxy S20 Ultra 5G",
+    "os_version": "12"
+  },
+  "13": {
+    "subject_id": 13,
+    "device": "Galaxy S10 5G",
+    "os_version": "12"
+  },
+  "14": {
+    "subject_id": 14,
+    "device": "Galaxy S21",
+    "os_version": "11"
+  },
+  "15": {
+    "subject_id": 15,
+    "device": "Galaxy S21",
+    "os_version": "12"
+  },
+  "16": {
+    "subject_id": 16,
+    "device": "Galaxy S10+",
+    "os_version": "12"
+  },
+  "17": {
+    "subject_id": 17,
+    "device": "Galaxy Note 8",
+    "os_version": "9"
+  },
+  "18": {
+    "subject_id": 18,
+    "device": "Galaxy Z Flip 3",
+    "os_version": "11"
+  },
+  "19": {
+    "subject_id": 19,
+    "device": "Galaxy A90 5G",
+    "os_version": "11"
+  },
+  "20": {
+    "subject_id": 20,
+    "device": "Galaxy A52s",
+    "os_version": "12"
+  },
+  "21": {
+    "subject_id": 21,
+    "device": "Galaxy S8+",
+    "os_version": "9"
+  },
+  "22": {
+    "subject_id": 22,
+    "device": "Galaxy A50",
+    "os_version": "11"
+  },
+  "23": {
+    "subject_id": 23,
+    "device": "Galaxy S20+",
+    "os_version": "12"
+  },
+  "24": {
+    "subject_id": 24,
+    "device": "Galaxy S21",
+    "os_version": "11"
+  },
+  "25": {
+    "subject_id": 25,
+    "device": "LG V50S ThinQ",
+    "os_version": "11"
+  },
+  "26": {
+    "subject_id": 26,
+    "device": "Galaxy Z Flip 3",
+    "os_version": "11"
+  },
+  "27": {
+    "subject_id": 27,
+    "device": "Galaxy Note 9",
+    "os_version": "10"
+  },
+  "28": {
+    "subject_id": 28,
+    "device": "Galaxy Note 10 5G",
+    "os_version": "12"
+  },
+  "29": {
+    "subject_id": 29,
+    "device": "Galaxy S8",
+    "os_version": "11"
+  },
+  "30": {
+    "subject_id": 30,
+    "device": "Galaxy Note 9",
+    "os_version": "10"
+  },
+  "31": {
+    "subject_id": 31,
+    "device": "Galaxy S10e",
+    "os_version": "12"
+  },
+  "32": {
+    "subject_id": 32,
+    "device": "Galaxy A70",
+    "os_version": "11"
+  },
+  "33": {
+    "subject_id": 33,
+    "device": "Galaxy S10 5G",
+    "os_version": "12"
+  },
+  "34": {
+    "subject_id": 34,
+    "device": "Galaxy S8+",
+    "os_version": "9"
+  },
+  "35": {
+    "subject_id": 35,
+    "device": "LG V30",
+    "os_version": "9"
+  },
+  "36": {
+    "subject_id": 36,
+    "device": "LG V30",
+    "os_version": "9"
+  },
+  "37": {
+    "subject_id": 37,
+    "device": "Galaxy S22",
+    "os_version": "11"
+  },
+  "38": {
+    "subject_id": 38,
+    "device": "Galaxy S8+",
+    "os_version": "9"
+  },
+  "39": {
+    "subject_id": 39,
+    "device": "Galaxy Note 10+",
+    "os_version": "12"
+  },
+  "40": {
+    "subject_id": 40,
+    "device": "Galaxy S20 FE",
+    "os_version": "12"
+  },
+  "41": {
+    "subject_id": 41,
+    "device": "Galaxy A90 5G",
+    "os_version": "10"
+  },
+  "42": {
+    "subject_id": 42,
+    "device": "Galaxy S21",
+    "os_version": "11"
+  },
+  "43": {
+    "subject_id": 43,
+    "device": "LG Q9",
+    "os_version": "9"
+  },
+  "44": {
+    "subject_id": 44,
+    "device": "Galaxy A50",
+    "os_version": "11"
+  },
+  "45": {
+    "subject_id": 45,
+    "device": "Galaxy A80",
+    "os_version": "11"
+  },
+  "46": {
+    "subject_id": 46,
+    "device": "Galaxy S22",
+    "os_version": "12"
+  },
+  "47": {
+    "subject_id": 47,
+    "device": "Galaxy Note 20 Ultra",
+    "os_version": "12"
+  },
+  "48": {
+    "subject_id": 48,
+    "device": "Galaxy S20+ 5G",
+    "os_version": "12"
+  },
+  "49": {
+    "subject_id": 49,
+    "device": "Galaxy Note 9",
+    "os_version": "10"
+  },
+  "50": {
+    "subject_id": 50,
+    "device": "LG V30",
+    "os_version": "9"
+  },
+  "51": {
+    "subject_id": 51,
+    "device": "Galaxy S9",
+    "os_version": "10"
+  },
+  "52": {
+    "subject_id": 52,
+    "device": "Galaxy Note 10+",
+    "os_version": "12"
+  },
+  "53": {
+    "subject_id": 53,
+    "device": "Galaxy Note 10 5G",
+    "os_version": "12"
+  },
+  "54": {
+    "subject_id": 54,
+    "device": "Galaxy A42 5G",
+    "os_version": "11"
+  },
+  "55": {
+    "subject_id": 55,
+    "device": "Galaxy S20",
+    "os_version": "12"
+  },
+  "56": {
+    "subject_id": 56,
+    "device": "Galaxy Note 20 Ultra",
+    "os_version": "12"
+  },
+  "57": {
+    "subject_id": 57,
+    "device": "Galaxy S10 5G",
+    "os_version": "12"
+  },
+  "58": {
+    "subject_id": 58,
+    "device": "Galaxy S20",
+    "os_version": "12"
+  },
+  "59": {
+    "subject_id": 59,
+    "device": "Galaxy S21+",
+    "os_version": "12"
+  },
+  "60": {
+    "subject_id": 60,
+    "device": "Galaxy S10+",
+    "os_version": "12"
+  },
+  "61": {
+    "subject_id": 61,
+    "device": "Galaxy S20",
+    "os_version": "12"
+  },
+  "62": {
+    "subject_id": 62,
+    "device": "Galaxy S22",
+    "os_version": "12"
+  },
+  "63": {
+    "subject_id": 63,
+    "device": "Galaxy Note 10+",
+    "os_version": "12"
+  },
+  "64": {
+    "subject_id": 64,
+    "device": "Galaxy S21+",
+    "os_version": "12"
+  },
+  "65": {
+    "subject_id": 65,
+    "device": "Galaxy S10 5G",
+    "os_version": "12"
+  },
+  "66": {
+    "subject_id": 66,
+    "device": "LG Q9",
+    "os_version": "11"
+  },
+  "67": {
+    "subject_id": 67,
+    "device": "Galaxy S20+",
+    "os_version": "11"
+  },
+  "68": {
+    "subject_id": 68,
+    "device": "Galaxy A71 5G",
+    "os_version": "12"
+  },
+  "69": {
+    "subject_id": 69,
+    "device": "Galaxy S21",
+    "os_version": "12"
+  },
+  "70": {
+    "subject_id": 70,
+    "device": "Galaxy S10 5G",
+    "os_version": "10"
+  },
+  "71": {
+    "subject_id": 71,
+    "device": "Galaxy S10+",
+    "os_version": "12"
+  },
+  "72": {
+    "subject_id": 72,
+    "device": "Galaxy S10",
+    "os_version": "12"
+  },
+  "73": {
+    "subject_id": 73,
+    "device": "Galaxy S8",
+    "os_version": "12"
+  },
+  "74": {
+    "subject_id": 74,
+    "device": "Galaxy Z Flip 3",
+    "os_version": "12"
+  },
+  "75": {
+    "subject_id": 75,
+    "device": "Galaxy S22 Ultra",
+    "os_version": "12"
+  },
+  "76": {
+    "subject_id": 76,
+    "device": "Galaxy S22 Ultra",
+    "os_version": "12"
+  },
+  "77": {
+    "subject_id": 77,
+    "device": "Galaxy S10 5G",
+    "os_version": "12"
+  },
+  "78": {
+    "subject_id": 78,
+    "device": "Galaxy A21s",
+    "os_version": "11"
+  },
+  "79": {
+    "subject_id": 79,
+    "device": "Galaxy S20",
+    "os_version": "11"
+  },
+  "80": {
+    "subject_id": 80,
+    "device": "LG Velvet",
+    "os_version": "12"
+  },
+  "81": {
+    "subject_id": 81,
+    "device": "Galaxy S22",
+    "os_version": "12"
+  },
+  "82": {
+    "subject_id": 82,
+    "device": "Galaxy S10 5G",
+    "os_version": "11"
+  },
+  "83": {
+    "subject_id": 83,
+    "device": "Galaxy S10 5G",
+    "os_version": "11"
+  },
+  "84": {
+    "subject_id": 84,
+    "device": "Galaxy S10 5G",
+    "os_version": "11"
+  },
+  "85": {
+    "subject_id": 85,
+    "device": "Galaxy S10e",
+    "os_version": "12"
+  },
+  "86": {
+    "subject_id": 86,
+    "device": "Galaxy S9+",
+    "os_version": "10"
+  },
+  "87": {
+    "subject_id": 87,
+    "device": "Galaxy S21",
+    "os_version": "12"
+  },
+  "88": {
+    "subject_id": 88,
+    "device": "Galaxy S21",
+    "os_version": "12"
+  },
+  "89": {
+    "subject_id": 89,
+    "device": "Galaxy S8",
+    "os_version": "9"
+  },
+  "90": {
+    "subject_id": 90,
+    "device": "Galaxy S8",
+    "os_version": "9"
+  },
+  "91": {
+    "subject_id": 91,
+    "device": "Galaxy S22+ 5G",
+    "os_version": "12"
+  },
+  "92": {
+    "subject_id": 92,
+    "device": "Galaxy S21",
+    "os_version": "12"
+  },
+  "93": {
+    "subject_id": 93,
+    "device": "Galaxy S8+",
+    "os_version": "9"
+  },
+  "94": {
+    "subject_id": 94,
+    "device": "Galaxy S22+ 5G",
+    "os_version": "12"
+  },
+  "95": {
+    "subject_id": 95,
+    "device": "Galaxy S22+ 5G",
+    "os_version": "12"
+  },
+  "96": {
+    "subject_id": 96,
+    "device": "Galaxy S22+ 5G",
+    "os_version": "12"
+  },
+  "97": {
+    "subject_id": 97,
+    "device": "Galaxy S22 Ultra",
+    "os_version": "12"
+  },
+  "98": {
+    "subject_id": 98,
+    "device": "Galaxy Z Flip 3",
+    "os_version": "12"
+  },
+  "99": {
+    "subject_id": 99,
+    "device": "Galaxy S22+ 5G",
+    "os_version": "12"
+  },
+  "100": {
+    "subject_id": 100,
+    "device": "Galaxy S10",
+    "os_version": "12"
+  },
+  "101": {
+    "subject_id": 101,
+    "device": "Galaxy S20",
+    "os_version": "12"
+  },
+  "102": {
+    "subject_id": 102,
+    "device": "Galaxy S10e",
+    "os_version": "12"
+  },
+  "103": {
+    "subject_id": 103,
+    "device": "Galaxy Z Flip 3",
+    "os_version": "12"
+  },
+  "104": {
+    "subject_id": 104,
+    "device": "Galaxy A71 5G",
+    "os_version": "12"
+  },
+  "105": {
+    "subject_id": 105,
+    "device": "Galaxy S22",
+    "os_version": "12"
+  },
+  "106": {
+    "subject_id": 106,
+    "device": "Galaxy S21",
+    "os_version": "12"
+  },
+  "107": {
+    "subject_id": 107,
+    "device": "Galaxy S21 Ultra",
+    "os_version": "12"
+  },
+  "108": {
+    "subject_id": 108,
+    "device": "Galaxy Note 10 5G",
+    "os_version": "12"
+  },
+  "109": {
+    "subject_id": 109,
+    "device": "Galaxy S10+",
+    "os_version": "12"
+  },
+  "110": {
+    "subject_id": 110,
+    "device": "Galaxy Z Flip 3",
+    "os_version": "12"
+  },
+  "111": {
+    "subject_id": 111,
+    "device": "Galaxy S22+ 5G",
+    "os_version": "12"
+  },
+  "112": {
+    "subject_id": 112,
+    "device": "Galaxy S21",
+    "os_version": "12"
+  },
+  "113": {
+    "subject_id": 113,
+    "device": "Galaxy S10 5G",
+    "os_version": "12"
+  },
+  "114": {
+    "subject_id": 114,
+    "device": "Galaxy S22+ 5G",
+    "os_version": "12"
+  },
+  "115": {
+    "subject_id": 115,
+    "device": "Galaxy Z Flip 3",
+    "os_version": "12"
+  },
+  "116": {
+    "subject_id": 116,
+    "device": "Galaxy S22+ 5G",
+    "os_version": "12"
+  },
+  "117": {
+    "subject_id": 117,
+    "device": "Galaxy Note 10+",
+    "os_version": "12"
+  },
+  "118": {
+    "subject_id": 118,
+    "device": "Galaxy S22+ 5G",
+    "os_version": "12"
+  },
+  "119": {
+    "subject_id": 119,
+    "device": "Galaxy S22+ 5G",
+    "os_version": "12"
+  },
+  "120": {
+    "subject_id": 120,
+    "device": "Galaxy S22+ 5G",
+    "os_version": "Unknown"
+  }
+}

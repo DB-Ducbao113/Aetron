@@ -91,4 +91,7 @@ tooling/data/*
 !tooling/data/deepiod_weights/
 tooling/data/deepiod_weights/*
 !tooling/data/deepiod_weights/*.json
+!tooling/data/har_pmd/
+tooling/data/har_pmd/*
+!tooling/data/har_pmd/*.json
 *.zip
