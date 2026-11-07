@@ -266,6 +266,55 @@ void main() {
       expect(agreementPct, equals(100.0));
     });
 
+    test('Parity Verification (Retrained Candidate Model C-Mobile): Strict failure if fixtures missing; genuine PyTorch-Dart VM agreement', () {
+      final parityFile = File('tooling/data/deepiod_weights/parity_test_vectors_candidate_mobile.json');
+      final weightsFile = File('tooling/data/deepiod_weights/deepiod_model_c_mobile_full_sampled_weights.json');
+
+      expect(
+        parityFile.existsSync(),
+        isTrue,
+        reason: 'Required fixture parity_test_vectors_candidate_mobile.json must exist (graceful skipping banned).',
+      );
+      expect(
+        weightsFile.existsSync(),
+        isTrue,
+        reason: 'Required fixture deepiod_model_c_mobile_full_sampled_weights.json must exist (graceful skipping banned).',
+      );
+
+      final testVectors = (jsonDecode(parityFile.readAsStringSync()) as List).cast<Map<String, dynamic>>();
+      final weightsJson = jsonDecode(weightsFile.readAsStringSync()) as Map<String, dynamic>;
+      final model = DeepIodModelC.fromJson(weightsJson);
+
+      double maxAbsError = 0.0;
+      double sumAbsError = 0.0;
+      int agreements = 0;
+
+      for (final item in testVectors) {
+        final window = (item['window'] as List)
+            .map((r) => (r as List).map((v) => (v as num).toDouble()).toList())
+            .toList();
+        final expectedPyTorch = (item['prob_pytorch'] as num).toDouble();
+
+        final dartProb = model.predict(window);
+        final absError = (dartProb - expectedPyTorch).abs();
+        if (absError > maxAbsError) {
+          maxAbsError = absError;
+        }
+        sumAbsError += absError;
+
+        if ((dartProb >= 0.50) == (expectedPyTorch >= 0.50)) {
+          agreements++;
+        }
+      }
+
+      final meanAbsError = sumAbsError / testVectors.length;
+      final agreementPct = (agreements / testVectors.length) * 100.0;
+
+      expect(maxAbsError, lessThan(1e-4));
+      expect(meanAbsError, lessThan(1e-6));
+      expect(agreementPct, equals(100.0));
+    });
+
     test('Parity Verification (Model A 8-Sensor CNN-LSTM): Strict failure if fixtures missing; exact PyTorch agreement', () {
       final parityFile = File('tooling/data/deepiod_weights/parity_test_vectors_model_a.json');
       final weightsFile = File('tooling/data/deepiod_weights/deepiod_model_a_weights.json');
