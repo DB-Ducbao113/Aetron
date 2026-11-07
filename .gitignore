@@ -87,5 +87,8 @@ GEMINI.md
 
 # Local research and GPS exports
 exports/
-tooling/data/
+tooling/data/*
+!tooling/data/deepiod_weights/
+tooling/data/deepiod_weights/*
+!tooling/data/deepiod_weights/*.json
 *.zip
