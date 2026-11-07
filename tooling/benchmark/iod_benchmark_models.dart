@@ -9,7 +9,11 @@ enum LabelProvenance {
   /// Verified ground truth explicitly certified by survey description (e.g., S1, S4 100% Outdoor).
   verifiedGroundTruth,
 
-  /// Macro scenario inferred from author narrative; second-by-second doorway timestamps unlogged (e.g., S2, S3, S5).
+  /// Exploratory macro scenario derived from narrative without second-by-second doorway timestamps (e.g., S2, S3, S5).
+  /// Strictly EXPLORATORY: Not certified Indoor ground truth.
+  exploratoryUnverifiedMacro,
+
+  /// Backward-compatible alias for exploratoryUnverifiedMacro.
   inferredScenarioMacro,
 
   /// Unlabeled or completely uncertain ground truth.

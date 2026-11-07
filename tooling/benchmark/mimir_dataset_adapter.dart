@@ -256,15 +256,15 @@ class MimirDatasetAdapter {
       case 'S2':
         // UGE Building survey:
         // Note: Authors did NOT record exact doorway crossing timestamps.
-        // Macro progression is inferred from survey description.
+        // Macro progression is strictly exploratory and unverified.
         final progress = epochIndex / totalEpochs;
         if (progress < 0.15 || progress > 0.85) {
-          return (IndoorOutdoorState.outdoor, 'uge_approach_road', LabelProvenance.inferredScenarioMacro);
+          return (IndoorOutdoorState.outdoor, 'uge_approach_road', LabelProvenance.exploratoryUnverifiedMacro);
         } else if ((progress >= 0.15 && progress < 0.20) ||
             (progress > 0.80 && progress <= 0.85)) {
-          return (IndoorOutdoorState.transition, 'uge_entrance_boundary', LabelProvenance.inferredScenarioMacro);
+          return (IndoorOutdoorState.transition, 'uge_entrance_boundary', LabelProvenance.exploratoryUnverifiedMacro);
         } else {
-          return (IndoorOutdoorState.indoor, 'uge_building_indoor', LabelProvenance.inferredScenarioMacro);
+          return (IndoorOutdoorState.indoor, 'uge_building_indoor', LabelProvenance.exploratoryUnverifiedMacro);
         }
 
       case 'S3':
@@ -272,11 +272,11 @@ class MimirDatasetAdapter {
         // Note: Authors did NOT record exact doorway crossing timestamps.
         final progress = epochIndex / totalEpochs;
         if (progress < 0.15) {
-          return (IndoorOutdoorState.outdoor, 'station_north_entrance', LabelProvenance.inferredScenarioMacro);
+          return (IndoorOutdoorState.outdoor, 'station_north_entrance', LabelProvenance.exploratoryUnverifiedMacro);
         } else if (progress < 0.23) {
-          return (IndoorOutdoorState.transition, 'station_entrance_boundary', LabelProvenance.inferredScenarioMacro);
+          return (IndoorOutdoorState.transition, 'station_entrance_boundary', LabelProvenance.exploratoryUnverifiedMacro);
         } else {
-          return (IndoorOutdoorState.indoor, 'station_mezzanine_light_indoor', LabelProvenance.inferredScenarioMacro);
+          return (IndoorOutdoorState.indoor, 'station_mezzanine_light_indoor', LabelProvenance.exploratoryUnverifiedMacro);
         }
 
       case 'S5':
@@ -284,12 +284,12 @@ class MimirDatasetAdapter {
         // Note: Authors did NOT record exact doorway crossing timestamps.
         final progress = epochIndex / totalEpochs;
         if (progress < 0.10 || progress > 0.90) {
-          return (IndoorOutdoorState.outdoor, 'atlantis_outdoor_entrance', LabelProvenance.inferredScenarioMacro);
+          return (IndoorOutdoorState.outdoor, 'atlantis_outdoor_entrance', LabelProvenance.exploratoryUnverifiedMacro);
         } else if ((progress >= 0.10 && progress < 0.15) ||
             (progress > 0.85 && progress <= 0.90)) {
-          return (IndoorOutdoorState.transition, 'atlantis_door_boundary', LabelProvenance.inferredScenarioMacro);
+          return (IndoorOutdoorState.transition, 'atlantis_door_boundary', LabelProvenance.exploratoryUnverifiedMacro);
         } else {
-          return (IndoorOutdoorState.indoor, 'atlantis_shopping_mall', LabelProvenance.inferredScenarioMacro);
+          return (IndoorOutdoorState.indoor, 'atlantis_shopping_mall', LabelProvenance.exploratoryUnverifiedMacro);
         }
 
       default:

@@ -220,6 +220,7 @@ def main():
         ("tooling/data/benchmark_results/ciod_full_held_out_mobile_predictions.csv", "DeepIOD Model C-Mobile Baseline (Full 201K)", 201731),
         ("tooling/data/benchmark_results/ciod_full_held_out_mobile_calibrated_predictions.csv", "DeepIOD Model C-Mobile Calibrated (theta=0.25, Full 201K)", 201731),
         ("tooling/data/benchmark_results/ciod_full_held_out_mobile_hysteresis_predictions.csv", "DeepIOD Model C-Mobile Hysteresis [0.40, 0.20] (Full 201K)", 201731),
+        ("tooling/data/benchmark_results/ciod_full_held_out_mobile_hysteresis_fixed_predictions.csv", "Candidate C-Mobile Hysteresis [0.45, 0.25] (Session Boundary Reset, Full 201K)", 201731),
         ("tooling/data/benchmark_results/ciod_full_held_out_mobile_weighted_bce_predictions.csv", "Retrained C-Mobile Weighted BCE (Full 201K)", 201731),
         ("tooling/data/benchmark_results/ciod_full_held_out_gnss_assisted_exp_predictions.csv", "Aetron Composite GNSS-Assisted Exp Mode (Full 201K)", 201731),
         ("tooling/data/benchmark_results/ciod_full_held_out_model_c_predictions.csv", "DeepIOD Model C (8-Ch, Full 201K)", 201731),
