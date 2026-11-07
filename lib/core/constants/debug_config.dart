@@ -18,6 +18,20 @@ const String kGpsFilterAlgoConfig = String.fromEnvironment(
   defaultValue: 'ekf4State',
 );
 
+/// Enables research-based trajectory data preprocessing (Phase 1: Li et al., 2025 & Zheng, 2015).
+/// When enabled, incorporates modality-specific kinematic limits, sliding-window median filtering,
+/// Zheng (2009) stay point dwell detection, and blackout partitioning into live tracking and finalization.
+const bool kEnableTrajectoryPreprocessing = bool.fromEnvironment(
+  'FLOWFIT_ENABLE_TRAJECTORY_PREPROCESSING',
+  defaultValue: false,
+);
+
+/// Enables shadow comparison logging between legacy WorkoutTrackingEngine and research preprocessing.
+const bool kEnableTrajectoryPreprocessingShadowMode = bool.fromEnvironment(
+  'FLOWFIT_TRAJECTORY_PREPROCESSING_SHADOW',
+  defaultValue: false,
+);
+
 /// Compile-time git revision for experiment provenance.
 /// Injected dynamically via --dart-define=GIT_COMMIT_SHA=... during build.
 const String kGitRevision = String.fromEnvironment(

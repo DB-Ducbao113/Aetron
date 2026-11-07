@@ -4,6 +4,9 @@ import 'dart:math' as math;
 import 'package:fitness_exercise_application/core/constants/debug_config.dart';
 import 'package:fitness_exercise_application/features/profile/domain/entities/user_profile.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
+import 'package:fitness_exercise_application/features/workout/domain/services/trajectory_preprocessing/batch_trajectory_preprocessor.dart';
+import 'package:fitness_exercise_application/features/workout/domain/services/trajectory_preprocessing/kinematic_limits.dart';
+import 'package:fitness_exercise_application/features/workout/domain/services/trajectory_preprocessing/trajectory_sample.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/workout_metrics_calculator.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/workout_tracking_engine.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/screens/record/workout_session_state.dart';
@@ -41,6 +44,7 @@ class WorkoutSessionFinalizer {
     required List<List<LatLng>> filteredRouteSegments,
     String gpsAlgorithm = 'ekf_4state',
     UserProfile? userProfile,
+    bool enableTrajectoryPreprocessing = kEnableTrajectoryPreprocessing,
   }) {
     final gpsAnalysis = trackingEngine.analyzeGpsWorkout(
       GpsWorkoutAnalysisInput(
@@ -52,13 +56,51 @@ class WorkoutSessionFinalizer {
     );
     final durationSec = state.durationSeconds;
     final movingTimeSec = math.min(state.movingTimeSeconds, durationSec);
-    final distanceKm = gpsAnalysis.validDistanceKm > 0
+
+    TrajectoryPreprocessingResult? preprocessorResult;
+    if (enableTrajectoryPreprocessing && rawGpsPositions.isNotEmpty) {
+      try {
+        final limits = KinematicLimits.forActivity(state.activityType);
+        final batchPreprocessor = BatchTrajectoryPreprocessor(limits: limits);
+        final rawSamples = rawGpsPositions.asMap().entries.map((entry) {
+          final pos = entry.value;
+          return TrajectoryRawSample(
+            index: entry.key,
+            timestamp: pos.timestamp,
+            point: LatLng(pos.latitude, pos.longitude),
+            altitudeMeters: pos.altitude,
+            sensorSpeedMs: pos.speed,
+            accuracyMeters: pos.accuracy,
+            sensorHeadingDeg: pos.heading,
+            deviceSource: 'finalizer_batch',
+          );
+        }).toList(growable: false);
+        preprocessorResult = batchPreprocessor.process(rawSamples);
+      } catch (e) {
+        // Fallback safely if batch preprocessing fails on unusual inputs
+      }
+    }
+
+    final legacyDistanceKm = gpsAnalysis.validDistanceKm > 0
         ? gpsAnalysis.validDistanceKm
         : (gpsAnalysis.totalDistanceKm > 0
               ? gpsAnalysis.totalDistanceKm
               : WorkoutMetricsCalculator.distanceMetersToKm(
                   state.distanceMeters,
                 ));
+
+    final double distanceKm;
+    final String distanceSelectionPolicy;
+    if (enableTrajectoryPreprocessing &&
+        preprocessorResult != null &&
+        preprocessorResult.cleanDistanceMeters > 0) {
+      distanceKm = preprocessorResult.cleanDistanceMeters / 1000.0;
+      distanceSelectionPolicy = 'preprocessed_clean_then_raw_valid_then_live';
+    } else {
+      distanceKm = legacyDistanceKm;
+      distanceSelectionPolicy = 'raw_valid_then_raw_total_then_live';
+    }
+
     final avgSpeedKmh = WorkoutMetricsCalculator.computeAverageSpeedKmh(
       distanceKm: distanceKm,
       durationSec: durationSec,
@@ -118,10 +160,7 @@ class WorkoutSessionFinalizer {
       'filter_branch': 'experiment/ekf4-field-recording',
       'source_revision': kGitRevision,
       'source_fingerprint': kSourceFingerprint,
-      // Explicitly separate live, saved, and displayed-route distance.
-      // Keep historical saved-distance policy unchanged until independently
-      // benchmarked; route smoothing is NOT currently the saved-distance source.
-      'distance_selection_policy': 'raw_valid_then_raw_total_then_live',
+      'distance_selection_policy': distanceSelectionPolicy,
       'raw_gps_fix_count': rawGpsPositions.length,
       'live_distance_km': state.distanceMeters / 1000.0,
       'saved_distance_km': distanceKm,
@@ -131,6 +170,35 @@ class WorkoutSessionFinalizer {
       'filtered_minus_saved_distance_km':
           filteredRouteDistanceM / 1000.0 - distanceKm,
       'raw_valid_distance_km': gpsAnalysis.validDistanceKm,
+      'preprocessing_enabled': preprocessorResult != null,
+      if (preprocessorResult != null) ...{
+        'preprocessing_clean_distance_km':
+            preprocessorResult.cleanDistanceMeters / 1000.0,
+        'preprocessing_raw_total_distance_km':
+            preprocessorResult.rawTotalDistanceMeters / 1000.0,
+        'preprocessing_drift_eliminated_m':
+            preprocessorResult.stationaryDriftEliminatedMeters,
+        'preprocessing_stay_points_count':
+            preprocessorResult.stayPointsCount,
+        'preprocessing_stay_duration_sec':
+            preprocessorResult.totalStayDurationSeconds,
+        'preprocessing_accepted_count':
+            preprocessorResult.acceptedCleanCount,
+        'preprocessing_rejected_count':
+            preprocessorResult.totalRawCount - preprocessorResult.acceptedCleanCount,
+        'preprocessing_speed_spikes':
+            preprocessorResult.speedSpikeCount,
+        'preprocessing_accel_spikes':
+            preprocessorResult.accelerationSpikeCount,
+        'preprocessing_heading_spikes':
+            preprocessorResult.headingSpikeCount,
+        'preprocessing_signal_gaps':
+            preprocessorResult.signalGapCount,
+        'preprocessing_latency_us_per_sample':
+            preprocessorResult.latencyPerSampleUs,
+        'legacy_vs_clean_delta_km':
+            legacyDistanceKm - (preprocessorResult.cleanDistanceMeters / 1000.0),
+      },
     };
     final session = WorkoutSession(
       id: sessionId,

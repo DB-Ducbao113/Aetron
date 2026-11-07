@@ -25,7 +25,9 @@ import 'package:fitness_exercise_application/features/workout/presentation/scree
 import 'package:fitness_exercise_application/features/workout/presentation/screens/record/workout_session_starter.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/screens/record/workout_session_state.dart';
 import 'package:fitness_exercise_application/core/services/location_tracking_service.dart';
+import 'package:fitness_exercise_application/core/services/sensor/step_sensor_types.dart';
 import 'package:fitness_exercise_application/core/services/step_tracking_service.dart';
+import 'package:fitness_exercise_application/features/workout/domain/services/trajectory_preprocessing/trajectory_preprocessor_interface.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/workout_metrics_calculator.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/workout_tracking_engine.dart';
 import 'package:flutter/foundation.dart';
@@ -122,7 +124,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
 
   // Subscriptions
   StreamSubscription<Position>? _locationSub;
-  StreamSubscription<int>? _stepSub;
+  StreamSubscription<dynamic>? _stepSub;
 
   // Timers
   Timer? _uiTicker;
@@ -162,6 +164,8 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   DateTime? _lastGpsEventTime;
   DateTime? _lastModeFlipTime;
   final List<Position> _rawGpsPositions = [];
+  StreamingTrajectoryPreprocessor? _streamingPreprocessor;
+  int _rawPositionSequence = 0;
   static const Duration _kPauseAutoStopDelay = Duration(minutes: 15);
   static const Duration _kIndoorWatchdogTick = Duration(seconds: 2);
   static const Duration _kIndoorStepGrace = Duration(seconds: 4);
@@ -243,6 +247,13 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       recordingSource: _defaultRecordingSource(activityType),
     );
     _resetRuntimeTrackingState();
+    if (kEnableTrajectoryPreprocessing ||
+        kEnableTrajectoryPreprocessingShadowMode) {
+      _streamingPreprocessor = TrajectoryPreprocessor.forActivity(
+        activityType,
+        debugLocationMode: kDebugLocationMode,
+      ).createStreamingSession();
+    }
     final startupLockPoint = startupGpsLock == null
         ? null
         : LatLng(startupGpsLock.latitude, startupGpsLock.longitude);
@@ -602,9 +613,9 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     try {
       final stepService = _ref.read(stepTrackingServiceProvider);
       await _stepSub?.cancel();
-      _stepSub = await _sensorController.startStepTracking(
+      _stepSub = await _sensorController.startWorkoutStepTracking(
         stepService: stepService,
-        onStep: _onStep,
+        onStepUpdate: _onStepUpdate,
       );
       debugPrint('[Workout] pedometer subscription active');
     } catch (e) {
@@ -635,11 +646,12 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       subscription: _locationSub,
     );
     _locationSub = null;
-    _stepSub?.pause();
+    final stepService = _ref.read(stepTrackingServiceProvider);
+    _sensorController.pauseStepTracking(stepService);
     state = _sessionLifecycle.pause(
       current: state,
       pauseAutoStopRemainingSeconds: _kPauseAutoStopDelay.inSeconds,
-    );
+    ).copyWith(currentCadenceSpm: 0);
     _syncLiveActivityState();
     _startPauseAutoStopCountdown();
   }
@@ -647,7 +659,8 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   Future<void> resumeWorkout() async {
     _cancelPauseAutoStopCountdown();
     _stopwatch.start();
-    _stepSub?.resume();
+    final stepService = _ref.read(stepTrackingServiceProvider);
+    _sensorController.resumeStepTracking(stepService);
     _speedSamples.clear();
     _shouldResetGpsAnchorOnResume = true;
     _lastGpsEventTime = DateTime.now();
@@ -953,6 +966,9 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     _pendingRecoveryReason = null;
     _lastRecoveryAttemptTime = null;
     _gpsSmoothingService.reset();
+    _streamingPreprocessor?.reset();
+    _streamingPreprocessor = null;
+    _rawPositionSequence = 0;
     _lastModeFlipTime = null;
   }
 
@@ -1229,7 +1245,18 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       return;
     }
 
-    final decision = _trackingEngine.evaluateGpsUpdate(
+    final rawSample = TrajectoryRawSample(
+      index: _rawPositionSequence++,
+      timestamp: position.timestamp,
+      point: livePoint,
+      altitudeMeters: position.altitude,
+      sensorSpeedMs: position.speed,
+      accuracyMeters: position.accuracy,
+      sensorHeadingDeg: position.heading,
+      deviceSource: rawGpsDeviceSource,
+    );
+
+    final legacyDecision = _trackingEngine.evaluateGpsUpdate(
       position: position,
       activityType: state.activityType,
       routePoints: state.routePoints,
@@ -1241,6 +1268,31 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       wasGpsSignalWeak: state.isGpsSignalWeak,
       debugLocationMode: kDebugLocationMode,
     );
+
+    ProcessedTrajectoryPoint? processedSample;
+    if (_streamingPreprocessor != null) {
+      processedSample = _streamingPreprocessor!.processSample(rawSample);
+    }
+
+    if (kEnableTrajectoryPreprocessingShadowMode && processedSample != null) {
+      _logTrajectoryPreprocessingShadow(
+        index: rawSample.index,
+        legacyDecision: legacyDecision,
+        processed: processedSample,
+      );
+    }
+
+    final TrackingGpsDecision decision;
+    if (kEnableTrajectoryPreprocessing && processedSample != null) {
+      decision = _resolveTrajectoryPreprocessingDecision(
+        legacyDecision: legacyDecision,
+        processedSample: processedSample,
+        livePoint: livePoint,
+      );
+    } else {
+      decision = legacyDecision;
+    }
+
     state = state.copyWith(currentLatLng: decision.previewPoint);
     _recordGpsDecision(
       position: position,
@@ -1344,23 +1396,16 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   }
 
   // Step updates
-  void _onStep(int sessionSteps) {
+  void _onStepUpdate(WorkoutStepUpdate update) {
     if (state.status == RecordingState.paused) {
-      // Collect steps occurred during pause into offset
-      if (_lastSessionSteps > 0 && sessionSteps > _lastSessionSteps) {
-        _pausedStepsOffset += (sessionSteps - _lastSessionSteps);
-      }
-      _lastSessionSteps = sessionSteps;
+      state = state.copyWith(currentCadenceSpm: 0);
       return;
     }
 
     if (state.status != RecordingState.active) return;
 
-    if (_lastSessionSteps == 0) {
-      _lastSessionSteps = sessionSteps;
-    }
-
-    final effectiveSteps = math.max(0, sessionSteps - _pausedStepsOffset);
+    final effectiveSteps = update.activeSessionSteps;
+    _lastSessionSteps = update.totalSessionSteps;
 
     final stepDecision = _trackingEngine.evaluateStepUpdate(
       sessionSteps: effectiveSteps,
@@ -1370,10 +1415,16 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       gpsFallbackActive: state.gpsFallbackActive,
       recordingSource: state.recordingSource,
       lastAcceptedPositionTime: _lastAcceptedPositionTime,
-      now: DateTime.now(),
+      now: update.timestamp,
     );
-    _lastSessionSteps = sessionSteps;
+
     final delta = stepDecision.delta;
+    state = state.copyWith(
+      stepCount: effectiveSteps,
+      currentCadenceSpm: update.currentCadenceSpm,
+      avgCadenceSpm: update.avgCadenceSpm,
+    );
+
     if (delta <= 0) return;
 
     _recordingCoordinator.bufferRawStepInterval(
@@ -1383,7 +1434,6 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     );
     _environmentController.addStepDelta(delta);
     _ref.read(iodControllerProvider.notifier).onStepDelta(delta);
-    state = state.copyWith(stepCount: effectiveSteps);
 
     if (stepDecision.shouldActivateGpsFallback) {
       state = state.copyWith(
@@ -1399,6 +1449,41 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     if (!_requiresGpsTracking(state.activityType) || state.gpsFallbackActive) {
       _updateIndoorDistanceFromSteps(delta);
     }
+  }
+
+  @visibleForTesting
+  void onStep(int sessionSteps) {
+    if (state.status == RecordingState.paused) {
+      // Collect steps occurred during pause into offset
+      if (_lastSessionSteps > 0 && sessionSteps > _lastSessionSteps) {
+        _pausedStepsOffset += (sessionSteps - _lastSessionSteps);
+      }
+      _lastSessionSteps = sessionSteps;
+      state = state.copyWith(currentCadenceSpm: 0);
+      return;
+    }
+
+    if (state.status != RecordingState.active) return;
+
+    if (_lastSessionSteps == 0) {
+      _lastSessionSteps = sessionSteps;
+    }
+
+    final effectiveSteps = math.max(0, sessionSteps - _pausedStepsOffset);
+    final delta = effectiveSteps - state.stepCount;
+
+    _onStepUpdate(
+      WorkoutStepUpdate(
+        totalSessionSteps: sessionSteps,
+        activeSessionSteps: effectiveSteps,
+        deltaSteps: math.max(0, delta),
+        currentCadenceSpm: state.currentCadenceSpm,
+        avgCadenceSpm: state.avgCadenceSpm,
+        timestamp: DateTime.now(),
+        isPaused: false,
+        source: StepSensorSource.unknown,
+      ),
+    );
   }
 
   // Indoor distance
@@ -1755,6 +1840,135 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
         'acc=${position.accuracy.toStringAsFixed(1)} speed=${position.speed.toStringAsFixed(2)} '
         'segment=${decision.segmentMeters.toStringAsFixed(2)} route=${decision.routeSegmentMeters.toStringAsFixed(2)} '
         'detail=$detail',
+      );
+    }
+  }
+
+  TrackingGpsDecision _resolveTrajectoryPreprocessingDecision({
+    required TrackingGpsDecision legacyDecision,
+    required ProcessedTrajectoryPoint processedSample,
+    required LatLng livePoint,
+  }) {
+    // 1. First fix / route seeding
+    if (legacyDecision.type == TrackingGpsDecisionType.seedRoute) {
+      if (!processedSample.isAccepted) {
+        return TrackingGpsDecision(
+          type: TrackingGpsDecisionType.skip,
+          livePoint: livePoint,
+          previewPoint: legacyDecision.previewPoint,
+          outcome: GpsPointOutcome.softRejected,
+          reason: GpsRejectReason.waitingForBetterFirstFix,
+          skipReason:
+              'preprocessor_rejected_first_fix: ${processedSample.qualityFlags}',
+        );
+      }
+      return legacyDecision;
+    }
+
+    // 2. Pause-resume lifecycle anchor reset
+    if (legacyDecision.type == TrackingGpsDecisionType.resetAnchor) {
+      return legacyDecision;
+    }
+
+    // 3. Outage / Signal Gap recovery
+    final isOutageGap =
+        processedSample.qualityFlags.contains(TrajectoryQualityFlag.signalGap) ||
+        (legacyDecision.type == TrackingGpsDecisionType.acceptRoute &&
+            legacyDecision.outcome == GpsPointOutcome.signalGap);
+    if (isOutageGap) {
+      final gapDuration = math.max(
+        _rawSignalContinuity.pendingGapDurationSec,
+        processedSample.timeDeltaSec,
+      );
+      return TrackingGpsDecision(
+        type: TrackingGpsDecisionType.acceptRoute,
+        livePoint: livePoint,
+        previewPoint: legacyDecision.previewPoint,
+        segmentMeters: 0,
+        rawSegmentMeters: legacyDecision.rawSegmentMeters,
+        routeSegmentMeters: legacyDecision.routeSegmentMeters,
+        candidateSpeedKmh: 0,
+        shouldAddDistance: false,
+        shouldBreakRouteForDisplay: true,
+        gpsGapDurationSec: gapDuration,
+        outcome: GpsPointOutcome.signalGap,
+        reason: GpsRejectReason.staleSignalGap,
+      );
+    }
+
+    // 4. If legacy skipped due to hard/soft rejection, honor it
+    if (legacyDecision.type == TrackingGpsDecisionType.skip) {
+      return legacyDecision;
+    }
+
+    // 5. Kinematic & accuracy outliers flagged by Preprocessor
+    if (!processedSample.isAccepted) {
+      final GpsRejectReason reason;
+      final GpsPointOutcome outcome;
+      if (processedSample.qualityFlags.contains(TrajectoryQualityFlag.lowAccuracy)) {
+        reason = GpsRejectReason.lowAccuracy;
+        outcome = GpsPointOutcome.softRejected;
+      } else if (processedSample.qualityFlags.contains(TrajectoryQualityFlag.speedSpike)) {
+        reason = GpsRejectReason.gpsSpeedHardSpike;
+        outcome = GpsPointOutcome.hardRejected;
+      } else if (processedSample.qualityFlags.contains(TrajectoryQualityFlag.accelerationSpike)) {
+        reason = GpsRejectReason.impliedSpeedHardSpike;
+        outcome = GpsPointOutcome.hardRejected;
+      } else if (processedSample.qualityFlags.contains(TrajectoryQualityFlag.headingSpike)) {
+        reason = GpsRejectReason.headingSpike;
+        outcome = GpsPointOutcome.hardRejected;
+      } else {
+        reason = GpsRejectReason.tinySegment;
+        outcome = GpsPointOutcome.softRejected;
+      }
+      return TrackingGpsDecision(
+        type: TrackingGpsDecisionType.skip,
+        livePoint: livePoint,
+        previewPoint: legacyDecision.previewPoint,
+        skipReason: 'preprocessor_outlier: ${processedSample.qualityFlags}',
+        segmentMeters: legacyDecision.segmentMeters,
+        rawSegmentMeters: legacyDecision.rawSegmentMeters,
+        routeSegmentMeters: legacyDecision.routeSegmentMeters,
+        outcome: outcome,
+        reason: reason,
+      );
+    }
+
+    // 6. Stationary stay point drift suppression
+    if (processedSample.isStayPoint) {
+      return TrackingGpsDecision(
+        type: TrackingGpsDecisionType.skip,
+        livePoint: livePoint,
+        previewPoint: legacyDecision.previewPoint,
+        skipReason: 'preprocessor_stay_point_dwell',
+        segmentMeters: legacyDecision.segmentMeters,
+        rawSegmentMeters: legacyDecision.rawSegmentMeters,
+        routeSegmentMeters: legacyDecision.routeSegmentMeters,
+        outcome: GpsPointOutcome.softRejected,
+        reason: GpsRejectReason.tinySegment,
+      );
+    }
+
+    // 7. Clean accepted sample
+    return legacyDecision;
+  }
+
+  void _logTrajectoryPreprocessingShadow({
+    required int index,
+    required TrackingGpsDecision legacyDecision,
+    required ProcessedTrajectoryPoint processed,
+  }) {
+    final legacyAccepted =
+        legacyDecision.type == TrackingGpsDecisionType.acceptRoute ||
+        legacyDecision.type == TrackingGpsDecisionType.seedRoute ||
+        legacyDecision.type == TrackingGpsDecisionType.resetAnchor;
+    final preprocessorAccepted = processed.isAccepted;
+
+    if (legacyAccepted != preprocessorAccepted) {
+      debugPrint(
+        '[GPS-SHADOW-DIVERGENCE] #$index '
+        'legacy=${legacyDecision.type.name}(${legacyDecision.reason.name}) vs '
+        'preprocessor=${preprocessorAccepted ? "accept" : "reject"}(${processed.qualityFlags})',
       );
     }
   }
