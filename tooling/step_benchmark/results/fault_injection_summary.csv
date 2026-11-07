@@ -1,0 +1,7 @@
+gate_name,total_tested,passed,failed,pass_rate_pct,evaluation_type
+Conservation of Step Totals,90,90,0,100.0%,Dataset Native Replay
+Baseline Isolation,90,90,0,100.0%,Synthetic Fault Injection
+Pause / Resume Offset Segregation,90,90,0,100.0%,Synthetic Fault Injection
+Counter Reset / Reboot Recovery,90,90,0,100.0%,Synthetic Fault Injection
+Unrealistic Spike Rejection (>4.5 st/s),90,90,0,100.0%,Synthetic Fault Injection
+Inactivity Timeout Cadence Decay,90,90,0,100.0%,Synthetic Fault Injection

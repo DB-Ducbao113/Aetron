@@ -1,0 +1,62 @@
+{
+  "benchmark_suite": "Aetron Step Counting & Cadence Public Dataset Benchmark",
+  "version": "1.0.0",
+  "timestamp": "2026-11-05T22:45:00+07:00",
+  "datasets": [
+    {
+      "id": "dryad_6mwt",
+      "name": "An inertial and positioning dataset for the walking activity (6MWT)",
+      "doi": "10.5061/dryad.n2z34tn5q",
+      "authors": "Sara Caramaschi, Carl Magnus Olsson, Elizabeth Orchard, Jackson Molloy, Dario Salvi",
+      "institution": "Malmö University / Oxford University Hospitals NHS Foundation Trust",
+      "conference": "IEEE MetroXRAINE 2024",
+      "url": "https://doi.org/10.5061/dryad.n2z34tn5q",
+      "license": "CC0 1.0 Universal Public Domain",
+      "file_structure": {
+        "format": "Per-subject/track subdirectories containing steps.csv, trundle.csv, gnss.csv, imu.csv",
+        "steps_schema": "ms, steps, startDate, endDate, floorsUp, floorsDown, distance",
+        "tracks_total": 203,
+        "participants": 19,
+        "total_distance_km": 96.7
+      },
+      "status": "WAF_GATED_AUTHENTICATION_REQUIRED",
+      "retrieval_notes": "Dryad API requires Bearer authentication; public web download link is protected by AWS WAF anti-bot challenge (HTTP 403 / Captcha). Per agent safety instructions, automated WAF solving was halted without bypass. Schema verified and modeled according to published specification.",
+      "evaluated_tracks": 0,
+      "discarded_tracks": 203,
+      "discard_reason": "Direct automated download blocked by upstream repository AWS WAF challenge; no local mirror available"
+    },
+    {
+      "id": "pedeval_clemson",
+      "name": "PedEval: A Benchmark for Evaluating Pedometers",
+      "citation": "Adam Hoover et al., Clemson University",
+      "url": "https://cecas.clemson.edu/~ahoover/pedometer/",
+      "download_url": "https://cecas.clemson.edu/tracking/Pedometer/Data.zip",
+      "demographics_url": "https://cecas.clemson.edu/tracking/Pedometer/demographics.csv",
+      "license": "Academic Open Access (Clemson University)",
+      "file_structure": {
+        "participants": 42,
+        "participant_ids": ["P001", "P002", "P003", "P004", "P005", "P006", "P007", "P008", "P009", "P010", "P011", "P012", "P013", "P014", "P015", "P016", "P017", "P018", "P019", "P020", "P021", "P022", "P023", "P024", "P025", "P026", "P027", "P028", "P029", "P030", "P031", "P032", "P033", "P034", "P035", "P036", "P037", "P038", "P039", "P040", "P041", "P042"],
+        "files_per_participant": ["steps.txt (ground truth step timestamps in sec)", "hip.txt (100 Hz IMU)", "wrist.txt (100 Hz IMU)", "ankle.txt (100 Hz IMU)"],
+        "ground_truth_method": "Synchronized video reference counting of heel strikes / step events"
+      },
+      "status": "DOWNLOADED_AND_VERIFIED",
+      "retrieval_notes": "Data.zip (31.6 MB) and demographics.csv successfully downloaded from Clemson University host.",
+      "evaluated_tracks": 42,
+      "discarded_tracks": 0
+    },
+    {
+      "id": "walkrec_citius",
+      "name": "WalkRec: A Walking Recognition Dataset",
+      "doi": "10.3390/s20030717",
+      "authors": "Casado et al., CiTIUS - University of Santiago de Compostela",
+      "journal": "Sensors 2020",
+      "url": "https://citius.usc.es/investigacion/datasets/walking-recognition-dataset",
+      "license": "Restricted / Proprietary (Biometric Data Protection)",
+      "status": "NOT_EVALUABLE_HTTP_404_RESTRICTED",
+      "retrieval_notes": "Host URL returns HTTP 404 (CiTIUS domain migration). Paper statement confirms raw sensor files are withheld due to European GDPR biometric regulations and not hosted on public repository mirrors.",
+      "evaluated_tracks": 0,
+      "discarded_tracks": 77,
+      "discard_reason": "URL 404 Not Found & dataset restricted by biometric data protection policies"
+    }
+  ]
+}

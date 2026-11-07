@@ -1161,6 +1161,7 @@ class _CompactRecordingHud extends ConsumerWidget {
           avgSpeedKmh: state.avgSpeedKmh,
           calories: state.caloriesBurned,
           stepCount: state.stepCount,
+          cadenceSpm: state.currentCadenceSpm,
           activityType: activityType,
           useMetricUnits: useMetricUnits,
           isVi: isVi,

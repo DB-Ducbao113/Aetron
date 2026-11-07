@@ -11,6 +11,7 @@ class KineticLiveMetricsHud extends StatelessWidget {
   final double avgSpeedKmh;
   final int calories;
   final int stepCount;
+  final int cadenceSpm;
   final String activityType;
   final bool useMetricUnits;
   final bool isVi;
@@ -25,6 +26,7 @@ class KineticLiveMetricsHud extends StatelessWidget {
     required this.avgSpeedKmh,
     required this.calories,
     required this.stepCount,
+    this.cadenceSpm = 0,
     required this.activityType,
     required this.useMetricUnits,
     required this.isVi,
@@ -196,8 +198,10 @@ class KineticLiveMetricsHud extends StatelessWidget {
                       icon: Icons.directions_walk_rounded,
                       value: '$stepCount',
                       unit: isVi ? 'bước' : 'steps',
-                      note: isVi ? 'Tổng số bước' : 'Total steps',
-                      isNotePositive: null,
+                      note: cadenceSpm > 0
+                          ? '$cadenceSpm spm'
+                          : (isVi ? 'Tổng số bước' : 'Total steps'),
+                      isNotePositive: cadenceSpm > 0 ? true : null,
                     ),
             ),
           ],

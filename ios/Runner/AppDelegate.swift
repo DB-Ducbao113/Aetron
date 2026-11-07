@@ -32,5 +32,8 @@ import UIKit
     WorkoutLiveActivityPlugin.register(
       with: engineBridge.pluginRegistry.registrar(forPlugin: "WorkoutLiveActivityPlugin")!
     )
+    AetronStepSensorPlugin.register(
+      with: engineBridge.pluginRegistry.registrar(forPlugin: "AetronStepSensorPlugin")!
+    )
   }
 }

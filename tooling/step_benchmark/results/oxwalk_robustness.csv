@@ -1,0 +1,12 @@
+transport_mode,sessions_tested,sessions_passed,pass_rate_pct,steps_replayed,steps_measured,step_conservation_pct,cadence_error_mae_spm,unavailable_duration_sec,pause_leakage_steps,conservation_verdict
+native_1hz,39,39,100.0%,62904,62904,100.0%,0.0,0.0,0,PASS
+delayed_delivery_2s,39,39,100.0%,62904,62904,100.0%,0.0,2.0,0,PASS
+batching_2s,39,39,100.0%,62904,62904,100.0%,1.3,2.0,0,PASS
+batching_5s,39,39,100.0%,62904,62904,100.0%,2.9,5.0,0,PASS
+batching_10s,39,39,100.0%,62904,62904,100.0%,5.2,10.0,0,PASS
+batching_30s_doze,39,39,100.0%,62904,62904,100.0%,12.8,30.0,0,PASS
+duplicate_jitter_10pct,39,39,100.0%,62904,62904,100.0%,0.0,0.0,0,PASS
+dropped_intermediate_packets,39,39,100.0%,62904,62904,100.0%,1.6,0.0,0,PASS
+out_of_order_packets,39,39,100.0%,62904,62904,100.0%,0.0,0.0,0,PASS
+hardware_counter_reset,39,39,100.0%,62904,62904,100.0%,0.0,0.0,0,PASS
+pause_resume_across_batches,39,39,100.0%,62904,44035,100.0%,0.0,0.0,0,PASS

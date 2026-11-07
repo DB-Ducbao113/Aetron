@@ -1,0 +1,54 @@
+{
+  "dataset_name": "Clemson PedEval (Pedometer Evaluation Project)",
+  "source_url": "https://cecas.clemson.edu/~ahoover/pedometer/",
+  "citation": "Mattfeld, R.; Jesch, E.; Hoover, A. Evaluating Pedometer Algorithms on Semi-Regular and Unstructured Gaits. Sensors 2021, 21, 4260. DOI: 10.3390/s21134260",
+  "audit_timestamp": "2026-11-05T23:30:00Z",
+  "archives": {
+    "Data.zip": {
+      "size_bytes": 31661301,
+      "sha256": "ce37832d5e234f6f014193a3a2af2f3162ab90905f303d473849512d690885da"
+    },
+    "demographics.csv": {
+      "size_bytes": 900,
+      "sha256": "1621a94e53dfad7440f1ecea59b579b99830f4cb0a368db2120a7aeb358b2480"
+    }
+  },
+  "summary": {
+    "total_participants": 30,
+    "total_sessions": 90,
+    "protocols": [
+      "Regular",
+      "SemiRegular",
+      "Irregular"
+    ],
+    "locomotor_steps": 56668,
+    "postural_shifts": 4133,
+    "total_annotations": 60801,
+    "paper_reported_steps": 54387,
+    "paper_reported_shifts": 6418,
+    "paper_reported_total": 60805
+  },
+  "protocols_breakdown": {
+    "Regular": {
+      "locomotor_steps": 31435,
+      "postural_shifts": 93,
+      "total_annotations": 31528,
+      "paper_steps": 31401,
+      "paper_shifts": 133
+    },
+    "SemiRegular": {
+      "locomotor_steps": 19917,
+      "postural_shifts": 2298,
+      "total_annotations": 22215,
+      "paper_steps": 18444,
+      "paper_shifts": 3795
+    },
+    "Irregular": {
+      "locomotor_steps": 5316,
+      "postural_shifts": 1742,
+      "total_annotations": 7058,
+      "paper_steps": 4542,
+      "paper_shifts": 2490
+    }
+  }
+}

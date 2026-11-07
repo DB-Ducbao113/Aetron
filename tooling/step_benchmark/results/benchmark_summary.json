@@ -1,0 +1,29 @@
+{
+  "benchmark_timestamp": "2026-11-05T22:50:20.442267",
+  "sessions_processed": 90,
+  "total_reference_steps": 56668,
+  "total_measured_steps": 56668,
+  "step_drift_error": 0,
+  "cadence_metrics": {
+    "window_3s": {
+      "mean_mae": 7.960811757806219,
+      "mean_rmse": 13.145758793767184
+    },
+    "window_6s": {
+      "mean_mae": 0.8533634339277821,
+      "mean_rmse": 2.998834042607207
+    },
+    "window_10s": {
+      "mean_mae": 6.626772835356572,
+      "mean_rmse": 10.936436492658654
+    }
+  },
+  "gate_pass_rates": {
+    "conservation": 1.0,
+    "baseline_isolation": 1.0,
+    "pause_resume": 1.0,
+    "reboot_recovery": 1.0,
+    "spike_filter": 1.0,
+    "inactivity_decay": 1.0
+  }
+}

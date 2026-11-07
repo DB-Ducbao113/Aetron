@@ -41,6 +41,8 @@ class WorkoutSessionState {
   final double speedKmh;
   final double avgSpeedKmh;
   final int stepCount;
+  final int currentCadenceSpm;
+  final int avgCadenceSpm;
   final double strideLengthMeters;
   final int caloriesBurned;
   final List<LatLng> filteredRoutePoints;
@@ -90,6 +92,8 @@ class WorkoutSessionState {
     this.speedKmh = 0,
     this.avgSpeedKmh = 0,
     this.stepCount = 0,
+    this.currentCadenceSpm = 0,
+    this.avgCadenceSpm = 0,
     this.strideLengthMeters = 0.75,
     this.caloriesBurned = 0,
     this.filteredRoutePoints = const [],
@@ -134,6 +138,8 @@ class WorkoutSessionState {
     double? speedKmh,
     double? avgSpeedKmh,
     int? stepCount,
+    int? currentCadenceSpm,
+    int? avgCadenceSpm,
     double? strideLengthMeters,
     int? caloriesBurned,
     List<LatLng>? filteredRoutePoints,
@@ -177,6 +183,8 @@ class WorkoutSessionState {
       speedKmh: speedKmh ?? this.speedKmh,
       avgSpeedKmh: avgSpeedKmh ?? this.avgSpeedKmh,
       stepCount: stepCount ?? this.stepCount,
+      currentCadenceSpm: currentCadenceSpm ?? this.currentCadenceSpm,
+      avgCadenceSpm: avgCadenceSpm ?? this.avgCadenceSpm,
       strideLengthMeters: strideLengthMeters ?? this.strideLengthMeters,
       caloriesBurned: caloriesBurned ?? this.caloriesBurned,
       filteredRoutePoints: filteredRoutePoints ?? this.filteredRoutePoints,
