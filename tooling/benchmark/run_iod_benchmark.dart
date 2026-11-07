@@ -346,16 +346,54 @@ void main() {
     print('======================================================================');
 
     final ciodFile = File('tooling/data/ciod/Data_Supporting_IOD_DL_MTSC_JIoT.csv');
-    if (ciodFile.existsSync()) {
-      // 1. Load strictly held-out sessions (72..84)
-      final heldOutSessionIds = Set<int>.from(List.generate(13, (i) => 72 + i));
-      print('Loading Cambridge CIOD held-out test sessions (Sessions 72..84)...');
-      final ciodHeldOutSamples = await CiodDatasetAdapter.parseCsvFile(
-        file: ciodFile,
-        targetSessionIndices: heldOutSessionIds,
-        maxSamplesPerSession: 800,
-      );
-      print('Loaded ${ciodHeldOutSamples.length} samples across 13 held-out Cambridge CIOD sessions.');
+    if (!ciodFile.existsSync() || ciodFile.lengthSync() == 0) {
+      stderr.writeln('FATAL ERROR: Cambridge CIOD dataset file missing or empty at: ${ciodFile.path}');
+      fail('Cambridge CIOD dataset file missing or empty');
+    }
+
+    final requiredWeightFiles = [
+      'assets/models/deepiod_model_c_mobile_weights.json',
+      'assets/models/deepiod_model_c_weights.json',
+      'tooling/data/deepiod_weights/deepiod_model_a_weights.json',
+      'tooling/data/deepiod_weights/deepiod_model_b_weights.json',
+      'tooling/data/deepiod_weights/deepiod_model_c_weights.json',
+      'tooling/data/deepiod_weights/deepiod_model_c_mobile_weights.json',
+    ];
+    for (final weightPath in requiredWeightFiles) {
+      final f = File(weightPath);
+      if (!f.existsSync() || f.lengthSync() == 0) {
+        stderr.writeln('FATAL ERROR: Required DeepIOD weight file missing or empty: $weightPath');
+        fail('Required DeepIOD weight file missing or empty: $weightPath');
+      }
+    }
+
+    // 1. Load strictly held-out sessions (72..84)
+    final heldOutSessionIds = Set<int>.from(List.generate(13, (i) => 72 + i));
+    print('Loading Cambridge CIOD held-out test sessions (Sessions 72..84)...');
+    final ciodHeldOutSamples = await CiodDatasetAdapter.parseCsvFile(
+      file: ciodFile,
+      targetSessionIndices: heldOutSessionIds,
+      maxSamplesPerSession: 800,
+    );
+    print('Loaded ${ciodHeldOutSamples.length} samples across 13 held-out Cambridge CIOD sessions.');
+
+    final loadedSessionIds = ciodHeldOutSamples.map((s) => s.sessionId).toSet();
+    if (loadedSessionIds.length != 13) {
+      stderr.writeln('FATAL ERROR: Expected 13 held-out test sessions, got ${loadedSessionIds.length}');
+      fail('Expected 13 held-out test sessions, got ${loadedSessionIds.length}');
+    }
+    for (int sIdx = 72; sIdx <= 84; sIdx++) {
+      if (!loadedSessionIds.contains('CIOD_session_${sIdx + 1}') &&
+          !loadedSessionIds.contains('CIOD_session_$sIdx') &&
+          !loadedSessionIds.contains('session_$sIdx')) {
+        stderr.writeln('FATAL ERROR: Missing required held-out test session: $sIdx');
+        fail('Missing required held-out test session: $sIdx');
+      }
+    }
+    if (ciodHeldOutSamples.length != 10400) {
+      stderr.writeln('FATAL ERROR: Expected exactly 10,400 held-out samples, got ${ciodHeldOutSamples.length}');
+      fail('Expected exactly 10,400 held-out samples, got ${ciodHeldOutSamples.length}');
+    }
 
       // Baseline A: Always-Indoor Majority Baseline (Held-Out)
       final ciodAlwaysIndoorResults = <IodBenchmarkResult>[];
@@ -616,14 +654,14 @@ void main() {
 
       // Model 7: Aetron IOD Composite Classifier (Application Output — Model C-Mobile Default)
       final ciodCompositeResults = <IodBenchmarkResult>[];
-      final compositeClassifier = IodCompositeClassifier();
+      final ciodCompositeClassifier = IodCompositeClassifier();
       String? lastSessId3;
       for (final s in ciodHeldOutSamples) {
         if (s.sessionId != lastSessId3) {
-          compositeClassifier.reset();
+          ciodCompositeClassifier.reset();
           lastSessId3 = s.sessionId;
         }
-        final pred = compositeClassifier.predict(s.snapshot);
+        final pred = ciodCompositeClassifier.predict(s.snapshot);
         ciodCompositeResults.add(IodBenchmarkResult(sample: s, prediction: pred));
       }
       final ciodCompositeMetrics = IodEvaluationMetrics.compute(
@@ -736,9 +774,6 @@ void main() {
         '${outDir.path}/ciod_train_diagnostic_predictions.csv',
         trainNeuralResults,
       );
-    } else {
-      print('Cambridge CIOD CSV not found at: ${ciodFile.path}');
-    }
 
     // ================================================================
     // PART 5: SYNTHETIC INTEGRATION TEST — YOO TRANSITION STATE MACHINE & W-KNN LOGIC

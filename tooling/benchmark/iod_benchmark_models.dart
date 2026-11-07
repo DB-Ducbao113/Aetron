@@ -248,7 +248,7 @@ class IodEvaluationMetrics {
     final sink = file.openWrite();
 
     sink.writeln(
-      'session_id,timestamp,ground_truth,predicted_state,is_correct,confidence,'
+      'session_id,timestamp,ground_truth,predicted_state,class_probability,model_version,is_correct,confidence,'
       'deepiod_outdoor_score,yoo_transition_prob,latency_ms,has_gnss,'
       'satellite_count,mean_cn0,top4_cn0,horizontal_accuracy,speed,mag_var',
     );
@@ -257,11 +257,29 @@ class IodEvaluationMetrics {
       final s = res.sample;
       final snap = s.snapshot;
       final pred = res.prediction;
+
+      double classProb;
+      if (pred.deepIodOutdoorProbability != null) {
+        if (pred.state == IndoorOutdoorState.outdoor) {
+          classProb = pred.deepIodOutdoorProbability!;
+        } else if (pred.state == IndoorOutdoorState.indoor) {
+          classProb = 1.0 - pred.deepIodOutdoorProbability!;
+        } else if (pred.state == IndoorOutdoorState.transition) {
+          classProb = pred.transitionProbability ?? pred.confidence;
+        } else {
+          classProb = pred.confidence;
+        }
+      } else {
+        classProb = pred.confidence;
+      }
+
       sink.writeln([
         s.sessionId,
         s.timestamp.toUtc().toIso8601String(),
         s.groundTruth.code,
         pred.state.code,
+        classProb.toStringAsFixed(4),
+        pred.modelVersion,
         res.isCorrect ? 1 : 0,
         pred.confidence.toStringAsFixed(3),
         pred.deepIodOutdoorProbability?.toStringAsFixed(3) ?? '',
