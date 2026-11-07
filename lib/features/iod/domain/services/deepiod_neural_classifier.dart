@@ -33,6 +33,7 @@ class DeepIodNeuralClassifier {
   final DeepIodModelC _model;
   final int windowSize;
   final DeepIodVariant variant;
+  final double classificationThreshold;
   final List<List<double>> _historyWindow = [];
 
   String get modelVersion => variant == DeepIodVariant.mobile4Channel
@@ -42,6 +43,7 @@ class DeepIodNeuralClassifier {
   DeepIodNeuralClassifier({
     DeepIodModelC? model,
     this.windowSize = 10,
+    this.classificationThreshold = 0.50,
     DeepIodVariant? variant,
   })  : _model = model ??
             (variant == DeepIodVariant.complete8Channel
@@ -54,10 +56,14 @@ class DeepIodNeuralClassifier {
                     : DeepIodVariant.mobile4Channel)
                 : DeepIodVariant.mobile4Channel);
 
-  factory DeepIodNeuralClassifier.mobile({int windowSize = 10}) =>
+  factory DeepIodNeuralClassifier.mobile({
+    int windowSize = 10,
+    double classificationThreshold = 0.50,
+  }) =>
       DeepIodNeuralClassifier(
         model: DeepIodModelC.fromJson(kDeepIodModelCMobileWeights),
         windowSize: windowSize,
+        classificationThreshold: classificationThreshold,
         variant: DeepIodVariant.mobile4Channel,
       );
 
@@ -171,12 +177,12 @@ class DeepIodNeuralClassifier {
     // Compute DeepIOD Model C Feed-Forward Inference with Trained Weights
     final double outdoorProbability = _model.predict(evalWindow);
 
-    // Published Decision Rule: Strictly binary boundary at 0.50 (PMC11360063 Eq. 29)
-    final bool isOutdoor = outdoorProbability >= 0.50;
+    // Decision Rule: Threshold comparison (default 0.50 per PMC11360063 Eq. 29)
+    final bool isOutdoor = outdoorProbability >= classificationThreshold;
     final IndoorOutdoorState state = isOutdoor ? IndoorOutdoorState.outdoor : IndoorOutdoorState.indoor;
     final double confidence = isOutdoor
-        ? ((outdoorProbability - 0.5) * 2.0).clamp(0.0, 1.0)
-        : (((1.0 - outdoorProbability) - 0.5) * 2.0).clamp(0.0, 1.0);
+        ? ((outdoorProbability - classificationThreshold) / (1.0 - classificationThreshold)).clamp(0.0, 1.0)
+        : ((classificationThreshold - outdoorProbability) / classificationThreshold).clamp(0.0, 1.0);
 
     stopwatch.stop();
 

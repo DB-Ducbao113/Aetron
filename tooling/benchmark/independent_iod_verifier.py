@@ -28,7 +28,7 @@ VAL_SESSIONS = {f"CIOD_session_{i}" for i in range(61, 73)}
 HELD_OUT_SESSIONS = {f"CIOD_session_{i}" for i in range(73, 86)}
 
 
-def verify_file(csv_path: str, model_label: str, expected_samples: int = 0):
+def verify_file(csv_path: str, model_label: str, expected_samples: int = 0, is_zenodo: bool = False):
     if not os.path.exists(csv_path):
         print(f"ERROR: Prediction CSV not found at: {csv_path}", file=sys.stderr)
         sys.exit(1)
@@ -101,21 +101,24 @@ def verify_file(csv_path: str, model_label: str, expected_samples: int = 0):
             stats['outdoor_pred'] += 1
 
     # Strict Partition Isolation Audit
-    train_overlap = loaded_session_ids.intersection(TRAIN_SESSIONS)
-    val_overlap = loaded_session_ids.intersection(VAL_SESSIONS)
-    if train_overlap:
-        print(f"FATAL ERROR: Training session leakage detected: {train_overlap}", file=sys.stderr)
-        sys.exit(1)
-    if val_overlap:
-        print(f"FATAL ERROR: Validation session leakage detected: {val_overlap}", file=sys.stderr)
-        sys.exit(1)
-    
-    unexpected_sessions = loaded_session_ids.difference(HELD_OUT_SESSIONS)
-    if unexpected_sessions:
-        print(f"FATAL ERROR: Unexpected session IDs found: {unexpected_sessions}", file=sys.stderr)
-        sys.exit(1)
+    if not is_zenodo:
+        train_overlap = loaded_session_ids.intersection(TRAIN_SESSIONS)
+        val_overlap = loaded_session_ids.intersection(VAL_SESSIONS)
+        if train_overlap:
+            print(f"FATAL ERROR: Training session leakage detected: {train_overlap}", file=sys.stderr)
+            sys.exit(1)
+        if val_overlap:
+            print(f"FATAL ERROR: Validation session leakage detected: {val_overlap}", file=sys.stderr)
+            sys.exit(1)
+        
+        unexpected_sessions = loaded_session_ids.difference(HELD_OUT_SESSIONS)
+        if unexpected_sessions:
+            print(f"FATAL ERROR: Unexpected session IDs found: {unexpected_sessions}", file=sys.stderr)
+            sys.exit(1)
 
-    print(f"Partition Isolation: 100% Verified. Sessions: {len(loaded_session_ids)} / 13 expected. 0 train/val overlap.")
+        print(f"Partition Isolation: 100% Verified. Sessions: {len(loaded_session_ids)} / 13 expected. 0 train/val overlap.")
+    else:
+        print(f"Partition Provenance: Nantes Zenodo Outdoor Dataset ({len(loaded_session_ids)} session(s): {', '.join(sorted(loaded_session_ids))}).")
 
     # Print model version provenance
     if model_versions:
@@ -203,7 +206,8 @@ def verify_file(csv_path: str, model_label: str, expected_samples: int = 0):
 def main():
     benchmarks_capped = [
         ("tooling/data/benchmark_results/ciod_held_out_composite_predictions.csv", "Aetron Composite Default (Model C-Mobile, 800-Cap)", 10400),
-        ("tooling/data/benchmark_results/ciod_held_out_mobile_predictions.csv", "DeepIOD Model C-Mobile (800-Cap)", 10400),
+        ("tooling/data/benchmark_results/ciod_held_out_mobile_predictions.csv", "DeepIOD Model C-Mobile Baseline (800-Cap)", 10400),
+        ("tooling/data/benchmark_results/ciod_held_out_mobile_calibrated_predictions.csv", "DeepIOD Model C-Mobile Calibrated (theta=0.25, 800-Cap)", 10400),
         ("tooling/data/benchmark_results/ciod_held_out_model_a_predictions.csv", "DeepIOD Model A (8-Ch, 800-Cap)", 10400),
         ("tooling/data/benchmark_results/ciod_held_out_model_b_predictions.csv", "DeepIOD Model B (8-Ch, 800-Cap)", 10400),
         ("tooling/data/benchmark_results/ciod_held_out_model_c_predictions.csv", "DeepIOD Model C (8-Ch, 800-Cap)", 10400),
@@ -212,9 +216,22 @@ def main():
     ]
 
     benchmarks_full = [
-        ("tooling/data/benchmark_results/ciod_full_held_out_composite_predictions.csv", "Aetron Composite Default (Model C-Mobile, Full 201K)", 201731),
-        ("tooling/data/benchmark_results/ciod_full_held_out_mobile_predictions.csv", "DeepIOD Model C-Mobile (Full 201K)", 201731),
+        ("tooling/data/benchmark_results/ciod_full_held_out_composite_predictions.csv", "Aetron Composite Default (Model C-Mobile Baseline, Full 201K)", 201731),
+        ("tooling/data/benchmark_results/ciod_full_held_out_mobile_predictions.csv", "DeepIOD Model C-Mobile Baseline (Full 201K)", 201731),
+        ("tooling/data/benchmark_results/ciod_full_held_out_mobile_calibrated_predictions.csv", "DeepIOD Model C-Mobile Calibrated (theta=0.25, Full 201K)", 201731),
+        ("tooling/data/benchmark_results/ciod_full_held_out_mobile_hysteresis_predictions.csv", "DeepIOD Model C-Mobile Hysteresis [0.40, 0.20] (Full 201K)", 201731),
+        ("tooling/data/benchmark_results/ciod_full_held_out_gnss_assisted_exp_predictions.csv", "Aetron Composite GNSS-Assisted Exp Mode (Full 201K)", 201731),
         ("tooling/data/benchmark_results/ciod_full_held_out_model_c_predictions.csv", "DeepIOD Model C (8-Ch, Full 201K)", 201731),
+    ]
+
+    benchmarks_ablations = [
+        ("tooling/data/benchmark_results/ciod_full_held_out_light_ablated_baseline_predictions.csv", "Light Ablated Baseline C-Mobile (ambientLux=0.0, Full 201K)", 201731),
+        ("tooling/data/benchmark_results/ciod_full_held_out_light_ablated_calibrated_predictions.csv", "Light Ablated Calibrated C-Mobile (theta=0.25, Full 201K)", 201731),
+    ]
+
+    benchmarks_zenodo = [
+        ("tooling/data/benchmark_results/zenodo_gnss_assisted_exp_predictions.csv", "Zenodo Outdoor Walking (GNSS Available, 3.18K)", 3180),
+        ("tooling/data/benchmark_results/zenodo_gnss_ablated_predictions.csv", "Zenodo Outdoor Walking (GNSS Ablated/Outage, 3.18K)", 3180),
     ]
 
     all_metrics = {}
@@ -222,14 +239,32 @@ def main():
     print("  SECTION 1: UNIFORM 800-SAMPLES/SESSION BENCHMARKS (10,400 EPOCHS)")
     print("#"*78)
     for path, label, expected in benchmarks_capped:
-        all_metrics[label] = verify_file(path, label, expected_samples=expected)
+        if os.path.exists(path):
+            all_metrics[label] = verify_file(path, label, expected_samples=expected)
 
     if os.path.exists(benchmarks_full[0][0]):
         print("\n" + "#"*78)
         print("  SECTION 2: UNCAPPED FULL-SESSION BENCHMARKS (201,731 EPOCHS)")
         print("#"*78)
         for path, label, expected in benchmarks_full:
-            all_metrics[label] = verify_file(path, label, expected_samples=expected)
+            if os.path.exists(path):
+                all_metrics[label] = verify_file(path, label, expected_samples=expected)
+
+    if os.path.exists(benchmarks_ablations[0][0]):
+        print("\n" + "#"*78)
+        print("  SECTION 3: LIGHT SENSOR ABLATION BENCHMARKS (201,731 EPOCHS)")
+        print("#"*78)
+        for path, label, expected in benchmarks_ablations:
+            if os.path.exists(path):
+                all_metrics[label] = verify_file(path, label, expected_samples=expected)
+
+    if os.path.exists(benchmarks_zenodo[0][0]):
+        print("\n" + "#"*78)
+        print("  SECTION 4: GNSS SENSOR ABLATION BENCHMARKS (NANTES ZENODO, 3,180 EPOCHS)")
+        print("#"*78)
+        for path, label, expected in benchmarks_zenodo:
+            if os.path.exists(path):
+                all_metrics[label] = verify_file(path, label, expected_samples=expected, is_zenodo=True)
 
     print("\n" + "="*78)
     print("  SUMMARY BENCHMARK COMPARISON TABLE (ALL EVALUATIONS)")

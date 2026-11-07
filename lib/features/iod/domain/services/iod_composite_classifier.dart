@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import '../models/indoor_outdoor_state.dart';
 import '../models/iod_prediction.dart';
 import '../models/iod_sensor_snapshot.dart';
@@ -11,6 +13,12 @@ enum IodClassifierMode {
   /// Composite Production Default: Dedicated Model C-Mobile (4 unprivileged sensors)
   /// with Yoo (2025) probabilistic transition boundary telemetry reported as an auxiliary signal.
   compositeDefault,
+
+  /// Separate Explicit Experiment: GNSS-Assisted Composite Classifier
+  /// Fuses Model C-Mobile with continuous GNSS C/N0 line-of-sight sigmoid (Yoo 2025)
+  /// when GNSS telemetry is available. Falls back gracefully to calibrated Model C-Mobile
+  /// when GNSS is unavailable (as in CIOD benchmark).
+  compositeGnssAssistedExperimental,
 
   /// Full DeepIOD Framework: Adaptive Majority Voting (AMV) consensus across
   /// Model A (CNN-LSTM), Model B (CNN-MHA), Model C (DWS-Conv2D), Adaptive Light, and GPS modules.
@@ -48,6 +56,8 @@ class IodCompositeClassifier {
     switch (mode) {
       case IodClassifierMode.compositeDefault:
         return modelVersion;
+      case IodClassifierMode.compositeGnssAssistedExperimental:
+        return 'aetron-iod-gnss-assisted-exp-v1.0';
       case IodClassifierMode.deepiodFull:
         return DeepIodFrameworkClassifier.modelVersion;
       case IodClassifierMode.deepiodMobile:
@@ -87,6 +97,14 @@ class IodCompositeClassifier {
   factory IodCompositeClassifier.yooOnly({SeamlessTransitionDetector? yooTransition}) =>
       IodCompositeClassifier(
         mode: IodClassifierMode.yooTransition,
+        yooTransition: yooTransition,
+      );
+
+  factory IodCompositeClassifier.gnssAssistedExperimental({
+    SeamlessTransitionDetector? yooTransition,
+  }) =>
+      IodCompositeClassifier(
+        mode: IodClassifierMode.compositeGnssAssistedExperimental,
         yooTransition: yooTransition,
       );
 
@@ -130,6 +148,62 @@ class IodCompositeClassifier {
 
       case IodClassifierMode.yooTransition:
         return _yooTransition.evaluate(snapshot);
+
+      case IodClassifierMode.compositeGnssAssistedExperimental:
+        final stopwatch = Stopwatch()..start();
+
+        final neuralPred = _mobileClassifier.classify(snapshot);
+        final double pMobile = neuralPred.deepIodOutdoorProbability ?? 0.50;
+
+        final bool hasGnss = snapshot.hasGnssStatus && snapshot.top4Cn0DbHz != null;
+        double pFused;
+        String gnssTag;
+
+        if (hasGnss) {
+          // Yoo (2025, Electronics Eq. 4) continuous line-of-sight sigmoid model:
+          // Center: 35.0 dB-Hz, Scale: 0.5
+          final double cn0 = snapshot.top4Cn0DbHz!;
+          final double pGnss = 1.0 / (1.0 + math.exp(-0.5 * (cn0 - 35.0)));
+          pFused = (0.5 * pMobile) + (0.5 * pGnss);
+          gnssTag = 'GNSS(C/N0=${cn0.toStringAsFixed(1)}dB-Hz,P=${(pGnss * 100).toStringAsFixed(0)}%)';
+        } else {
+          // When GNSS is unavailable (as in CIOD), operate in sensor-deprived mode
+          // using the validation-calibrated operating point (theta_val = 0.25).
+          pFused = pMobile;
+          gnssTag = 'GNSS(Unavailable)';
+        }
+
+        final double effectiveThreshold = hasGnss ? 0.50 : 0.25;
+        final bool isOutdoor = pFused >= effectiveThreshold;
+        final IndoorOutdoorState resolvedState =
+            isOutdoor ? IndoorOutdoorState.outdoor : IndoorOutdoorState.indoor;
+        final double resolvedConfidence = isOutdoor
+            ? ((pFused - effectiveThreshold) / (1.0 - effectiveThreshold)).clamp(0.0, 1.0)
+            : ((effectiveThreshold - pFused) / effectiveThreshold).clamp(0.0, 1.0);
+
+        final yooPred = _yooTransition.evaluate(snapshot);
+        stopwatch.stop();
+
+        final availability = Map<String, bool>.from(neuralPred.sensorAvailability)
+          ..addAll(yooPred.sensorAvailability);
+
+        final summary =
+            'GNSS-Assisted Exp: [${resolvedState.code.toUpperCase()}] '
+            'P(Fused)=${(pFused * 100).toStringAsFixed(1)}% | '
+            'ModelC-Mobile=${(pMobile * 100).toStringAsFixed(1)}% | $gnssTag';
+
+        return IodPrediction(
+          state: resolvedState,
+          confidence: resolvedConfidence,
+          deepIodOutdoorProbability: pFused,
+          transitionProbability: yooPred.transitionProbability,
+          nativeClass: 'composite(gnss_assisted_exp)',
+          modelVersion: activeModelVersion,
+          inferenceLatencyMs: stopwatch.elapsedMilliseconds,
+          sensorAvailability: availability,
+          reasoningSummary: summary,
+          isObservationalOnly: true,
+        );
 
       case IodClassifierMode.compositeDefault:
         final stopwatch = Stopwatch()..start();
