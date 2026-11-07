@@ -698,103 +698,120 @@ def main():
     print(f"Pretrained Scaler Std:  {deployed_std}")
     print("Pretraining Session Range: Sessions 01..60 (Cambridge CIOD)")
 
+    export_only = '--export-only' in sys.argv
+
     # -------------------------------------------------------------------------
     # PART 1: 5-FOLD NESTED SESSION-GROUPED CROSS-VALIDATION (STANDARD MOBILE)
     # -------------------------------------------------------------------------
     mob_indices = [2, 3, 4, 7]
     mob_names = ['Light', 'Mag', 'Acc', 'Daytime']
 
-    res_standard = run_nested_session_cv(
-        dev_sessions, mob_indices, mob_names, device, deployed_model, deployed_mean, deployed_std, num_outer_folds=5
-    )
+    if not export_only:
+        res_standard = run_nested_session_cv(
+            dev_sessions, mob_indices, mob_names, device, deployed_model, deployed_mean, deployed_std, num_outer_folds=5
+        )
 
-    print("\n" + "="*88)
-    print("  RESULTS: NESTED SESSION-GROUPED CV (SESSIONS 01..72)")
-    print("="*88)
-    print_nested_cv_summary("1. Fresh Retrained Model C-Mobile (Default theta=0.50)", res_standard['retrained_base'])
-    print_nested_cv_summary("2. Fresh Retrained Model C-Mobile (Inner-Tuned Threshold theta*)", res_standard['retrained_calib'])
-    print_nested_cv_summary("3. Fresh Retrained Model C-Mobile (Inner-Tuned Hysteresis [High*, Low*])", res_standard['retrained_hyst'])
-    print_nested_cv_summary("4. Deployed Pretrained C-Mobile Baseline (theta=0.50, Frozen Pretrained Scaler)", res_standard['deployed_base'])
-    print_nested_cv_summary("5. Deployed Pretrained C-Mobile + Candidate 3 Hysteresis [0.45, 0.25] (Session Reset)", res_standard['deployed_cand3'])
+        print("\n" + "="*88)
+        print("  RESULTS: NESTED SESSION-GROUPED CV (SESSIONS 01..72)")
+        print("="*88)
+        print_nested_cv_summary("1. Fresh Retrained Model C-Mobile (Default theta=0.50)", res_standard['retrained_base'])
+        print_nested_cv_summary("2. Fresh Retrained Model C-Mobile (Inner-Tuned Threshold theta*)", res_standard['retrained_calib'])
+        print_nested_cv_summary("3. Fresh Retrained Model C-Mobile (Inner-Tuned Hysteresis [High*, Low*])", res_standard['retrained_hyst'])
+        print_nested_cv_summary("4. Deployed Pretrained C-Mobile Baseline (theta=0.50, Frozen Pretrained Scaler)", res_standard['deployed_base'])
+        print_nested_cv_summary("5. Deployed Pretrained C-Mobile + Candidate 3 Hysteresis [0.45, 0.25] (Session Reset)", res_standard['deployed_cand3'])
 
-    # -------------------------------------------------------------------------
-    # PART 2: NESTED CV COMPARISON ACROSS ALL FOUR 4-CHANNEL SENSOR FEATURE SETS
-    # -------------------------------------------------------------------------
-    print("\n" + "="*88)
-    print("  PART 2: NESTED CV COMPARISON ACROSS ALL FOUR 4-CHANNEL SENSOR FEATURE SETS")
-    print("="*88)
+        # -------------------------------------------------------------------------
+        # PART 2: NESTED CV COMPARISON ACROSS ALL FOUR 4-CHANNEL SENSOR FEATURE SETS
+        # -------------------------------------------------------------------------
+        print("\n" + "="*88)
+        print("  PART 2: NESTED CV COMPARISON ACROSS ALL FOUR 4-CHANNEL SENSOR FEATURE SETS")
+        print("="*88)
 
-    feature_sets = {
-        '1. Standard Mobile [Light, Mag, Acc, Daytime]': ([2, 3, 4, 7], ['Light', 'Mag', 'Acc', 'Daytime']),
-        '2. Proximity-Augmented [Light, Mag, Acc, Proximity]': ([2, 3, 4, 6], ['Light', 'Mag', 'Acc', 'Proximity']),
-        '3. Acoustic-Augmented [Light, Mag, Sound, Daytime]': ([2, 3, 5, 7], ['Light', 'Mag', 'Sound', 'Daytime']),
-        '4. Lightless Mobile [Mag, Acc, Sound, Daytime]': ([3, 4, 5, 7], ['Mag', 'Acc', 'Sound', 'Daytime']),
-    }
-
-    feature_cv_summaries = {}
-    for feat_title, (f_idx, f_names) in feature_sets.items():
-        if feat_title == '1. Standard Mobile [Light, Mag, Acc, Daytime]':
-            res_feat = res_standard
-        else:
-            res_feat = run_nested_session_cv(
-                dev_sessions, f_idx, f_names, device, deployed_model, deployed_mean, deployed_std, num_outer_folds=5
-            )
-
-        m_list = res_feat['retrained_base']
-        accs = [m['accuracy'] for m in m_list]
-        f1s = [m['macro_f1'] for m in m_list]
-        in_recs = [m['recall_in'] for m in m_list]
-        out_recs = [m['recall_out'] for m in m_list]
-
-        feature_cv_summaries[feat_title] = {
-            'accuracy': f"{np.mean(accs)*100:.2f}±{np.std(accs)*100:.2f}%",
-            'macro_f1': f"{np.mean(f1s)*100:.2f}±{np.std(f1s)*100:.2f}%",
-            'recall_in': f"{np.mean(in_recs)*100:.1f}±{np.std(in_recs)*100:.1f}%",
-            'recall_out': f"{np.mean(out_recs)*100:.1f}±{np.std(out_recs)*100:.1f}%",
+        feature_sets = {
+            '1. Standard Mobile [Light, Mag, Acc, Daytime]': ([2, 3, 4, 7], ['Light', 'Mag', 'Acc', 'Daytime']),
+            '2. Proximity-Augmented [Light, Mag, Acc, Proximity]': ([2, 3, 4, 6], ['Light', 'Mag', 'Acc', 'Proximity']),
+            '3. Acoustic-Augmented [Light, Mag, Sound, Daytime]': ([2, 3, 5, 7], ['Light', 'Mag', 'Sound', 'Daytime']),
+            '4. Lightless Mobile [Mag, Acc, Sound, Daytime]': ([3, 4, 5, 7], ['Mag', 'Acc', 'Sound', 'Daytime']),
         }
 
-    print("\n#### Four Feasible Feature Sets Comparison (5-Fold Nested CV Outer Evaluation):")
-    print("| Sensor Feature Combination | Accuracy (Mean±Std) | Macro-F1 (Mean±Std) | Indoor Recall (Mean±Std) | Outdoor Recall (Mean±Std) | Hardware & Legal Feasibility |")
-    print("| :--- | :---: | :---: | :---: | :---: | :--- |")
-    print(f"| **1. Standard Mobile [Light, Mag, Acc, Daytime]** | **{feature_cv_summaries['1. Standard Mobile [Light, Mag, Acc, Daytime]']['accuracy']}** | **{feature_cv_summaries['1. Standard Mobile [Light, Mag, Acc, Daytime]']['macro_f1']}** | {feature_cv_summaries['1. Standard Mobile [Light, Mag, Acc, Daytime]']['recall_in']} | {feature_cv_summaries['1. Standard Mobile [Light, Mag, Acc, Daytime]']['recall_out']} | High: Standard Android Sensor.TYPE_LIGHT, IMU + Clock |")
-    print(f"| **2. Proximity-Augmented [Light, Mag, Acc, Proximity]** | **{feature_cv_summaries['2. Proximity-Augmented [Light, Mag, Acc, Proximity]']['accuracy']}** | **{feature_cv_summaries['2. Proximity-Augmented [Light, Mag, Acc, Proximity]']['macro_f1']}** | {feature_cv_summaries['2. Proximity-Augmented [Light, Mag, Acc, Proximity]']['recall_in']} | {feature_cv_summaries['2. Proximity-Augmented [Light, Mag, Acc, Proximity]']['recall_out']} | Medium: Proximity often binary; iOS restricted to phone calls |")
-    print(f"| **3. Acoustic-Augmented [Light, Mag, Sound, Daytime]** | **{feature_cv_summaries['3. Acoustic-Augmented [Light, Mag, Sound, Daytime]']['accuracy']}** | **{feature_cv_summaries['3. Acoustic-Augmented [Light, Mag, Sound, Daytime]']['macro_f1']}** | {feature_cv_summaries['3. Acoustic-Augmented [Light, Mag, Sound, Daytime]']['recall_in']} | {feature_cv_summaries['3. Acoustic-Augmented [Light, Mag, Sound, Daytime]']['recall_out']} | Low: Invasive RECORD_AUDIO microphone permission required |")
-    print(f"| **4. Lightless Mobile [Mag, Acc, Sound, Daytime]** | **{feature_cv_summaries['4. Lightless Mobile [Mag, Acc, Sound, Daytime]']['accuracy']}** | **{feature_cv_summaries['4. Lightless Mobile [Mag, Acc, Sound, Daytime]']['macro_f1']}** | {feature_cv_summaries['4. Lightless Mobile [Mag, Acc, Sound, Daytime]']['recall_in']} | {feature_cv_summaries['4. Lightless Mobile [Mag, Acc, Sound, Daytime]']['recall_out']} | Low: Microphone permission + reduced indoor recall |")
+        feature_cv_summaries = {}
+        for feat_title, (f_idx, f_names) in feature_sets.items():
+            if feat_title == '1. Standard Mobile [Light, Mag, Acc, Daytime]':
+                res_feat = res_standard
+            else:
+                res_feat = run_nested_session_cv(
+                    dev_sessions, f_idx, f_names, device, deployed_model, deployed_mean, deployed_std, num_outer_folds=5
+                )
+
+            m_list = res_feat['retrained_base']
+            accs = [m['accuracy'] for m in m_list]
+            f1s = [m['macro_f1'] for m in m_list]
+            in_recs = [m['recall_in'] for m in m_list]
+            out_recs = [m['recall_out'] for m in m_list]
+
+            feature_cv_summaries[feat_title] = {
+                'accuracy': f"{np.mean(accs)*100:.2f}±{np.std(accs)*100:.2f}%",
+                'macro_f1': f"{np.mean(f1s)*100:.2f}±{np.std(f1s)*100:.2f}%",
+                'recall_in': f"{np.mean(in_recs)*100:.1f}±{np.std(in_recs)*100:.1f}%",
+                'recall_out': f"{np.mean(out_recs)*100:.1f}±{np.std(out_recs)*100:.1f}%",
+            }
+
+        print("\n#### Four Feasible Feature Sets Comparison (5-Fold Nested CV Outer Evaluation):")
+        print("| Sensor Feature Combination | Accuracy (Mean±Std) | Macro-F1 (Mean±Std) | Indoor Recall (Mean±Std) | Outdoor Recall (Mean±Std) | Hardware & Legal Feasibility |")
+        print("| :--- | :---: | :---: | :---: | :---: | :--- |")
+        print(f"| **1. Standard Mobile [Light, Mag, Acc, Daytime]** | **{feature_cv_summaries['1. Standard Mobile [Light, Mag, Acc, Daytime]']['accuracy']}** | **{feature_cv_summaries['1. Standard Mobile [Light, Mag, Acc, Daytime]']['macro_f1']}** | {feature_cv_summaries['1. Standard Mobile [Light, Mag, Acc, Daytime]']['recall_in']} | {feature_cv_summaries['1. Standard Mobile [Light, Mag, Acc, Daytime]']['recall_out']} | High: Standard Android Sensor.TYPE_LIGHT, IMU + Clock |")
+        print(f"| **2. Proximity-Augmented [Light, Mag, Acc, Proximity]** | **{feature_cv_summaries['2. Proximity-Augmented [Light, Mag, Acc, Proximity]']['accuracy']}** | **{feature_cv_summaries['2. Proximity-Augmented [Light, Mag, Acc, Proximity]']['macro_f1']}** | {feature_cv_summaries['2. Proximity-Augmented [Light, Mag, Acc, Proximity]']['recall_in']} | {feature_cv_summaries['2. Proximity-Augmented [Light, Mag, Acc, Proximity]']['recall_out']} | Medium: Proximity often binary; iOS restricted to phone calls |")
+        print(f"| **3. Acoustic-Augmented [Light, Mag, Sound, Daytime]** | **{feature_cv_summaries['3. Acoustic-Augmented [Light, Mag, Sound, Daytime]']['accuracy']}** | **{feature_cv_summaries['3. Acoustic-Augmented [Light, Mag, Sound, Daytime]']['macro_f1']}** | {feature_cv_summaries['3. Acoustic-Augmented [Light, Mag, Sound, Daytime]']['recall_in']} | {feature_cv_summaries['3. Acoustic-Augmented [Light, Mag, Sound, Daytime]']['recall_out']} | Low: Invasive RECORD_AUDIO microphone permission required |")
+        print(f"| **4. Lightless Mobile [Mag, Acc, Sound, Daytime]** | **{feature_cv_summaries['4. Lightless Mobile [Mag, Acc, Sound, Daytime]']['accuracy']}** | **{feature_cv_summaries['4. Lightless Mobile [Mag, Acc, Sound, Daytime]']['macro_f1']}** | {feature_cv_summaries['4. Lightless Mobile [Mag, Acc, Sound, Daytime]']['recall_in']} | {feature_cv_summaries['4. Lightless Mobile [Mag, Acc, Sound, Daytime]']['recall_out']} | Low: Microphone permission + reduced indoor recall |")
 
     # -------------------------------------------------------------------------
     # PART 3: CANONICAL RETRAINED CANDIDATE WEIGHT & PARITY FIXTURE EXPORT
+    # (Scientifically Correct Checkpoint Selection on Separate Validation Split)
     # -------------------------------------------------------------------------
     print("\n" + "="*88)
     print("  PART 3: EXPORTING CANONICAL CANDIDATE WEIGHTS & CLEAN-CHECKOUT PARITY FIXTURES")
+    print("  (Checkpoint Selection on Independent Validation Partition: Sessions 55..72)")
     print("="*88)
 
-    raw_dev_all = np.concatenate([s['features'][:, mob_indices] for s in dev_sessions], axis=0)
-    mean_dev_all = np.mean(raw_dev_all, axis=0)
-    std_dev_all = np.std(raw_dev_all, axis=0)
-    std_dev_all[std_dev_all < 1e-6] = 1.0
+    can_tr_sess = dev_sessions[:54]   # Sessions 01..54 (75%)
+    can_val_sess = dev_sessions[54:72]  # Sessions 55..72 (25%)
+    print(f"Canonical Model Training Set: {len(can_tr_sess)} sessions")
+    print(f"Canonical Model Checkpoint Validation Set: {len(can_val_sess)} sessions")
 
-    X_dev_all, y_dev_all, _ = build_vectorized_windows(
-        dev_sessions, mean_dev_all, std_dev_all, mob_indices, samples_per_session=1500, is_test=False
+    # Fit scaler strictly on training split (Sessions 01..54)
+    raw_can_tr = np.concatenate([s['features'][:, mob_indices] for s in can_tr_sess], axis=0)
+    mean_can_tr = np.mean(raw_can_tr, axis=0)
+    std_can_tr = np.std(raw_can_tr, axis=0)
+    std_can_tr[std_can_tr < 1e-6] = 1.0
+
+    X_can_tr, y_can_tr, _ = build_vectorized_windows(
+        can_tr_sess, mean_can_tr, std_can_tr, mob_indices, samples_per_session=1500, is_test=False
     )
-    dev_all_loader = DataLoader(CiodSessionDataset(X_dev_all, y_dev_all), batch_size=64, shuffle=True)
+    X_can_val, y_can_val, _ = build_vectorized_windows(
+        can_val_sess, mean_can_tr, std_can_tr, mob_indices, samples_per_session=0, is_test=True
+    )
+
+    can_tr_loader = DataLoader(CiodSessionDataset(X_can_tr, y_can_tr), batch_size=64, shuffle=True)
+    can_val_loader = DataLoader(CiodSessionDataset(X_can_val, y_can_val), batch_size=256, shuffle=False)
 
     set_deterministic(42)
-    canonical_model = train_single_model(dev_all_loader, dev_all_loader, device, epochs=5, lr=0.001)
-    canonical_weights_folded = fold_weights(canonical_model, mean_dev_all, std_dev_all, mob_names)
+    # Model checkpoint selected strictly on separate validation partition
+    canonical_model = train_single_model(can_tr_loader, can_val_loader, device, epochs=5, lr=0.001)
+    canonical_weights_folded = fold_weights(canonical_model, mean_can_tr, std_can_tr, mob_names)
 
     weights_out = "tooling/data/deepiod_weights/deepiod_model_c_mobile_full_sampled_weights.json"
     with open(weights_out, 'w') as f:
         json.dump(canonical_weights_folded, f, indent=2)
     print(f"Exported canonical candidate weights to: {weights_out}")
 
-    # Generate deterministic 100 test vectors
+    # Generate deterministic 100 test vectors from the separate validation partition
     set_deterministic(42)
-    sample_indices = np.random.choice(len(X_dev_all), size=100, replace=False)
+    sample_indices = np.random.choice(len(X_can_val), size=100, replace=False)
     parity_vectors = []
     canonical_model.eval()
     with torch.no_grad():
         for idx in sample_indices:
-            win = X_dev_all[idx]
+            win = X_can_val[idx]
             t_win = torch.tensor(win, dtype=torch.float32).unsqueeze(0).to(device)
             p_torch = float(canonical_model(t_win).cpu().numpy().flatten()[0])
             parity_vectors.append({
@@ -826,9 +843,9 @@ def main():
     m_aud_dep_base = compute_metrics(y_aud_dep, probs_aud_dep, threshold=0.50)
     m_aud_dep_cand3 = evaluate_hysteresis(y_aud_dep, probs_aud_dep, sess_aud_dep, low=0.25, high=0.45)
 
-    # Canonical retrained model on audit sessions using its dev scaler
+    # Canonical retrained model on audit sessions using its training scaler
     X_aud_can, y_aud_can, sess_aud_can = build_vectorized_windows(
-        audit_sessions, mean_dev_all, std_dev_all, mob_indices, samples_per_session=0, is_test=True
+        audit_sessions, mean_can_tr, std_can_tr, mob_indices, samples_per_session=0, is_test=True
     )
     aud_can_loader = DataLoader(CiodSessionDataset(X_aud_can, y_aud_can), batch_size=256, shuffle=False)
     probs_aud_can = predict_loader(canonical_model, aud_can_loader, device)
@@ -840,8 +857,8 @@ def main():
     print("| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |")
     print(f"| **Deployed Pretrained C-Mobile (theta=0.50)** | Pretrained | **{m_aud_dep_base['accuracy']*100:.2f}%** | **{m_aud_dep_base['macro_f1']*100:.2f}%** | **{m_aud_dep_base['recall_in']*100:.1f}%** | **{m_aud_dep_base['recall_out']*100:.1f}%** | {m_aud_dep_base['precision_out']*100:.1f}% | **PASS (>=90%)** |")
     print(f"| **Deployed C-Mobile + Candidate 3 Hysteresis [0.45, 0.25]** | Pretrained | **{m_aud_dep_cand3['accuracy']*100:.2f}%** | **{m_aud_dep_cand3['macro_f1']*100:.2f}%** | **{m_aud_dep_cand3['recall_in']*100:.1f}%** | **{m_aud_dep_cand3['recall_out']*100:.1f}%** | {m_aud_dep_cand3['precision_out']*100:.1f}% | **PASS (>=90%)** |")
-    print(f"| **Canonical Retrained C-Mobile (theta=0.50)** | Dev Scaler | **{m_aud_can_base['accuracy']*100:.2f}%** | **{m_aud_can_base['macro_f1']*100:.2f}%** | **{m_aud_can_base['recall_in']*100:.1f}%** | **{m_aud_can_base['recall_out']*100:.1f}%** | {m_aud_can_base['precision_out']*100:.1f}% | FAIL (<90%) |")
-    print(f"| **Canonical Retrained C-Mobile + Hysteresis [0.45, 0.25]** | Dev Scaler | **{m_aud_can_hyst['accuracy']*100:.2f}%** | **{m_aud_can_hyst['macro_f1']*100:.2f}%** | **{m_aud_can_hyst['recall_in']*100:.1f}%** | **{m_aud_can_hyst['recall_out']*100:.1f}%** | {m_aud_can_hyst['precision_out']*100:.1f}% | FAIL (<90%) |")
+    print(f"| **Canonical Retrained C-Mobile (theta=0.50)** | Train Scaler (S01..54) | **{m_aud_can_base['accuracy']*100:.2f}%** | **{m_aud_can_base['macro_f1']*100:.2f}%** | **{m_aud_can_base['recall_in']*100:.1f}%** | **{m_aud_can_base['recall_out']*100:.1f}%** | {m_aud_can_base['precision_out']*100:.1f}% | {'PASS (>=90%)' if m_aud_can_base['recall_in'] >= 0.90 else 'FAIL (<90%)'} |")
+    print(f"| **Canonical Retrained C-Mobile + Hysteresis [0.45, 0.25]** | Train Scaler (S01..54) | **{m_aud_can_hyst['accuracy']*100:.2f}%** | **{m_aud_can_hyst['macro_f1']*100:.2f}%** | **{m_aud_can_hyst['recall_in']*100:.1f}%** | **{m_aud_can_hyst['recall_out']*100:.1f}%** | {m_aud_can_hyst['precision_out']*100:.1f}% | {'PASS (>=90%)' if m_aud_can_hyst['recall_in'] >= 0.90 else 'FAIL (<90%)'} |")
 
 
 if __name__ == '__main__':
