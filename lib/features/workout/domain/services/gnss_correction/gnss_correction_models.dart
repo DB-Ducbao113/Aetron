@@ -55,3 +55,4 @@ class GnssCorrectionResult {
     this.headingProcessNoiseMultiplier = 1.0,
   });
 }
+

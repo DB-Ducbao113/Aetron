@@ -19,9 +19,13 @@ abstract class IGnssCorrectionEngine {
     required LatLng? predictedPosition,
     required double? predictedHeadingDeg,
     required double predictedPosVariance,
+    double? predictedPosVarianceEast,
+    double? predictedPosVarianceNorth,
+    double? predictedPosCovarianceEN,
     required String activityType,
   });
 
   /// Resets internal temporal and heading states.
   void reset();
 }
+

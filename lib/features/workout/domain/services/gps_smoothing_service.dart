@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:fitness_exercise_application/core/constants/debug_config.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/ekf/extended_kalman_filter.dart';
+import 'package:fitness_exercise_application/features/workout/domain/services/gnss_correction/adaptive_gnss_correction_engine.dart';
+import 'package:fitness_exercise_application/features/workout/domain/services/gnss_correction/gnss_correction_interface.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/gps_validation_models.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -33,6 +35,9 @@ enum GpsFilterAlgorithm {
 class GpsSmoothingService {
   final GpsFilterAlgorithm algorithm;
   final ExtendedKalmanFilter _ekf;
+  final IGnssCorrectionEngine? _gnssCorrectionEngine;
+  final bool enableGnssCorrection;
+  final bool enableShadowMode;
 
   /// Duration after which a GPS absence is treated as a major blackout gap.
   static const double kGpsGapThresholdSec = 5.0;
@@ -40,17 +45,32 @@ class GpsSmoothingService {
   GpsSmoothingService({
     ExtendedKalmanFilter? ekf,
     GpsFilterAlgorithm? algorithm,
+    IGnssCorrectionEngine? gnssCorrectionEngine,
+    bool? enableGnssCorrection,
+    bool? enableShadowMode,
   }) : algorithm =
            algorithm ??
            (kGpsFilterAlgoConfig.toLowerCase() == 'fixedalpha'
                ? GpsFilterAlgorithm.fixedAlpha
                : GpsFilterAlgorithm.ekf4State),
+       enableGnssCorrection = enableGnssCorrection ?? kEnableGnssCorrection,
+       enableShadowMode = enableShadowMode ?? kEnableGnssCorrectionShadowMode,
+       _gnssCorrectionEngine = gnssCorrectionEngine ??
+           ((enableGnssCorrection ?? kEnableGnssCorrection) || (enableShadowMode ?? kEnableGnssCorrectionShadowMode)
+               ? AdaptiveGnssCorrectionEngine()
+               : null),
        _ekf =
            ekf ??
            ExtendedKalmanFilter(
              processPosStd: 0.6,
              processSpeedStd: 1.2,
              processHeadingStd: 0.5,
+             gnssCorrectionEngine: gnssCorrectionEngine ??
+                 ((enableGnssCorrection ?? kEnableGnssCorrection) || (enableShadowMode ?? kEnableGnssCorrectionShadowMode)
+                     ? AdaptiveGnssCorrectionEngine()
+                     : null),
+             enableGnssCorrection: enableGnssCorrection ?? kEnableGnssCorrection,
+             enableShadowMode: enableShadowMode ?? kEnableGnssCorrectionShadowMode,
            );
 
   /// Human-readable identifier of the active smoothing algorithm.
@@ -60,6 +80,7 @@ class GpsSmoothingService {
   /// Resets filter state (e.g. at workout start, mode flip, or after long GPS blackout)
   void reset() {
     _ekf.reset();
+    _gnssCorrectionEngine?.reset();
   }
 
   GpsSmoothingUpdate smoothAcceptedPoint({
@@ -181,6 +202,7 @@ class GpsSmoothingService {
       accuracyMeters: accuracyMeters,
       speedMs: speedMs,
       timeDeltaSec: timeDeltaSec,
+      activityType: activityType,
     );
   }
 
@@ -190,6 +212,7 @@ class GpsSmoothingService {
     required double accuracyMeters,
     required double speedMs,
     required double timeDeltaSec,
+    required String activityType,
   }) {
     final headingDeg = previousAcceptedPoint != null
         ? _bearing(previousAcceptedPoint, acceptedPoint)
@@ -201,6 +224,7 @@ class GpsSmoothingService {
       timeDeltaSec: timeDeltaSec,
       speedMs: speedMs >= 0.0 ? speedMs : null,
       headingDeg: headingDeg,
+      activityType: activityType,
     );
 
     return estimate.position;
