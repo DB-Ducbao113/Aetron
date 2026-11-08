@@ -4,12 +4,12 @@ class KineticTypography {
   const KineticTypography._();
 
   /// Display face for headings, controls, and performance telemetry.
-  /// V4 (2026-11-08): single typeface for the whole app — Archivo variable
+  /// V4 (2026-11-08): single typeface for the whole app — Be Vietnam Pro
   /// (weight + width axes). Owner direction: modern, clean, one stable font.
-  static const String displayFontFamily = 'Archivo';
+  static const String displayFontFamily = 'BeVietnamPro';
 
   /// Reading face — same family as display in V4 (single-font system).
-  static const String bodyFontFamily = 'Archivo';
+  static const String bodyFontFamily = 'BeVietnamPro';
 
   /// Compatibility alias for custom telemetry styles outside this token file.
   static const String fontFamily = displayFontFamily;
@@ -27,11 +27,10 @@ class KineticTypography {
     letterSpacing: -1.0,
     height: 1.0,
     fontFeatures: [FontFeature.tabularFigures()],
-    fontVariations: [FontVariation('wdth', 112)],
   );
 
   /// Mega Metric — V4: the single biggest number on screen (live distance,
-  /// summary headline). Archivo ExtraBold, slightly expanded.
+  /// summary headline). Be Vietnam Pro ExtraBold.
   static const TextStyle metricMega = TextStyle(
     fontFamily: displayFontFamily,
     fontSize: 76,
@@ -39,7 +38,6 @@ class KineticTypography {
     letterSpacing: -0.5,
     height: 0.95,
     fontFeatures: [FontFeature.tabularFigures()],
-    fontVariations: [FontVariation('wdth', 116)],
   );
 
   /// Display XL — V4: page-level statement headlines.
@@ -49,7 +47,6 @@ class KineticTypography {
     fontWeight: FontWeight.w800,
     letterSpacing: -0.4,
     height: 1.1,
-    fontVariations: [FontVariation('wdth', 115)],
   );
 
   /// Telemetry Metric (Medium)
@@ -60,7 +57,6 @@ class KineticTypography {
     letterSpacing: -0.2,
     height: 1.15,
     fontFeatures: [FontFeature.tabularFigures()],
-    fontVariations: [FontVariation('wdth', 112)],
   );
 
   /// Telemetry Metric (Small)
@@ -71,7 +67,6 @@ class KineticTypography {
     letterSpacing: -0.15,
     height: 1.2,
     fontFeatures: [FontFeature.tabularFigures()],
-    fontVariations: [FontVariation('wdth', 112)],
   );
 
   /// Display Large
@@ -230,7 +225,6 @@ class KineticTypography {
     letterSpacing: -0.3,
     height: 1.1,
     fontFeatures: [FontFeature.tabularFigures()],
-    fontVariations: [FontVariation('wdth', 112)],
   );
 
   /// Telemetry Metric (Card) — Summary/Details telemetry card values (2×2 grid)
@@ -241,7 +235,6 @@ class KineticTypography {
     letterSpacing: -0.3,
     height: 1.15,
     fontFeatures: [FontFeature.tabularFigures()],
-    fontVariations: [FontVariation('wdth', 112)],
   );
 
   /// Unit descriptor next to a big metric (e.g. "KM", "MI" beside metricHero)
