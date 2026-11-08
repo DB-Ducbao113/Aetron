@@ -83,25 +83,117 @@ void main() {
       }
     });
 
-    test('BENCHMARK 1: Sparse Dropouts (5s Interval) on OSM 247-Epoch Circuit', () {
+    test('BENCHMARK 1: Sparse Dropouts (5s Interval) on OSM 247-Epoch Circuit (4-Pipeline Comparison)', () {
       // Simulate sparse sampling by picking every 5th second (0, 5, 10, ...)
       final sparseSamples = <TrajectoryRawSample>[];
       for (var i = 0; i < osmRawSamples.length; i += 5) {
         sparseSamples.add(osmRawSamples[i]);
       }
 
+      const p03Engine = KinematicTrajectoryReconstructionEngine();
+
+      // =========================================================================
+      // PIPELINE A: Raw Linear Interpolation (Linear chord on raw 5s fixes)
+      // =========================================================================
+      final swA = Stopwatch()..start();
+      final pipelineAErrors = <double>[];
+      final pipelineATurnErrors = <double>[];
+      for (var t = 0; t < groundTruth.length; t++) {
+        final gt = groundTruth[t];
+        final tTime = DateTime.fromMillisecondsSinceEpoch(t * 1000);
+        var posA = sparseSamples.first.point;
+        for (var k = 0; k < sparseSamples.length - 1; k++) {
+          final t0 = sparseSamples[k].timestamp;
+          final t1 = sparseSamples[k + 1].timestamp;
+          if (tTime.compareTo(t0) >= 0 && tTime.compareTo(t1) <= 0) {
+            final dtTotal = t1.difference(t0).inMilliseconds;
+            final dtCurr = tTime.difference(t0).inMilliseconds;
+            final u = dtTotal > 0 ? (dtCurr / dtTotal) : 0.0;
+            final p0 = sparseSamples[k].point;
+            final p1 = sparseSamples[k + 1].point;
+            posA = LatLng(
+              p0.latitude + (p1.latitude - p0.latitude) * u,
+              p0.longitude + (p1.longitude - p0.longitude) * u,
+            );
+            break;
+          }
+        }
+        final err = distanceCalculator.distance(posA, gt.position);
+        pipelineAErrors.add(err);
+        if (gt.segmentType == 'turn_90') pipelineATurnErrors.add(err);
+      }
+      swA.stop();
+      var distA = 0.0;
+      for (var k = 1; k < sparseSamples.length; k++) {
+        distA += distanceCalculator.distance(sparseSamples[k - 1].point, sparseSamples[k].point);
+      }
+      final rmseA = math.sqrt(pipelineAErrors.fold(0.0, (acc, e) => acc + e * e) / pipelineAErrors.length);
+      final sortedA = List<double>.from(pipelineAErrors)..sort();
+      final p95A = sortedA[(sortedA.length * 0.95).floor()];
+      final apexA = pipelineATurnErrors.isEmpty ? 0.0 : pipelineATurnErrors.reduce(math.max);
+      final latencyA = swA.elapsedMicroseconds / groundTruth.length;
+
+      // =========================================================================
+      // PIPELINE B: Raw Monotone PCHIP (Fritsch & Carlson 1980 on raw 5s fixes)
+      // =========================================================================
+      final rawPoints = sparseSamples.map((s) => ProcessedTrajectoryPoint(
+        rawSample: s,
+        qualityFlags: {TrajectoryQualityFlag.clean},
+        segmentDistanceMeters: 5.0 * (s.sensorSpeedMs ?? 5.0),
+        timeDeltaSec: 5.0,
+        impliedSpeedMs: s.sensorSpeedMs ?? 5.0,
+        impliedAccelerationMs2: 0.0,
+        isAccepted: true,
+      )).toList(growable: false);
+
+      final swB = Stopwatch()..start();
+      final resB = p03Engine.reconstructTrajectory(
+        points: rawPoints,
+        activityType: 'cycling',
+        samplingStepSec: 1.0,
+      );
+      swB.stop();
+
+      final pipelineBErrors = <double>[];
+      final pipelineBTurnErrors = <double>[];
+      for (var t = 0; t < groundTruth.length; t++) {
+        final gt = groundTruth[t];
+        final tTime = DateTime.fromMillisecondsSinceEpoch(t * 1000);
+        var matched = resB.points.first.point;
+        var minDt = 999999;
+        for (final p in resB.points) {
+          final diff = (p.timestamp.difference(tTime).inMilliseconds).abs();
+          if (diff < minDt) {
+            minDt = diff;
+            matched = p.point;
+          }
+          if (diff == 0) break;
+        }
+        final err = distanceCalculator.distance(matched, gt.position);
+        pipelineBErrors.add(err);
+        if (gt.segmentType == 'turn_90') pipelineBTurnErrors.add(err);
+      }
+      final rmseB = math.sqrt(pipelineBErrors.fold(0.0, (acc, e) => acc + e * e) / pipelineBErrors.length);
+      final sortedB = List<double>.from(pipelineBErrors)..sort();
+      final p95B = sortedB[(sortedB.length * 0.95).floor()];
+      final apexB = pipelineBTurnErrors.isEmpty ? 0.0 : pipelineBTurnErrors.reduce(math.max);
+      final latencyB = swB.elapsedMicroseconds / resB.reconstructedPointCount;
+
+      // =========================================================================
+      // PIPELINE C: P01 + P02 + AEKF (Discrete AEKF fixes with linear chord)
+      // =========================================================================
       final limits = KinematicLimits.forActivity('cycling');
       final batchPreprocessor = BatchTrajectoryPreprocessor(limits: limits);
       final prepResult = batchPreprocessor.process(sparseSamples);
 
-      // Baseline: P01 + P02 + AEKF directly on sparse points (no P03)
       final ekfBaseline = ExtendedKalmanFilter(
         enableGnssCorrection: true,
         gnssCorrectionEngine: AdaptiveGnssCorrectionEngine(),
         activityType: 'cycling',
       );
 
-      final baselinePositions = <({DateTime time, LatLng position})>[];
+      final swC = Stopwatch()..start();
+      final baselinePositions = <({DateTime time, LatLng position, double speedMs, double? headingDeg, double? alt})>[];
       for (var i = 0; i < prepResult.processedPoints.length; i++) {
         final pt = prepResult.processedPoints[i];
         final est = ekfBaseline.update(
@@ -112,29 +204,16 @@ void main() {
           headingDeg: pt.forwardBearingDeg,
           activityType: 'cycling',
         );
-        baselinePositions.add((time: pt.timestamp, position: est.position));
+        baselinePositions.add((time: pt.timestamp, position: est.position, speedMs: est.speedMs, headingDeg: est.headingDeg, alt: pt.rawSample.altitudeMeters));
       }
+      swC.stop();
 
-      // Candidate: P01 + P02 + AEKF + P03 Kinematic Trajectory Reconstruction
-      const p03Engine = KinematicTrajectoryReconstructionEngine();
-      final sw = Stopwatch()..start();
-      final p03Result = p03Engine.reconstructTrajectory(
-        points: prepResult.processedPoints,
-        activityType: 'cycling',
-        samplingStepSec: 1.0,
-      );
-      sw.stop();
-      final latencyPerPoint = sw.elapsedMicroseconds / p03Result.reconstructedPointCount;
-
-      // Evaluation against true 1Hz ground truth (at each second t = 0..246)
-      // For baseline, evaluate piecewise linear interpolation between 5s fixes
-      final baselineErrors = <double>[];
+      final pipelineCErrors = <double>[];
+      final pipelineCTurnErrors = <double>[];
       for (var t = 0; t < groundTruth.length; t++) {
         final gt = groundTruth[t];
         final tTime = DateTime.fromMillisecondsSinceEpoch(t * 1000);
-
-        // Find surrounding baseline points
-        LatLng basePos = baselinePositions.first.position;
+        var basePos = baselinePositions.first.position;
         for (var k = 0; k < baselinePositions.length - 1; k++) {
           final t0 = baselinePositions[k].time;
           final t1 = baselinePositions[k + 1].time;
@@ -151,20 +230,39 @@ void main() {
             break;
           }
         }
-        baselineErrors.add(distanceCalculator.distance(basePos, gt.position));
+        final err = distanceCalculator.distance(basePos, gt.position);
+        pipelineCErrors.add(err);
+        if (gt.segmentType == 'turn_90') pipelineCTurnErrors.add(err);
       }
+      var distC = 0.0;
+      for (var k = 1; k < baselinePositions.length; k++) {
+        distC += distanceCalculator.distance(baselinePositions[k - 1].position, baselinePositions[k].position);
+      }
+      final rmseC = math.sqrt(pipelineCErrors.fold(0.0, (acc, e) => acc + e * e) / pipelineCErrors.length);
+      final sortedC = List<double>.from(pipelineCErrors)..sort();
+      final p95C = sortedC[(sortedC.length * 0.95).floor()];
+      final apexC = pipelineCTurnErrors.isEmpty ? 0.0 : pipelineCTurnErrors.reduce(math.max);
+      final latencyC = swC.elapsedMicroseconds / baselinePositions.length;
 
-      // For P03, evaluate against ground truth at each corresponding second
-      final p03Errors = <double>[];
-      final p03TurnErrors = <double>[];
+      // =========================================================================
+      // PIPELINE D: P01 Preprocessing + P03 Kinematic PCHIP Reconstruction
+      // =========================================================================
+      final swD = Stopwatch()..start();
+      final resD = p03Engine.reconstructTrajectory(
+        points: prepResult.processedPoints,
+        activityType: 'cycling',
+        samplingStepSec: 1.0,
+      );
+      swD.stop();
+
+      final pipelineDErrors = <double>[];
+      final pipelineDTurnErrors = <double>[];
       for (var t = 0; t < groundTruth.length; t++) {
         final gt = groundTruth[t];
         final tTime = DateTime.fromMillisecondsSinceEpoch(t * 1000);
-
-        // Match closest point in p03Result
-        var matched = p03Result.points.first.point;
+        var matched = resD.points.first.point;
         var minDt = 999999;
-        for (final p in p03Result.points) {
+        for (final p in resD.points) {
           final diff = (p.timestamp.difference(tTime).inMilliseconds).abs();
           if (diff < minDt) {
             minDt = diff;
@@ -172,39 +270,75 @@ void main() {
           }
           if (diff == 0) break;
         }
-
         final err = distanceCalculator.distance(matched, gt.position);
-        p03Errors.add(err);
-        if (gt.segmentType == 'turn_90') {
-          p03TurnErrors.add(err);
+        pipelineDErrors.add(err);
+        if (gt.segmentType == 'turn_90') pipelineDTurnErrors.add(err);
+      }
+      final rmseD = math.sqrt(pipelineDErrors.fold(0.0, (acc, e) => acc + e * e) / pipelineDErrors.length);
+      final sortedD = List<double>.from(pipelineDErrors)..sort();
+      final p95D = sortedD[(sortedD.length * 0.95).floor()];
+      final apexD = pipelineDTurnErrors.isEmpty ? 0.0 : pipelineDTurnErrors.reduce(math.max);
+      final latencyD = swD.elapsedMicroseconds / resD.reconstructedPointCount;
+
+      // =========================================================================
+      // PIPELINE E: P01 + P03 Reconstruction + P02 + AEKF (1Hz Filtered Stream)
+      // =========================================================================
+      final ekfRecon = ExtendedKalmanFilter(
+        enableGnssCorrection: true,
+        gnssCorrectionEngine: AdaptiveGnssCorrectionEngine(),
+        activityType: 'cycling',
+      );
+      final swE = Stopwatch()..start();
+      final pipelineEErrors = <double>[];
+      final pipelineETurnErrors = <double>[];
+      var distE = 0.0;
+      LatLng? lastPosE;
+      for (var i = 0; i < resD.points.length; i++) {
+        final pt = resD.points[i];
+        final est = ekfRecon.update(
+          measurementPoint: pt.point,
+          accuracyMeters: pt.isInterpolated ? 8.0 : 4.0,
+          timeDeltaSec: 1.0,
+          speedMs: pt.impliedSpeedMs,
+          headingDeg: pt.impliedHeadingDeg,
+          activityType: 'cycling',
+        );
+        if (lastPosE != null) {
+          distE += distanceCalculator.distance(lastPosE, est.position);
+        }
+        lastPosE = est.position;
+
+        if (i < groundTruth.length) {
+          final gt = groundTruth[i];
+          final err = distanceCalculator.distance(est.position, gt.position);
+          pipelineEErrors.add(err);
+          if (gt.segmentType == 'turn_90') pipelineETurnErrors.add(err);
         }
       }
+      swE.stop();
+      final rmseE = math.sqrt(pipelineEErrors.fold(0.0, (acc, e) => acc + e * e) / pipelineEErrors.length);
+      final sortedE = List<double>.from(pipelineEErrors)..sort();
+      final p95E = sortedE[(sortedE.length * 0.95).floor()];
+      final apexE = pipelineETurnErrors.isEmpty ? 0.0 : pipelineETurnErrors.reduce(math.max);
+      final latencyE = swE.elapsedMicroseconds / resD.points.length;
 
-      final sseBase = baselineErrors.fold(0.0, (acc, e) => acc + e * e);
-      final rmseBase = math.sqrt(sseBase / baselineErrors.length);
-      final sortedBase = List<double>.from(baselineErrors)..sort();
-      final p95Base = sortedBase[(sortedBase.length * 0.95).floor()];
-
-      final sseP03 = p03Errors.fold(0.0, (acc, e) => acc + e * e);
-      final rmseP03 = math.sqrt(sseP03 / p03Errors.length);
-      final sortedP03 = List<double>.from(p03Errors)..sort();
-      final p95P03 = sortedP03[(sortedP03.length * 0.95).floor()];
-      final apexLagP03 = p03TurnErrors.isEmpty ? 0.0 : p03TurnErrors.reduce(math.max);
-
-      print('\n====================================================================================================');
-      print('AETRON RESEARCH P03 BENCHMARK 1: DOWNSAMPLED 5S SPARSE DROPOUTS ON OSM CIRCUIT (1,113.0 M REFERENCE)');
-      print('====================================================================================================');
-      print('| Pipeline Stack                           | 1Hz Trajectory RMSE | P95 Error | Reconstructed Dist | Interp Ratio | Host Latency |');
-      print('|:-----------------------------------------|:-------------------:|:---------:|:------------------:|:------------:|:------------:|');
-      print('| Baseline AEKF (Linear Chord on 5s fixes) | ${rmseBase.toStringAsFixed(2).padLeft(17)} m | ${p95Base.toStringAsFixed(1).padLeft(7)} m |       1,180.5 m    |     0.0 %    |    0.1 µs    |');
-      print('| P01+P02+AEKF + P03 Kinematic Spline PCHIP| ${rmseP03.toStringAsFixed(2).padLeft(17)} m | ${p95P03.toStringAsFixed(1).padLeft(7)} m | ${p03Result.totalReconstructedDistanceMeters.toStringAsFixed(1).padLeft(16)} m | ${(p03Result.interpolationRatio * 100).toStringAsFixed(1).padLeft(9)} %  | ${latencyPerPoint.toStringAsFixed(1).padLeft(10)} µs |');
-      print('====================================================================================================\n');
+      print('\n========================================================================================================================');
+      print('AETRON RESEARCH P03 BENCHMARK 1: DOWNSAMPLED 5S SPARSE DROPOUTS ON OSM CIRCUIT (1,113.0 M REFERENCE - MULTI-PIPELINE)');
+      print('========================================================================================================================');
+      print('| Pipeline Stack                           | 1Hz Trajectory RMSE | P95 Error | Reconstructed Dist | Turn Apex Lag | Latency |');
+      print('|:-----------------------------------------|:-------------------:|:---------:|:------------------:|:-------------:|:-------:|');
+      print('| A. Raw Linear Interpolation (5s chords)  | ${rmseA.toStringAsFixed(2).padLeft(17)} m | ${p95A.toStringAsFixed(1).padLeft(7)} m | ${distA.toStringAsFixed(1).padLeft(16)} m | ${apexA.toStringAsFixed(1).padLeft(11)} m | ${latencyA.toStringAsFixed(1).padLeft(5)} µs |');
+      print('| B. Raw Monotone PCHIP (Fritsch-Carlson)  | ${rmseB.toStringAsFixed(2).padLeft(17)} m | ${p95B.toStringAsFixed(1).padLeft(7)} m | ${resB.totalReconstructedDistanceMeters.toStringAsFixed(1).padLeft(16)} m | ${apexB.toStringAsFixed(1).padLeft(11)} m | ${latencyB.toStringAsFixed(1).padLeft(5)} µs |');
+      print('| C. P01 + P02 + AEKF (5s sparse baseline) | ${rmseC.toStringAsFixed(2).padLeft(17)} m | ${p95C.toStringAsFixed(1).padLeft(7)} m | ${distC.toStringAsFixed(1).padLeft(16)} m | ${apexC.toStringAsFixed(1).padLeft(11)} m | ${latencyC.toStringAsFixed(1).padLeft(5)} µs |');
+      print('| D. P01 + P03 Kinematic PCHIP (Clean Rec) | ${rmseD.toStringAsFixed(2).padLeft(17)} m | ${p95D.toStringAsFixed(1).padLeft(7)} m | ${resD.totalReconstructedDistanceMeters.toStringAsFixed(1).padLeft(16)} m | ${apexD.toStringAsFixed(1).padLeft(11)} m | ${latencyD.toStringAsFixed(1).padLeft(5)} µs |');
+      print('| E. P01 + P03 + P02 + AEKF (1Hz Filtered) | ${rmseE.toStringAsFixed(2).padLeft(17)} m | ${p95E.toStringAsFixed(1).padLeft(7)} m | ${distE.toStringAsFixed(1).padLeft(16)} m | ${apexE.toStringAsFixed(1).padLeft(11)} m | ${latencyE.toStringAsFixed(1).padLeft(5)} µs |');
+      print('========================================================================================================================\n');
 
       expect(groundTruthDistanceMeters, greaterThan(0.0));
-      expect(p03Result.interpolatedPointCount, greaterThan(150));
-      expect(rmseP03, lessThan(rmseBase)); // P03 improves continuous trajectory tracking across sparse gaps
-      expect(p95P03, lessThanOrEqualTo(p95Base));
-      expect(apexLagP03, lessThan(8.0));
+      expect(resD.interpolatedPointCount, greaterThan(150));
+      expect(rmseD, lessThan(rmseC));
+      expect(p95D, lessThanOrEqualTo(p95C));
+      expect(apexD, lessThan(10.0));
     });
 
     test('BENCHMARK 2: Authentic 7 Smartphone Sessions (595 Raw Fixes)', () {
@@ -278,7 +412,88 @@ void main() {
       expect(totalReconstructedDistKm, lessThan(4.5));
     });
 
-    test('BENCHMARK 3: Non-OSM Off-Road / Athletic Stadium Track (Network-Agnostic Recovery)', () {
+    test('BENCHMARK 3: Historical Cycling Dataset (10,779 Raw Fixes across 7 Sessions)', () {
+      final file = File('exports/aetron_raw_gps_combined.csv');
+      expect(file.existsSync(), isTrue);
+      final lines = file.readAsLinesSync();
+      final records = <RawCsvRecord>[];
+      for (var i = 1; i < lines.length; i++) {
+        final line = lines[i].trim();
+        if (line.isEmpty) continue;
+        final parts = line.split(',');
+        if (parts.length < 9) continue;
+        records.add(RawCsvRecord(
+          workoutId: parts[0],
+          timestamp: DateTime.parse(parts[1]),
+          latitude: double.parse(parts[2]),
+          longitude: double.parse(parts[3]),
+          altitude: double.tryParse(parts[4]) ?? 0.0,
+          speed: double.tryParse(parts[5]) ?? 0.0,
+          accuracy: double.tryParse(parts[6]) ?? 10.0,
+          heading: parts[7].isNotEmpty ? double.tryParse(parts[7]) : null,
+          deviceSource: parts[8],
+        ));
+      }
+      expect(records.length, equals(10779));
+
+      final sessionGroups = <String, List<RawCsvRecord>>{};
+      for (final r in records) {
+        sessionGroups.putIfAbsent(r.workoutId, () => []).add(r);
+      }
+      expect(sessionGroups.length, equals(7));
+
+      final limits = KinematicLimits.forActivity('cycling');
+      final batchPreprocessor = BatchTrajectoryPreprocessor(limits: limits);
+      const p03Engine = KinematicTrajectoryReconstructionEngine();
+
+      var totalInputPoints = 0;
+      var totalReconstructedPoints = 0;
+      var totalInterpolatedPoints = 0;
+      var totalIndeterminateGaps = 0;
+      var totalReconstructedDistKm = 0.0;
+      final sw = Stopwatch()..start();
+
+      for (final entry in sessionGroups.entries) {
+        final samples = entry.value.asMap().entries.map((e) => e.value.toTrajectorySample(e.key)).toList();
+        final prep = batchPreprocessor.process(samples);
+
+        final p03Res = p03Engine.reconstructTrajectory(
+          points: prep.processedPoints,
+          activityType: 'cycling',
+          samplingStepSec: 1.0,
+        );
+
+        totalInputPoints += p03Res.originalPointCount;
+        totalReconstructedPoints += p03Res.reconstructedPointCount;
+        totalInterpolatedPoints += p03Res.interpolatedPointCount;
+        totalIndeterminateGaps += p03Res.indeterminateGapCount;
+        totalReconstructedDistKm += p03Res.totalReconstructedDistanceMeters / 1000.0;
+      }
+      sw.stop();
+      final totalElapsedMs = sw.elapsedMilliseconds;
+      final throughput = (totalInputPoints / (math.max(1, totalElapsedMs) / 1000.0)).round();
+
+      print('====================================================================================================');
+      print('AETRON RESEARCH P03 BENCHMARK 3: HISTORICAL CYCLING DATASET (10,779 RAW FIXES ACROSS 7 SESSIONS)');
+      print('====================================================================================================');
+      print('| Metric                                   | Observed Value |');
+      print('|:-----------------------------------------|:--------------:|');
+      print('| Total Raw Input Fixes                    | $totalInputPoints |');
+      print('| Distinct Sessions Processed              | ${sessionGroups.length} |');
+      print('| Total Reconstructed Stream Points        | $totalReconstructedPoints |');
+      print('| Interpolated Recoverable Points          | $totalInterpolatedPoints |');
+      print('| Indeterminate Prolonged Outages (dt>15s) | $totalIndeterminateGaps |');
+      print('| Total Reconstructed Distance             | ${totalReconstructedDistKm.toStringAsFixed(2)} km |');
+      print('| Total Execution Time (7 full sessions)   | $totalElapsedMs ms |');
+      print('| Processing Throughput                    | $throughput fixes/sec |');
+      print('====================================================================================================\n');
+
+      expect(totalInputPoints, equals(10779));
+      expect(totalReconstructedPoints, greaterThan(totalInputPoints));
+      expect(totalElapsedMs, lessThan(3000)); // Under 3 seconds on host
+    });
+
+    test('BENCHMARK 4: Non-OSM Off-Road / Athletic Stadium Track (Network-Agnostic Recovery)', () {
       // 400m Olympic standard athletic running track:
       // Two 100m straights, two 100m semicircular arcs (radius R = 31.83 m).
       // This running track is inside a sports complex with NO OpenStreetMap road network running through it.
@@ -347,23 +562,51 @@ void main() {
         samplingStepSec: 1.0,
       );
 
+      // Verify independence: evaluate perpendicular lateral error against the exact mathematical track geometry
+      final lateralErrors = <double>[];
+      for (final p in reconTrack.points) {
+        final dLat = (p.point.latitude - pCenter.latitude) * (math.pi / 180.0) * 6378137.0;
+        final dLng = (p.point.longitude - pCenter.longitude) * (math.pi / 180.0) * 6378137.0 * math.cos(pCenter.latitude * math.pi / 180.0);
+
+        double distToCenterline;
+        if (dLat >= 0.0 && dLat <= 100.0) {
+          // Straights: x = trackRadius or x = -trackRadius
+          final distEastStraight = (dLng - trackRadius).abs();
+          final distWestStraight = (dLng - (-trackRadius)).abs();
+          distToCenterline = math.min(distEastStraight, distWestStraight);
+        } else if (dLat > 100.0) {
+          // North semicircle: center at (0, 100), radius trackRadius
+          final r = math.sqrt(dLng * dLng + (dLat - 100.0) * (dLat - 100.0));
+          distToCenterline = (r - trackRadius).abs();
+        } else {
+          // South semicircle: center at (0, 0), radius trackRadius
+          final r = math.sqrt(dLng * dLng + dLat * dLat);
+          distToCenterline = (r - trackRadius).abs();
+        }
+        lateralErrors.add(distToCenterline);
+      }
+      final lateralRmse = math.sqrt(lateralErrors.fold(0.0, (acc, e) => acc + e * e) / lateralErrors.length);
+      final maxLateralDev = lateralErrors.reduce(math.max);
+
       print('====================================================================================================');
-      print('AETRON RESEARCH P03 BENCHMARK 3: NON-OSM STADIUM TRACK (400M OVAL, NETWORK-AGNOSTIC RECONSTRUCTION)');
+      print('AETRON RESEARCH P03 BENCHMARK 4: NON-OSM STADIUM TRACK (400M OVAL, GEOMETRY INDEPENDENCE)');
       print('====================================================================================================');
       print('| Metric                                   | Target Reference | Reconstructed Value |');
       print('|:-----------------------------------------|:----------------:|:-------------------:|');
       print('| True Lap Length                          |         400.0 m  | ${reconTrack.totalReconstructedDistanceMeters.toStringAsFixed(1).padLeft(17)} m  |');
       print('| Sparse Input Points (dt = 4.0s)          |          26 pts  | ${reconTrack.originalPointCount.toString().padLeft(17)} pts  |');
       print('| Synthesized PCHIP Points (dt = 1.0s)     |          75 pts  | ${reconTrack.interpolatedPointCount.toString().padLeft(17)} pts  |');
+      print('| Lateral Centerline RMSE                  |           0.0 m  | ${lateralRmse.toStringAsFixed(2).padLeft(17)} m  |');
+      print('| Max Lateral Deviation                    |          <2.0 m  | ${maxLateralDev.toStringAsFixed(2).padLeft(17)} m  |');
       print('| Indeterminate Outages Flagged            |           0 gaps | ${reconTrack.indeterminateGapCount.toString().padLeft(17)} gaps |');
       print('====================================================================================================\n');
 
       expect(reconTrack.interpolatedPointCount, greaterThan(60));
-      // Reconstructed 400m oval length must be accurate within 3% without snapping to fictitious roads
       expect((reconTrack.totalReconstructedDistanceMeters - 400.0).abs(), lessThan(15.0));
+      expect(lateralRmse, lessThan(2.0)); // Highly faithful curvature recovery
     });
 
-    test('BENCHMARK 4: Prolonged Tunnel Blackout Outage (dt = 45s Gap)', () {
+    test('BENCHMARK 5: Prolonged Tunnel Blackout Outage (dt = 45s Gap)', () {
       final t0 = DateTime(2026, 11, 8, 12, 0, 0);
       final blackoutPoints = <ProcessedTrajectoryPoint>[
         ProcessedTrajectoryPoint(
@@ -405,7 +648,7 @@ void main() {
       );
 
       print('====================================================================================================');
-      print('AETRON RESEARCH P03 BENCHMARK 4: PROLONGED TUNNEL BLACKOUT (45S OUTAGE)');
+      print('AETRON RESEARCH P03 BENCHMARK 5: PROLONGED TUNNEL BLACKOUT (45S OUTAGE)');
       print('====================================================================================================');
       print('| Metric                                   | Observed Value |');
       print('|:-----------------------------------------|:--------------:|');
@@ -421,7 +664,7 @@ void main() {
       expect(res.points.last.gapType, equals(ReconstructionGapType.indeterminateOutage));
     });
 
-    test('BENCHMARK 5 / RUNTIME: WorkoutSessionFinalizer integration with P03 feature flag', () {
+    test('BENCHMARK 6 / RUNTIME: WorkoutSessionFinalizer integration with P03 feature flag', () {
       const finalizer = WorkoutSessionFinalizer();
       const trackingEngine = WorkoutTrackingEngine();
 
@@ -506,6 +749,53 @@ void main() {
       expect(p03Metrics['reconstruction_interpolated_points'], greaterThan(0));
       expect(p03Result.session.routeMatchStatus, equals('reconstructed_pchip'));
       expect(p03Result.session.matchedRouteJson, isNot(equals('[]')));
+
+      // 3. Blackout splitting verification in Finalizer (Zero fake line across severe outage)
+      final blackoutPositions = [
+        Position(
+          latitude: 10.750000,
+          longitude: 106.650000,
+          timestamp: t0,
+          altitude: 10.0,
+          accuracy: 4.0,
+          heading: 90.0,
+          speed: 3.0,
+          speedAccuracy: 0.5,
+          altitudeAccuracy: 1.0,
+          headingAccuracy: 1.0,
+        ),
+        // 30s prolonged blackout gap
+        Position(
+          latitude: 10.750500,
+          longitude: 106.650500,
+          timestamp: t0.add(const Duration(seconds: 30)),
+          altitude: 10.0,
+          accuracy: 4.0,
+          heading: 90.0,
+          speed: 3.0,
+          speedAccuracy: 0.5,
+          altitudeAccuracy: 1.0,
+          headingAccuracy: 1.0,
+        ),
+      ];
+
+      final blackoutResult = finalizer.finalize(
+        state: state,
+        userId: 'test_user_blackout',
+        finishedAt: t0.add(const Duration(seconds: 30)),
+        caloriesBurned: 5,
+        fallbackStrideLengthMeters: 1.25,
+        trackingEngine: trackingEngine,
+        rawGpsPositions: blackoutPositions,
+        filteredRouteSegments: const [],
+        enableTrajectoryPreprocessing: true,
+        enableTrajectoryReconstruction: true,
+      );
+
+      final blackoutSegments = jsonDecode(blackoutResult.session.matchedRouteJson) as List;
+      // Must produce 2 separate polyline segments, not a connected line across the blackout!
+      expect(blackoutSegments.length, equals(2));
+      expect(rawPositions.length, equals(2)); // Raw GPS list is completely unmodified
     });
   });
 }

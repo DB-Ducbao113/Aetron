@@ -54,6 +54,9 @@ class ReconstructedPoint {
   double get latitude => point.latitude;
   double get longitude => point.longitude;
 
+  /// True if this point is an observed raw/filtered GNSS fix, false if synthesized.
+  bool get isObserved => !isInterpolated;
+
   @override
   String toString() =>
       'ReconstructedPoint(t=$timestamp, lat=${latitude.toStringAsFixed(6)}, '
@@ -98,3 +101,4 @@ class TrajectoryReconstructionResult {
     required this.indeterminateChordDistanceMeters,
   });
 }
+
