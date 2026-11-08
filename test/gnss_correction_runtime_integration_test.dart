@@ -1,6 +1,10 @@
 import 'package:fitness_exercise_application/features/workout/domain/services/ekf/extended_kalman_filter.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/gnss_correction/adaptive_gnss_correction_engine.dart';
+import 'package:fitness_exercise_application/features/workout/domain/services/gnss_correction/gnss_correction_models.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/gps_smoothing_service.dart';
+import 'package:fitness_exercise_application/features/workout/domain/services/trajectory_preprocessing/kinematic_limits.dart';
+import 'package:fitness_exercise_application/features/workout/domain/services/trajectory_preprocessing/streaming_trajectory_preprocessor.dart';
+import 'package:fitness_exercise_application/features/workout/domain/services/trajectory_preprocessing/trajectory_sample.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -173,6 +177,155 @@ void main() {
       // Blackout recovery re-seeds on new resume point without rejecting it as a jump
       expect(resumeUpdate.smoothedPoint, equals(resumePoint));
       expect(resumeUpdate.shouldAppendRoutePoint, isTrue);
+    });
+
+    test('2x2 Permutation Matrix (P01 ON/OFF x P02 ON/OFF) operates with complete state isolation', () {
+      // Test points: 3 nominal points moving North at 5 m/s, followed by a 25m East deceptive multipath spike
+      const baseLat = 10.776889;
+      const baseLng = 106.700806;
+      final rawFixes = <TrajectoryRawSample>[
+        TrajectoryRawSample(
+          index: 0,
+          timestamp: DateTime(2026, 10, 24, 10, 0, 0),
+          point: const LatLng(baseLat, baseLng),
+          accuracyMeters: 3.5,
+          sensorSpeedMs: 5.0,
+          sensorHeadingDeg: 0.0,
+        ),
+        TrajectoryRawSample(
+          index: 1,
+          timestamp: DateTime(2026, 10, 24, 10, 0, 1),
+          point: const LatLng(baseLat + 0.000045, baseLng),
+          accuracyMeters: 3.5,
+          sensorSpeedMs: 5.0,
+          sensorHeadingDeg: 0.0,
+        ),
+        TrajectoryRawSample(
+          index: 2,
+          timestamp: DateTime(2026, 10, 24, 10, 0, 2),
+          point: const LatLng(baseLat + 0.000090, baseLng),
+          accuracyMeters: 3.5,
+          sensorSpeedMs: 5.0,
+          sensorHeadingDeg: 0.0,
+        ),
+        // Fix 3: 25m lateral multipath spike with deceptive reported accuracy 3.0m
+        TrajectoryRawSample(
+          index: 3,
+          timestamp: DateTime(2026, 10, 24, 10, 0, 3),
+          point: const LatLng(baseLat + 0.000135, baseLng + 0.000228),
+          accuracyMeters: 3.0,
+          sensorSpeedMs: 5.0,
+          sensorHeadingDeg: 0.0,
+        ),
+      ];
+
+      // Permutation 1: P01 OFF, P02 OFF (Legacy Raw -> Baseline EKF)
+      final ekfP1 = ExtendedKalmanFilter(
+        enableGnssCorrection: false,
+        enableShadowMode: false,
+        activityType: 'cycling',
+      );
+      LatLng? p1Smoothed;
+      for (final fix in rawFixes) {
+        final est = ekfP1.update(
+          measurementPoint: fix.point,
+          accuracyMeters: fix.accuracyMeters,
+          timeDeltaSec: 1.0,
+          speedMs: fix.sensorSpeedMs,
+          headingDeg: fix.sensorHeadingDeg,
+          activityType: 'cycling',
+        );
+        p1Smoothed = est.position;
+      }
+      // Baseline EKF absorbs the multipath spike laterally
+      expect(p1Smoothed!.longitude, greaterThan(baseLng + 0.00005));
+
+      // Permutation 2: P01 ON, P02 OFF (Streaming Preprocessed -> Baseline EKF)
+      final preprocessorP2 = StreamingTrajectoryPreprocessor(
+        limits: KinematicLimits.forActivity('cycling'),
+      );
+      final ekfP2 = ExtendedKalmanFilter(
+        enableGnssCorrection: false,
+        enableShadowMode: false,
+        activityType: 'cycling',
+      );
+      LatLng? p2Smoothed;
+      for (final fix in rawFixes) {
+        final prepResult = preprocessorP2.processSample(fix);
+        if (!prepResult.isOutlier) {
+          final est = ekfP2.update(
+            measurementPoint: prepResult.point,
+            accuracyMeters: prepResult.accuracyMeters,
+            timeDeltaSec: 1.0,
+            speedMs: fix.sensorSpeedMs,
+            headingDeg: fix.sensorHeadingDeg,
+            activityType: 'cycling',
+          );
+          p2Smoothed = est.position;
+        }
+      }
+      expect(p2Smoothed, isNotNull);
+
+      // Permutation 3: P01 OFF, P02 ON (Raw Fixes -> EKF with P02 Adaptive Correction)
+      final ekfP3 = ExtendedKalmanFilter(
+        enableGnssCorrection: true,
+        gnssCorrectionEngine: AdaptiveGnssCorrectionEngine(),
+        activityType: 'cycling',
+      );
+      var p3Rejected = false;
+      LatLng? p3Smoothed;
+      for (final fix in rawFixes) {
+        final est = ekfP3.update(
+          measurementPoint: fix.point,
+          accuracyMeters: fix.accuracyMeters,
+          timeDeltaSec: 1.0,
+          speedMs: fix.sensorSpeedMs,
+          headingDeg: fix.sensorHeadingDeg,
+          activityType: 'cycling',
+        );
+        p3Smoothed = est.position;
+        if (est.correctionQuality == GnssCorrectionQuality.multipathRejected) {
+          p3Rejected = true;
+        }
+      }
+      // P02 successfully rejects the deceptive multipath pulse at fix 3 even without P01!
+      expect(p3Rejected, isTrue);
+      // Smoothed longitude is preserved along meridian (~0.0 lateral distortion)
+      expect((p3Smoothed!.longitude - baseLng).abs(), lessThan(0.00003));
+
+      // Permutation 4: P01 ON, P02 ON (Preprocessed -> EKF with P02 Adaptive Correction)
+      final preprocessorP4 = StreamingTrajectoryPreprocessor(
+        limits: KinematicLimits.forActivity('cycling'),
+      );
+      final ekfP4 = ExtendedKalmanFilter(
+        enableGnssCorrection: true,
+        gnssCorrectionEngine: AdaptiveGnssCorrectionEngine(),
+        activityType: 'cycling',
+      );
+      var p4Rejected = false;
+      LatLng? p4Smoothed;
+      for (final fix in rawFixes) {
+        final prepResult = preprocessorP4.processSample(fix);
+        if (!prepResult.isOutlier) {
+          final est = ekfP4.update(
+            measurementPoint: prepResult.point,
+            accuracyMeters: prepResult.accuracyMeters,
+            timeDeltaSec: 1.0,
+            speedMs: fix.sensorSpeedMs,
+            headingDeg: fix.sensorHeadingDeg,
+            activityType: 'cycling',
+          );
+          p4Smoothed = est.position;
+          if (est.correctionQuality == GnssCorrectionQuality.multipathRejected) {
+            p4Rejected = true;
+          }
+        }
+      }
+      expect(p4Smoothed, isNotNull);
+      // P01 preprocessor filtered the spike before EKF, so P02 inside EKF received only clean candidate fixes
+      expect(p4Rejected, isFalse);
+      // Full stack preserves accuracy and demonstrates complete modularity
+      expect((p4Smoothed!.longitude - baseLng).abs(), lessThan(0.00005));
     });
   });
 }

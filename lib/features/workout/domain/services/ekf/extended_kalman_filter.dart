@@ -180,7 +180,11 @@ class ExtendedKalmanFilter {
           effectiveAccuracy = corr.effectiveAccuracyMeters;
           effectiveHeading = corr.effectiveHeadingDeg;
           if (corr.headingProcessNoiseMultiplier > 1.0) {
-            _p.set(3, 3, _p.get(3, 3) * corr.headingProcessNoiseMultiplier);
+            // Add extra maneuver heading process noise delta Q_theta linearly [Li & Jilkov 2003; Groves 2013]
+            // rather than geometrically multiplying posterior covariance P33 across consecutive epochs.
+            final extraHeadingQ = (processHeadingStd * processHeadingStd * dt) *
+                (corr.headingProcessNoiseMultiplier - 1.0);
+            _p.set(3, 3, _p.get(3, 3) + extraHeadingQ);
           }
         }
       }

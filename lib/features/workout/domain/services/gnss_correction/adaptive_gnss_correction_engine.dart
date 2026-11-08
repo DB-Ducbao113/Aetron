@@ -66,18 +66,30 @@ class AdaptiveGnssCorrectionEngine implements IGnssCorrectionEngine {
     double? predictedPosCovarianceEN,
     required String activityType,
   }) {
-    final dt = timeDeltaSec.clamp(0.05, 5.0);
+    // Robust input validation and numerical sanitization
+    final dt = (timeDeltaSec.isFinite && timeDeltaSec > 0.0)
+        ? timeDeltaSec.clamp(0.05, 5.0)
+        : 1.0;
+    final safeAcc = (reportedAccuracyMeters.isFinite && reportedAccuracyMeters > 0.0)
+        ? reportedAccuracyMeters
+        : 10.0;
+    final safeSpeed = (reportedSpeedMs.isFinite && reportedSpeedMs >= 0.0)
+        ? reportedSpeedMs
+        : 0.0;
+    final safeHeading = (reportedHeadingDeg != null && reportedHeadingDeg.isFinite)
+        ? reportedHeadingDeg
+        : null;
 
     // Initial fix: no prediction available, accept nominally
     if (predictedPosition == null) {
-      if (reportedHeadingDeg != null) {
-        _prevAcceptedHeadingDeg = reportedHeadingDeg;
+      if (safeHeading != null) {
+        _prevAcceptedHeadingDeg = safeHeading;
       }
       return GnssCorrectionResult(
         position: measurementPoint,
-        effectiveAccuracyMeters: math.max(1.5, reportedAccuracyMeters),
-        effectiveSpeedMs: math.max(0.0, reportedSpeedMs),
-        effectiveHeadingDeg: reportedHeadingDeg,
+        effectiveAccuracyMeters: math.max(1.5, safeAcc),
+        effectiveSpeedMs: safeSpeed,
+        effectiveHeadingDeg: safeHeading,
         mahalanobisDistanceSq: 0.0,
         quality: GnssCorrectionQuality.nominal,
         isAccepted: true,
@@ -96,18 +108,26 @@ class AdaptiveGnssCorrectionEngine implements IGnssCorrectionEngine {
     // 2. Full 2x2 Innovation Covariance Matrix: S = H P^- H^T + R [Published: Bar-Shalom 2001, Eq. 1.4-12]
     // Reported horizontal accuracy (iOS CLLocation.horizontalAccuracy / Android Location.getAccuracy())
     // is a 68% confidence circle (1-sigma radius). R = diag(sigma_pos^2, sigma_pos^2).
-    final rMeas = math.max(2.25, reportedAccuracyMeters * reportedAccuracyMeters);
-    final pEast = math.max(0.5, predictedPosVarianceEast ?? predictedPosVariance);
-    final pNorth = math.max(0.5, predictedPosVarianceNorth ?? predictedPosVariance);
-    final pCov = predictedPosCovarianceEN ?? 0.0;
+    final rMeas = math.max(2.25, safeAcc * safeAcc);
+    final rawPEast = predictedPosVarianceEast ?? predictedPosVariance;
+    final rawPNorth = predictedPosVarianceNorth ?? predictedPosVariance;
+    final pEast = math.max(0.5, rawPEast.isFinite && rawPEast > 0.0 ? rawPEast : 4.0);
+    final pNorth = math.max(0.5, rawPNorth.isFinite && rawPNorth > 0.0 ? rawPNorth : 4.0);
+
+    // Cauchy-Schwarz inequality constraint: |P_EN| <= 0.99 * sqrt(P_EE * P_NN)
+    // Mathematically guarantees det(S) >= (1 - 0.99^2)*P_EE*P_NN + rMeas^2 >= 5.0625 > 0 strictly positive.
+    final maxCov = math.sqrt(pEast * pNorth);
+    final rawCov = (predictedPosCovarianceEN != null && predictedPosCovarianceEN.isFinite)
+        ? predictedPosCovarianceEN
+        : 0.0;
+    final pCov = rawCov.clamp(-0.99 * maxCov, 0.99 * maxCov);
 
     final s00 = pEast + rMeas; // S_EE
     final s11 = pNorth + rMeas; // S_NN
     final s01 = pCov; // S_EN = S_NE
 
     // Determinant: det(S) = S_EE * S_NN - S_EN^2
-    // Since P^- is positive semi-definite (P_EE * P_NN - P_EN^2 >= 0) and rMeas >= 2.25 > 0,
-    // det(S) >= rMeas^2 >= 5.0625 > 0, strictly positive definite and stably invertible.
+    // Since P^- is positive semi-definite and clamped, det(S) >= rMeas^2 >= 5.0625 > 0.
     final detS = (s00 * s11) - (s01 * s01);
     final safeDet = detS > 1e-4 ? detS : (rMeas * rMeas);
 
@@ -139,8 +159,8 @@ class AdaptiveGnssCorrectionEngine implements IGnssCorrectionEngine {
 
     // 4. Low-speed heading deadband stabilization [Aetron-Adapted]
     final bool isHeadingDeadbandActive =
-        enableHeadingDeadband && (reportedSpeedMs < deadbandSpeedMs);
-    double? effectiveHeading = reportedHeadingDeg;
+        enableHeadingDeadband && (safeSpeed < deadbandSpeedMs);
+    double? effectiveHeading = safeHeading;
     if (isHeadingDeadbandActive) {
       // When speed is negligible, GNSS Doppler bearing is invalid white noise
       effectiveHeading = null;
@@ -151,9 +171,9 @@ class AdaptiveGnssCorrectionEngine implements IGnssCorrectionEngine {
     double headingMultiplier = 1.0;
     bool isTurnAdapted = false;
 
-    if (enableTurnRateNoiseScaling && !isHeadingDeadbandActive && reportedHeadingDeg != null) {
-      final baselineHeading = predictedHeadingDeg ?? _prevAcceptedHeadingDeg ?? reportedHeadingDeg;
-      var headingDiff = (reportedHeadingDeg - baselineHeading).abs();
+    if (enableTurnRateNoiseScaling && !isHeadingDeadbandActive && safeHeading != null) {
+      final baselineHeading = predictedHeadingDeg ?? _prevAcceptedHeadingDeg ?? safeHeading;
+      var headingDiff = (safeHeading - baselineHeading).abs();
       if (headingDiff > 180.0) headingDiff = 360.0 - headingDiff;
 
       final turnRate = headingDiff / dt;
@@ -170,7 +190,8 @@ class AdaptiveGnssCorrectionEngine implements IGnssCorrectionEngine {
 
     // 6. Innovation Testing & Measurement Covariance Inflation
     final isGatedOutlier = enableInnovationGating && (dMSq > gammaCritical);
-    final isInflated = enableAdaptiveCovarianceInflation && (dMSq > gammaNominal && dMSq <= gammaCritical);
+    final isInflated = enableAdaptiveCovarianceInflation &&
+        (dMSq > gammaNominal && (!enableInnovationGating || dMSq <= gammaCritical));
 
     if (!isGatedOutlier && !isInflated) {
       // Nominal observation: within 95% confidence ellipsoid
@@ -180,8 +201,8 @@ class AdaptiveGnssCorrectionEngine implements IGnssCorrectionEngine {
       }
       return GnssCorrectionResult(
         position: measurementPoint,
-        effectiveAccuracyMeters: reportedAccuracyMeters,
-        effectiveSpeedMs: reportedSpeedMs,
+        effectiveAccuracyMeters: safeAcc,
+        effectiveSpeedMs: safeSpeed,
         effectiveHeadingDeg: effectiveHeading,
         mahalanobisDistanceSq: dMSq,
         quality: isTurnAdapted
@@ -196,7 +217,7 @@ class AdaptiveGnssCorrectionEngine implements IGnssCorrectionEngine {
       // Degraded observation: inflate measurement covariance R adaptively [Reproduced: Groves 2013, Sec 11.4]
       _consecutiveOutlierCount = 0;
       final inflationFactor = math.sqrt(dMSq / gammaNominal);
-      final effectiveAcc = reportedAccuracyMeters * inflationFactor;
+      final effectiveAcc = safeAcc * inflationFactor;
 
       if (effectiveHeading != null) {
         _prevAcceptedHeadingDeg = effectiveHeading;
@@ -204,7 +225,7 @@ class AdaptiveGnssCorrectionEngine implements IGnssCorrectionEngine {
       return GnssCorrectionResult(
         position: measurementPoint,
         effectiveAccuracyMeters: effectiveAcc,
-        effectiveSpeedMs: reportedSpeedMs,
+        effectiveSpeedMs: safeSpeed,
         effectiveHeadingDeg: effectiveHeading,
         mahalanobisDistanceSq: dMSq,
         quality: GnssCorrectionQuality.inflatedVariance,
@@ -224,8 +245,8 @@ class AdaptiveGnssCorrectionEngine implements IGnssCorrectionEngine {
         }
         return GnssCorrectionResult(
           position: measurementPoint,
-          effectiveAccuracyMeters: reportedAccuracyMeters * 2.0,
-          effectiveSpeedMs: reportedSpeedMs,
+          effectiveAccuracyMeters: safeAcc * 2.0,
+          effectiveSpeedMs: safeSpeed,
           effectiveHeadingDeg: effectiveHeading,
           mahalanobisDistanceSq: dMSq,
           quality: GnssCorrectionQuality.inflatedVariance,
@@ -237,8 +258,8 @@ class AdaptiveGnssCorrectionEngine implements IGnssCorrectionEngine {
       // Reject outlier update to protect state from multipath distortion
       return GnssCorrectionResult(
         position: measurementPoint,
-        effectiveAccuracyMeters: reportedAccuracyMeters,
-        effectiveSpeedMs: reportedSpeedMs,
+        effectiveAccuracyMeters: safeAcc,
+        effectiveSpeedMs: safeSpeed,
         effectiveHeadingDeg: null,
         mahalanobisDistanceSq: dMSq,
         quality: GnssCorrectionQuality.multipathRejected,

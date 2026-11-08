@@ -270,6 +270,104 @@ void main() {
       expect(res.quality, equals(GnssCorrectionQuality.nominal));
       expect(res.effectiveAccuracyMeters, equals(3.0));
     });
+
+    test('Numerical conditioning: negative or zero reported accuracy is safely sanitized', () {
+      const pred = LatLng(10.776889, 106.700806);
+      const meas = LatLng(10.776899, 106.700806);
+
+      // Pathological receiver error: reportedAccuracyMeters = -5.0m
+      final res = engine.correctMeasurement(
+        measurementPoint: meas,
+        reportedAccuracyMeters: -5.0,
+        timeDeltaSec: 1.0,
+        reportedSpeedMs: 4.0,
+        reportedHeadingDeg: 0.0,
+        predictedPosition: pred,
+        predictedHeadingDeg: 0.0,
+        predictedPosVariance: 9.0,
+        activityType: 'running',
+      );
+
+      expect(res.isAccepted, isTrue);
+      expect(res.effectiveAccuracyMeters, equals(10.0)); // Fallback safe default
+      expect(res.mahalanobisDistanceSq.isFinite, isTrue);
+      expect(res.mahalanobisDistanceSq, greaterThan(0.0));
+    });
+
+    test('Numerical conditioning: extreme reported accuracy 500m remains numerically stable', () {
+      const pred = LatLng(10.776889, 106.700806);
+      const meas = LatLng(10.776950, 106.700806);
+
+      // Extreme cellular/WiFi coarse accuracy: 500m -> R = 250,000 m^2
+      final res = engine.correctMeasurement(
+        measurementPoint: meas,
+        reportedAccuracyMeters: 500.0,
+        timeDeltaSec: 1.0,
+        reportedSpeedMs: 4.0,
+        reportedHeadingDeg: 0.0,
+        predictedPosition: pred,
+        predictedHeadingDeg: 0.0,
+        predictedPosVariance: 16.0,
+        activityType: 'running',
+      );
+
+      expect(res.isAccepted, isTrue);
+      expect(res.quality, equals(GnssCorrectionQuality.nominal));
+      expect(res.effectiveAccuracyMeters, equals(500.0));
+      // With R = 250,000, NIS distance is tiny (< 0.01)
+      expect(res.mahalanobisDistanceSq, lessThan(0.01));
+      expect(res.mahalanobisDistanceSq, greaterThanOrEqualTo(0.0));
+    });
+
+    test('Numerical conditioning: pathological singular cross-covariance is clamped by Cauchy-Schwarz', () {
+      const pred = LatLng(10.776889, 106.700806);
+      const meas = LatLng(10.776910, 106.700806);
+
+      // Pathological P_EN violating Cauchy-Schwarz: P_EE = 4.0, P_NN = 4.0, but P_EN = 100.0 (unphysical)
+      // Max allowable |P_EN| is 0.99 * sqrt(4 * 4) = 3.96
+      final res = engine.correctMeasurement(
+        measurementPoint: meas,
+        reportedAccuracyMeters: 4.0,
+        timeDeltaSec: 1.0,
+        reportedSpeedMs: 4.0,
+        reportedHeadingDeg: 0.0,
+        predictedPosition: pred,
+        predictedHeadingDeg: 0.0,
+        predictedPosVariance: 4.0,
+        predictedPosVarianceEast: 4.0,
+        predictedPosVarianceNorth: 4.0,
+        predictedPosCovarianceEN: 100.0, // Pathological singular covariance
+        activityType: 'running',
+      );
+
+      expect(res.isAccepted, isTrue);
+      expect(res.mahalanobisDistanceSq.isFinite, isTrue);
+      expect(res.mahalanobisDistanceSq, greaterThan(0.0));
+      expect(res.mahalanobisDistanceSq, lessThan(5.991));
+    });
+
+    test('Input sanitization: non-positive dt, negative speed, and NaN heading do not crash or produce NaN', () {
+      const pred = LatLng(10.776889, 106.700806);
+      const meas = LatLng(10.776899, 106.700806);
+
+      final res = engine.correctMeasurement(
+        measurementPoint: meas,
+        reportedAccuracyMeters: 4.0,
+        timeDeltaSec: -1.0, // Non-positive dt
+        reportedSpeedMs: -3.0, // Negative speed
+        reportedHeadingDeg: double.nan, // NaN heading
+        predictedPosition: pred,
+        predictedHeadingDeg: 0.0,
+        predictedPosVariance: 9.0,
+        activityType: 'running',
+      );
+
+      expect(res.isAccepted, isTrue);
+      expect(res.effectiveSpeedMs, equals(0.0));
+      expect(res.effectiveHeadingDeg, isNull);
+      expect(res.mahalanobisDistanceSq.isFinite, isTrue);
+      expect(res.headingProcessNoiseMultiplier, equals(1.0));
+    });
   });
 }
 
