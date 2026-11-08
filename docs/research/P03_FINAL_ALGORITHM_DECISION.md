@@ -45,9 +45,19 @@ Linear Chord (Planar Straight)            Monotone PCHIP (Athletic Arc)
 
 ## 2. Fair Linear vs Monotone PCHIP Benchmark Audit (Task 1)
 
-### 2.1. Empirical Segment Breakdown (OSM 247-Epoch Circuit, Downsampled to 5s)
-To eliminate selection bias, both algorithms and multi-stage pipelines were evaluated on the identical 247-epoch OpenStreetMap (OSM) circuit ($1,113.0\text{ m}$ reference trajectory) downsampled to 5.0-second intervals ($N = 50$ sparse observations). The trajectory errors were partitioned by physical road segment type:
+### 2.1. Global Multi-Pipeline Comparison & Segment Breakdown (OSM 247-Epoch Circuit, Downsampled to 5s)
+To eliminate selection bias, both candidate interpolation algorithms and multi-stage pipelines were evaluated on the identical 247-epoch OpenStreetMap (OSM) circuit ($1,113.0\text{ m}$ reference trajectory) downsampled to 5.0-second intervals ($N = 50$ sparse observations).
 
+#### Overall 5-Pipeline Comparative Metrics:
+| Pipeline Stack | 1Hz Trajectory RMSE | P95 Error | Reconstructed Dist | Distance Error % | Turn Apex Lag ($90^\circ$) | Latency / Pt | Overshoot Loops |
+|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| **A. Raw Linear Interpolation (5s chords)** | **6.10 m** | **16.0 m** | 1,158.0 m | +4.04 % | 5.0 m | 6.1 µs | 0 |
+| **B. Raw Monotone PCHIP (Fritsch-Carlson)** | 6.24 m | **16.0 m** | 1,166.0 m | +4.76 % | 5.0 m | 6.5 µs | 0 |
+| **C. P01 + P02 + AEKF (5s sparse baseline)** | 9.35 m | 23.0 m | 1,206.0 m | +8.36 % | 29.0 m | 75.0 µs | 0 |
+| **D. P01 + P03 Kinematic PCHIP (Clean Rec)** | **6.65 m** | **16.0 m** | 1,167.0 m | +4.85 % | **5.0 m** | **2.0 µs** | **0** |
+| **E. P01 + P03 + P02 + AEKF (1Hz Filtered)** | 6.83 m | **16.0 m** | 1,208.0 m | +8.54 % | 5.0 m | 7.8 µs | 0 |
+
+#### Empirical Segment Breakdown by Road Type:
 | Segment Type | Epoch Count | Linear RMSE (Pipeline A) | PCHIP RMSE (Pipeline B) | P01 + PCHIP (Pipeline D) | Best Performing Method | Architectural Rationale |
 |:---|:---:|:---:|:---:|:---:|:---:|:---|
 | **straight** | 100 | **3.05 m** | 3.18 m | 3.53 m | **Linear** | On straight road corridors, a straight line is the true underlying geometry; cubic splines introduce minimal sub-meter curvature variance. |
@@ -135,15 +145,30 @@ The reconciliation of cumulative distance across the full historical dataset ([`
 
 | Processing Stage / Pipeline Source | Cumulative Distance | Point Count | Physical Interpretation & Algorithmic Transformation |
 |:---|:---:|:---:|:---|
-| **1. Raw Unfiltered GPS** | **61.98 km** | 10,779 | Raw GPS coordinate deltas. Contains stationary jitter drift at red lights, 14 multipath spikes, and teleportation steps. |
+| **1. Raw Unfiltered GPS** | **61.96 – 61.98 km** | 10,779 | Raw GPS coordinate deltas. Contains stationary jitter drift at red lights, 14 multipath spikes, and teleportation steps. (61.96 km with unconstrained endpoints; 61.98 km raw sum). |
 | **2. P01 Preprocessed Clean** | **56.08 km** | 10,346 | Zheng (2009) stay-point clustering isolates stationary pauses and eliminates false drift ($433\text{ points}$ clustered). Kinetic spike filters eliminate speed outliers. |
-| **3. P02 4-State AEKF Filtered** | **60.68 km** | 10,779 | Kinematic state vector $[\hat{x}, \hat{y}, \hat{v}_x, \hat{v}_y]^T$ estimates smoothed continuous trajectory. |
+| **3. P02 4-State AEKF Filtered** | **60.68 km** | 10,779 | Kinematic state vector $[\hat{x}, \hat{y}, \hat{v}_x, \hat{v}_y]^T$ estimates smoothed continuous trajectory, attenuating high-frequency measurement noise. |
 | **4. P03 Kinematic Reconstructed** | **59.06 km** | 10,899 | Monotone PCHIP bridges duty-cycling gaps and bridges rejected outliers along smooth arc chords ($433\text{ points}$ synthesized). Isolates 8 prolonged blackouts ($>15\text{s}$) without fabricating distance. |
 
-### 4.2. Scientific Statement on Ground Truth
+### 4.2. Detailed Root-Cause Decomposition of the Distance Delta
+Why do these distances differ by up to 5.9 km?
+1. **Stationary Jitter Elimination ($61.96\text{ km} \to 56.08\text{ km}$, $\Delta = -5.88\text{ km}$):**
+   - In cycling, athletes stop at traffic lights, intersections, or coffee stops.
+   - During stationary periods, commercial GNSS chipsets report pseudo-random noise wandering within a 5–15m radius ("stationary drift").
+   - Over 7 sessions ($>6\text{ hours}$ total time), stationary drift accumulated nearly **$5.9\text{ km}$ of fictitious movement**.
+   - P01 Zheng (2009) density clustering locks stay-points to their spatial centroid, zeroing out this artificial distance.
+2. **Kinematic Continuous Smoothing ($56.08\text{ km} \to 60.68\text{ km}$, $\Delta = +4.60\text{ km}$):**
+   - The 4-State AEKF continuously tracks the velocity state $[\hat{v}_x, \hat{v}_y]^T$.
+   - While it filters out high-frequency noise and innovation spikes, it does not apply discrete stay-point clustering; during low-speed crawling or slow pauses, the filter continues integrating state velocity.
+3. **Duty-Cycle Gap Recovery & Blackout Isolation ($56.08\text{ km} \to 59.06\text{ km}$, $\Delta = +2.98\text{ km}$):**
+   - When phone operating systems throttle GPS from 1 Hz to 2s–5s intervals, linear chord tracking cuts corners and undercounts arc distance.
+   - P03 Monotone PCHIP reconstructs the continuous 1 Hz trajectory across recoverable gaps ($2\text{s} < \Delta t \le 15\text{s}$), recovering legitimate athletic arc distance.
+   - Crucially, P03 detects 8 prolonged outages ($\Delta t > 15\text{s}$) and isolates them with zero synthetic points, avoiding runaway fictitious accumulation.
+
+### 4.3. Scientific Statement on Ground Truth
 > **Epistemological Reality Statement:**  
 > In commercial smartphone field recordings without a concurrent geodetic-grade, dual-frequency RTK surveyor base-station, **no single distance figure can be dogmatically declared "absolute physical ground truth"**.  
-> - **$61.98\text{ km}$** is definitively an **overcount** due to stationary drift and multipath spikes.  
+> - **$61.96\text{ km}$ / $61.98\text{ km}$** is definitively an **overcount** due to stationary drift and multipath spikes.  
 > - **$56.08\text{ km}$** represents the **conservative lower bound** of active, verified non-stationary displacement.  
 > - **$59.06\text{ km}$** represents the **continuous time-regularized geometric trajectory**, balancing stay-point dwell against duty-cycling recovery.  
 > Aetron maintains strict algorithmic transparency by persisting these metrics separately in telemetry.
@@ -188,6 +213,12 @@ To prevent map renderers from drawing an artificial straight line across prolong
 ]
 ```
 The mobile UI renders disconnected polyline segments, faithfully reflecting the absence of satellite visibility.
+
+### 5.4. Scientific Limitations & Scope Boundaries
+1. **No External Map Matching (HMM):** P03 does not snap coordinates to OpenStreetMap road vectors (such as Newson & Krumm 2009). On urban streets with heavy multipath, lateral offsets of 3–5m from street centerlines will remain unsnapped.
+2. **Kinematic Smoothness Assumption:** PCHIP assumes the athlete moves along a smooth curve with continuous velocity tangents across 2s–15s gaps. If an athlete performs an abrupt 180° hairpin turn or erratic stop-and-go maneuver *during* an unobserved 10-second gap, the spline will round the turn rather than reproduce the sharp vertex.
+3. **Elevation Model Independence:** P03 preserves raw barometric/GNSS altitude deltas and does not replace vertical coordinates with an external Digital Elevation Model (DEM).
+4. **Prolonged Outages ($>15\text{s}$):** Without inertial odometry or pedestrian dead reckoning (IMU), no trajectory reconstruction algorithm can know the true path taken during long blackouts (e.g., inside 500m tunnels). Aetron explicitly refuses to fabricate fictitious coordinates in such intervals.
 
 ---
 
