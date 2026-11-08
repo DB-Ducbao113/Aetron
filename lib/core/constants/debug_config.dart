@@ -60,6 +60,20 @@ const bool kEnableTrajectoryReconstructionShadowMode = bool.fromEnvironment(
   defaultValue: false,
 );
 
+/// Enables research-enhanced GPS Input Quality Gate (Phase 1 Enhancement).
+/// When enabled, incorporates multi-tier quality evaluation (ACCEPT, DOWNWEIGHT,
+/// REJECT, SEGMENT_BREAK) using robust M-estimator weighting and adaptive covariance scaling.
+const bool kEnableGpsQualityGate = bool.fromEnvironment(
+  'FLOWFIT_ENABLE_GPS_QUALITY_GATE',
+  defaultValue: false,
+);
+
+/// Enables shadow comparison logging for GPS Input Quality Gate diagnostics.
+const bool kEnableGpsQualityGateShadowMode = bool.fromEnvironment(
+  'FLOWFIT_GPS_QUALITY_GATE_SHADOW',
+  defaultValue: false,
+);
+
 /// Compile-time git revision for experiment provenance.
 /// Injected dynamically via --dart-define=GIT_COMMIT_SHA=... during build.
 const String kGitRevision = String.fromEnvironment(
