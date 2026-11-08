@@ -21,6 +21,7 @@ class TrackingGpsDecision {
   final double gpsGapDurationSec;
   final GpsPointOutcome outcome;
   final GpsRejectReason reason;
+  final double covarianceScale;
 
   const TrackingGpsDecision({
     required this.type,
@@ -36,7 +37,43 @@ class TrackingGpsDecision {
     this.gpsGapDurationSec = 0,
     this.outcome = GpsPointOutcome.accepted,
     this.reason = GpsRejectReason.none,
+    this.covarianceScale = 1.0,
   });
+
+  TrackingGpsDecision copyWith({
+    TrackingGpsDecisionType? type,
+    LatLng? livePoint,
+    LatLng? previewPoint,
+    String? skipReason,
+    double? segmentMeters,
+    double? rawSegmentMeters,
+    double? routeSegmentMeters,
+    double? candidateSpeedKmh,
+    bool? shouldAddDistance,
+    bool? shouldBreakRouteForDisplay,
+    double? gpsGapDurationSec,
+    GpsPointOutcome? outcome,
+    GpsRejectReason? reason,
+    double? covarianceScale,
+  }) {
+    return TrackingGpsDecision(
+      type: type ?? this.type,
+      livePoint: livePoint ?? this.livePoint,
+      previewPoint: previewPoint ?? this.previewPoint,
+      skipReason: skipReason ?? this.skipReason,
+      segmentMeters: segmentMeters ?? this.segmentMeters,
+      rawSegmentMeters: rawSegmentMeters ?? this.rawSegmentMeters,
+      routeSegmentMeters: routeSegmentMeters ?? this.routeSegmentMeters,
+      candidateSpeedKmh: candidateSpeedKmh ?? this.candidateSpeedKmh,
+      shouldAddDistance: shouldAddDistance ?? this.shouldAddDistance,
+      shouldBreakRouteForDisplay:
+          shouldBreakRouteForDisplay ?? this.shouldBreakRouteForDisplay,
+      gpsGapDurationSec: gpsGapDurationSec ?? this.gpsGapDurationSec,
+      outcome: outcome ?? this.outcome,
+      reason: reason ?? this.reason,
+      covarianceScale: covarianceScale ?? this.covarianceScale,
+    );
+  }
 }
 
 class StepTrackingDecision {

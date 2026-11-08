@@ -252,7 +252,10 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       _streamingPreprocessor = TrajectoryPreprocessor.forActivity(
         activityType,
         debugLocationMode: kDebugLocationMode,
-      ).createStreamingSession();
+      ).createStreamingSession(
+        enableQualityGate: kEnableGpsQualityGate,
+        enableShadowMode: kEnableGpsQualityGateShadowMode,
+      );
     }
     final startupLockPoint = startupGpsLock == null
         ? null
@@ -1392,6 +1395,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       shouldAddDistance: decision.shouldAddDistance,
       shouldBreakRouteForDisplay: decision.shouldBreakRouteForDisplay,
       gpsGapDurationSec: decision.gpsGapDurationSec,
+      covarianceScale: decision.covarianceScale,
     );
   }
 
@@ -1703,6 +1707,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     required bool shouldAddDistance,
     required bool shouldBreakRouteForDisplay,
     required double gpsGapDurationSec,
+    double covarianceScale = 1.0,
   }) {
     if (shouldAddDistance && candidateSpeedKmh > 0) {
       _addSpeedSample(candidateSpeedKmh);
@@ -1723,13 +1728,16 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
                         .difference(_lastAcceptedPositionTime!)
                         .inMilliseconds /
                     1000.0);
+    final effectiveAccuracy = covarianceScale > 1.0
+        ? position.accuracy * math.sqrt(covarianceScale)
+        : position.accuracy;
     final smoothingUpdate = _gpsSmoothingService.smoothAcceptedPoint(
       activityType: state.activityType,
       acceptedPoint: routeCandidate,
       previousAcceptedPoint: lastRoutePoint,
       previousSmoothedPoint: state.smoothedCurrentLatLng,
       lastSmoothedRoutePoint: lastSmoothedRoutePoint,
-      accuracyMeters: position.accuracy,
+      accuracyMeters: effectiveAccuracy,
       speedMs: position.speed,
       timeDeltaSec: timeDeltaSec,
       gpsGapDurationSec: gpsGapDurationSec,
@@ -1950,6 +1958,11 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     }
 
     // 7. Clean accepted sample
+    if (processedSample.covarianceScale != 1.0) {
+      return legacyDecision.copyWith(
+        covarianceScale: processedSample.covarianceScale,
+      );
+    }
     return legacyDecision;
   }
 

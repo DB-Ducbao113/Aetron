@@ -405,5 +405,94 @@ void main() {
       expect(res4.lowAccuracyCount, equals(1));
       expect(res4.acceptedCleanCount, equals(3));
     });
+
+    test('Live Runtime Wiring: verify GpsInputQualityGate flag routing and covariance scaling', () {
+      final now = DateTime.utc(2026, 11, 8, 12, 0, 0);
+
+      // Running limits: maxSpeedMs = 8.0 m/s, maxAccelerationMs2 = 4.5 m/s2
+      // Sample 0: initial valid fix
+      final s0 = TrajectoryRawSample(
+        index: 0,
+        timestamp: now,
+        point: const LatLng(10.750000, 106.650000),
+        altitudeMeters: 10.0,
+        accuracyMeters: 4.0,
+        sensorSpeedMs: 1.0,
+      );
+
+      // Sample 1: 1s later, nominal move (~1.0 m north, speed 1.0 m/s)
+      final s1 = TrajectoryRawSample(
+        index: 1,
+        timestamp: now.add(const Duration(seconds: 1)),
+        point: const LatLng(10.750009, 106.650000), // ~1.0 m north
+        altitudeMeters: 10.0,
+        accuracyMeters: 4.0,
+        sensorSpeedMs: 1.0,
+      );
+
+      // Sample 2: 1s later, 1Hz acceleration jitter
+      // 6.0 m north in 1s -> implied speed ~6.0 m/s (< 8.0 m/s max speed),
+      // acceleration delta ~5.0 m/s2 (> 4.5 m/s2 max acceleration)
+      final s2 = TrajectoryRawSample(
+        index: 2,
+        timestamp: now.add(const Duration(seconds: 2)),
+        point: const LatLng(10.750063, 106.650000), // ~6.0 m north from s1
+        altitudeMeters: 10.0,
+        accuracyMeters: 4.0,
+        sensorSpeedMs: 6.0,
+      );
+
+      // Session A: enableQualityGate = false (production default)
+      final sessionP01 = TrajectoryPreprocessor.forActivity('running')
+          .createStreamingSession(enableQualityGate: false);
+      final r0P01 = sessionP01.processSample(s0);
+      final r1P01 = sessionP01.processSample(s1);
+      final r2P01 = sessionP01.processSample(s2);
+
+      expect(r0P01.isAccepted, isTrue);
+      expect(r1P01.isAccepted, isTrue);
+      expect(r0P01.covarianceScale, equals(1.0));
+      expect(r1P01.covarianceScale, equals(1.0));
+
+      // In P01 with flag false, the acceleration spike is hard rejected
+      expect(r2P01.isAccepted, isFalse);
+      expect(r2P01.qualityFlags.contains(TrajectoryQualityFlag.accelerationSpike), isTrue);
+
+      // Session B: enableQualityGate = true (candidate hybrid mode)
+      final sessionHybrid = TrajectoryPreprocessor.forActivity('running')
+          .createStreamingSession(enableQualityGate: true);
+      final r0Hybrid = sessionHybrid.processSample(s0);
+      final r1Hybrid = sessionHybrid.processSample(s1);
+      final r2Hybrid = sessionHybrid.processSample(s2);
+
+      expect(r0Hybrid.isAccepted, isTrue);
+      expect(r1Hybrid.isAccepted, isTrue);
+      expect(r0Hybrid.covarianceScale, equals(1.0));
+      expect(r1Hybrid.covarianceScale, equals(1.0));
+
+      // In Hybrid mode, 1Hz acceleration jitter is retained and downweighted via covarianceScale > 1.0
+      expect(r2Hybrid.isAccepted, isTrue);
+      expect(r2Hybrid.covarianceScale, greaterThan(1.0));
+      expect(r2Hybrid.qualityFlags.contains(TrajectoryQualityFlag.accelerationSpike), isTrue);
+
+      // Test TrackingGpsDecision.copyWith preserves and updates covarianceScale
+      const originalDecision = TrackingGpsDecision(
+        type: TrackingGpsDecisionType.acceptRoute,
+        livePoint: LatLng(10.750063, 106.650000),
+        previewPoint: LatLng(10.750063, 106.650000),
+        segmentMeters: 6.0,
+        rawSegmentMeters: 6.0,
+        routeSegmentMeters: 6.0,
+        candidateSpeedKmh: 21.6,
+      );
+      expect(originalDecision.covarianceScale, equals(1.0));
+
+      final downweightedDecision = originalDecision.copyWith(
+        covarianceScale: r2Hybrid.covarianceScale,
+      );
+      expect(downweightedDecision.covarianceScale, equals(r2Hybrid.covarianceScale));
+      expect(downweightedDecision.segmentMeters, equals(6.0));
+      expect(downweightedDecision.type, equals(TrackingGpsDecisionType.acceptRoute));
+    });
   });
 }

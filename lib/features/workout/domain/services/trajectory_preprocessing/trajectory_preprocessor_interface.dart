@@ -19,7 +19,10 @@ abstract class ITrajectoryPreprocessor {
   KinematicLimits get limits;
 
   /// Creates an initialized streaming preprocessor for live GPS tracking.
-  StreamingTrajectoryPreprocessor createStreamingSession();
+  StreamingTrajectoryPreprocessor createStreamingSession({
+    bool? enableQualityGate,
+    bool? enableShadowMode,
+  });
 
   /// Runs complete multi-pass batch preprocessing on an immutable sequence of raw GPS samples.
   TrajectoryPreprocessingResult processBatch(List<TrajectoryRawSample> samples);
@@ -49,8 +52,15 @@ class TrajectoryPreprocessor implements ITrajectoryPreprocessor {
   }
 
   @override
-  StreamingTrajectoryPreprocessor createStreamingSession() {
-    return StreamingTrajectoryPreprocessor(limits: limits);
+  StreamingTrajectoryPreprocessor createStreamingSession({
+    bool? enableQualityGate,
+    bool? enableShadowMode,
+  }) {
+    return StreamingTrajectoryPreprocessor(
+      limits: limits,
+      enableQualityGate: enableQualityGate,
+      enableShadowMode: enableShadowMode,
+    );
   }
 
   @override

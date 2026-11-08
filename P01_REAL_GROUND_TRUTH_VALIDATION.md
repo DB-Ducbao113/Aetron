@@ -291,3 +291,4 @@ Replay of 14,400 raw 1 Hz epochs from Google Pixel 5 and Google Pixel 9 Pro XL o
 1. **Decision:** The **Hybrid GPS Input Quality Gate** is scientifically verified and empirically sound. It improves distance error from **5.93% to 2.61%** and completely eliminates false rejections (from 39 to 0) by replacing brittle hard-rejections with robust M-estimator covariance downweighting.
 2. **Rollout Policy:** In adherence to production safety guidelines, `kEnableGpsQualityGate` **remains OFF (`false`) by default** in `lib/core/constants/debug_config.dart`.
 3. **Next Phase:** Enable `kEnableGpsQualityGateShadowMode = true` in staging/internal dogfooding builds to stream shadow metrics without affecting user-visible workouts. Production activation will follow upon completing staged telemetry validation.
+

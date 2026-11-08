@@ -1,5 +1,5 @@
+import 'gps_input_quality_gate.dart';
 import 'kinematic_limits.dart';
-import 'trajectory_outlier_detector.dart';
 import 'trajectory_sample.dart';
 
 /// Real-time streaming trajectory preprocessor operating with O(1) amortized latency per sample.
@@ -13,8 +13,9 @@ import 'trajectory_sample.dart';
 /// - Zheng (2015). "Trajectory Data Mining: An Overview." ACM TIST, 6(3), 29.
 class StreamingTrajectoryPreprocessor {
   final KinematicLimits limits;
-  final TrajectoryOutlierDetector _detector;
+  final GpsInputQualityGate _qualityGate;
 
+  TrajectoryRawSample? _lastRawSample;
   ProcessedTrajectoryPoint? _lastAcceptedPoint;
   ProcessedTrajectoryPoint? _twoPointsAgoAccepted;
   DateTime? _lastRawSampleTime;
@@ -26,8 +27,15 @@ class StreamingTrajectoryPreprocessor {
   int _signalGapCount = 0;
   double _accumulatedCleanDistanceMeters = 0.0;
 
-  StreamingTrajectoryPreprocessor({required this.limits})
-      : _detector = TrajectoryOutlierDetector(limits: limits);
+  StreamingTrajectoryPreprocessor({
+    required this.limits,
+    bool? enableQualityGate,
+    bool? enableShadowMode,
+  })  : _qualityGate = GpsInputQualityGate(
+          limits: limits,
+          enableQualityGate: enableQualityGate,
+          enableShadowMode: enableShadowMode,
+        );
 
   ProcessedTrajectoryPoint? get lastAcceptedPoint => _lastAcceptedPoint;
   int get totalRawCount => _totalRawCount;
@@ -38,6 +46,7 @@ class StreamingTrajectoryPreprocessor {
 
   /// Resets preprocessor state (e.g. at workout initiation or mode change).
   void reset() {
+    _lastRawSample = null;
     _lastAcceptedPoint = null;
     _twoPointsAgoAccepted = null;
     _lastRawSampleTime = null;
@@ -61,11 +70,28 @@ class StreamingTrajectoryPreprocessor {
     }
     _lastRawSampleTime = rawSample.timestamp;
 
-    final processed = _detector.evaluateStreamingPoint(
+    final decision = _qualityGate.evaluateSample(
       candidate: rawSample,
+      previousRawSample: _lastRawSample,
       previousAcceptedPoint: _lastAcceptedPoint,
       twoPointsAgoAccepted: _twoPointsAgoAccepted,
+      kinematicPredictedPoint: null,
+      previousSpeedMs: _lastAcceptedPoint?.impliedSpeedMs,
       rawTimeSincePreviousSampleSec: rawDtSec,
+    );
+    _lastRawSample = rawSample;
+
+    final processed = ProcessedTrajectoryPoint(
+      rawSample: rawSample,
+      qualityFlags: decision.qualityFlags,
+      segmentDistanceMeters: decision.segmentDistanceMeters,
+      timeDeltaSec: decision.timeDeltaSec,
+      impliedSpeedMs: decision.impliedSpeedMs,
+      impliedAccelerationMs2: decision.impliedAccelerationMs2,
+      forwardBearingDeg: null,
+      isAccepted: decision.isAcceptedForPath,
+      isGapRecovery: decision.isGapRecovery,
+      covarianceScale: decision.covarianceScale,
     );
 
     if (processed.qualityFlags.contains(TrajectoryQualityFlag.signalGap)) {

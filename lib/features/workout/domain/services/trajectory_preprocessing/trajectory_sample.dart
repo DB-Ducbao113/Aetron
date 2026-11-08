@@ -100,6 +100,9 @@ class ProcessedTrajectoryPoint {
   /// Whether this point immediately succeeds a signal gap and starts a new segment.
   final bool isGapRecovery;
 
+  /// Measurement covariance inflation factor for downstream EKF (defaults to 1.0).
+  final double covarianceScale;
+
   const ProcessedTrajectoryPoint({
     required this.rawSample,
     required this.qualityFlags,
@@ -110,6 +113,7 @@ class ProcessedTrajectoryPoint {
     this.forwardBearingDeg,
     required this.isAccepted,
     this.isGapRecovery = false,
+    this.covarianceScale = 1.0,
   });
 
   int get index => rawSample.index;
