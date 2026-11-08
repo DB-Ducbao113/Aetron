@@ -77,8 +77,6 @@ class _TrackingMapWidgetState extends State<TrackingMapWidget>
 
   static const LatLng _defaultCenter = LatLng(10.7769, 106.7009);
 
-  static const _routeGlow = Color(0x66A8DCE7);
-  static const _routeCore = Color(0xFFA8DCE7);
   static const _routeHighlight = Color(0xFFE2F8FC);
   static const _routeShadow = Color(0x40000000);
 
@@ -386,6 +384,16 @@ class _TrackingMapWidgetState extends State<TrackingMapWidget>
     final useLitePolyline =
         widget.routePoints.length > (kDebugLocationMode ? 250 : 700);
 
+    // Theme identity: dark keeps the cyan route on its dark basemap;
+    // light ("Morning") draws the route in deep teal on the light basemap
+    // and melts the map edges into the paper background instead of black.
+    final colors = context.kinetic;
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final routeCore = isLight ? colors.primary : colors.accentFill;
+    final routeGlow = routeCore.withValues(alpha: 0.4);
+    final routeMid = isLight ? colors.secondary : const Color(0xFF2BD9A5);
+    final vignetteColor = isLight ? colors.background : Colors.black;
+
     return Stack(
       children: [
         AnimatedBuilder(
@@ -439,19 +447,15 @@ class _TrackingMapWidgetState extends State<TrackingMapWidget>
                         Polyline(
                           points: segment,
                           strokeWidth: 16,
-                          color: _routeGlow,
+                          color: routeGlow,
                         ),
                       Polyline(
                         points: segment,
                         strokeWidth: useLitePolyline ? 5.5 : 7.5,
                         gradientColors: useLitePolyline
                             ? null
-                            : const [
-                                Color(0xFFA8DCE7),
-                                Color(0xFF2BD9A5),
-                                Color(0xFFA8DCE7),
-                              ],
-                        color: _routeCore,
+                            : [routeCore, routeMid, routeCore],
+                        color: routeCore,
                       ),
                       if (!useLitePolyline)
                         Polyline(
@@ -531,10 +535,10 @@ class _TrackingMapWidgetState extends State<TrackingMapWidget>
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withValues(alpha: 0.32),
+                    vignetteColor.withValues(alpha: isLight ? 0.35 : 0.32),
                     Colors.transparent,
                     Colors.transparent,
-                    Colors.black.withValues(alpha: 0.40),
+                    vignetteColor.withValues(alpha: isLight ? 0.45 : 0.40),
                   ],
                   stops: const [0.0, 0.14, 0.65, 1.0],
                 ),

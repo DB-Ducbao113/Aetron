@@ -78,9 +78,8 @@ class _Workout3DCountdownOverlayState extends State<Workout3DCountdownOverlay>
 
   Color _getAccentColor(KineticColors colors) {
     final type = widget.activityType.toLowerCase();
-    if (type == 'cycling') return const Color(0xFF39B5F2);
-    if (type == 'walking') return const Color(0xFF4EBE9E);
-    return colors.primary;
+    if (type == 'running') return colors.secondary;
+    return colors.tertiary;
   }
 
   IconData get _activityIcon {
@@ -189,12 +188,6 @@ class _Workout3DCountdownOverlayState extends State<Workout3DCountdownOverlay>
                         color: accent.withValues(alpha: 0.45),
                         width: 1.2,
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: accent.withValues(alpha: 0.25),
-                          blurRadius: 16,
-                        ),
-                      ],
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -259,13 +252,6 @@ class _Workout3DCountdownOverlayState extends State<Workout3DCountdownOverlay>
                                     color: accent.withValues(alpha: 0.75),
                                     width: 3,
                                   ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: accent.withValues(alpha: 0.45),
-                                      blurRadius: 32,
-                                      spreadRadius: 2,
-                                    ),
-                                  ],
                                 ),
                               ),
                             );
@@ -302,22 +288,10 @@ class _Workout3DCountdownOverlayState extends State<Workout3DCountdownOverlay>
                                   ? '${widget.countdown}'
                                   : 'GO!',
                               key: ValueKey(widget.countdown),
-                              style: KineticTypography.metricHero.copyWith(
+                              style: KineticTypography.metricMega.copyWith(
                                 fontSize: widget.countdown > 0 ? 88 : 58,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.white,
+                                color: colors.textPrimary,
                                 letterSpacing: widget.countdown > 0 ? -4 : -1,
-                                shadows: [
-                                  Shadow(
-                                    color: accent.withValues(alpha: 0.9),
-                                    blurRadius: 28,
-                                  ),
-                                  const Shadow(
-                                    color: Colors.black,
-                                    blurRadius: 10,
-                                    offset: Offset(0, 4),
-                                  ),
-                                ],
                               ),
                             ),
                           ),

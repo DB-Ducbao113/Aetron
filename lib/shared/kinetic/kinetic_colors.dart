@@ -16,6 +16,14 @@ class KineticColors extends ThemeExtension<KineticColors> {
   final Color textMuted;
   final Color borderSubtle;
   final Color borderAccent;
+
+  /// Stronger edge tier (board v3): large containers, switches, inputs.
+  final Color borderStrong;
+
+  /// The cyan fill (#A8DCE7) in BOTH themes — fills, washes, the primary
+  /// button gradient. In the light "Morning" identity, [primary] becomes
+  /// deep teal for text, so cyan fills must come from here instead.
+  final Color accentFill;
   final Color glow;
 
   const KineticColors({
@@ -33,6 +41,8 @@ class KineticColors extends ThemeExtension<KineticColors> {
     required this.textMuted,
     required this.borderSubtle,
     required this.borderAccent,
+    required this.borderStrong,
+    required this.accentFill,
     required this.glow,
   });
 
@@ -50,28 +60,34 @@ class KineticColors extends ThemeExtension<KineticColors> {
     textPrimary: Color(0xFFFFFFFF),
     textSecondary: Color(0xFFE1E8EB),
     textMuted: Color(0xFF7D919A),
-    borderSubtle: Color(0xFF1C272C),
+    borderSubtle: Color(0xFF3D4650),
     borderAccent: Color(0x33A8DCE7),
+    borderStrong: Color(0xFF57626E),
+    accentFill: Color(0xFFA8DCE7),
     glow: Color(0xFFA8DCE7),
   );
 
-  /// Kinetic Editorial (Light Mode)
+  /// Kinetic Morning (Light Mode) — its own identity, not an inverted
+  /// dark theme: paper background, white cards defined by soft shadow,
+  /// deep teal carries text/accents, cyan survives as [accentFill] only.
   static const light = KineticColors(
-    background: Color(0xFFF6FAF6),
-    surface1: Color(0xFFF0F5F1),
-    surface2: Color(0xFFEAEFEB),
-    surface3: Color(0xFFDFE4E0),
-    primary: Color(0xFF022218),
+    background: Color(0xFFF6F9F6),
+    surface1: Color(0xFFFFFFFF),
+    surface2: Color(0xFFEDF3EE),
+    surface3: Color(0xFFDFE9E0),
+    primary: Color(0xFF2F7E96),
     onPrimary: Color(0xFFFFFFFF),
-    secondary: Color(0xFF4E6700),
-    tertiary: Color(0xFF003265),
+    secondary: Color(0xFF4E9DB5),
+    tertiary: Color(0xFFE8734D),
     error: Color(0xFFBA1A1A),
-    textPrimary: Color(0xFF181D1B),
-    textSecondary: Color(0xFF414844),
-    textMuted: Color(0xFF727974),
-    borderSubtle: Color(0xFFC1C8C3),
-    borderAccent: Color(0x40022218),
-    glow: Color(0xFF4E6700),
+    textPrimary: Color(0xFF0D1517),
+    textSecondary: Color(0xFF3E4C52),
+    textMuted: Color(0xFF5A6A70),
+    borderSubtle: Color(0xFFD9E3DB),
+    borderAccent: Color(0x662F7E96),
+    borderStrong: Color(0xFFB7C8BB),
+    accentFill: Color(0xFFA8DCE7),
+    glow: Color(0xFF2F7E96),
   );
 
   @override
@@ -90,6 +106,8 @@ class KineticColors extends ThemeExtension<KineticColors> {
     Color? textMuted,
     Color? borderSubtle,
     Color? borderAccent,
+    Color? borderStrong,
+    Color? accentFill,
     Color? glow,
   }) {
     return KineticColors(
@@ -107,6 +125,8 @@ class KineticColors extends ThemeExtension<KineticColors> {
       textMuted: textMuted ?? this.textMuted,
       borderSubtle: borderSubtle ?? this.borderSubtle,
       borderAccent: borderAccent ?? this.borderAccent,
+      borderStrong: borderStrong ?? this.borderStrong,
+      accentFill: accentFill ?? this.accentFill,
       glow: glow ?? this.glow,
     );
   }
@@ -129,6 +149,8 @@ class KineticColors extends ThemeExtension<KineticColors> {
       textMuted: Color.lerp(textMuted, other.textMuted, t)!,
       borderSubtle: Color.lerp(borderSubtle, other.borderSubtle, t)!,
       borderAccent: Color.lerp(borderAccent, other.borderAccent, t)!,
+      borderStrong: Color.lerp(borderStrong, other.borderStrong, t)!,
+      accentFill: Color.lerp(accentFill, other.accentFill, t)!,
       glow: Color.lerp(glow, other.glow, t)!,
     );
   }

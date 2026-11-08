@@ -6,14 +6,16 @@ const String kAppLanguagePrefKey = 'settings.language.code';
 enum AppLanguage { vi, en }
 
 class AppLanguageNotifier extends StateNotifier<AppLanguage> {
-  AppLanguageNotifier() : super(AppLanguage.vi) {
+  // V4 (2026-11-08): English is now the primary language — new users start
+  // in English; a previously saved preference is still respected.
+  AppLanguageNotifier() : super(AppLanguage.en) {
     _loadLanguage();
   }
 
   Future<void> _loadLanguage() async {
     final prefs = await SharedPreferences.getInstance();
-    final code = prefs.getString(kAppLanguagePrefKey) ?? 'vi';
-    state = code == 'en' ? AppLanguage.en : AppLanguage.vi;
+    final code = prefs.getString(kAppLanguagePrefKey) ?? 'en';
+    state = code == 'vi' ? AppLanguage.vi : AppLanguage.en;
   }
 
   Future<void> setLanguage(AppLanguage lang) async {

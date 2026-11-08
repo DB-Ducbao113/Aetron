@@ -29,7 +29,8 @@ class KineticCategoryFilterTabs extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         clipBehavior: Clip.none,
         itemCount: categories.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) =>
+            const SizedBox(width: KineticTokens.spaceXS),
         itemBuilder: (context, index) {
           final cat = categories[index];
           final isSelected = cat == selectedCategory;
@@ -43,13 +44,17 @@ class KineticCategoryFilterTabs extends StatelessWidget {
                 HapticFeedback.selectionClick();
                 onSelectCategory(cat);
               },
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
               child: AnimatedContainer(
                 duration: KineticTokens.motionTab,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: KineticTokens.spaceSM,
+                  vertical: KineticTokens.spaceXS,
+                ),
                 decoration: BoxDecoration(
                   color: isSelected ? colors.primary : colors.surface1,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius:
+                      BorderRadius.circular(KineticTokens.radiusPill),
                   border: Border.all(
                     color: isSelected ? colors.primary : colors.borderSubtle,
                     width: 1.0,

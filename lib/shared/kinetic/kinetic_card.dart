@@ -23,6 +23,9 @@ class KineticCard extends StatelessWidget {
   final double borderRadius;
   final String? semanticLabel;
 
+  /// V4: optional background fill gradient (hero mesh / scene wash).
+  final Gradient? gradient;
+
   const KineticCard({
     super.key,
     required this.child,
@@ -36,6 +39,7 @@ class KineticCard extends StatelessWidget {
     this.hasGlow = false,
     this.borderRadius = KineticTokens.radiusSM,
     this.semanticLabel,
+    this.gradient,
   });
 
   @override
@@ -47,7 +51,8 @@ class KineticCard extends StatelessWidget {
     Widget content = Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: bg,
+        color: gradient == null ? bg : null,
+        gradient: gradient,
         borderRadius: BorderRadius.circular(borderRadius),
         border: Border.all(color: border, width: 1),
         boxShadow: hasGlow
@@ -58,7 +63,18 @@ class KineticCard extends StatelessWidget {
                   spreadRadius: -2,
                 ),
               ]
-            : null,
+            : Theme.of(context).brightness == Brightness.light
+                ? [
+                    // Morning identity: white cards are defined by a soft
+                    // ambient shadow, not by borders alone.
+                    BoxShadow(
+                      color: const Color(0xFF172B33).withValues(alpha: 0.10),
+                      blurRadius: 24,
+                      offset: const Offset(0, 10),
+                      spreadRadius: -8,
+                    ),
+                  ]
+                : null,
       ),
       child: child,
     );

@@ -90,6 +90,18 @@ class KineticActivityCard extends StatelessWidget {
 
     final name = isVi ? option.nameVi : option.nameEn;
 
+    // V4 scene identity per sport: running → secondary, walking/cycling →
+    // tertiary. The scene is decoration (background); selection is signaled
+    // by border + check badge only.
+    final Color sceneTint;
+    switch (option.type.toLowerCase()) {
+      case 'running':
+        sceneTint = colors.secondary;
+        break;
+      default:
+        sceneTint = colors.tertiary;
+    }
+
     return Semantics(
       button: true,
       selected: isSelected,
@@ -111,21 +123,6 @@ class KineticActivityCard extends StatelessWidget {
                   : colors.borderSubtle.withValues(alpha: 0.6),
               width: isSelected ? 2.0 : 1.0,
             ),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: colors.primary.withValues(alpha: 0.22),
-                      blurRadius: 18,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                : [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.15),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
           ),
           child: ClipRRect(
             // 1px less than card radius to sit inside the 1px border
@@ -133,82 +130,55 @@ class KineticActivityCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Top Highlight strip when active
-                if (isSelected)
-                  Container(
-                    height: 3,
-                    color: colors.primary,
-                  ),
-
-                // Main Scenic Image Body
+                // Main duotone scene body (V4: rich background, clean front)
                 SizedBox(
                   height: 140,
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      // Photo Asset
-                      Image.asset(
-                        option.imagePath,
-                        fit: BoxFit.cover,
-                        alignment: Alignment.centerRight,
-                        errorBuilder: (context, error, stackTrace) => Container(
-                          color: colors.surface2,
-                          child: Icon(
-                            option.icon,
-                            size: 64,
-                            color: colors.textSecondary.withValues(alpha: 0.3),
-                          ),
-                        ),
-                      ),
+                      // Duotone scene backdrop in the sport's tint
+                      SceneBackdrop(tint: sceneTint),
 
-                      // Subtle Bottom Gradient for title readability without darkening the photo
+                      // Legibility scrim for the title
                       DecoratedBox(
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.transparent,
-                              Colors.transparent,
-                              Colors.black.withValues(alpha: 0.25),
-                              Colors.black.withValues(alpha: 0.65),
-                            ],
-                            stops: const [0.0, 0.40, 0.70, 1.0],
-                          ),
+                          gradient: KineticGradients.scrimBottom(colors),
                         ),
                       ),
 
-                      // Top Row: Active Check Circle
+                      // Sport glyph as part of the scene, bottom-right
                       Positioned(
-                        top: 10,
-                        right: 12,
-                        child: AnimatedContainer(
-                          duration: KineticTokens.motionTab,
-                          width: 26,
-                          height: 26,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: isSelected
-                                ? colors.primary
-                                : Colors.black.withValues(alpha: 0.35),
-                            border: Border.all(
-                              color: isSelected
-                                  ? colors.primary
-                                  : Colors.white.withValues(alpha: 0.4),
-                              width: 1.5,
+                        right: 14,
+                        bottom: 10,
+                        child: Icon(
+                          option.icon,
+                          size: 56,
+                          color: sceneTint.withValues(alpha: 0.4),
+                        ),
+                      ),
+
+                      // Check badge — the only selection marker besides the
+                      // primary border
+                      if (isSelected)
+                        Positioned(
+                          top: 10,
+                          right: 12,
+                          child: Container(
+                            width: 26,
+                            height: 26,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: colors.primary,
+                            ),
+                            child: Icon(
+                              Icons.check_rounded,
+                              size: 16,
+                              color: colors.onPrimary,
                             ),
                           ),
-                          child: isSelected
-                              ? const Icon(
-                                  Icons.check_rounded,
-                                  size: 16,
-                                  color: Colors.black,
-                                )
-                              : null,
                         ),
-                      ),
 
-                      // Bottom Content: Title only with text shadow for crisp legibility
+                      // Bottom Content: Title
                       Positioned(
                         bottom: 12,
                         left: 14,
@@ -216,14 +186,7 @@ class KineticActivityCard extends StatelessWidget {
                         child: Text(
                           name,
                           style: KineticTypography.cardTitle.copyWith(
-                            color: Colors.white,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black.withValues(alpha: 0.8),
-                                blurRadius: 8,
-                                offset: const Offset(0, 1),
-                              ),
-                            ],
+                            color: colors.textPrimary,
                           ),
                         ),
                       ),
@@ -239,9 +202,7 @@ class KineticActivityCard extends StatelessWidget {
                       vertical: 9,
                     ),
                     decoration: BoxDecoration(
-                      color: isSelected
-                          ? colors.surface2
-                          : colors.surface1.withValues(alpha: 0.9),
+                      color: colors.surface1,
                       border: Border(
                         top: BorderSide(
                           color: colors.borderSubtle.withValues(alpha: 0.3),
@@ -250,14 +211,6 @@ class KineticActivityCard extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.insights_rounded,
-                          size: 14,
-                          color: isSelected
-                              ? colors.primary
-                              : colors.textSecondary,
-                        ),
-                        const SizedBox(width: 6),
                         Text(
                           statLeft,
                           style: KineticTypography.bodySmall.copyWith(

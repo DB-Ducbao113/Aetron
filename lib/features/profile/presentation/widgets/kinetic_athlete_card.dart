@@ -2,8 +2,9 @@ import 'package:fitness_exercise_application/core/localization/app_translations.
 import 'package:fitness_exercise_application/features/profile/domain/entities/user_profile.dart';
 import 'package:fitness_exercise_application/features/profile/presentation/providers/avatar_providers.dart';
 import 'package:fitness_exercise_application/features/profile/presentation/widgets/edit_display_name_sheet.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_card.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_backdrop.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -63,13 +64,22 @@ class KineticAthleteCard extends ConsumerWidget {
     final displayName = _getAthleteDisplayName();
     final memberSince = _formatMemberSince();
 
-    return KineticCard(
-      padding: const EdgeInsets.all(18),
-      topAccentColor: colors.primary,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
+        border: Border.all(color: colors.borderSubtle),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
+        child: Stack(
+          children: [
+            const Positioned.fill(child: TopographicBackdrop()),
+            Padding(
+              padding: const EdgeInsets.all(KineticTokens.spaceLG),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // Avatar Stack (Left-aligned)
@@ -83,12 +93,6 @@ class KineticAthleteCard extends ConsumerWidget {
                       shape: BoxShape.circle,
                       color: colors.surface2,
                       border: Border.all(color: colors.primary, width: 2),
-                      boxShadow: [
-                        BoxShadow(
-                          color: colors.primary.withValues(alpha: 0.22),
-                          blurRadius: 16,
-                        ),
-                      ],
                     ),
                     child: Center(
                       child: Container(
@@ -150,12 +154,6 @@ class KineticAthleteCard extends ConsumerWidget {
                               color: colors.primary,
                               shape: BoxShape.circle,
                               border: Border.all(color: colors.background, width: 2),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: colors.primary.withValues(alpha: 0.4),
-                                  blurRadius: 8,
-                                ),
-                              ],
                             ),
                             child: Icon(
                               Icons.camera_alt_rounded,
@@ -168,7 +166,7 @@ class KineticAthleteCard extends ConsumerWidget {
                     ),
                 ],
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: KineticTokens.spaceMD),
 
               // Athlete Info (Right-aligned details)
               Expanded(
@@ -184,7 +182,7 @@ class KineticAthleteCard extends ConsumerWidget {
                           ref.invalidate(currentUserProfileProvider);
                         }
                       },
-                      borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 2),
                         child: Row(
@@ -205,39 +203,76 @@ class KineticAthleteCard extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 4),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: KineticTokens.spaceMD),
 
-                    // Member Since
+          // Stat row — hairline dividers, existing data only
+          Divider(height: 1, thickness: 1, color: colors.borderSubtle),
+          const SizedBox(height: KineticTokens.spaceSM),
+          Row(
+            children: [
+              Expanded(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.local_fire_department_rounded,
+                      size: 16,
+                      color: colors.tertiary,
+                    ),
+                    const SizedBox(width: KineticTokens.spaceXS),
                     Text(
-                      '${AppTranslations.get('member_since', currentLang)}: $memberSince',
-                      style: KineticTypography.caption.copyWith(
-                        color: colors.textMuted,
+                      '$currentStreak',
+                      style: KineticTypography.metricSmall.copyWith(
+                        color: colors.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 8),
-
-                    // Streak Badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: colors.tertiary.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: colors.tertiary.withValues(alpha: 0.35)),
+                    const SizedBox(width: KineticTokens.spaceXXS),
+                    Flexible(
+                      child: Text(
+                        currentLang == AppLanguage.vi
+                            ? 'NGÀY LIÊN TIẾP'
+                            : 'DAY STREAK',
+                        style: KineticTypography.unitLabel.copyWith(
+                          color: colors.textMuted,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.local_fire_department_rounded, size: 14, color: colors.tertiary),
-                          const SizedBox(width: 4),
-                          Text(
-                            '$currentStreak ${currentLang == AppLanguage.vi ? 'NGÀY LIÊN TIẾP' : 'DAY STREAK'}',
-                            style: KineticTypography.unitLabel.copyWith(
-                              color: colors.tertiary,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ],
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                width: 1,
+                height: 28,
+                color: colors.borderSubtle,
+              ),
+              const SizedBox(width: KineticTokens.spaceMD),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      memberSince,
+                      style: KineticTypography.metricSmall.copyWith(
+                        color: colors.textPrimary,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      AppTranslations.get('member_since', currentLang),
+                      style: KineticTypography.unitLabel.copyWith(
+                        color: colors.textMuted,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
@@ -246,7 +281,7 @@ class KineticAthleteCard extends ConsumerWidget {
           ),
 
           if (avatarState.errorMessage != null) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: KineticTokens.spaceXS),
             Text(
               avatarState.errorMessage!,
               style: KineticTypography.caption.copyWith(
@@ -254,7 +289,11 @@ class KineticAthleteCard extends ConsumerWidget {
               ),
             ),
           ],
-        ],
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -69,8 +69,18 @@ class WorkoutDetailsScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: colors.background,
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
+            // V4: topographic backdrop behind the header zone only.
+            const Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 240,
+              child: TopographicBackdrop(),
+            ),
+            Column(
+              children: [
             // Top Bar
             KineticDetailsTopBar(
               currentLang: currentLang,
@@ -168,6 +178,8 @@ class WorkoutDetailsScreen extends ConsumerWidget {
                 },
               ),
             ),
+          ],
+        ),
           ],
         ),
       ),

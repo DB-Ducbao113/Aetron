@@ -312,13 +312,13 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen>
                         physics: const AlwaysScrollableScrollPhysics(),
                         padding: const EdgeInsets.fromLTRB(
                           KineticTokens.page,
-                          8,
+                          KineticTokens.spaceXS,
                           KineticTokens.page,
-                          16,
+                          KineticTokens.spaceMD,
                         ),
                         itemCount: _kActivities.length,
                         separatorBuilder: (context, index) =>
-                            const SizedBox(height: 12),
+                            const SizedBox(height: KineticTokens.spaceSM),
                         itemBuilder: (context, index) {
                           final option = _kActivities[index];
                           final isSelected = option.type == _selectedType;

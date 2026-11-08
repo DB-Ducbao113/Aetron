@@ -215,7 +215,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             ),
           ),
 
-          // ── 2. Bottom Section: Cyber Dark Glassmorphic Card ───────────────
+          // ── 2. Bottom Section: V4 flat card ───────────────────────────────
           Positioned(
             top: MediaQuery.of(context).size.height * 0.28,
             left: 0,
@@ -225,28 +225,16 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               decoration: BoxDecoration(
                 color: kinetic.surface1,
                 borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(32),
+                  top: Radius.circular(KineticTokens.radiusXXL),
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: kinetic.primary.withValues(alpha: 0.2),
-                    blurRadius: 28,
-                    offset: const Offset(0, -6),
-                    spreadRadius: -2,
-                  ),
-                  const BoxShadow(
-                    color: Colors.black,
-                    blurRadius: 36,
-                    offset: Offset(0, -10),
-                  ),
-                ],
                 border: Border(
-                  top: BorderSide(color: kinetic.primary, width: 1.5),
+                  top: BorderSide(color: kinetic.borderStrong, width: 1.5),
                 ),
+                boxShadow: KineticTokens.shadowPanel(Colors.black),
               ),
               child: ClipRRect(
                 borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(32),
+                  top: Radius.circular(KineticTokens.radiusXXL),
                 ),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(24, 20, 24, 36),
@@ -267,6 +255,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
   /// ── VIEW A: INPUT EMAIL STATE ─────────────────────────────────────────────
   Widget _buildInputState(BuildContext context, bool isVi) {
+    final kinetic = context.kinetic;
     return Form(
       key: _formKey,
       child: Column(
@@ -279,39 +268,26 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: const Color(0xFFA8DCE7).withValues(alpha: 0.4),
+                color: kinetic.primary.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
           ),
           const SizedBox(height: 20),
 
-          // Glowing Security Icon
+          // Medallion — flat primary tint circle with mail glyph (board v2/v3)
           Center(
             child: Container(
               width: 72,
               height: 72,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: const RadialGradient(
-                  colors: [Color(0xFF13324E), Color(0xFF0C1929)],
-                ),
-                border: Border.all(
-                  color: const Color(0xFFA8DCE7).withValues(alpha: 0.6),
-                  width: 1.5,
-                ),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x4400E5FF),
-                    blurRadius: 20,
-                    spreadRadius: 2,
-                  ),
-                ],
+                color: kinetic.primary.withValues(alpha: 0.12),
               ),
-              child: const Icon(
-                Icons.lock_reset_rounded,
-                color: Color(0xFFA8DCE7),
-                size: 36,
+              child: Icon(
+                Icons.mail_outline_rounded,
+                color: kinetic.primary,
+                size: 30,
               ),
             ),
           ),
@@ -321,11 +297,11 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           Text(
             isVi ? 'KHÔI PHỤC MẬT KHẨU' : 'FORGOT PASSWORD',
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w900,
               letterSpacing: 0.8,
-              color: Colors.white,
+              color: kinetic.textPrimary,
             ),
           ),
           const SizedBox(height: 8),
@@ -334,10 +310,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 ? 'Nhập email đã đăng ký với Aetron để nhận đường dẫn đặt lại mật khẩu an toàn.'
                 : 'Enter your registered email address to receive a secure password reset link.',
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w400,
-              color: Color(0xFF8FA0B8),
+              color: kinetic.textMuted,
               height: 1.4,
             ),
           ),
@@ -346,8 +322,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           // Email Input Field
           Text(
             isVi ? 'ĐỊA CHỈ EMAIL' : 'EMAIL ADDRESS',
-            style: const TextStyle(
-              color: Color(0xFFA8DCE7),
+            style: TextStyle(
+              color: kinetic.primary,
               fontSize: 11,
               fontWeight: FontWeight.w800,
               letterSpacing: 1.5,
@@ -357,22 +333,22 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           TextFormField(
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: kinetic.textPrimary,
               fontSize: 15,
               fontWeight: FontWeight.w600,
             ),
             decoration: InputDecoration(
               hintText: isVi ? 'name@example.com' : 'name@example.com',
-              hintStyle: const TextStyle(
-                color: Color(0xFF4A5B73),
+              hintStyle: TextStyle(
+                color: kinetic.textMuted,
                 fontSize: 14,
               ),
               filled: true,
-              fillColor: const Color(0xFF0F1826),
-              prefixIcon: const Icon(
+              fillColor: kinetic.background,
+              prefixIcon: Icon(
                 Icons.alternate_email_rounded,
-                color: Color(0xFFA8DCE7),
+                color: kinetic.primary,
                 size: 20,
               ),
               contentPadding: const EdgeInsets.symmetric(
@@ -381,23 +357,23 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(color: Color(0xFF1E2E45)),
+                borderSide: BorderSide(color: kinetic.borderSubtle),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(
-                  color: Color(0xFFA8DCE7),
+                borderSide: BorderSide(
+                  color: kinetic.primary,
                   width: 1.5,
                 ),
               ),
               errorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(color: Color(0xFFFF4B6E)),
+                borderSide: BorderSide(color: kinetic.error),
               ),
               focusedErrorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(
-                  color: Color(0xFFFF4B6E),
+                borderSide: BorderSide(
+                  color: kinetic.error,
                   width: 1.5,
                 ),
               ),
@@ -424,23 +400,23 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: const Color(0x22FF4B6E),
+                color: kinetic.error.withValues(alpha: 0.13),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0x66FF4B6E)),
+                border: Border.all(color: kinetic.error.withValues(alpha: 0.4)),
               ),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.error_outline_rounded,
-                    color: Color(0xFFFF4B6E),
+                    color: kinetic.error,
                     size: 16,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       _errorMessage!,
-                      style: const TextStyle(
-                        color: Color(0xFFFFB3C3),
+                      style: TextStyle(
+                        color: kinetic.error,
                         fontSize: 12,
                       ),
                     ),
@@ -452,63 +428,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
           const SizedBox(height: 24),
 
-          // Primary Send Reset Link Button
-          Container(
-            height: 52,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFA8DCE7), Color(0xFF2AF598)],
-              ),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x5500E5FF),
-                  blurRadius: 16,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
-            child: ElevatedButton(
-              onPressed: _isLoading ? null : _sendResetEmail,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                shadowColor: Colors.transparent,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              child: _isLoading
-                  ? const SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          Color(0xFF09181C),
-                        ),
-                      ),
-                    )
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          isVi ? 'GỬI LIÊN KẾT XÁC THỰC' : 'SEND RESET LINK',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1.2,
-                            color: Color(0xFF09181C),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Icon(
-                          Icons.send_rounded,
-                          color: Color(0xFF09181C),
-                          size: 18,
-                        ),
-                      ],
-                    ),
-            ),
+          // Primary Send Reset Link Button — V4 KineticButton (flat pill)
+          KineticButton(
+            label: isVi ? 'GỬI LIÊN KẾT XÁC THỰC' : 'SEND RESET LINK',
+            icon: Icons.send_rounded,
+            isLoading: _isLoading,
+            height: KineticTokens.buttonHeightPrimary,
+            onPressed: _isLoading ? null : _sendResetEmail,
           ),
           const SizedBox(height: 24),
 
@@ -516,9 +442,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFF0F1826),
+              color: kinetic.surface2,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFF1B2C42)),
+              border: Border.all(color: kinetic.borderSubtle),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -546,8 +472,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     isVi
                         ? 'Đăng nhập bằng Google? Bạn không cần mật khẩu Aetron. Chỉ cần chọn "Đăng nhập với Google" ở màn hình chính.'
                         : 'Using Google Sign-In? You do not need an Aetron password. Simply choose "Continue with Google" on the login screen.',
-                    style: const TextStyle(
-                      color: Color(0xFF8FA0B8),
+                    style: TextStyle(
+                      color: kinetic.textMuted,
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                       height: 1.35,
@@ -563,15 +489,15 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           Center(
             child: TextButton.icon(
               onPressed: () => Navigator.of(context).pop(),
-              icon: const Icon(
+              icon: Icon(
                 Icons.arrow_back_rounded,
-                color: Color(0xFFA8DCE7),
+                color: kinetic.primary,
                 size: 16,
               ),
               label: Text(
                 isVi ? 'Quay lại Đăng nhập' : 'Back to Login',
-                style: const TextStyle(
-                  color: Color(0xFFA8DCE7),
+                style: TextStyle(
+                  color: kinetic.primary,
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
                 ),
@@ -585,6 +511,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
   /// ── VIEW B: SUCCESS SENT STATE ────────────────────────────────────────────
   Widget _buildSuccessState(BuildContext context, bool isVi) {
+    final kinetic = context.kinetic;
     final email = _emailController.text.trim();
 
     return Column(
@@ -597,7 +524,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: const Color(0xFF2AF598).withValues(alpha: 0.4),
+              color: kinetic.secondary.withValues(alpha: 0.4),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -611,21 +538,14 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             height: 80,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: const RadialGradient(
-                colors: [Color(0xFF114232), Color(0xFF081C15)],
+              gradient: RadialGradient(
+                colors: [kinetic.surface3, kinetic.surface1],
               ),
-              border: Border.all(color: const Color(0xFF2AF598), width: 1.8),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x552AF598),
-                  blurRadius: 24,
-                  spreadRadius: 2,
-                ),
-              ],
+              border: Border.all(color: kinetic.secondary, width: 1.8),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.mark_email_read_rounded,
-              color: Color(0xFF2AF598),
+              color: kinetic.secondary,
               size: 42,
             ),
           ),
@@ -636,11 +556,11 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         Text(
           isVi ? 'ĐÃ GỬI LIÊN KẾT XÁC THỰC!' : 'CHECK YOUR INBOX!',
           textAlign: TextAlign.center,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.w900,
             letterSpacing: 0.8,
-            color: Colors.white,
+            color: kinetic.textPrimary,
           ),
         ),
         const SizedBox(height: 10),
@@ -650,25 +570,25 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             decoration: BoxDecoration(
-              color: const Color(0xFF0F2233),
+              color: kinetic.surface2,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: const Color(0xFFA8DCE7).withValues(alpha: 0.5),
+                color: kinetic.primary.withValues(alpha: 0.5),
               ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
+                Icon(
                   Icons.email_rounded,
-                  color: Color(0xFFA8DCE7),
+                  color: kinetic.primary,
                   size: 14,
                 ),
                 const SizedBox(width: 8),
                 Text(
                   email,
-                  style: const TextStyle(
-                    color: Color(0xFFA8DCE7),
+                  style: TextStyle(
+                    color: kinetic.primary,
                     fontWeight: FontWeight.w700,
                     fontSize: 13,
                   ),
@@ -685,61 +605,21 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               ? 'Chúng tôi đã gửi email chứa đường dẫn khôi phục mật khẩu. Vui lòng mở email và nhấn vào liên kết để thiết lập mật khẩu mới (kiểm tra cả mục Thư rác/Spam).'
               : 'We sent a secure password reset link to your email. Click the link in the message to set a new password (please also check your Spam folder).',
           textAlign: TextAlign.center,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w400,
-            color: Color(0xFF8FA0B8),
+            color: kinetic.textMuted,
             height: 1.45,
           ),
         ),
         const SizedBox(height: 28),
 
-        // Open Email App Button
-        Container(
-          height: 50,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFFA8DCE7), Color(0xFF2AF598)],
-            ),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x5500E5FF),
-                blurRadius: 16,
-                offset: Offset(0, 4),
-              ),
-            ],
-          ),
-          child: ElevatedButton(
-            onPressed: _openEmailApp,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.transparent,
-              shadowColor: Colors.transparent,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  isVi ? 'MỞ HỘP THƯ EMAIL' : 'OPEN EMAIL APP',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1.2,
-                    color: Color(0xFF09181C),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                const Icon(
-                  Icons.open_in_new_rounded,
-                  color: Color(0xFF09181C),
-                  size: 16,
-                ),
-              ],
-            ),
-          ),
+        // Open Email App Button — V4 KineticButton (flat pill)
+        KineticButton(
+          label: isVi ? 'MỞ HỘP THƯ EMAIL' : 'OPEN EMAIL APP',
+          icon: Icons.open_in_new_rounded,
+          height: KineticTokens.buttonHeightPrimary,
+          onPressed: _openEmailApp,
         ),
         const SizedBox(height: 14),
 
@@ -752,8 +632,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             padding: const EdgeInsets.symmetric(vertical: 14),
             side: BorderSide(
               color: _resendCountdown == 0
-                  ? const Color(0xFFA8DCE7)
-                  : const Color(0xFF1E2E45),
+                  ? kinetic.primary
+                  : kinetic.borderSubtle,
             ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
@@ -770,8 +650,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               fontWeight: FontWeight.w800,
               letterSpacing: 1.0,
               color: _resendCountdown == 0
-                  ? const Color(0xFFA8DCE7)
-                  : const Color(0xFF4A5B73),
+                  ? kinetic.primary
+                  : kinetic.textMuted,
             ),
           ),
         ),
@@ -780,23 +660,23 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: const Color(0x22FF4B6E),
+              color: kinetic.error.withValues(alpha: 0.13),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0x66FF4B6E)),
+              border: Border.all(color: kinetic.error.withValues(alpha: 0.4)),
             ),
             child: Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.error_outline_rounded,
-                  color: Color(0xFFFF4B6E),
+                  color: kinetic.error,
                   size: 16,
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     _errorMessage!,
-                    style: const TextStyle(
-                      color: Color(0xFFFF4B6E),
+                    style: TextStyle(
+                      color: kinetic.error,
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                     ),
@@ -812,15 +692,15 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         Center(
           child: TextButton.icon(
             onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_back_rounded,
-              color: Color(0xFF8FA0B8),
+              color: kinetic.textMuted,
               size: 16,
             ),
             label: Text(
               isVi ? 'Quay lại Đăng nhập' : 'Back to Login',
-              style: const TextStyle(
-                color: Color(0xFF8FA0B8),
+              style: TextStyle(
+                color: kinetic.textMuted,
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
@@ -915,9 +795,10 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   Widget build(BuildContext context) {
     final currentLang = ref.watch(appLanguageProvider);
     final isVi = currentLang == AppLanguage.vi;
+    final kinetic = context.kinetic;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF09181C),
+      backgroundColor: kinetic.background,
       body: Stack(
         children: [
           // ── 1. Top Section: Cyber Scenic Header Artwork ───────────────────
@@ -941,10 +822,10 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          const Color(0xFF09181C).withValues(alpha: 0.35),
+                          kinetic.background.withValues(alpha: 0.35),
                           Colors.transparent,
-                          const Color(0xFF09181C).withValues(alpha: 0.85),
-                          const Color(0xFF09181C),
+                          kinetic.background.withValues(alpha: 0.85),
+                          kinetic.background,
                         ],
                         stops: const [0.0, 0.4, 0.85, 1.0],
                       ),
@@ -955,36 +836,26 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
             ),
           ),
 
-          // ── 2. Bottom Section: Cyber Dark Glassmorphic Card ───────────────
+          // ── 2. Bottom Section: V4 flat card ───────────────────────────────
           Positioned(
             top: MediaQuery.of(context).size.height * 0.22,
             left: 0,
             right: 0,
             bottom: 0,
             child: Container(
-              decoration: const BoxDecoration(
-                color: Color(0xFF0A111E),
-                borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Color(0x3300E5FF),
-                    blurRadius: 28,
-                    offset: Offset(0, -6),
-                    spreadRadius: -2,
-                  ),
-                  BoxShadow(
-                    color: Colors.black,
-                    blurRadius: 36,
-                    offset: Offset(0, -10),
-                  ),
-                ],
-                border: Border(
-                  top: BorderSide(color: Color(0xFFA8DCE7), width: 1.5),
+              decoration: BoxDecoration(
+                color: kinetic.surface1,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(KineticTokens.radiusXXL),
                 ),
+                border: Border(
+                  top: BorderSide(color: kinetic.borderStrong, width: 1.5),
+                ),
+                boxShadow: KineticTokens.shadowPanel(Colors.black),
               ),
               child: ClipRRect(
                 borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(32),
+                  top: Radius.circular(KineticTokens.radiusXXL),
                 ),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(24, 20, 24, 36),
@@ -999,9 +870,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                             width: 40,
                             height: 4,
                             decoration: BoxDecoration(
-                              color: const Color(
-                                0xFFA8DCE7,
-                              ).withValues(alpha: 0.4),
+                              color: kinetic.primary.withValues(alpha: 0.4),
                               borderRadius: BorderRadius.circular(2),
                             ),
                           ),
@@ -1015,26 +884,17 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                             height: 72,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              gradient: const RadialGradient(
-                                colors: [Color(0xFF13324E), Color(0xFF0C1929)],
+                              gradient: RadialGradient(
+                                colors: [kinetic.surface3, kinetic.surface1],
                               ),
                               border: Border.all(
-                                color: const Color(
-                                  0xFFA8DCE7,
-                                ).withValues(alpha: 0.6),
+                                color: kinetic.primary.withValues(alpha: 0.6),
                                 width: 1.5,
                               ),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Color(0x4400E5FF),
-                                  blurRadius: 20,
-                                  spreadRadius: 2,
-                                ),
-                              ],
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.security_rounded,
-                              color: Color(0xFFA8DCE7),
+                              color: kinetic.primary,
                               size: 36,
                             ),
                           ),
@@ -1045,11 +905,11 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                         Text(
                           isVi ? 'THIẾT LẬP MẬT KHẨU MỚI' : 'SET NEW PASSWORD',
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w900,
                             letterSpacing: 0.8,
-                            color: Colors.white,
+                            color: kinetic.textPrimary,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -1058,10 +918,10 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                               ? 'Tạo mật khẩu mạnh để bảo vệ hồ sơ và dữ liệu luyện tập của bạn.'
                               : 'Create a strong password to secure your athlete profile & telemetry.',
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w400,
-                            color: Color(0xFF8FA0B8),
+                            color: kinetic.textMuted,
                             height: 1.4,
                           ),
                         ),
@@ -1070,8 +930,8 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                         // New Password Field
                         Text(
                           isVi ? 'MẬT KHẨU MỚI' : 'NEW PASSWORD',
-                          style: const TextStyle(
-                            color: Color(0xFFA8DCE7),
+                          style: TextStyle(
+                            color: kinetic.primary,
                             fontSize: 11,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 1.5,
@@ -1082,8 +942,8 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                           controller: _passwordController,
                           obscureText: _obscurePassword,
                           onChanged: (_) => setState(() {}),
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: kinetic.textPrimary,
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
                           ),
@@ -1091,15 +951,15 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                             hintText: isVi
                                 ? 'Tối thiểu 8 ký tự'
                                 : 'At least 8 characters',
-                            hintStyle: const TextStyle(
-                              color: Color(0xFF4A5B73),
+                            hintStyle: TextStyle(
+                              color: kinetic.textMuted,
                               fontSize: 14,
                             ),
                             filled: true,
-                            fillColor: const Color(0xFF0F1826),
-                            prefixIcon: const Icon(
+                            fillColor: kinetic.background,
+                            prefixIcon: Icon(
                               Icons.lock_outline_rounded,
-                              color: Color(0xFFA8DCE7),
+                              color: kinetic.primary,
                               size: 20,
                             ),
                             suffixIcon: IconButton(
@@ -1107,7 +967,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                                 _obscurePassword
                                     ? Icons.visibility_off_outlined
                                     : Icons.visibility_outlined,
-                                color: const Color(0xFF8FA0B8),
+                                color: kinetic.textMuted,
                                 size: 20,
                               ),
                               onPressed: () {
@@ -1122,27 +982,27 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
-                              borderSide: const BorderSide(
-                                color: Color(0xFF1E2E45),
+                              borderSide: BorderSide(
+                                color: kinetic.borderSubtle,
                               ),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
-                              borderSide: const BorderSide(
-                                color: Color(0xFFA8DCE7),
+                              borderSide: BorderSide(
+                                color: kinetic.primary,
                                 width: 1.5,
                               ),
                             ),
                             errorBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
-                              borderSide: const BorderSide(
-                                color: Color(0xFFFF4B6E),
+                              borderSide: BorderSide(
+                                color: kinetic.error,
                               ),
                             ),
                             focusedErrorBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
-                              borderSide: const BorderSide(
-                                color: Color(0xFFFF4B6E),
+                              borderSide: BorderSide(
+                                color: kinetic.error,
                                 width: 1.5,
                               ),
                             ),
@@ -1161,8 +1021,8 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                         // Confirm Password Field
                         Text(
                           isVi ? 'XÁC NHẬN MẬT KHẨU' : 'CONFIRM PASSWORD',
-                          style: const TextStyle(
-                            color: Color(0xFFA8DCE7),
+                          style: TextStyle(
+                            color: kinetic.primary,
                             fontSize: 11,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 1.5,
@@ -1173,8 +1033,8 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                           controller: _confirmPasswordController,
                           obscureText: _obscureConfirmPassword,
                           onChanged: (_) => setState(() {}),
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: kinetic.textPrimary,
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
                           ),
@@ -1182,15 +1042,15 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                             hintText: isVi
                                 ? 'Nhập lại mật khẩu mới'
                                 : 'Repeat new password',
-                            hintStyle: const TextStyle(
-                              color: Color(0xFF4A5B73),
+                            hintStyle: TextStyle(
+                              color: kinetic.textMuted,
                               fontSize: 14,
                             ),
                             filled: true,
-                            fillColor: const Color(0xFF0F1826),
-                            prefixIcon: const Icon(
+                            fillColor: kinetic.background,
+                            prefixIcon: Icon(
                               Icons.verified_user_outlined,
-                              color: Color(0xFFA8DCE7),
+                              color: kinetic.primary,
                               size: 20,
                             ),
                             suffixIcon: IconButton(
@@ -1198,7 +1058,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                                 _obscureConfirmPassword
                                     ? Icons.visibility_off_outlined
                                     : Icons.visibility_outlined,
-                                color: const Color(0xFF8FA0B8),
+                                color: kinetic.textMuted,
                                 size: 20,
                               ),
                               onPressed: () {
@@ -1214,27 +1074,27 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
-                              borderSide: const BorderSide(
-                                color: Color(0xFF1E2E45),
+                              borderSide: BorderSide(
+                                color: kinetic.borderSubtle,
                               ),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
-                              borderSide: const BorderSide(
-                                color: Color(0xFFA8DCE7),
+                              borderSide: BorderSide(
+                                color: kinetic.primary,
                                 width: 1.5,
                               ),
                             ),
                             errorBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
-                              borderSide: const BorderSide(
-                                color: Color(0xFFFF4B6E),
+                              borderSide: BorderSide(
+                                color: kinetic.error,
                               ),
                             ),
                             focusedErrorBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
-                              borderSide: const BorderSide(
-                                color: Color(0xFFFF4B6E),
+                              borderSide: BorderSide(
+                                color: kinetic.error,
                                 width: 1.5,
                               ),
                             ),
@@ -1263,25 +1123,25 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                               vertical: 10,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0x22FF4B6E),
+                              color: kinetic.error.withValues(alpha: 0.13),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: const Color(0x66FF4B6E),
+                                color: kinetic.error.withValues(alpha: 0.4),
                               ),
                             ),
                             child: Row(
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.error_outline_rounded,
-                                  color: Color(0xFFFF4B6E),
+                                  color: kinetic.error,
                                   size: 16,
                                 ),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
                                     _errorMessage!,
-                                    style: const TextStyle(
-                                      color: Color(0xFFFFB3C3),
+                                    style: TextStyle(
+                                      color: kinetic.error,
                                       fontSize: 12,
                                     ),
                                   ),
@@ -1300,25 +1160,25 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                               vertical: 10,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0x222AF598),
+                              color: kinetic.secondary.withValues(alpha: 0.13),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: const Color(0x662AF598),
+                                color: kinetic.secondary.withValues(alpha: 0.4),
                               ),
                             ),
                             child: Row(
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.check_circle_rounded,
-                                  color: Color(0xFF2AF598),
+                                  color: kinetic.secondary,
                                   size: 16,
                                 ),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
                                     _successMessage!,
-                                    style: const TextStyle(
-                                      color: Color(0xFFB3FFDE),
+                                    style: TextStyle(
+                                      color: kinetic.secondary,
                                       fontSize: 12,
                                     ),
                                   ),
@@ -1330,65 +1190,15 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
 
                         const SizedBox(height: 24),
 
-                        // Submit Update Button
-                        Container(
-                          height: 52,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFFA8DCE7), Color(0xFF2AF598)],
-                            ),
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Color(0x5500E5FF),
-                                blurRadius: 16,
-                                offset: Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: ElevatedButton(
-                            onPressed: _isLoading ? null : _updatePassword,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.transparent,
-                              shadowColor: Colors.transparent,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                            ),
-                            child: _isLoading
-                                ? const SizedBox(
-                                    width: 22,
-                                    height: 22,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2.2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        Color(0xFF09181C),
-                                      ),
-                                    ),
-                                  )
-                                : Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        isVi
-                                            ? 'CẬP NHẬT MẬT KHẨU'
-                                            : 'UPDATE PASSWORD',
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w900,
-                                          letterSpacing: 1.2,
-                                          color: Color(0xFF09181C),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      const Icon(
-                                        Icons.check_rounded,
-                                        color: Color(0xFF09181C),
-                                        size: 18,
-                                      ),
-                                    ],
-                                  ),
-                          ),
+                        // Submit Update Button — V4 KineticButton (flat pill)
+                        KineticButton(
+                          label: isVi
+                              ? 'CẬP NHẬT MẬT KHẨU'
+                              : 'UPDATE PASSWORD',
+                          icon: Icons.check_rounded,
+                          isLoading: _isLoading,
+                          height: KineticTokens.buttonHeightPrimary,
+                          onPressed: _isLoading ? null : _updatePassword,
                         ),
                       ],
                     ),

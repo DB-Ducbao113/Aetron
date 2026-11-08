@@ -5,6 +5,7 @@ import 'package:fitness_exercise_application/features/settings/presentation/prov
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -57,7 +58,7 @@ class DailyWorkoutList extends ConsumerWidget {
         );
 
         return Padding(
-          padding: const EdgeInsets.only(bottom: 20),
+          padding: const EdgeInsets.only(bottom: KineticTokens.spaceLG),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -77,7 +78,7 @@ class DailyWorkoutList extends ConsumerWidget {
                             color: colors.primary,
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: KineticTokens.spaceXS),
                         Text(
                           dateHeader,
                           style: KineticTypography.unitLabel.copyWith(
@@ -104,7 +105,7 @@ class DailyWorkoutList extends ConsumerWidget {
               Column(
                 children: dayWorkouts.map((workout) {
                   return Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.only(bottom: KineticTokens.spaceXS),
                     child: KineticWorkoutHistoryCard(
                       workout: workout,
                       useMetricUnits: useMetricUnits,

@@ -4,6 +4,7 @@ import 'package:fitness_exercise_application/features/workout/presentation/scree
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_card.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -94,7 +95,8 @@ class KineticWorkoutHistoryCard extends StatelessWidget {
     }
 
     return KineticCard(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(KineticTokens.spaceMD),
+      borderRadius: KineticTokens.radiusLG,
       onTap: () {
         HapticFeedback.lightImpact();
         Navigator.of(context).push(
@@ -110,10 +112,10 @@ class KineticWorkoutHistoryCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: KineticTokens.spaceXXS, vertical: KineticTokens.spaceXXS),
                 decoration: BoxDecoration(
                   color: colors.primary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
                   border: Border.all(
                     color: colors.primary.withValues(alpha: 0.3),
                   ),
@@ -134,7 +136,7 @@ class KineticWorkoutHistoryCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: KineticTokens.spaceXXS),
 
               Text(
                 timeStr,
@@ -148,10 +150,10 @@ class KineticWorkoutHistoryCard extends StatelessWidget {
 
               // Validity chip
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: KineticTokens.spaceXXS, vertical: KineticTokens.spaceXXS),
                 decoration: BoxDecoration(
                   color: validityColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
                   border: Border.all(color: validityColor.withValues(alpha: 0.3)),
                 ),
                 child: Text(
@@ -167,7 +169,7 @@ class KineticWorkoutHistoryCard extends StatelessWidget {
               Icon(Icons.chevron_right_rounded, size: 16, color: colors.textMuted),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: KineticTokens.spaceSM),
 
           // Main Metrics Row
           Row(
@@ -179,8 +181,6 @@ class KineticWorkoutHistoryCard extends StatelessWidget {
                 distanceStr.replaceAll(RegExp(r'[a-zA-Z]'), '').trim(),
                 style: KineticTypography.metricMedium.copyWith(
                   color: colors.textPrimary,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
                 ),
               ),
               const SizedBox(width: 4),
@@ -210,7 +210,7 @@ class KineticWorkoutHistoryCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: KineticTokens.spaceMD),
 
               // Pace or Speed
               Row(

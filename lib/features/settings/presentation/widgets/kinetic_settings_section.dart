@@ -1,4 +1,5 @@
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
 import 'package:flutter/material.dart';
 
@@ -20,25 +21,37 @@ class KineticSettingsSectionGroup extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          padding: const EdgeInsets.only(
+            left: KineticTokens.spaceXS,
+            bottom: KineticTokens.spaceSM,
+          ),
           child: Text(
             title.toUpperCase(),
-            style: KineticTypography.unitLabel.copyWith(
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              color: colors.primary,
-              letterSpacing: 1.2,
+            style: KineticTypography.sectionEyebrow.copyWith(
+              color: colors.textMuted,
             ),
           ),
         ),
         Material(
           color: colors.surface1,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
           clipBehavior: Clip.antiAlias,
           child: Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
               border: Border.all(color: colors.borderSubtle),
+              boxShadow: Theme.of(context).brightness == Brightness.light
+                  ? [
+                      // Morning identity: grouped cards lift off the paper
+                      // background with a soft ambient shadow.
+                      BoxShadow(
+                        color: const Color(0xFF172B33).withValues(alpha: 0.10),
+                        blurRadius: 24,
+                        offset: const Offset(0, 10),
+                        spreadRadius: -8,
+                      ),
+                    ]
+                  : null,
             ),
             child: Column(
               children: [
@@ -48,6 +61,8 @@ class KineticSettingsSectionGroup extends StatelessWidget {
                     Divider(
                       height: 1,
                       thickness: 1,
+                      indent: KineticTokens.spaceMD + 42,
+                      endIndent: KineticTokens.spaceMD,
                       color: colors.borderSubtle,
                     ),
                 ],
@@ -68,6 +83,10 @@ class KineticSettingsTile extends StatelessWidget {
   final Widget? trailing;
   final VoidCallback onTap;
 
+  /// Danger-zone rows (log out, delete account): the title takes the
+  /// tile's accent color so the row reads as destructive at a glance.
+  final bool danger;
+
   const KineticSettingsTile({
     super.key,
     required this.icon,
@@ -76,6 +95,7 @@ class KineticSettingsTile extends StatelessWidget {
     this.accentColor,
     this.trailing,
     required this.onTap,
+    this.danger = false,
   });
 
   @override
@@ -88,24 +108,28 @@ class KineticSettingsTile extends StatelessWidget {
       label: '$title, $subtitle',
       child: ListTile(
         onTap: onTap,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: KineticTokens.spaceMD,
+          vertical: KineticTokens.spaceXS,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
+        ),
         leading: Container(
-          width: 38,
-          height: 38,
+          width: 30,
+          height: 30,
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: colors.surface2,
-            border: Border.all(color: effectiveColor.withValues(alpha: 0.4)),
+            color: effectiveColor.withValues(alpha: 0.14),
+            borderRadius: BorderRadius.circular(KineticTokens.radiusSM + 2),
           ),
-          child: Icon(icon, color: effectiveColor, size: 18),
+          child: Icon(icon, color: effectiveColor, size: 16),
         ),
         title: Text(
           title,
           style: KineticTypography.headlineSmall.copyWith(
             fontSize: 14,
             fontWeight: FontWeight.w800,
-            color: colors.textPrimary,
+            color: danger ? effectiveColor : colors.textPrimary,
           ),
         ),
         subtitle: subtitle.isNotEmpty

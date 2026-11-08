@@ -52,6 +52,20 @@ class WorkoutRouteFullMapScreen extends StatelessWidget {
               showMapTiles: showMapTiles,
             ),
           ),
+          // V4: top scrim for legibility over the full-bleed map.
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 130,
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: KineticGradients.scrimTop(colors),
+                ),
+              ),
+            ),
+          ),
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -69,8 +83,8 @@ class WorkoutRouteFullMapScreen extends StatelessWidget {
                       alignment: Alignment.centerLeft,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
-                        color: colors.surface1.withValues(alpha: 0.94),
-                        borderRadius: BorderRadius.circular(16),
+                        gradient: KineticGradients.hudSurface(colors),
+                        borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
                         border: Border.all(
                           color: colors.borderSubtle.withValues(alpha: 0.8),
                         ),
@@ -102,8 +116,8 @@ class WorkoutRouteFullMapScreen extends StatelessWidget {
                       vertical: 12,
                     ),
                     decoration: BoxDecoration(
-                      color: colors.surface1.withValues(alpha: 0.94),
-                      borderRadius: BorderRadius.circular(16),
+                      gradient: KineticGradients.hudSurface(colors),
+                      borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
                       border: Border.all(
                         color: colors.borderSubtle.withValues(alpha: 0.8),
                       ),
@@ -157,15 +171,22 @@ class _MapOverlayButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.kinetic;
     return Material(
-      color: colors.surface1.withValues(alpha: 0.94),
-      borderRadius: BorderRadius.circular(16),
-      child: IconButton(
-        tooltip: tooltip,
-        onPressed: onPressed,
-        icon: Icon(icon),
-        color: colors.textPrimary,
-        iconSize: 22,
-        constraints: const BoxConstraints.tightFor(width: 48, height: 48),
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
+      child: Ink(
+        decoration: BoxDecoration(
+          gradient: KineticGradients.hudSurface(colors),
+          borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
+          border: Border.all(color: colors.borderSubtle.withValues(alpha: 0.8)),
+        ),
+        child: IconButton(
+          tooltip: tooltip,
+          onPressed: onPressed,
+          icon: Icon(icon),
+          color: colors.textPrimary,
+          iconSize: 22,
+          constraints: const BoxConstraints.tightFor(width: 48, height: 48),
+        ),
       ),
     );
   }

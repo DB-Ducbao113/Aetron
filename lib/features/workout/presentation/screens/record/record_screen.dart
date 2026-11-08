@@ -354,17 +354,21 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: colors.surface1,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(KineticTokens.radiusXL),
           side: BorderSide(color: colors.borderSubtle),
         ),
         title: Text(
           title,
-          style: TextStyle(
+          style: KineticTypography.headlineSmall.copyWith(
             color: colors.textPrimary,
-            fontWeight: FontWeight.bold,
           ),
         ),
-        content: Text(message, style: TextStyle(color: colors.textSecondary)),
+        content: Text(
+          message,
+          style: KineticTypography.bodyMedium.copyWith(
+            color: colors.textSecondary,
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () {
@@ -386,7 +390,7 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
               backgroundColor: colors.primary,
               foregroundColor: colors.onPrimary,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
               ),
             ),
             child: Text(
@@ -462,6 +466,7 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
     BuildContext context,
     AppLanguage currentLang,
   ) {
+    final colors = context.kinetic;
     final isVi = currentLang == AppLanguage.vi;
     final programTitle = widget.guidedProgram != null
         ? AppTranslations.get(widget.guidedProgram!.titleKey, currentLang)
@@ -475,19 +480,15 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
       builder: (modalContext) {
         return Container(
           padding: const EdgeInsets.fromLTRB(24, 20, 24, 36),
-          decoration: const BoxDecoration(
-            color: Color(0xFF0D1624),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-            border: Border(
-              top: BorderSide(color: Color(0xFFA8DCE7), width: 2.0),
+          decoration: BoxDecoration(
+            color: colors.surface1,
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(KineticTokens.radiusXXL),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black87,
-                blurRadius: 30,
-                offset: Offset(0, -10),
-              ),
-            ],
+            border: Border(
+              top: BorderSide(color: colors.primary, width: 2.0),
+            ),
+            boxShadow: KineticTokens.shadowPanel(Colors.black),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -495,17 +496,9 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
               Container(
                 width: 68,
                 height: 68,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF2AF598), Color(0xFF00B86B)],
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF2AF598).withValues(alpha: 0.45),
-                      blurRadius: 20,
-                    ),
-                  ],
+                  color: Color(0xFF2AF598),
                 ),
                 child: const Icon(
                   Icons.emoji_events_rounded,
@@ -516,11 +509,9 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
               const SizedBox(height: 18),
               Text(
                 isVi ? "HOÀN THÀNH GIÁO ÁN! 🎉" : "PROGRAM COMPLETED! 🎉",
-                style: TextStyle(
-                  fontFamily: KineticTypography.fontFamily,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
+                style: KineticTypography.pageTitle.copyWith(
+                  color: colors.textPrimary,
+                  fontWeight: FontWeight.w800,
                   letterSpacing: 0.5,
                 ),
               ),
@@ -530,10 +521,8 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
                     ? "Bạn đã xuất sắc hoàn thành tất cả các hiệp của giáo án \"$programTitle\". Bạn muốn làm gì tiếp theo?"
                     : "You have successfully completed all steps of \"$programTitle\". What would you like to do next?",
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: KineticTypography.fontFamily,
-                  fontSize: 14,
-                  color: Colors.white70,
+                style: KineticTypography.bodyMedium.copyWith(
+                  color: colors.textSecondary,
                   height: 1.4,
                 ),
               ),
@@ -753,6 +742,27 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
                 onUserGesturePan: () {
                   ref.read(workoutSessionProvider.notifier).onUserDraggedMap();
                 },
+              ),
+            ),
+
+            // 1b. Map legibility scrims — decoration only, never hit-tested.
+            // HUD content (top bar, mini card, dock) sits on these.
+            Positioned.fill(
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: KineticGradients.scrimTop(context.kinetic),
+                  ),
+                ),
+              ),
+            ),
+            Positioned.fill(
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: KineticGradients.scrimBottom(context.kinetic),
+                  ),
+                ),
               ),
             ),
 
@@ -978,7 +988,7 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
             if (_isScreenLocked)
               Positioned.fill(
                 child: Container(
-                  color: Colors.black.withValues(alpha: 0.88),
+                  color: context.kinetic.background.withValues(alpha: 0.92),
                   child: SafeArea(
                     child: Center(
                       child: Padding(
@@ -995,15 +1005,6 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
                                   color: context.kinetic.tertiary,
                                   width: 2,
                                 ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: context.kinetic.tertiary.withValues(
-                                      alpha: 0.35,
-                                    ),
-                                    blurRadius: 24,
-                                    spreadRadius: 2,
-                                  ),
-                                ],
                               ),
                               child: Icon(
                                 Icons.lock_rounded,
@@ -1017,7 +1018,7 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
                                   ? 'MÀN HÌNH ĐÃ KHÓA'
                                   : 'SCREEN LOCKED',
                               style: KineticTypography.headlineSmall.copyWith(
-                                color: Colors.white,
+                                color: context.kinetic.textPrimary,
                                 letterSpacing: 2,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -1068,13 +1069,12 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
   }
 
   Color _activityAccent(String type) {
+    final colors = context.kinetic;
     switch (type.toLowerCase()) {
-      case 'cycling':
-        return const Color(0xFF39B5F2);
-      case 'walking':
-        return const Color(0xFF4EBE9E);
+      case 'running':
+        return colors.secondary;
       default:
-        return const Color(0xFFA8DCE7);
+        return colors.tertiary;
     }
   }
 }
@@ -1183,7 +1183,7 @@ class _IntegratedProgramPill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
         color: step.phaseColor.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
         border: Border.all(color: step.phaseColor.withValues(alpha: 0.4)),
       ),
       child: Row(
@@ -1193,9 +1193,7 @@ class _IntegratedProgramPill extends StatelessWidget {
           Expanded(
             child: Text(
               '${isVi ? "Hiệp" : "Step"} ${stepIndex + 1}/$totalSteps: ${isVi ? step.titleVi : step.titleEn}',
-              style: TextStyle(
-                fontFamily: KineticTypography.fontFamily,
-                fontSize: 12,
+              style: KineticTypography.unitLabel.copyWith(
                 fontWeight: FontWeight.w800,
                 color: step.phaseColor,
               ),
@@ -1207,14 +1205,12 @@ class _IntegratedProgramPill extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
               color: Colors.black.withValues(alpha: 0.35),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
             ),
             child: Text(
               '$minutes:$seconds',
-              style: TextStyle(
-                fontFamily: KineticTypography.fontFamily,
-                fontSize: 13,
-                fontWeight: FontWeight.w900,
+              style: KineticTypography.label.copyWith(
+                fontWeight: FontWeight.w800,
                 color: Colors.white,
                 fontFeatures: KineticTypography.tabularFigures,
               ),
@@ -1293,7 +1289,7 @@ class _IntegratedTargetPill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
         color: colors.primary.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
         border: Border.all(color: colors.primary.withValues(alpha: 0.35)),
       ),
       child: Row(
@@ -1303,9 +1299,7 @@ class _IntegratedTargetPill extends StatelessWidget {
           Expanded(
             child: Text(
               targetLabel,
-              style: TextStyle(
-                fontFamily: KineticTypography.fontFamily,
-                fontSize: 12,
+              style: KineticTypography.label.copyWith(
                 fontWeight: FontWeight.w700,
                 color: colors.textPrimary,
               ),
@@ -1313,9 +1307,7 @@ class _IntegratedTargetPill extends StatelessWidget {
           ),
           Text(
             remainingLabel,
-            style: TextStyle(
-              fontFamily: KineticTypography.fontFamily,
-              fontSize: 12,
+            style: KineticTypography.label.copyWith(
               fontWeight: FontWeight.w800,
               color: colors.primary,
             ),

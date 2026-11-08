@@ -1,4 +1,7 @@
 export 'kinetic_colors.dart';
+export 'kinetic_tokens.dart';
+export 'kinetic_gradients.dart';
+export 'kinetic_backdrop.dart';
 export 'kinetic_typography.dart';
 export 'kinetic_theme.dart';
 export 'kinetic_theme_provider.dart';

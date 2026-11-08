@@ -114,21 +114,14 @@ class KineticPerformanceStoryBento extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(KineticTokens.spaceLG),
       decoration: BoxDecoration(
         color: colors.surface1,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
         border: Border.all(
-          color: colors.borderSubtle.withValues(alpha: 0.8),
-          width: 1.2,
+          color: colors.borderSubtle,
+          width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.35),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -153,7 +146,7 @@ class KineticPerformanceStoryBento extends StatelessWidget {
                         letterSpacing: 1.2,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: KineticTokens.spaceXXS),
                     Text(
                       storyHeadline,
                       style: KineticTypography.headlineSmall.copyWith(
@@ -182,7 +175,7 @@ class KineticPerformanceStoryBento extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: KineticTokens.spaceMD),
 
           // 2. Hero Distance + Comparison Pill
           Row(
@@ -202,7 +195,7 @@ class KineticPerformanceStoryBento extends StatelessWidget {
                   color: colors.textSecondary,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: KineticTokens.spaceSM),
               if (percentChange != null || isNewBenchmark)
                 Container(
                   padding:
@@ -211,7 +204,7 @@ class KineticPerformanceStoryBento extends StatelessWidget {
                     color: isNewBenchmark || isPositive
                         ? colors.primary.withValues(alpha: 0.15)
                         : colors.tertiary.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
                     border: Border.all(
                       color: isNewBenchmark || isPositive
                           ? colors.primary.withValues(alpha: 0.4)
@@ -258,11 +251,11 @@ class KineticPerformanceStoryBento extends StatelessWidget {
               height: 1.45,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: KineticTokens.spaceLG),
 
           // 4. Slender 7-Day Bar Chart
           Container(
-            padding: const EdgeInsets.only(top: 16),
+            padding: const EdgeInsets.only(top: KineticTokens.spaceMD),
             decoration: BoxDecoration(
               border: Border(
                 top: BorderSide(
@@ -299,14 +292,9 @@ class KineticPerformanceStoryBento extends StatelessWidget {
                                   margin: const EdgeInsets.only(bottom: 6),
                                   decoration: BoxDecoration(
                                     color: colors.primary,
-                                    borderRadius: BorderRadius.circular(8),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: colors.primary
-                                            .withValues(alpha: 0.4),
-                                        blurRadius: 8,
-                                      ),
-                                    ],
+                                    borderRadius: BorderRadius.circular(
+                                      KineticTokens.radiusSM,
+                                    ),
                                   ),
                                   child: Text(
                                     '${dayDist.toStringAsFixed(1)} $distanceUnit',
@@ -329,24 +317,16 @@ class KineticPerformanceStoryBento extends StatelessWidget {
                                       color: isPeak
                                           ? colors.primary
                                           : (dayDist > 0
-                                              ? colors.borderSubtle
-                                                  .withValues(alpha: 0.9)
+                                              ? colors.secondary.withValues(
+                                                  alpha: 0.55,
+                                                )
                                               : colors.surface2),
                                       borderRadius: BorderRadius.circular(6),
-                                      boxShadow: isPeak
-                                          ? [
-                                              BoxShadow(
-                                                color: colors.primary
-                                                    .withValues(alpha: 0.45),
-                                                blurRadius: 10,
-                                              ),
-                                            ]
-                                          : null,
                                     ),
                                   ),
                                 ),
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: KineticTokens.spaceXS),
 
                               // Day label
                               Text(
@@ -367,7 +347,7 @@ class KineticPerformanceStoryBento extends StatelessWidget {
                     }),
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: KineticTokens.spaceSM),
 
                 // Footnote
                 if (peakDayIdx >= 0 && peakVal > 0.05)

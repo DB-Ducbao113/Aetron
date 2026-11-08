@@ -49,7 +49,7 @@ class KineticKeyTelemetryBento extends StatelessWidget {
             letterSpacing: 1.2,
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: KineticTokens.spaceXS),
         Row(
           children: [
             Expanded(
@@ -63,7 +63,7 @@ class KineticKeyTelemetryBento extends StatelessWidget {
                 accentColor: colors.primary,
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: KineticTokens.spaceXS),
             Expanded(
               child: _TelemetryCard(
                 label: isVi ? 'THỜI GIAN' : 'ACTIVE TIME',
@@ -75,7 +75,7 @@ class KineticKeyTelemetryBento extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: KineticTokens.spaceXS),
         Row(
           children: [
             Expanded(
@@ -87,7 +87,7 @@ class KineticKeyTelemetryBento extends StatelessWidget {
                 accentColor: colors.tertiary,
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: KineticTokens.spaceXS),
             Expanded(
               child: _TelemetryCard(
                 label: isVi ? 'BUỔI TẬP' : 'SESSIONS',
@@ -124,21 +124,14 @@ class _TelemetryCard extends StatelessWidget {
     final colors = context.kinetic;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(KineticTokens.spaceMD),
       decoration: BoxDecoration(
         color: colors.surface1,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
         border: Border.all(
-          color: colors.borderSubtle.withValues(alpha: 0.8),
-          width: 1.1,
+          color: colors.borderSubtle,
+          width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,7 +157,7 @@ class _TelemetryCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: KineticTokens.spaceXS),
           Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
@@ -176,7 +169,7 @@ class _TelemetryCard extends StatelessWidget {
                 ),
               ),
               if (unit.isNotEmpty) ...[
-                const SizedBox(width: 4),
+                const SizedBox(width: KineticTokens.spaceXXS),
                 Text(
                   unit,
                   style: KineticTypography.unitLabel.copyWith(

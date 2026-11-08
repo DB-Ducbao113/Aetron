@@ -13,17 +13,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// ─── Design tokens (mirrors stitch dark palette) ────────────────────────────
-const _bg = Color(0xFF0C1316);
-const _surface = Color(0xFF162025);
-const _surfaceLow = Color(0xFF11181C);
-const _outlineVariant = Color(0xFF23323A);
-const _primary = Color(0xFFA8DCE7);
-const _onPrimary = Color(0xFF09181C);
-const _onSurface = Color(0xFFE2E8EA);
-const _onSurfaceVariant = Color(0xFF90A2A7);
-const _error = Color(0xFFFF4B6E);
-
 class LoginScreen extends ConsumerStatefulWidget {
   final String? initialErrorMessage;
   const LoginScreen({super.key, this.initialErrorMessage});
@@ -178,26 +167,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     final currentLang = ref.watch(appLanguageProvider);
     final isVi = currentLang == AppLanguage.vi;
     final topPad = MediaQuery.of(context).padding.top;
+    final colors = context.kinetic;
 
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: colors.background,
       body: Column(
         children: [
-          // ── Top App Bar (matches stitch home/activity header) ─────────────
-          Container(
-            color: _bg.withValues(alpha: 0.97),
-            padding: EdgeInsets.fromLTRB(16, topPad + 8, 16, 12),
-            child: SizedBox(
+          // ── Top App Bar on the V4 topographic backdrop ────────────────────
+          Stack(
+            children: [
+              const Positioned.fill(child: TopographicBackdrop()),
+              Container(
+                padding: EdgeInsets.fromLTRB(16, topPad + 8, 16, 12),
+                child: SizedBox(
               height: 36,
               child: Stack(
                 alignment: Alignment.center,
                 children: [
                   Text(
                     isVi ? 'Đăng nhập' : 'Sign In',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
-                      color: _onSurface,
+                      color: colors.textPrimary,
                       letterSpacing: -0.01 * 18,
                     ),
                   ),
@@ -208,9 +200,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                 ],
               ),
             ),
+              ),
+            ],
           ),
           // Divider matching stitch border-b border-[#23323a]
-          const Divider(height: 1, thickness: 1, color: _outlineVariant),
+          Divider(height: 1, thickness: 1, color: colors.borderSubtle),
 
           // ── Scrollable Body ───────────────────────────────────────────────
           Expanded(
@@ -235,34 +229,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                             errorBuilder: (context, error, stackTrace) =>
                                 Container(
                                   height: 180,
-                                  color: _surface,
-                                  child: const Center(
+                                  color: colors.surface2,
+                                  child: Center(
                                     child: Icon(
                                       Icons.fitness_center_rounded,
-                                      color: _primary,
+                                      color: colors.primary,
                                       size: 48,
                                     ),
                                   ),
                                 ),
                           ),
-                          // Gradient scrim — same as stitch home hero
+                          // Gradient scrim — DS scrimBottom
                           Positioned.fill(
                             child: DecoratedBox(
                               decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    _bg.withValues(alpha: 0.2),
-                                    _bg.withValues(alpha: 0.80),
-                                  ],
-                                ),
+                                gradient: KineticGradients.scrimBottom(colors),
                               ),
                             ),
                           ),
                           // Bottom overlay text
                           Positioned(
-                            bottom: 16,
+                            bottom: 36,
                             left: 16,
                             right: 16,
                             child: Column(
@@ -270,10 +257,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                               children: [
                                 Text(
                                   isVi ? 'Hành trình của bạn' : 'Your journey',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
-                                    color: _primary,
+                                    color: colors.primary,
                                     letterSpacing: 0.05 * 10,
                                   ),
                                 ),
@@ -281,10 +268,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                   isVi
                                       ? 'Sẵn sàng tiếp tục?'
                                       : 'Ready to continue?',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 22,
                                     fontWeight: FontWeight.w700,
-                                    color: _onSurface,
+                                    color: colors.textPrimary,
                                     letterSpacing: -0.015 * 22,
                                   ),
                                 ),
@@ -294,166 +281,187 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         ],
                       ),
                     ),
-                    const SizedBox(height: 24),
 
-                    // ── Username field ──────────────────────────────────────
-                    _SectionLabel(isVi ? 'TÊN ĐĂNG NHẬP' : 'USERNAME'),
-                    const SizedBox(height: 6),
-                    _StitchTextField(
-                      controller: _usernameController,
-                      hintText: isVi
-                          ? 'Nhập tên đăng nhập'
-                          : 'Enter your username',
-                      prefixIcon: Icons.person_outline_rounded,
-                      validator: (value) => validateUsername(value, isVi: isVi),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // ── Password field ──────────────────────────────────────
-                    _SectionLabel(isVi ? 'MẬT KHẨU' : 'PASSWORD'),
-                    const SizedBox(height: 6),
-                    _StitchTextField(
-                      controller: _passwordController,
-                      hintText: isVi
-                          ? 'Nhập mật khẩu của bạn'
-                          : 'Enter your password',
-                      prefixIcon: Icons.lock_outline_rounded,
-                      obscureText: _obscurePassword,
-                      suffixIcon: IconButton(
-                        onPressed: () => setState(
-                          () => _obscurePassword = !_obscurePassword,
-                        ),
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
-                          color: _primary.withValues(alpha: 0.7),
-                          size: 20,
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return isVi
-                              ? 'Vui lòng nhập mật khẩu'
-                              : 'Enter your password';
-                        }
-                        if (value.length < 6) {
-                          return isVi
-                              ? 'Tối thiểu 6 ký tự'
-                              : 'Minimum 6 characters';
-                        }
-                        return null;
-                      },
-                    ),
-
-                    // ── Forgot password ─────────────────────────────────────
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const ForgotPasswordScreen(),
-                            ),
-                          );
-                        },
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 4,
-                            vertical: 8,
+                    Transform.translate(
+                      offset: const Offset(0, -22),
+                      child: Container(
+                        padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
+                        decoration: BoxDecoration(
+                          color: colors.surface1,
+                          borderRadius: BorderRadius.circular(
+                            KineticTokens.radiusXXL,
                           ),
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        child: Text(
-                          isVi ? 'Quên mật khẩu?' : 'Forgot password?',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: _primary,
+                          border: Border.all(
+                            color: colors.borderStrong,
+                            width: 1.5,
                           ),
+                          boxShadow: KineticTokens.shadowPanel(Colors.black),
                         ),
-                      ),
-                    ),
-
-                    // ── Error message ───────────────────────────────────────
-                    if (_errorMessage != null) ...[
-                      const SizedBox(height: 8),
-                      _ErrorMessage(_errorMessage!),
-                    ],
-                    const SizedBox(height: 20),
-
-                    // ── Primary CTA (stitch: bg-[#A8DCE7] text-[#09181c] pill) ─
-                    _PrimaryButton(
-                      label: isVi ? 'Đăng Nhập' : 'Sign In',
-                      isLoading: _isLoading,
-                      disabled: _isGoogleLoading,
-                      onPressed: _login,
-                    ),
-                    const SizedBox(height: 20),
-
-                    // ── Divider ─────────────────────────────────────────────
-                    Row(
-                      children: [
-                        const Expanded(child: Divider(color: _outlineVariant)),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 14),
-                          child: Text(
-                            isVi ? 'Hoặc tiếp tục với' : 'Or continue with',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: _onSurfaceVariant,
-                            ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                          // ── Username field ──────────────────────────────────────
+                          _SectionLabel(isVi ? 'TÊN ĐĂNG NHẬP' : 'USERNAME'),
+                          const SizedBox(height: 6),
+                          _StitchTextField(
+                            controller: _usernameController,
+                            hintText: isVi
+                                ? 'Nhập tên đăng nhập'
+                                : 'Enter your username',
+                            prefixIcon: Icons.person_outline_rounded,
+                            validator: (value) => validateUsername(value, isVi: isVi),
                           ),
-                        ),
-                        const Expanded(child: Divider(color: _outlineVariant)),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
+                          const SizedBox(height: 16),
 
-                    // ── Google button ───────────────────────────────────────
-                    _GoogleButton(
-                      label: isVi
-                          ? 'Tiếp tục với Google'
-                          : 'Continue with Google',
-                      isLoading: _isGoogleLoading,
-                      disabled: _isLoading,
-                      onPressed: _loginWithGoogle,
-                    ),
-                    const SizedBox(height: 28),
-
-                    // ── Sign up link ────────────────────────────────────────
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          isVi
-                              ? 'Chưa có tài khoản? '
-                              : "Don't have an account? ",
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: _onSurfaceVariant,
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => const RegisterScreen(),
+                          // ── Password field ──────────────────────────────────────
+                          _SectionLabel(isVi ? 'MẬT KHẨU' : 'PASSWORD'),
+                          const SizedBox(height: 6),
+                          _StitchTextField(
+                            controller: _passwordController,
+                            hintText: isVi
+                                ? 'Nhập mật khẩu của bạn'
+                                : 'Enter your password',
+                            prefixIcon: Icons.lock_outline_rounded,
+                            obscureText: _obscurePassword,
+                            suffixIcon: IconButton(
+                              onPressed: () => setState(
+                                () => _obscurePassword = !_obscurePassword,
                               ),
-                            );
-                          },
-                          child: Text(
-                            isVi ? 'Tạo tài khoản' : 'Create account',
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: _primary,
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
+                                color: colors.primary.withValues(alpha: 0.7),
+                                size: 20,
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return isVi
+                                    ? 'Vui lòng nhập mật khẩu'
+                                    : 'Enter your password';
+                              }
+                              if (value.length < 6) {
+                                return isVi
+                                    ? 'Tối thiểu 6 ký tự'
+                                    : 'Minimum 6 characters';
+                              }
+                              return null;
+                            },
+                          ),
+
+                          // ── Forgot password ─────────────────────────────────────
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => const ForgotPasswordScreen(),
+                                  ),
+                                );
+                              },
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                  vertical: 8,
+                                ),
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              child: Text(
+                                isVi ? 'Quên mật khẩu?' : 'Forgot password?',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: colors.primary,
+                                ),
+                              ),
                             ),
                           ),
+
+                          // ── Error message ───────────────────────────────────────
+                          if (_errorMessage != null) ...[
+                            const SizedBox(height: 8),
+                            _ErrorMessage(_errorMessage!),
+                          ],
+                          const SizedBox(height: 20),
+
+                          // ── Primary CTA (stitch: bg-[#A8DCE7] text-[#09181c] pill) ─
+                          _PrimaryButton(
+                            label: isVi ? 'Đăng Nhập' : 'Sign In',
+                            isLoading: _isLoading,
+                            disabled: _isGoogleLoading,
+                            onPressed: _login,
+                          ),
+                          const SizedBox(height: 20),
+
+                          // ── Divider ─────────────────────────────────────────────
+                          Row(
+                            children: [
+                              Expanded(child: Divider(color: colors.borderSubtle)),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 14),
+                                child: Text(
+                                  isVi ? 'Hoặc tiếp tục với' : 'Or continue with',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: colors.textMuted,
+                                  ),
+                                ),
+                              ),
+                              Expanded(child: Divider(color: colors.borderSubtle)),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+
+                          // ── Google button ───────────────────────────────────────
+                          _GoogleButton(
+                            label: isVi
+                                ? 'Tiếp tục với Google'
+                                : 'Continue with Google',
+                            isLoading: _isGoogleLoading,
+                            disabled: _isLoading,
+                            onPressed: _loginWithGoogle,
+                          ),
+                          const SizedBox(height: 28),
+
+                          // ── Sign up link ────────────────────────────────────────
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                isVi
+                                    ? 'Chưa có tài khoản? '
+                                    : "Don't have an account? ",
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: colors.textMuted,
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => const RegisterScreen(),
+                                    ),
+                                  );
+                                },
+                                child: Text(
+                                  isVi ? 'Tạo tài khoản' : 'Create account',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: colors.primary,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ],
                 ),
@@ -476,12 +484,13 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.kinetic;
     return Text(
       text,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 11,
         fontWeight: FontWeight.w600,
-        color: _onSurfaceVariant,
+        color: colors.textMuted,
         letterSpacing: 0.03 * 10,
       ),
     );
@@ -507,25 +516,26 @@ class _StitchTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.kinetic;
     return TextFormField(
       controller: controller,
       obscureText: obscureText,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w500,
-        color: _onSurface,
+        color: colors.textPrimary,
       ),
       validator: validator,
       decoration: InputDecoration(
         hintText: hintText,
-        hintStyle: const TextStyle(
+        hintStyle: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w400,
-          color: _onSurfaceVariant,
+          color: colors.textMuted,
         ),
         filled: true,
-        fillColor: _surfaceLow,
-        prefixIcon: Icon(prefixIcon, color: _onSurfaceVariant, size: 18),
+        fillColor: colors.background,
+        prefixIcon: Icon(prefixIcon, color: colors.textMuted, size: 18),
         suffixIcon: suffixIcon,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
@@ -533,26 +543,27 @@ class _StitchTextField extends StatelessWidget {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: _outlineVariant),
+          borderSide: BorderSide(color: colors.borderSubtle),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: _primary, width: 1.5),
+          borderSide: BorderSide(color: colors.primary, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: _error),
+          borderSide: BorderSide(color: colors.error),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: _error, width: 1.5),
+          borderSide: BorderSide(color: colors.error, width: 1.5),
         ),
       ),
     );
   }
 }
 
-/// Primary action button — bg #A8DCE7, text #09181c, pill, shadow (stitch CTA)
+/// Primary action button — V4: delegates to the DS KineticButton
+/// (flat pill, buttonHeightPrimary).
 class _PrimaryButton extends StatelessWidget {
   const _PrimaryButton({
     required this.label,
@@ -568,54 +579,11 @@ class _PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: (isLoading || disabled) ? null : onPressed,
-      child: AnimatedContainer(
-        duration: KineticTokens.motionPress,
-        height: 52,
-        decoration: BoxDecoration(
-          color: _primary,
-          borderRadius: BorderRadius.circular(999),
-          boxShadow: [
-            BoxShadow(
-              color: _primary.withValues(alpha: 0.25),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Center(
-          child: isLoading
-              ? const SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    color: _onPrimary,
-                    strokeWidth: 2.4,
-                  ),
-                )
-              : Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      label,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: _onPrimary,
-                        letterSpacing: 0.01 * 14,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    const Icon(
-                      Icons.arrow_forward_rounded,
-                      color: _onPrimary,
-                      size: 18,
-                    ),
-                  ],
-                ),
-        ),
-      ),
+    return KineticButton(
+      label: label,
+      isLoading: isLoading,
+      height: KineticTokens.buttonHeightPrimary,
+      onPressed: (isLoading || disabled) ? null : onPressed,
     );
   }
 }
@@ -636,22 +604,23 @@ class _GoogleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.kinetic;
     return GestureDetector(
       onTap: (isLoading || disabled) ? null : onPressed,
       child: Container(
         height: 52,
         decoration: BoxDecoration(
-          color: _surfaceLow,
+          color: colors.surface2,
           borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: _outlineVariant),
+          border: Border.all(color: colors.borderStrong, width: 1.5),
         ),
         child: isLoading
-            ? const Center(
+            ? Center(
                 child: SizedBox(
                   width: 22,
                   height: 22,
                   child: CircularProgressIndicator(
-                    color: _primary,
+                    color: colors.primary,
                     strokeWidth: 2,
                   ),
                 ),
@@ -663,19 +632,19 @@ class _GoogleButton extends StatelessWidget {
                     'assets/GoogleLogo.jpg',
                     width: 20,
                     height: 20,
-                    errorBuilder: (context, error, stackTrace) => const Icon(
+                    errorBuilder: (context, error, stackTrace) => Icon(
                       Icons.g_mobiledata,
-                      color: _primary,
+                      color: colors.primary,
                       size: 24,
                     ),
                   ),
                   const SizedBox(width: 12),
                   Text(
                     label,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: _onSurface,
+                      color: colors.textPrimary,
                     ),
                   ),
                 ],
@@ -691,23 +660,24 @@ class _ErrorMessage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.kinetic;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: _error.withValues(alpha: 0.12),
+        color: colors.error.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _error.withValues(alpha: 0.35)),
+        border: Border.all(color: colors.error.withValues(alpha: 0.35)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline_rounded, color: _error, size: 16),
+          Icon(Icons.error_outline_rounded, color: colors.error, size: 16),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               message,
               style: TextStyle(
                 fontSize: 12,
-                color: _error.withValues(alpha: 0.9),
+                color: colors.error.withValues(alpha: 0.9),
               ),
             ),
           ),

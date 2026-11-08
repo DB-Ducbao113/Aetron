@@ -72,7 +72,6 @@ class KineticDetailsTelemetryListCard extends StatelessWidget {
 
     return KineticCard(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-      topAccentColor: colors.primary,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -1,5 +1,6 @@
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
 import 'package:flutter/material.dart';
 
@@ -31,23 +32,20 @@ class KineticHistoryTopBar extends StatelessWidget {
               child: Text(
                 AppTranslations.get('workout_history', currentLang),
                 style: KineticTypography.pageTitle.copyWith(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.5,
                   color: colors.textPrimary,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: KineticTokens.spaceSM),
 
             // Workout Count Badge Pill
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: KineticTokens.spaceSM, vertical: KineticTokens.spaceXXS),
               decoration: BoxDecoration(
                 color: colors.primary.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
                 border: Border.all(
                   color: colors.primary.withValues(alpha: 0.35),
                 ),
@@ -61,12 +59,6 @@ class KineticHistoryTopBar extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: colors.primary,
                       shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: colors.primary.withValues(alpha: 0.6),
-                          blurRadius: 4,
-                        ),
-                      ],
                     ),
                   ),
                   const SizedBox(width: 6),
@@ -85,18 +77,18 @@ class KineticHistoryTopBar extends StatelessWidget {
         ),
 
         if (isOffline) ...[
-          const SizedBox(height: 10),
+          const SizedBox(height: KineticTokens.spaceXS),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: KineticTokens.spaceSM, vertical: KineticTokens.spaceXS),
             decoration: BoxDecoration(
               color: colors.surface2,
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
               border: Border.all(color: colors.borderSubtle),
             ),
             child: Row(
               children: [
                 Icon(Icons.cloud_off_rounded, size: 14, color: colors.tertiary),
-                const SizedBox(width: 8),
+                const SizedBox(width: KineticTokens.spaceXS),
                 Expanded(
                   child: Text(
                     currentLang == AppLanguage.vi

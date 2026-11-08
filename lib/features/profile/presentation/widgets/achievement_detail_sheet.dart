@@ -1,6 +1,8 @@
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/profile/domain/entities/achievement_badge.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_button.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -41,17 +43,26 @@ class AchievementDetailSheet extends StatelessWidget {
 
     return SafeArea(
       child: Container(
-        margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+        margin: const EdgeInsets.fromLTRB(
+          KineticTokens.spaceSM,
+          0,
+          KineticTokens.spaceSM,
+          KineticTokens.spaceSM,
+        ),
         decoration: BoxDecoration(
-          color: colors.surface2,
-          borderRadius: BorderRadius.circular(24),
+          color: colors.surface1,
+          borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
           border: Border.all(
             color: isUnlocked ? colors.borderAccent : colors.borderSubtle,
-            width: 1.5,
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+          padding: const EdgeInsets.fromLTRB(
+            KineticTokens.spaceXL,
+            KineticTokens.spaceMD,
+            KineticTokens.spaceXL,
+            KineticTokens.spaceXL,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -64,7 +75,7 @@ class AchievementDetailSheet extends StatelessWidget {
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: KineticTokens.spaceXL),
 
               // Emblem Container
               Stack(
@@ -75,7 +86,7 @@ class AchievementDetailSheet extends StatelessWidget {
                     height: 80,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: colors.surface1,
+                      color: colors.surface2,
                       border: Border.all(
                         color: isUnlocked ? colors.primary : colors.borderSubtle,
                         width: 2.0,
@@ -110,17 +121,21 @@ class AchievementDetailSheet extends StatelessWidget {
                     ),
                 ],
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: KineticTokens.spaceLG),
 
               // Tier & Category Chips Row
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: KineticTokens.spaceSM,
+                      vertical: KineticTokens.spaceXXS,
+                    ),
                     decoration: BoxDecoration(
-                      color: colors.surface1,
-                      borderRadius: BorderRadius.circular(8),
+                      color: colors.surface2,
+                      borderRadius:
+                          BorderRadius.circular(KineticTokens.radiusPill),
                       border: Border.all(color: colors.borderSubtle),
                     ),
                     child: Row(
@@ -139,12 +154,16 @@ class AchievementDetailSheet extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: KineticTokens.spaceXS),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: KineticTokens.spaceSM,
+                      vertical: KineticTokens.spaceXXS,
+                    ),
                     decoration: BoxDecoration(
-                      color: colors.surface1,
-                      borderRadius: BorderRadius.circular(8),
+                      color: colors.surface2,
+                      borderRadius:
+                          BorderRadius.circular(KineticTokens.radiusPill),
                       border: Border.all(color: colors.borderSubtle),
                     ),
                     child: Row(
@@ -169,7 +188,7 @@ class AchievementDetailSheet extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: KineticTokens.spaceSM),
 
               // Badge Title
               Text(
@@ -180,7 +199,7 @@ class AchievementDetailSheet extends StatelessWidget {
                   color: colors.textPrimary,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: KineticTokens.spaceXS),
 
               // Description
               Text(
@@ -191,15 +210,18 @@ class AchievementDetailSheet extends StatelessWidget {
                   height: 1.4,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: KineticTokens.spaceMD),
 
               // Quote Box
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: KineticTokens.spaceMD,
+                  vertical: KineticTokens.spaceSM,
+                ),
                 decoration: BoxDecoration(
-                  color: colors.surface1,
-                  borderRadius: BorderRadius.circular(12),
+                  color: colors.surface2,
+                  borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
                   border: Border.all(color: colors.borderSubtle),
                 ),
                 child: Row(
@@ -222,15 +244,15 @@ class AchievementDetailSheet extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: KineticTokens.spaceLG),
 
               // Progress Section
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(KineticTokens.spaceMD),
                 decoration: BoxDecoration(
-                  color: colors.surface1,
-                  borderRadius: BorderRadius.circular(16),
+                  color: colors.surface2,
+                  borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
                   border: Border.all(color: colors.borderSubtle),
                 ),
                 child: Column(
@@ -299,16 +321,13 @@ class AchievementDetailSheet extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: KineticTokens.spaceLG),
 
               // Action Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
-                  label: Text(currentLang == AppLanguage.vi ? 'ĐÓNG' : 'CLOSE'),
-                ),
+              KineticButton(
+                label: currentLang == AppLanguage.vi ? 'ĐÓNG' : 'CLOSE',
+                icon: Icons.check_circle_outline_rounded,
+                onPressed: () => Navigator.of(context).pop(),
               ),
             ],
           ),

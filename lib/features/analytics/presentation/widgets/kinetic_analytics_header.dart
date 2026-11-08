@@ -32,84 +32,109 @@ class KineticAnalyticsHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.kinetic;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Title + Sync Status Row
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Left: Main Title (Clear & Prominent)
-            Expanded(
-              child: Text(
-                isVi ? 'Phân tích' : 'Analytics',
-                style: KineticTypography.pageTitle.copyWith(
-                  color: colors.textPrimary,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const SizedBox(width: 12),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
+      child: Stack(
+        children: [
+          const Positioned.fill(child: TopographicBackdrop()),
+          Padding(
+            padding: const EdgeInsets.all(KineticTokens.spaceMD),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Title + Sync Status Row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Left: Main Title (Clear & Prominent)
+                    Expanded(
+                      child: Text(
+                        isVi ? 'Phân tích' : 'Analytics',
+                        style: KineticTypography.pageTitle.copyWith(
+                          color: colors.textPrimary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: KineticTokens.spaceSM),
 
-            // Right: Sync / Offline Status Badge Pill
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: colors.surface2,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: colors.borderSubtle,
+                    // Right: Sync / Offline Status Badge Pill
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: KineticTokens.spaceSM,
+                        vertical: KineticTokens.spaceXXS,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colors.surface2,
+                        borderRadius: BorderRadius.circular(
+                          KineticTokens.radiusPill,
+                        ),
+                        border: Border.all(
+                          color: colors.borderSubtle,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: isOffline
+                                  ? colors.tertiary
+                                  : colors.primary,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            isOffline
+                                ? (isVi ? 'Ngoại tuyến' : 'Offline')
+                                : (isVi ? 'Đã đồng bộ' : 'Synced'),
+                            style: KineticTypography.unitLabel.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: colors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: isOffline ? colors.tertiary : colors.primary,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: (isOffline ? colors.tertiary : colors.primary)
-                              .withValues(alpha: 0.6),
-                          blurRadius: 5,
+                const SizedBox(height: KineticTokens.spaceMD),
+
+                // Period Filter — pill segmented control
+                Container(
+                  padding: const EdgeInsets.all(KineticTokens.spaceXXS),
+                  decoration: BoxDecoration(
+                    color: colors.surface1,
+                    borderRadius: BorderRadius.circular(
+                      KineticTokens.radiusPill,
+                    ),
+                    border: Border.all(color: colors.borderSubtle),
+                  ),
+                  child: Row(
+                    children: [
+                      for (int i = 0; i < TimePeriod.values.length; i++) ...[
+                        if (i > 0) const SizedBox(width: KineticTokens.spaceXXS),
+                        Expanded(
+                          child: _buildPeriodTab(
+                            context,
+                            colors,
+                            TimePeriod.values[i],
+                          ),
                         ),
                       ],
-                    ),
+                    ],
                   ),
-                  const SizedBox(width: 6),
-                  Text(
-                    isOffline
-                        ? (isVi ? 'Ngoại tuyến' : 'Offline')
-                        : (isVi ? 'Đã đồng bộ' : 'Synced'),
-                    style: KineticTypography.unitLabel.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: colors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
-        const SizedBox(height: 14),
-
-        // Expanded Period Filter Tabs (Tuần này / Tháng này / Năm nay dàn đều ngang)
-        Row(
-          children: [
-            for (int i = 0; i < TimePeriod.values.length; i++) ...[
-              if (i > 0) const SizedBox(width: 8),
-              Expanded(
-                child: _buildPeriodTab(context, colors, TimePeriod.values[i]),
-              ),
-            ],
-          ],
-        ),
-      ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -119,9 +144,8 @@ class KineticAnalyticsHeader extends StatelessWidget {
     TimePeriod period,
   ) {
     final isSelected = selectedPeriod == period;
-    final bg = isSelected ? colors.surface2 : colors.surface1;
-    final borderColor = isSelected ? colors.primary : colors.borderSubtle;
-    final textColor = isSelected ? colors.primary : colors.textMuted;
+    final bg = isSelected ? colors.primary : Colors.transparent;
+    final textColor = isSelected ? colors.onPrimary : colors.textMuted;
     final label = _periodLabel(period);
 
     return Material(
@@ -131,59 +155,23 @@ class KineticAnalyticsHeader extends StatelessWidget {
           HapticFeedback.selectionClick();
           onPeriodChanged(period);
         },
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
         child: AnimatedContainer(
           duration: KineticTokens.motionTab,
           height: 42,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: bg,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: borderColor,
-              width: isSelected ? 1.5 : 1.0,
-            ),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: colors.primary.withValues(alpha: 0.15),
-                      blurRadius: 10,
-                      spreadRadius: -1,
-                    ),
-                  ]
-                : null,
+            borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (isSelected) ...[
-                Container(
-                  width: 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: colors.primary,
-                    boxShadow: [
-                      BoxShadow(
-                        color: colors.primary.withValues(alpha: 0.6),
-                        blurRadius: 4,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 6),
-              ],
-              Text(
-                label,
-                style: KineticTypography.label.copyWith(
-                  color: textColor,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+          child: Text(
+            label,
+            style: KineticTypography.label.copyWith(
+              color: textColor,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ),

@@ -29,10 +29,10 @@ class LegalInfoPanel extends StatelessWidget {
             : 'Aetron is designed to help you track and understand your fitness activities. It is not a medical device and does not provide medical advice, diagnosis, or treatment. Always consult a physician before starting any vigorous exercise program.');
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(KineticTokens.spaceMD),
       decoration: BoxDecoration(
         color: colors.surface1,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
         border: Border.all(color: colors.secondary.withValues(alpha: 0.3)),
       ),
       child: Row(
@@ -65,9 +65,9 @@ class LegalInfoPanel extends StatelessWidget {
                 const SizedBox(height: 6),
                 Text(
                   displayMessage,
-                  style: KineticTypography.bodySmall.copyWith(
+                  style: KineticTypography.bodyMedium.copyWith(
                     color: colors.textSecondary,
-                    height: 1.5,
+                    height: 1.6,
                   ),
                 ),
               ],

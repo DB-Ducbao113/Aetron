@@ -15,8 +15,10 @@ import 'package:fitness_exercise_application/features/settings/presentation/widg
 import 'package:fitness_exercise_application/features/settings/presentation/widgets/kinetic_settings_top_bar.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/providers/workout_providers.dart';
 import 'package:fitness_exercise_application/shared/aetron/aetron_skeleton.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_backdrop.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_theme_provider.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
 
 import 'dart:io';
@@ -99,11 +101,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       backgroundColor: Colors.transparent,
       builder: (context) => SafeArea(
         child: Container(
-          margin: const EdgeInsets.all(16),
-          padding: const EdgeInsets.all(20),
+          margin: const EdgeInsets.all(KineticTokens.spaceMD),
+          padding: const EdgeInsets.all(KineticTokens.spaceLG),
           decoration: BoxDecoration(
             color: colors.surface2,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(KineticTokens.radiusXL),
             border: Border.all(color: colors.borderAccent, width: 1.2),
           ),
           child: Column(
@@ -161,11 +163,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       backgroundColor: Colors.transparent,
       builder: (context) => SafeArea(
         child: Container(
-          margin: const EdgeInsets.all(16),
-          padding: const EdgeInsets.all(20),
+          margin: const EdgeInsets.all(KineticTokens.spaceMD),
+          padding: const EdgeInsets.all(KineticTokens.spaceLG),
           decoration: BoxDecoration(
             color: colors.surface2,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(KineticTokens.radiusXL),
             border: Border.all(color: colors.borderAccent, width: 1.2),
           ),
           child: Column(
@@ -232,11 +234,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       backgroundColor: Colors.transparent,
       builder: (context) => SafeArea(
         child: Container(
-          margin: const EdgeInsets.all(16),
-          padding: const EdgeInsets.all(20),
+          margin: const EdgeInsets.all(KineticTokens.spaceMD),
+          padding: const EdgeInsets.all(KineticTokens.spaceLG),
           decoration: BoxDecoration(
             color: colors.surface2,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(KineticTokens.radiusXL),
             border: Border.all(
               color: colors.borderAccent,
               width: 1.2,
@@ -515,7 +517,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       builder: (ctx) => AlertDialog(
         backgroundColor: colors.surface2,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(KineticTokens.radiusXL),
           side: BorderSide(
             color: colors.borderAccent,
             width: 1.2,
@@ -741,7 +743,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       builder: (ctx) => AlertDialog(
         backgroundColor: colors.surface2,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(KineticTokens.radiusXL),
           side: BorderSide(
             color: colors.error.withValues(alpha: 0.5),
             width: 1.2,
@@ -821,7 +823,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                 padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
                 decoration: BoxDecoration(
                   color: colors.surface2,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(KineticTokens.radiusXL),
                   border: Border.all(
                     color: colors.error.withValues(alpha: 0.4),
                     width: 1.2,
@@ -831,7 +833,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     CircularProgressIndicator(color: colors.error),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: KineticTokens.spaceLG),
                     Text(
                       isVi ? 'Đang xóa tài khoản...' : 'Deleting account...',
                       style: KineticTypography.bodyLarge.copyWith(
@@ -927,51 +929,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
                   children: [
-                    // SECTION 0: ACCOUNT & IDENTITY
-                    KineticSettingsSectionGroup(
-                      title: currentLang == AppLanguage.vi ? 'TÀI KHOẢN & DANH TÍNH' : 'ACCOUNT & IDENTITY',
-                      children: [
-                        KineticSettingsTile(
-                          icon: Icons.badge_outlined,
-                          title: AppTranslations.get('display_name', currentLang),
-                          subtitle: _settingsDisplayName(user),
-                          accentColor: colors.primary,
-                          trailing: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                            decoration: BoxDecoration(
-                              color: colors.surface2,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: colors.borderSubtle),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  currentLang == AppLanguage.vi ? 'Đổi tên' : 'Edit',
-                                  style: KineticTypography.label.copyWith(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w800,
-                                    color: colors.primary,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Icon(Icons.edit_outlined, size: 12, color: colors.primary),
-                              ],
-                            ),
-                          ),
-                          onTap: () async {
-                            final updated = await showEditDisplayNameSheet(
-                              context,
-                              currentName: _settingsDisplayName(user),
-                            );
-                            if (updated == true && mounted) {
-                              setState(() {});
-                            }
-                          },
-                        ),
-                      ],
+                    // SECTION 0: PROFILE HERO CARD
+                    _ProfileHeroCard(
+                      displayName: _settingsDisplayName(user),
+                      email: user?.email,
+                      nameLabel: AppTranslations.get('display_name', currentLang),
+                      editLabel: currentLang == AppLanguage.vi ? 'Đổi tên' : 'Edit',
+                      onTap: () async {
+                        final updated = await showEditDisplayNameSheet(
+                          context,
+                          currentName: _settingsDisplayName(user),
+                        );
+                        if (updated == true && mounted) {
+                          setState(() {});
+                        }
+                      },
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: KineticTokens.spaceLG),
 
                     // SECTION 1: APP PREFERENCES
                     KineticSettingsSectionGroup(
@@ -996,7 +970,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
                               color: colors.surface2,
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
                               border: Border.all(color: colors.borderSubtle),
                             ),
                             child: Text(
@@ -1031,7 +1005,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                         ),
                       ],
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: KineticTokens.spaceLG),
 
                     // SECTION 2: PRIVACY & PERMISSIONS ACCESS
                     KineticSettingsSectionGroup(
@@ -1121,7 +1095,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                         ),
                       ],
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: KineticTokens.spaceLG),
 
                     // SECTION 3: DATA & STORAGE
                     KineticSettingsSectionGroup(
@@ -1148,7 +1122,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                         ),
                       ],
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: KineticTokens.spaceLG),
 
                     // SECTION 4: LEGAL & SUPPORT
                     KineticSettingsSectionGroup(
@@ -1188,7 +1162,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
                               color: colors.surface2,
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
                               border: Border.all(color: colors.borderSubtle),
                             ),
                             child: Text(
@@ -1204,7 +1178,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                         ),
                       ],
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: KineticTokens.spaceLG),
 
                     // SECTION 5: ACCOUNT DELETION
                     KineticSettingsSectionGroup(
@@ -1217,6 +1191,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                               ? 'Xóa vĩnh viễn tài khoản và toàn bộ dữ liệu'
                               : 'Permanently remove your account and all data',
                           accentColor: colors.error,
+                          danger: true,
                           trailing: Icon(Icons.chevron_right_rounded, color: colors.error),
                           onTap: () => _confirmDeleteAccount(context, currentLang),
                         ),
@@ -1389,6 +1364,165 @@ class _UnitOptionTile extends StatelessWidget {
                   size: 20,
                 ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Profile hero card (board v2/v3 composition): the identity block at the
+/// top of Settings, rendered as a scene card — topographic backdrop,
+/// strong 1.5px edge, initials avatar, name + email, and the same Edit
+/// affordance the old identity tile carried.
+class _ProfileHeroCard extends StatelessWidget {
+  final String displayName;
+  final String? email;
+  final String nameLabel;
+  final String editLabel;
+  final VoidCallback onTap;
+
+  const _ProfileHeroCard({
+    required this.displayName,
+    required this.email,
+    required this.nameLabel,
+    required this.editLabel,
+    required this.onTap,
+  });
+
+  String get _initials {
+    final parts = displayName
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((p) => p.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) return '?';
+    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
+    return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
+        .toUpperCase();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.kinetic;
+    final hasEmail = email != null && email!.isNotEmpty;
+
+    return Semantics(
+      button: true,
+      label: hasEmail ? '$nameLabel, $displayName, $email' : '$nameLabel, $displayName',
+      child: Container(
+        foregroundDecoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
+          border: Border.all(color: colors.borderStrong, width: 1.5),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onTap,
+              child: Stack(
+                children: [
+                  const Positioned.fill(child: TopographicBackdrop()),
+                  Padding(
+                    padding: const EdgeInsets.all(KineticTokens.spaceMD),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: colors.primary.withValues(alpha: 0.16),
+                            border: Border.all(
+                              color: colors.borderStrong,
+                              width: 1.5,
+                            ),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            _initials,
+                            style: KineticTypography.headlineMedium.copyWith(
+                              color: colors.primary,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: KineticTokens.spaceSM),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                nameLabel.toUpperCase(),
+                                style: KineticTypography.sectionEyebrow.copyWith(
+                                  color: colors.textMuted,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                displayName,
+                                style: KineticTypography.headlineSmall.copyWith(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                  color: colors.textPrimary,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (hasEmail) ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  email!,
+                                  style: KineticTypography.bodySmall.copyWith(
+                                    color: colors.textSecondary,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: KineticTokens.spaceSM),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colors.surface1,
+                            borderRadius: BorderRadius.circular(
+                              KineticTokens.radiusSM,
+                            ),
+                            border: Border.all(color: colors.borderStrong),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                editLabel,
+                                style: KineticTypography.label.copyWith(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                  color: colors.primary,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(
+                                Icons.edit_outlined,
+                                size: 12,
+                                color: colors.primary,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),

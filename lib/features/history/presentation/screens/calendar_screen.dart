@@ -13,7 +13,7 @@ import 'package:fitness_exercise_application/features/shell/presentation/provide
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/providers/workout_providers.dart';
 import 'package:fitness_exercise_application/shared/aetron/aetron_ui.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -143,7 +143,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     if (workouts.isEmpty) {
                       return ListView(
                         physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
+                        padding: const EdgeInsets.fromLTRB(KineticTokens.page, KineticTokens.spaceSM, KineticTokens.page, 100),
                         children: [
                           KineticHistoryTopBar(
                             totalCount: 0,
@@ -177,7 +177,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
                     return ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 112),
+                      padding: const EdgeInsets.fromLTRB(KineticTokens.page, KineticTokens.spaceSM, KineticTokens.page, 112),
                       children: [
                         // 1. Top Bar
                         KineticHistoryTopBar(
@@ -185,7 +185,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                           currentLang: currentLang,
                           isOffline: isOffline,
                         ),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: KineticTokens.spaceMD),
 
                         // 2. Sport Filter (All, Running, Cycling, Walking)
                         KineticHistorySportFilter(
@@ -200,7 +200,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                                 val;
                           },
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: KineticTokens.spaceXS),
 
                         // 3. Time Range Segmented Selector
                         KineticHistoryRangeTabs(
@@ -211,7 +211,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                                 value;
                           },
                         ),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: KineticTokens.spaceMD),
 
                         // 4. Telemetry Bento Overview (Only if there are workouts)
                         if (filtered.isNotEmpty) ...[
@@ -220,7 +220,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                             useMetricUnits: useMetricUnits,
                             currentLang: currentLang,
                           ),
-                          const SizedBox(height: 18),
+                          const SizedBox(height: KineticTokens.spaceLG),
                         ],
 
                         // 5. Daily Workout List or Filtered Empty State
@@ -236,7 +236,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     physics: const AlwaysScrollableScrollPhysics(),
                     children: [
                       Padding(
-                        padding: const EdgeInsets.all(24),
+                        padding: const EdgeInsets.all(KineticTokens.spaceXL),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -245,18 +245,16 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                               size: 40,
                               color: colors.error,
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: KineticTokens.spaceSM),
                             Text(
                               currentLang == AppLanguage.vi
                                   ? 'Không thể tải lịch sử tập'
                                   : 'History unavailable',
-                              style: TextStyle(
+                              style: KineticTypography.headlineSmall.copyWith(
                                 color: colors.textPrimary,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 16,
                               ),
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: KineticTokens.spaceSM),
                             TextButton(
                               onPressed: () => ref
                                   .read(workoutListProvider.notifier)
@@ -265,7 +263,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                                 currentLang == AppLanguage.vi
                                     ? 'Thử lại'
                                     : 'Retry',
-                                style: TextStyle(color: colors.primary),
+                                style: KineticTypography.label.copyWith(color: colors.primary),
                               ),
                             ),
                           ],

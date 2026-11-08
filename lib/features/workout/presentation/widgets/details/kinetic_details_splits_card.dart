@@ -2,8 +2,8 @@ import 'dart:math' as math;
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_card.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
 import 'package:flutter/material.dart';
 
@@ -46,8 +46,15 @@ class KineticDetailsSplitsCard extends StatelessWidget {
 
     final unitLabel = WorkoutFormatters.distanceUnitLabel(useMetric: useMetricUnits).toUpperCase();
 
-    return KineticCard(
-      padding: const EdgeInsets.all(16),
+    // V4: flat section — hairline frame, rows already hairline-divided.
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(color: colors.borderSubtle),
+          bottom: BorderSide(color: colors.borderSubtle),
+        ),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -150,12 +157,7 @@ class _SplitRow extends StatelessWidget {
             color: isFastest
                 ? colors.primary.withValues(alpha: 0.15)
                 : colors.surface2,
-            borderRadius: BorderRadius.circular(4),
-            border: Border.all(
-              color: isFastest
-                  ? colors.primary.withValues(alpha: 0.4)
-                  : colors.borderSubtle,
-            ),
+            borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
           ),
           child: Text(
             '$unitLabel ${split.index}',

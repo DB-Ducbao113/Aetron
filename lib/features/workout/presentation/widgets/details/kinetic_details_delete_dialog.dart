@@ -1,5 +1,6 @@
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
 import 'package:flutter/material.dart';
 
@@ -24,18 +25,11 @@ class KineticDetailsDeleteDialog extends StatelessWidget {
         padding: const EdgeInsets.all(22),
         decoration: BoxDecoration(
           color: colors.surface1,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
           border: Border.all(
             color: colors.error.withValues(alpha: 0.35),
-            width: 1.2,
+            width: 1,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.5),
-              blurRadius: 24,
-              offset: const Offset(0, 10),
-            ),
-          ],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -87,7 +81,7 @@ class KineticDetailsDeleteDialog extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       side: BorderSide(color: colors.borderSubtle),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
                       ),
                     ),
                     child: Text(
@@ -126,7 +120,7 @@ class KineticDetailsDeleteDialog extends StatelessWidget {
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
                       ),
                       elevation: 0,
                     ),

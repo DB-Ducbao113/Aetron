@@ -1,6 +1,7 @@
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/settings/presentation/screens/settings_screen.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
 import 'package:flutter/material.dart';
 
@@ -36,10 +37,10 @@ class KineticProfileTopBar extends StatelessWidget {
                 MaterialPageRoute(builder: (_) => const SettingsScreen()),
               );
             },
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
             child: Container(
-              width: 44,
-              height: 44,
+              width: KineticTokens.minTouchTarget,
+              height: KineticTokens.minTouchTarget,
               decoration: BoxDecoration(
                 color: colors.surface1,
                 shape: BoxShape.circle,

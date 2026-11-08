@@ -4,10 +4,12 @@ class KineticTypography {
   const KineticTypography._();
 
   /// Display face for headings, controls, and performance telemetry.
-  static const String displayFontFamily = 'SpaceGrotesk';
+  /// V4 (2026-11-08): single typeface for the whole app — Archivo variable
+  /// (weight + width axes). Owner direction: modern, clean, one stable font.
+  static const String displayFontFamily = 'Archivo';
 
-  /// Reading face with first-class Vietnamese diacritic support.
-  static const String bodyFontFamily = 'BeVietnamPro';
+  /// Reading face — same family as display in V4 (single-font system).
+  static const String bodyFontFamily = 'Archivo';
 
   /// Compatibility alias for custom telemetry styles outside this token file.
   static const String fontFamily = displayFontFamily;
@@ -21,30 +23,55 @@ class KineticTypography {
   static const TextStyle metricHero = TextStyle(
     fontFamily: displayFontFamily,
     fontSize: 52,
-    fontWeight: FontWeight.w700,
-    letterSpacing: -1.5,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -1.0,
     height: 1.0,
     fontFeatures: [FontFeature.tabularFigures()],
+    fontVariations: [FontVariation('wdth', 112)],
+  );
+
+  /// Mega Metric — V4: the single biggest number on screen (live distance,
+  /// summary headline). Archivo ExtraBold, slightly expanded.
+  static const TextStyle metricMega = TextStyle(
+    fontFamily: displayFontFamily,
+    fontSize: 76,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -0.5,
+    height: 0.95,
+    fontFeatures: [FontFeature.tabularFigures()],
+    fontVariations: [FontVariation('wdth', 116)],
+  );
+
+  /// Display XL — V4: page-level statement headlines.
+  static const TextStyle displayXL = TextStyle(
+    fontFamily: displayFontFamily,
+    fontSize: 38,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -0.4,
+    height: 1.1,
+    fontVariations: [FontVariation('wdth', 115)],
   );
 
   /// Telemetry Metric (Medium)
   static const TextStyle metricMedium = TextStyle(
     fontFamily: displayFontFamily,
     fontSize: 26,
-    fontWeight: FontWeight.w700,
-    letterSpacing: -0.26,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -0.2,
     height: 1.15,
     fontFeatures: [FontFeature.tabularFigures()],
+    fontVariations: [FontVariation('wdth', 112)],
   );
 
   /// Telemetry Metric (Small)
   static const TextStyle metricSmall = TextStyle(
     fontFamily: displayFontFamily,
     fontSize: 20,
-    fontWeight: FontWeight.w700,
-    letterSpacing: -0.2,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -0.15,
     height: 1.2,
     fontFeatures: [FontFeature.tabularFigures()],
+    fontVariations: [FontVariation('wdth', 112)],
   );
 
   /// Display Large
@@ -199,20 +226,22 @@ class KineticTypography {
   static const TextStyle metricCompact = TextStyle(
     fontFamily: displayFontFamily,
     fontSize: 24,
-    fontWeight: FontWeight.w700,
-    letterSpacing: -0.5,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -0.3,
     height: 1.1,
     fontFeatures: [FontFeature.tabularFigures()],
+    fontVariations: [FontVariation('wdth', 112)],
   );
 
   /// Telemetry Metric (Card) — Summary/Details telemetry card values (2×2 grid)
   static const TextStyle metricCard = TextStyle(
     fontFamily: displayFontFamily,
     fontSize: 22,
-    fontWeight: FontWeight.w700,
-    letterSpacing: -0.44,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -0.3,
     height: 1.15,
     fontFeatures: [FontFeature.tabularFigures()],
+    fontVariations: [FontVariation('wdth', 112)],
   );
 
   /// Unit descriptor next to a big metric (e.g. "KM", "MI" beside metricHero)

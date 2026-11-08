@@ -2,8 +2,8 @@ import 'dart:math' as math;
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_card.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
 import 'package:flutter/material.dart';
 
@@ -44,8 +44,15 @@ class KineticSummarySplitsCard extends StatelessWidget {
       }
     }
 
-    return KineticCard(
-      padding: const EdgeInsets.all(16),
+    // V4: flat section — hairline frame + hairline row separators.
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(color: colors.borderSubtle),
+          bottom: BorderSide(color: colors.borderSubtle),
+        ),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -84,7 +91,14 @@ class KineticSummarySplitsCard extends StatelessWidget {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: lapSplits.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 10),
+            separatorBuilder: (_, _) => Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 9),
+                Container(height: 1, color: colors.borderSubtle),
+                const SizedBox(height: 9),
+              ],
+            ),
             itemBuilder: (context, i) {
               final split = lapSplits[i];
               final isFastest = split.index == fastestIndex;
@@ -147,10 +161,7 @@ class KineticSummarySplitsCard extends StatelessWidget {
                       margin: const EdgeInsets.only(right: 8),
                       decoration: BoxDecoration(
                         color: colors.primary.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(
-                          color: colors.primary.withValues(alpha: 0.4),
-                        ),
+                        borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
                       ),
                       child: Text(
                         currentLang == AppLanguage.vi ? 'Nhanh nhất' : 'Fastest',

@@ -42,22 +42,15 @@ class KineticActivityCockpit extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(
         horizontal: KineticTokens.page,
-        vertical: 8,
+        vertical: KineticTokens.spaceXS,
       ),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(KineticTokens.spaceMD),
       decoration: BoxDecoration(
         color: colors.surface1,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
         border: Border.all(
-          color: colors.borderSubtle.withValues(alpha: 0.6),
+          color: colors.borderSubtle,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
-            blurRadius: 20,
-            offset: const Offset(0, 6),
-          ),
-        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

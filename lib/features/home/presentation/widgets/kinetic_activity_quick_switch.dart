@@ -36,23 +36,26 @@ class KineticActivityQuickSwitch extends StatelessWidget {
     ];
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 6, 20, 10),
+      padding: const EdgeInsets.fromLTRB(
+        KineticTokens.page,
+        KineticTokens.spaceXXS,
+        KineticTokens.page,
+        KineticTokens.spaceXS,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             isVi ? 'CHỌN BỘ MÔN NHANH' : 'QUICK ACTIVITY SWITCH',
-            style: KineticTypography.unitLabel.copyWith(
+            style: KineticTypography.sectionEyebrow.copyWith(
               color: colors.textMuted,
-              fontSize: 11,
-              letterSpacing: 0.08,
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: KineticTokens.spaceXS),
           Row(
             children: [
               for (int i = 0; i < activities.length; i++) ...[
-                if (i > 0) const SizedBox(width: 10),
+                if (i > 0) const SizedBox(width: KineticTokens.spaceXS),
                 Expanded(
                   child: _ActivityQuickSwitchCard(
                     id: activities[i]['id'] as String,
@@ -102,27 +105,21 @@ class _ActivityQuickSwitchCard extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
           child: AnimatedContainer(
             duration: KineticTokens.motionTab,
-            curve: Curves.easeOutCubic,
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+            curve: KineticTokens.animCurve,
+            padding: const EdgeInsets.symmetric(
+              vertical: KineticTokens.spaceSM,
+              horizontal: KineticTokens.spaceXS,
+            ),
             decoration: BoxDecoration(
               color: bg,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
               border: Border.all(
                 color: borderColor,
                 width: isSelected ? 1.5 : 1.0,
               ),
-              boxShadow: isSelected
-                  ? [
-                      BoxShadow(
-                        color: colors.primary.withValues(alpha: 0.16),
-                        blurRadius: 10,
-                        spreadRadius: -1,
-                      ),
-                    ]
-                  : null,
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -133,7 +130,7 @@ class _ActivityQuickSwitchCard extends StatelessWidget {
                   size: 20,
                   color: contentColor,
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: KineticTokens.spaceXS),
                 Flexible(
                   child: Text(
                     label,

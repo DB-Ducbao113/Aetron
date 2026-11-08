@@ -6,6 +6,8 @@ import 'dart:ui' as ui;
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/utils/activity_consistency_feedback.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/utils/route_display_sanitizer.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -113,19 +115,23 @@ class _MapGlassBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Brightness-aware glass: dark theme keeps the dark glass badge;
+    // light ("Morning") switches to white glass, with callers picking ink
+    // text from the same brightness branch.
+    final colors = context.kinetic;
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: const Color(0xC0152232),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.18),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        color: isLight
+            ? Colors.white.withValues(alpha: 0.88)
+            : KineticColors.dark.background.withValues(alpha: 0.82),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
+        border: Border.all(
+          color: isLight
+              ? colors.borderSubtle
+              : Colors.white.withValues(alpha: 0.08),
+        ),
       ),
       child: child,
     );
@@ -192,6 +198,9 @@ class WorkoutRoutePreviewMap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.kinetic;
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final badgeTextColor = isLight ? colors.textPrimary : Colors.white;
     final displayRoute = refineRouteForSavedDisplay(
       routePoints,
       activityType: activityType,
@@ -250,7 +259,7 @@ class WorkoutRoutePreviewMap extends StatelessWidget {
                   Polyline(
                     points: segment,
                     strokeWidth: 6,
-                    color: const Color(0xff0b314d).withValues(alpha: 0.72),
+                    color: colors.background.withValues(alpha: 0.72),
                   ),
                   Polyline(
                     points: segment,
@@ -300,10 +309,14 @@ class WorkoutRoutePreviewMap extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withValues(alpha: 0.20),
-                    const Color(0xff07121f).withValues(alpha: 0.08),
+                    isLight
+                        ? colors.background.withValues(alpha: 0.30)
+                        : Colors.black.withValues(alpha: 0.20),
+                    colors.background.withValues(alpha: 0.08),
                     Colors.transparent,
-                    Colors.black.withValues(alpha: 0.36),
+                    isLight
+                        ? colors.background.withValues(alpha: 0.45)
+                        : Colors.black.withValues(alpha: 0.36),
                   ],
                   stops: const [0.0, 0.24, 0.68, 1.0],
                 ),
@@ -323,8 +336,8 @@ class WorkoutRoutePreviewMap extends StatelessWidget {
                   const SizedBox(width: 6),
                   Text(
                     badgeText!,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: badgeTextColor,
                       fontSize: 12,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 1.0,
@@ -342,8 +355,8 @@ class WorkoutRoutePreviewMap extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
               child: Text(
                 footerText!,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: badgeTextColor,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                 ),

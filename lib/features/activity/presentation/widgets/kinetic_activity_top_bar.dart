@@ -69,7 +69,7 @@ class KineticActivityTopBar extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color: colors.surface2,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
           border: Border.all(color: colors.borderSubtle),
         ),
         child: Row(
@@ -100,12 +100,12 @@ class KineticActivityTopBar extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onMapPreviewTap,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
               color: colors.primary.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
               border: Border.all(
                 color: colors.primary.withValues(alpha: 0.35),
               ),
@@ -119,12 +119,6 @@ class KineticActivityTopBar extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: colors.primary,
                     shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: colors.primary.withValues(alpha: 0.6),
-                        blurRadius: 4,
-                      ),
-                    ],
                   ),
                 ),
                 const SizedBox(width: 6),
@@ -153,12 +147,12 @@ class KineticActivityTopBar extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onGpsTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
             color: colors.tertiary.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
             border: Border.all(
               color: colors.tertiary.withValues(alpha: 0.4),
             ),
@@ -191,7 +185,7 @@ class KineticActivityTopBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: colors.surface2,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
         border: Border.all(color: colors.borderSubtle),
       ),
       child: Row(

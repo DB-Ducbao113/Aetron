@@ -19,7 +19,10 @@ class KineticMotivationalQuote extends StatelessWidget {
         : '"No distance is too far when every stride moves forward."';
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+      padding: const EdgeInsets.symmetric(
+        horizontal: KineticTokens.spaceXXL,
+        vertical: KineticTokens.spaceMD,
+      ),
       child: Text(
         quote ?? defaultQuote,
         textAlign: TextAlign.center,

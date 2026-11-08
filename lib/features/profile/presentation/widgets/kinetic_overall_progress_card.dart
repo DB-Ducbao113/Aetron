@@ -1,5 +1,6 @@
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
 import 'package:flutter/material.dart';
 
@@ -29,11 +30,11 @@ class KineticOverallProgressCard extends StatelessWidget {
     final progressPercent = (overallProgress * 100).round();
 
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(KineticTokens.spaceLG),
       decoration: BoxDecoration(
         color: colors.surface1,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colors.borderAccent, width: 1.2),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
+        border: Border.all(color: colors.borderSubtle),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -56,11 +57,11 @@ class KineticOverallProgressCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: KineticTokens.spaceXS),
 
           // Progress Bar
           ClipRRect(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(KineticTokens.radiusXS),
             child: LinearProgressIndicator(
               value: overallProgress.clamp(0.0, 1.0),
               minHeight: 8,
@@ -68,9 +69,11 @@ class KineticOverallProgressCard extends StatelessWidget {
               valueColor: AlwaysStoppedAnimation<Color>(colors.primary),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: KineticTokens.spaceMD),
+          Divider(height: 1, thickness: 1, color: colors.borderSubtle),
+          const SizedBox(height: KineticTokens.spaceSM),
 
-          // 3 Telemetry Metrics Mini Cards
+          // 3 Telemetry Metrics — flat row, hairline separated
           Row(
             children: [
               Expanded(
@@ -82,7 +85,7 @@ class KineticOverallProgressCard extends StatelessWidget {
                   color: colors.primary,
                 ),
               ),
-              const SizedBox(width: 8),
+              Container(width: 1, height: 40, color: colors.borderSubtle),
               Expanded(
                 child: _buildMiniStat(
                   context: context,
@@ -92,7 +95,7 @@ class KineticOverallProgressCard extends StatelessWidget {
                   color: colors.tertiary,
                 ),
               ),
-              const SizedBox(width: 8),
+              Container(width: 1, height: 40, color: colors.borderSubtle),
               Expanded(
                 child: _buildMiniStat(
                   context: context,
@@ -118,18 +121,13 @@ class KineticOverallProgressCard extends StatelessWidget {
   }) {
     final colors = context.kinetic;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: colors.surface2,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: colors.borderSubtle),
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: KineticTokens.spaceSM),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, size: 14, color: color),
-          const SizedBox(height: 4),
+          const SizedBox(height: KineticTokens.spaceXXS),
           Text(
             value,
             maxLines: 1,

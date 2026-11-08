@@ -5,8 +5,6 @@ import 'package:fitness_exercise_application/shared/formatters/workout_formatter
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-const Color _trophyGold = Color(0xFFFFD54F);
-
 class PersonalRecordsTrophyWall extends StatelessWidget {
   final DetailedPersonalRecords records;
   final bool useMetricUnits;
@@ -27,26 +25,14 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(KineticTokens.spaceLG),
       decoration: BoxDecoration(
         color: colors.surface1,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
         border: Border.all(
-          color: _trophyGold.withValues(alpha: 0.4),
-          width: 1.2,
+          color: colors.borderSubtle,
+          width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.5),
-            blurRadius: 20,
-            offset: const Offset(0, 6),
-          ),
-          BoxShadow(
-            color: _trophyGold.withValues(alpha: 0.12),
-            blurRadius: 18,
-            spreadRadius: -2,
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -62,23 +48,23 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
                     height: 34,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: _trophyGold.withValues(alpha: 0.18),
-                      border: Border.all(color: _trophyGold.withValues(alpha: 0.5)),
+                      color: colors.tertiary.withValues(alpha: 0.18),
+                      border: Border.all(color: colors.tertiary.withValues(alpha: 0.5)),
                     ),
                     child: const Icon(
                       Icons.emoji_events_rounded,
-                      color: _trophyGold,
+                      color: colors.tertiary,
                       size: 18,
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: KineticTokens.spaceXS),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         currentLang == AppLanguage.vi ? 'ĐỀN THỜ KỶ LỤC' : 'PR HALL OF FAME',
                         style: KineticTypography.unitLabel.copyWith(
-                          color: _trophyGold.withValues(alpha: 0.9),
+                          color: colors.tertiary.withValues(alpha: 0.9),
                           letterSpacing: 1.2,
                         ),
                       ),
@@ -95,24 +81,24 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
 
               // Unlocked Counter Chip
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: KineticTokens.spaceXS, vertical: KineticTokens.spaceXXS),
                 decoration: BoxDecoration(
-                  color: _trophyGold.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: _trophyGold.withValues(alpha: 0.4)),
+                  color: colors.tertiary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
+                  border: Border.all(color: colors.tertiary.withValues(alpha: 0.4)),
                 ),
                 child: Text(
                   '$unlockedCount / ${all.length} ${currentLang == AppLanguage.vi ? 'KỶ LỤC' : 'RECORDS'}',
                   style: KineticTypography.unitLabel.copyWith(
                     fontWeight: FontWeight.w900,
-                    color: _trophyGold,
+                    color: colors.tertiary,
                     letterSpacing: 0.8,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: KineticTokens.spaceMD),
 
           // 2-Column Bento Grid
           GridView.builder(
@@ -121,8 +107,8 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
             itemCount: all.length,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
+              crossAxisSpacing: KineticTokens.spaceXS,
+              mainAxisSpacing: KineticTokens.spaceXS,
               childAspectRatio: 1.15,
             ),
             itemBuilder: (context, index) {
@@ -151,27 +137,21 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
       backgroundColor: Colors.transparent,
       builder: (_) => SafeArea(
         child: Container(
-          margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-          padding: const EdgeInsets.all(24),
+          margin: const EdgeInsets.fromLTRB(
+            KineticTokens.spaceSM,
+            0,
+            KineticTokens.spaceSM,
+            KineticTokens.spaceSM,
+          ),
+          padding: const EdgeInsets.all(KineticTokens.spaceXL),
           decoration: BoxDecoration(
             color: colors.surface1.withValues(alpha: 0.96),
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(KineticTokens.radiusXXL),
             border: Border.all(
-              color: isUnlocked ? _trophyGold : colors.borderSubtle,
-              width: 1.5,
+              color: isUnlocked ? colors.tertiary : colors.borderSubtle,
+              width: 1,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.7),
-                blurRadius: 28,
-              ),
-              if (isUnlocked)
-                BoxShadow(
-                  color: _trophyGold.withValues(alpha: 0.25),
-                  blurRadius: 24,
-                  spreadRadius: -2,
-                ),
-            ],
+            boxShadow: KineticTokens.shadowPanel(colors.background),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -181,10 +161,10 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
                 height: 4,
                 decoration: BoxDecoration(
                   color: colors.borderSubtle,
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.circular(KineticTokens.radiusXS),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: KineticTokens.spaceLG),
 
               // Emblem
               Container(
@@ -193,20 +173,20 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: isUnlocked
-                      ? _trophyGold.withValues(alpha: 0.2)
+                      ? colors.tertiary.withValues(alpha: 0.2)
                       : colors.surface2,
                   border: Border.all(
-                    color: isUnlocked ? _trophyGold : colors.borderSubtle,
+                    color: isUnlocked ? colors.tertiary : colors.borderSubtle,
                     width: 2,
                   ),
                 ),
                 child: Icon(
                   isUnlocked ? Icons.emoji_events_rounded : Icons.lock_outline_rounded,
                   size: 32,
-                  color: isUnlocked ? _trophyGold : colors.textSecondary,
+                  color: isUnlocked ? colors.tertiary : colors.textSecondary,
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: KineticTokens.spaceSM),
 
               Text(
                 isVi ? record.titleVi : record.titleEn,
@@ -222,19 +202,19 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
                     : (isVi ? 'CHƯA MỞ KHÓA' : 'NOT YET UNLOCKED'),
                 style: KineticTypography.unitLabel.copyWith(
                   fontWeight: FontWeight.w900,
-                  color: isUnlocked ? _trophyGold : colors.textMuted,
+                  color: isUnlocked ? colors.tertiary : colors.textMuted,
                   letterSpacing: 1.2,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: KineticTokens.spaceMD),
 
               // Detail box
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(KineticTokens.spaceMD),
                 decoration: BoxDecoration(
                   color: colors.surface2,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
                   border: Border.all(color: colors.borderSubtle),
                 ),
                 child: Column(
@@ -253,13 +233,13 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
                             _formatRecordValue(record, useMetricUnits),
                             style: KineticTypography.headlineSmall.copyWith(
                               fontWeight: FontWeight.w900,
-                              color: _trophyGold,
+                              color: colors.tertiary,
                             ),
                           ),
                         ],
                       ),
                       if (record.achievedAt != null) ...[
-                        const SizedBox(height: 10),
+                        const SizedBox(height: KineticTokens.spaceXS),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -291,36 +271,13 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: KineticTokens.spaceLG),
 
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: colors.surface2,
-                    foregroundColor: colors.textPrimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      side: BorderSide(color: colors.borderSubtle),
-                    ),
-                    elevation: 0,
-                  ),
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.check_circle_outline_rounded, size: 18),
-                      const SizedBox(width: 8),
-                      Text(
-                        isVi ? 'ĐÓNG' : 'CLOSE',
-                        style: KineticTypography.label.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              KineticButton(
+                label: isVi ? 'ĐÓNG' : 'CLOSE',
+                icon: Icons.check_circle_outline_rounded,
+                variant: KineticButtonVariant.secondary,
+                onPressed: () => Navigator.of(context).pop(),
               ),
             ],
           ),
@@ -368,9 +325,9 @@ class _TrophyCardItem extends StatelessWidget {
 
     final accentColor = switch (record.category) {
       'speed' => colors.primary,
-      'distance' => _trophyGold,
-      'energy' => const Color(0xFF2AF598),
-      _ => const Color(0xFFA55EEA),
+      'distance' => colors.tertiary,
+      'energy' => colors.secondary,
+      _ => colors.textMuted,
     };
 
     final icon = switch (record.id) {
@@ -388,25 +345,16 @@ class _TrophyCardItem extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
         child: Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(KineticTokens.spaceSM),
           decoration: BoxDecoration(
             color: isUnlocked ? colors.surface1 : colors.background.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
             border: Border.all(
               color: isUnlocked ? accentColor.withValues(alpha: 0.45) : colors.borderSubtle,
-              width: 1.2,
+              width: 1,
             ),
-            boxShadow: isUnlocked
-                ? [
-                    BoxShadow(
-                      color: accentColor.withValues(alpha: 0.12),
-                      blurRadius: 10,
-                      spreadRadius: -2,
-                    ),
-                  ]
-                : null,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

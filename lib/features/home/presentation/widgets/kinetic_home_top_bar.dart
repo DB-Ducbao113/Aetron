@@ -32,9 +32,9 @@ class KineticHomeTopBar extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         KineticTokens.page,
-        12,
+        KineticTokens.spaceSM,
         KineticTokens.page,
-        8,
+        KineticTokens.spaceXS,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -43,7 +43,7 @@ class KineticHomeTopBar extends StatelessWidget {
           Expanded(
             child: InkWell(
               onTap: onAvatarTap,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -56,7 +56,7 @@ class KineticHomeTopBar extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: KineticTokens.spaceXXS),
                   Text(
                     displayName,
                     style: KineticTypography.displayName.copyWith(
@@ -69,30 +69,33 @@ class KineticHomeTopBar extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: KineticTokens.spaceXS),
 
           // 3. Streak Indicator Pill
           Material(
             color: Colors.transparent,
             child: InkWell(
               onTap: onStreakTap,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: KineticTokens.spaceSM,
+                  vertical: KineticTokens.spaceXS,
+                ),
                 decoration: BoxDecoration(
                   color: colors.surface1,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
                   border: Border.all(color: colors.borderSubtle, width: 1),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.local_fire_department_rounded,
-                      color: Color(0xFFFF8E52),
+                      color: colors.tertiary,
                       size: 16,
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: KineticTokens.spaceXXS),
                     Text(
                       isVi
                           ? '$streakCount ngày'
@@ -108,14 +111,14 @@ class KineticHomeTopBar extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: KineticTokens.spaceXS),
 
           // 4. Notification Icon Button
           Material(
             color: Colors.transparent,
             child: InkWell(
               onTap: onNotificationTap,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
               child: Container(
                 width: 40,
                 height: 40,
@@ -141,12 +144,6 @@ class KineticHomeTopBar extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: colors.primary,
                           shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: colors.primary.withValues(alpha: 0.6),
-                              blurRadius: 3,
-                            ),
-                          ],
                         ),
                       ),
                     ),

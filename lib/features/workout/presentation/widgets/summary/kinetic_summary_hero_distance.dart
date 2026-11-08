@@ -126,8 +126,9 @@ class _KineticSummaryHeroDistanceState
     return ScaleTransition(
       scale: _entranceScale,
       child: KineticCard(
-        padding: const EdgeInsets.all(20),
-        topAccentColor: colors.primary,
+        padding: const EdgeInsets.fromLTRB(4, 8, 4, 4),
+        backgroundColor: Colors.transparent,
+        borderColor: Colors.transparent,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -142,12 +143,6 @@ class _KineticSummaryHeroDistanceState
                         decoration: BoxDecoration(
                           color: colors.primary,
                           shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: colors.primary.withValues(alpha: 0.6),
-                              blurRadius: 8,
-                            ),
-                          ],
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -172,10 +167,7 @@ class _KineticSummaryHeroDistanceState
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                     color: validityColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(
-                      color: validityColor.withValues(alpha: 0.35),
-                    ),
+                    borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
                   ),
                   child: Text(
                     validityText,
@@ -198,7 +190,7 @@ class _KineticSummaryHeroDistanceState
                   builder: (context, child) {
                     return Text(
                       (_displayDistance * _count.value).toStringAsFixed(2),
-                      style: KineticTypography.metricHero.copyWith(
+                      style: KineticTypography.metricMega.copyWith(
                         color: colors.textPrimary,
                       ),
                     );

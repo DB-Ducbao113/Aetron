@@ -38,7 +38,7 @@ class GuidedProgramHud extends StatelessWidget {
     final stepTip = isVi ? step.tipVi : step.tipEn;
 
     // Pace Feedback Evaluation
-    final paceFeedback = _evaluatePace(step, currentPaceMinSecKm, isVi, colors.primary);
+    final paceFeedback = _evaluatePace(step, currentPaceMinSecKm, isVi, colors);
 
     final minutes = (stepRemainingSeconds ~/ 60).toString().padLeft(2, '0');
     final seconds = (stepRemainingSeconds % 60).toString().padLeft(2, '0');
@@ -47,24 +47,13 @@ class GuidedProgramHud extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
       decoration: BoxDecoration(
-        color: colors.surface1.withValues(alpha: 0.94),
-        borderRadius: BorderRadius.circular(22),
+        gradient: KineticGradients.hudSurface(colors),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
         border: Border.all(
           color: step.phaseColor.withValues(alpha: 0.55),
           width: 1.5,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.6),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-          BoxShadow(
-            color: step.phaseColor.withValues(alpha: 0.18),
-            blurRadius: 16,
-            spreadRadius: -2,
-          ),
-        ],
+        boxShadow: KineticTokens.shadowPanel(Colors.black),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -104,7 +93,7 @@ class GuidedProgramHud extends StatelessWidget {
                   stepTitle,
                   style: KineticTypography.bodyMedium.copyWith(
                     fontWeight: FontWeight.w900,
-                    color: Colors.white,
+                    color: colors.textPrimary,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -155,8 +144,8 @@ class GuidedProgramHud extends StatelessWidget {
                   fontSize: 28,
                   fontWeight: FontWeight.w900,
                   color: stepRemainingSeconds <= 5
-                      ? const Color(0xFFFF5252)
-                      : Colors.white,
+                      ? colors.error
+                      : colors.textPrimary,
                   letterSpacing: 1.0,
                   height: 1.0,
                 ),
@@ -211,7 +200,7 @@ class GuidedProgramHud extends StatelessWidget {
             child: LinearProgressIndicator(
               value: stepProgress,
               minHeight: 4,
-              backgroundColor: Colors.white12,
+              backgroundColor: colors.surface3,
               valueColor: AlwaysStoppedAnimation<Color>(step.phaseColor),
             ),
           ),
@@ -222,7 +211,7 @@ class GuidedProgramHud extends StatelessWidget {
             '💡 $stepTip',
             style: KineticTypography.caption.copyWith(
               fontStyle: FontStyle.italic,
-              color: Colors.white.withValues(alpha: 0.75),
+              color: colors.textSecondary,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -236,12 +225,12 @@ class GuidedProgramHud extends StatelessWidget {
     ProgramStep step,
     double currentPaceSecKm,
     bool isVi,
-    Color primaryColor,
+    KineticColors colors,
   ) {
     if (currentPaceSecKm <= 0 || currentPaceSecKm > 1200) {
       return _PaceFeedback(
         label: isVi ? 'ĐANG BẮT TỐC ĐỘ' : 'ACQUIRING PACE',
-        color: primaryColor,
+        color: colors.primary,
       );
     }
 
@@ -251,24 +240,24 @@ class GuidedProgramHud extends StatelessWidget {
     if (minPace == null || maxPace == null) {
       return _PaceFeedback(
         label: isVi ? 'DUY TRÌ ĐỀU' : 'KEEP STEADY',
-        color: const Color(0xFFA8DCE7),
+        color: colors.primary,
       );
     }
 
     if (currentPaceSecKm < minPace - 30) {
       return _PaceFeedback(
         label: isVi ? '🛑 HÃY CHẬM LẠI' : '🛑 SLOW DOWN',
-        color: const Color(0xFFFF5252),
+        color: colors.error,
       );
     } else if (currentPaceSecKm > maxPace + 45) {
       return _PaceFeedback(
         label: isVi ? '⚡ TĂNG TỐC LÊN' : '⚡ SPEED UP',
-        color: const Color(0xFFFFB85C),
+        color: colors.tertiary,
       );
     } else {
       return _PaceFeedback(
         label: isVi ? '✅ PACE ĐẠT CHUẨN' : '✅ ON TARGET PACE',
-        color: const Color(0xFF00E676),
+        color: const Color(0xFF2AF598),
       );
     }
   }

@@ -11,6 +11,7 @@ import 'package:fitness_exercise_application/features/profile/presentation/widge
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/providers/workout_providers.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -71,7 +72,12 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
           children: [
             // Top Bar
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              padding: const EdgeInsets.fromLTRB(
+                KineticTokens.spaceMD,
+                KineticTokens.spaceSM,
+                KineticTokens.spaceMD,
+                KineticTokens.spaceXS,
+              ),
               child: KineticAchievementsTopBar(
                 currentLang: currentLang,
                 unlockedCount: unlockedCount,
@@ -82,7 +88,12 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
             // Scrollable Content
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                padding: const EdgeInsets.fromLTRB(
+                  KineticTokens.spaceMD,
+                  KineticTokens.spaceXS,
+                  KineticTokens.spaceMD,
+                  KineticTokens.spaceXXL,
+                ),
                 children: [
                   // 1. Overall Progress & Telemetry Banner
                   KineticOverallProgressCard(
@@ -94,7 +105,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                     longestStreak: streak.longestStreak,
                     totalDistanceKm: totalDistanceKm,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: KineticTokens.spaceMD),
 
                   // 2. Next Milestone Spotlight (if available)
                   if (nextMilestone != null) ...[
@@ -102,7 +113,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                       badge: nextMilestone,
                       currentLang: currentLang,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: KineticTokens.spaceMD),
                   ],
 
                   // 3. Category Filter Tabs
@@ -113,7 +124,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                       setState(() => _selectedCategory = cat);
                     },
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: KineticTokens.spaceMD),
 
                   // 4. Section Title & Filter Counter
                   Row(
@@ -137,7 +148,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: KineticTokens.spaceSM),
 
                   // 5. Badges Grid
                   GridView.builder(
@@ -146,8 +157,8 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                     itemCount: filteredBadges.length,
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
+                      crossAxisSpacing: KineticTokens.spaceSM,
+                      mainAxisSpacing: KineticTokens.spaceSM,
                       childAspectRatio: 1.08,
                     ),
                     itemBuilder: (context, index) {

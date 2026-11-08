@@ -135,7 +135,7 @@ class _KineticLiveTopBarState extends State<KineticLiveTopBar>
               height: 42,
               padding: const EdgeInsets.symmetric(horizontal: 14),
               decoration: BoxDecoration(
-                color: colors.surface1.withValues(alpha: 0.94),
+                gradient: KineticGradients.hudSurface(colors),
                 borderRadius: BorderRadius.circular(21),
                 border: Border.all(
                   color: isAlertState
@@ -143,19 +143,7 @@ class _KineticLiveTopBarState extends State<KineticLiveTopBar>
                       : colors.borderSubtle.withValues(alpha: 0.7),
                   width: isAlertState ? 1.4 : 1.1,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.32),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
-                  ),
-                  if (isAlertState)
-                    BoxShadow(
-                      color: colors.tertiary.withValues(alpha: 0.22),
-                      blurRadius: 12,
-                      spreadRadius: 1,
-                    ),
-                ],
+                boxShadow: KineticTokens.shadowPanel(Colors.black),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -171,13 +159,6 @@ class _KineticLiveTopBarState extends State<KineticLiveTopBar>
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: pulseColor,
-                        boxShadow: [
-                          BoxShadow(
-                            color: pulseColor.withValues(alpha: 0.65),
-                            blurRadius: 6,
-                            spreadRadius: 1,
-                          ),
-                        ],
                       ),
                     ),
                   ),
@@ -230,7 +211,7 @@ class _KineticLiveTopBarState extends State<KineticLiveTopBar>
                 height: 42,
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 decoration: BoxDecoration(
-                  color: colors.surface1.withValues(alpha: 0.94),
+                  gradient: KineticGradients.hudSurface(colors),
                   borderRadius: BorderRadius.circular(21),
                   border: Border.all(
                     color: widget.isLargeMetricsMode
@@ -238,19 +219,7 @@ class _KineticLiveTopBarState extends State<KineticLiveTopBar>
                         : colors.borderSubtle.withValues(alpha: 0.7),
                     width: widget.isLargeMetricsMode ? 1.4 : 1.1,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.32),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
-                    ),
-                    if (widget.isLargeMetricsMode)
-                      BoxShadow(
-                        color: colors.primary.withValues(alpha: 0.22),
-                        blurRadius: 12,
-                        spreadRadius: 1,
-                      ),
-                  ],
+                  boxShadow: KineticTokens.shadowPanel(Colors.black),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,

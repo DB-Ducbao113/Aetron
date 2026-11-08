@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/auth/presentation/screens/auth_wrapper.dart';
 import 'package:fitness_exercise_application/shared/aetron/aetron_globe_orbit_screen.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -150,6 +151,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
   Widget build(BuildContext context) {
     final currentLang = ref.watch(appLanguageProvider);
     final isVi = currentLang == AppLanguage.vi;
+    final colors = context.kinetic;
     final size = MediaQuery.sizeOf(context);
     final isShort = size.height < 720;
     final isLastPage = _currentPage == 3;
@@ -157,11 +159,11 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
     final pages = _getPages(isVi);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF09181C),
+      backgroundColor: colors.background,
       body: Stack(
         children: [
           // ── Background Ambient Grid & Glow ──
-          const Positioned.fill(child: _WelcomeGrid()),
+          Positioned.fill(child: _WelcomeGrid(color: colors.primary)),
           Positioned(
             top: -60,
             right: -60,
@@ -172,7 +174,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    const Color(0xFFA8DCE7).withValues(alpha: 0.12),
+                    colors.primary.withValues(alpha: 0.12),
                     Colors.transparent,
                   ],
                 ),
@@ -189,7 +191,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    const Color(0xFF00B0FF).withValues(alpha: 0.08),
+                    colors.secondary.withValues(alpha: 0.08),
                     Colors.transparent,
                   ],
                 ),
@@ -233,6 +235,12 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      // Final-page stat strip (board v2/v3 capability stats)
+                      if (isLastPage) ...[
+                        const _WelcomeStatStrip(),
+                        const SizedBox(height: 18),
+                      ],
+
                       // Next / Get Started Action Button
                       _ModernActionButton(
                         label: isLastPage
@@ -472,6 +480,7 @@ class _WelcomeTopBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.kinetic;
     final currentLang = ref.watch(appLanguageProvider);
 
     return SizedBox(
@@ -490,15 +499,15 @@ class _WelcomeTopBar extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: const Color(0xFF101B2B),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: const Color(0x3300E5FF),
+                          color: colors.surface1,
+                          borderRadius: BorderRadius.circular(
+                            KineticTokens.radiusMD,
                           ),
+                          border: Border.all(color: colors.borderAccent),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.arrow_back_ios_new_rounded,
-                          color: Color(0xFFA8DCE7),
+                          color: colors.primary,
                           size: 16,
                         ),
                       ),
@@ -507,16 +516,9 @@ class _WelcomeTopBar extends ConsumerWidget {
                       child: Container(
                         width: 8,
                         height: 8,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFA8DCE7),
+                        decoration: BoxDecoration(
+                          color: colors.primary,
                           shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Color(0xFFA8DCE7),
-                              blurRadius: 8,
-                              spreadRadius: 1,
-                            ),
-                          ],
                         ),
                       ),
                     ),
@@ -525,8 +527,8 @@ class _WelcomeTopBar extends ConsumerWidget {
 
             // Center Brand Badge
             ShaderMask(
-              shaderCallback: (bounds) => const LinearGradient(
-                colors: [Color(0xFFA8DCE7), Color(0xFF39F2B8)],
+              shaderCallback: (bounds) => LinearGradient(
+                colors: [colors.primary, colors.secondary],
               ).createShader(bounds),
               child: const Text(
                 'AETRON',
@@ -556,18 +558,16 @@ class _WelcomeTopBar extends ConsumerWidget {
                   vertical: 5,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF101B2B),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: const Color(0x3300E5FF),
-                  ),
+                  color: colors.surface1,
+                  borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
+                  border: Border.all(color: colors.borderAccent),
                 ),
                 child: Text(
                   currentLang == AppLanguage.vi ? '🇻🇳 VI' : '🇬🇧 EN',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFFA8DCE7),
+                    color: colors.primary,
                   ),
                 ),
               ),
@@ -578,7 +578,7 @@ class _WelcomeTopBar extends ConsumerWidget {
             TextButton(
               onPressed: isProcessing ? null : onSkip,
               style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF7D8DA6),
+                foregroundColor: colors.textMuted,
                 padding: const EdgeInsets.symmetric(horizontal: 10),
               ),
               child: Text(
@@ -610,11 +610,21 @@ class _OnboardingHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.kinetic;
+    final tint = switch (data.heroType) {
+      _OnboardingHeroType.runner => colors.secondary,
+      _OnboardingHeroType.tracking => colors.primary,
+      _OnboardingHeroType.analysis => colors.tertiary,
+      _OnboardingHeroType.achievements => colors.primary,
+    };
+
     return SizedBox(
       height: height,
       child: Stack(
         fit: StackFit.expand,
         children: [
+          // V4 scene backdrop (duotone wash + contours) tinted per page
+          Positioned.fill(child: SceneBackdrop(tint: tint)),
           if (data.heroType == _OnboardingHeroType.runner)
             Image.asset(
               'assets/welcome_runner.png',
@@ -630,6 +640,9 @@ class _OnboardingHero extends StatelessWidget {
                     progress: animation.value,
                     heroType: data.heroType,
                     icon: data.primaryIcon,
+                    primaryColor: colors.primary,
+                    secondaryColor: colors.secondary,
+                    tertiaryColor: colors.tertiary,
                   ),
                 );
               },
@@ -643,10 +656,10 @@ class _OnboardingHero extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    const Color(0xFF09181C).withValues(alpha: 0.6),
+                    colors.background.withValues(alpha: 0.6),
                     Colors.transparent,
-                    const Color(0xFF09181C).withValues(alpha: 0.85),
-                    const Color(0xFF09181C),
+                    colors.background.withValues(alpha: 0.85),
+                    colors.background,
                   ],
                   stops: const [0, 0.4, 0.85, 1.0],
                 ),
@@ -659,7 +672,10 @@ class _OnboardingHero extends StatelessWidget {
             animation: animation,
             builder: (context, _) {
               return CustomPaint(
-                painter: _HeroScanPainter(progress: animation.value),
+                painter: _HeroScanPainter(
+                  progress: animation.value,
+                  color: colors.primary,
+                ),
               );
             },
           ),
@@ -676,27 +692,17 @@ class _WelcomeCopyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.kinetic;
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(KineticTokens.spaceLG),
       decoration: BoxDecoration(
-        color: const Color(0xFF0A111E).withValues(alpha: 0.92),
-        borderRadius: BorderRadius.circular(22),
+        color: colors.surface1.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
         border: Border.all(
-          color: const Color(0x3300E5FF),
+          color: colors.borderAccent,
           width: 1.2,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFA8DCE7).withValues(alpha: 0.08),
-            blurRadius: 28,
-            offset: const Offset(0, 4),
-          ),
-          const BoxShadow(
-            color: Colors.black,
-            blurRadius: 36,
-            offset: Offset(0, 8),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -711,29 +717,21 @@ class _WelcomeCopyCard extends StatelessWidget {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFA8DCE7).withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: const Color(0x4400E5FF),
-                  ),
+                  color: colors.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
+                  border: Border.all(color: colors.borderAccent),
                 ),
                 child: Text(
                   data.eyebrow,
-                  style: const TextStyle(
-                    color: Color(0xFFA8DCE7),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1.8,
+                  style: KineticTypography.sectionEyebrow.copyWith(
+                    color: colors.primary,
                   ),
                 ),
               ),
               Text(
                 data.step,
-                style: const TextStyle(
-                  color: Color(0xFF7D8DA6),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.0,
+                style: KineticTypography.caption.copyWith(
+                  color: colors.textMuted,
                 ),
               ),
             ],
@@ -744,26 +742,16 @@ class _WelcomeCopyCard extends StatelessWidget {
           RichText(
             textScaler: MediaQuery.textScalerOf(context),
             text: TextSpan(
-              style: const TextStyle(
-                color: Colors.white,
+              style: KineticTypography.displayXL.copyWith(
+                color: colors.textPrimary,
                 fontSize: 26,
                 height: 1.15,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 0.3,
               ),
               children: [
                 TextSpan(text: data.titlePrefix),
                 TextSpan(
                   text: data.titleAccent,
-                  style: const TextStyle(
-                    color: Color(0xFFA8DCE7),
-                    shadows: [
-                      Shadow(
-                        color: Color(0x8800E5FF),
-                        blurRadius: 16,
-                      ),
-                    ],
-                  ),
+                  style: TextStyle(color: colors.primary),
                 ),
                 TextSpan(text: data.titleSuffix),
               ],
@@ -774,12 +762,9 @@ class _WelcomeCopyCard extends StatelessWidget {
           // Description
           Text(
             data.description,
-            style: const TextStyle(
-              color: Color(0xFF94A3B8),
-              fontSize: 14,
-              height: 1.45,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.2,
+            style: KineticTypography.bodyMedium.copyWith(
+              color: colors.textSecondary,
+              height: 1.6,
             ),
           ),
         ],
@@ -823,30 +808,28 @@ class _TelemetryPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.kinetic;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFF101B2B),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: const Color(0x3300E5FF),
-        ),
+        color: colors.surface1,
+        borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
+        border: Border.all(color: colors.borderSubtle),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: const Color(0xFFA8DCE7), size: 16),
+          Icon(icon, color: colors.primary, size: 16),
           const SizedBox(width: 8),
           Flexible(
             child: Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Color(0xFFC3F5FF),
+              style: KineticTypography.label.copyWith(
+                color: colors.textPrimary,
                 fontSize: 11,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.8,
               ),
             ),
           ),
@@ -871,62 +854,65 @@ class _ModernActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 56,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: LinearGradient(
-          colors: isLastPage
-              ? const [Color(0xFFA8DCE7), Color(0xFF39F2B8)]
-              : const [Color(0xFFA8DCE7), Color(0xFF00B0FF)],
+    // V4: DS KineticButton — flat pill at buttonHeightLarge.
+    return KineticButton(
+      label: label,
+      icon: isLastPage
+          ? Icons.check_circle_rounded
+          : Icons.arrow_forward_rounded,
+      isLoading: isProcessing,
+      height: KineticTokens.buttonHeightLarge,
+      onPressed: isProcessing ? null : onPressed,
+    );
+  }
+}
+
+/// Divided mini stat strip shown above the CTA on the final onboarding
+/// page (GPS accuracy / pace unit / route export — capability stats).
+class _WelcomeStatStrip extends StatelessWidget {
+  const _WelcomeStatStrip();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.kinetic;
+
+    Widget item(String value, String label) {
+      return Expanded(
+        child: Column(
+          children: [
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: colors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              style: KineticTypography.unitLabel.copyWith(
+                color: colors.textMuted,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFA8DCE7).withValues(alpha: 0.36),
-            blurRadius: 18,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: isProcessing ? null : onPressed,
-          borderRadius: BorderRadius.circular(16),
-          child: Center(
-            child: isProcessing
-                ? const SizedBox.square(
-                    dimension: 22,
-                    child: CircularProgressIndicator(
-                      color: Color(0xFF00272D),
-                      strokeWidth: 2.4,
-                    ),
-                  )
-                : Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        label,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 1.8,
-                          color: Color(0xFF00272D),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Icon(
-                        isLastPage
-                            ? Icons.check_circle_rounded
-                            : Icons.arrow_forward_rounded,
-                        color: const Color(0xFF00272D),
-                        size: 20,
-                      ),
-                    ],
-                  ),
-          ),
-        ),
-      ),
+      );
+    }
+
+    Widget divider() {
+      return Container(width: 1, height: 30, color: colors.borderSubtle);
+    }
+
+    return Row(
+      children: [
+        item('±8 m', 'GPS'),
+        divider(),
+        item('min/km', 'Live pace'),
+        divider(),
+        item('GPX', 'Routes'),
+      ],
     );
   }
 }
@@ -939,6 +925,8 @@ class _PageDots extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.kinetic;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(count, (index) {
@@ -950,22 +938,8 @@ class _PageDots extends StatelessWidget {
           width: selected ? 32 : 8,
           height: 6,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(99),
-            gradient: selected
-                ? const LinearGradient(
-                    colors: [Color(0xFFA8DCE7), Color(0xFF39F2B8)],
-                  )
-                : null,
-            color: selected ? null : const Color(0xFF1E293B),
-            boxShadow: selected
-                ? [
-                    BoxShadow(
-                      color: const Color(0xFFA8DCE7).withValues(alpha: 0.5),
-                      blurRadius: 8,
-                      spreadRadius: 1,
-                    ),
-                  ]
-                : null,
+            borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
+            color: selected ? colors.primary : colors.surface3,
           ),
         );
       }),
@@ -974,19 +948,27 @@ class _PageDots extends StatelessWidget {
 }
 
 class _WelcomeGrid extends StatelessWidget {
-  const _WelcomeGrid();
+  const _WelcomeGrid({required this.color});
+
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
-    return IgnorePointer(child: CustomPaint(painter: _WelcomeGridPainter()));
+    return IgnorePointer(
+      child: CustomPaint(painter: _WelcomeGridPainter(color: color)),
+    );
   }
 }
 
 class _WelcomeGridPainter extends CustomPainter {
+  const _WelcomeGridPainter({required this.color});
+
+  final Color color;
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFFA8DCE7).withValues(alpha: 0.035)
+      ..color = color.withValues(alpha: 0.035)
       ..strokeWidth = 1;
     const step = 36.0;
     for (var x = 0.0; x <= size.width; x += step) {
@@ -998,13 +980,16 @@ class _WelcomeGridPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _WelcomeGridPainter oldDelegate) {
+    return oldDelegate.color != color;
+  }
 }
 
 class _HeroScanPainter extends CustomPainter {
-  const _HeroScanPainter({required this.progress});
+  const _HeroScanPainter({required this.progress, required this.color});
 
   final double progress;
+  final Color color;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1013,15 +998,14 @@ class _HeroScanPainter extends CustomPainter {
       ..shader = LinearGradient(
         colors: [
           Colors.transparent,
-          const Color(0xFFA8DCE7).withValues(alpha: 0.72),
+          color.withValues(alpha: 0.72),
           Colors.transparent,
         ],
       ).createShader(Rect.fromLTWH(0, y - 12, size.width, 24))
       ..strokeWidth = 2;
     canvas.drawLine(Offset(0, y), Offset(size.width, y), linePaint);
 
-    final particlePaint = Paint()
-      ..color = const Color(0xFFA8DCE7).withValues(alpha: 0.36);
+    final particlePaint = Paint()..color = color.withValues(alpha: 0.36);
     for (var i = 0; i < 16; i++) {
       final seed = i * 38.0;
       final x = (math.sin(progress * math.pi * 2 + i) * 0.5 + 0.5) * size.width;
@@ -1032,7 +1016,7 @@ class _HeroScanPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _HeroScanPainter oldDelegate) {
-    return oldDelegate.progress != progress;
+    return oldDelegate.progress != progress || oldDelegate.color != color;
   }
 }
 
@@ -1041,11 +1025,17 @@ class _FeatureHeroPainter extends CustomPainter {
     required this.progress,
     required this.heroType,
     required this.icon,
+    required this.primaryColor,
+    required this.secondaryColor,
+    required this.tertiaryColor,
   });
 
   final double progress;
   final _OnboardingHeroType heroType;
   final IconData icon;
+  final Color primaryColor;
+  final Color secondaryColor;
+  final Color tertiaryColor;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1053,14 +1043,14 @@ class _FeatureHeroPainter extends CustomPainter {
     final radius = math.min(size.width, size.height) * 0.26;
 
     final glowPaint = Paint()
-      ..color = const Color(0xFFA8DCE7).withValues(alpha: 0.18)
+      ..color = primaryColor.withValues(alpha: 0.18)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 42);
     canvas.drawCircle(center, radius * 1.5, glowPaint);
 
     final ringPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.4
-      ..color = const Color(0xFFA8DCE7).withValues(alpha: 0.36);
+      ..color = primaryColor.withValues(alpha: 0.36);
     for (final scale in [0.72, 1.0, 1.28]) {
       canvas.drawCircle(center, radius * scale, ringPaint);
     }
@@ -1071,10 +1061,10 @@ class _FeatureHeroPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round
       ..shader = SweepGradient(
         colors: [
-          const Color(0xFFA8DCE7).withValues(alpha: 0),
-          const Color(0xFFA8DCE7),
-          const Color(0xFF39F2B8),
-          const Color(0xFFA8DCE7).withValues(alpha: 0),
+          primaryColor.withValues(alpha: 0),
+          primaryColor,
+          secondaryColor,
+          primaryColor.withValues(alpha: 0),
         ],
         transform: GradientRotation(progress * math.pi * 2),
       ).createShader(Rect.fromCircle(center: center, radius: radius * 1.16));
@@ -1115,16 +1105,16 @@ class _FeatureHeroPainter extends CustomPainter {
       ..strokeWidth = 12
       ..strokeCap = StrokeCap.round
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12)
-      ..color = const Color(0xFFA8DCE7).withValues(alpha: 0.32);
+      ..color = primaryColor.withValues(alpha: 0.32);
     final routePaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 4
       ..strokeCap = StrokeCap.round
-      ..color = const Color(0xFFA8DCE7);
+      ..color = primaryColor;
     canvas.drawPath(path, routeGlow);
     canvas.drawPath(path, routePaint);
 
-    final markerPaint = Paint()..color = const Color(0xFFC3F5FF);
+    final markerPaint = Paint()..color = primaryColor;
     for (final t in [0.0, 0.42, 0.78]) {
       final angle = (t + progress) * math.pi * 2;
       canvas.drawCircle(
@@ -1146,7 +1136,7 @@ class _FeatureHeroPainter extends CustomPainter {
   ) {
     final baseY = center.dy + radius * 0.55;
     final barPaint = Paint()
-      ..color = const Color(0xFFA8DCE7).withValues(alpha: 0.76)
+      ..color = primaryColor.withValues(alpha: 0.76)
       ..strokeCap = StrokeCap.round
       ..strokeWidth = 10;
     for (var i = 0; i < 6; i++) {
@@ -1170,7 +1160,7 @@ class _FeatureHeroPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = 3
         ..strokeCap = StrokeCap.round
-        ..color = const Color(0xFFFFBA20),
+        ..color = tertiaryColor,
     );
   }
 
@@ -1185,7 +1175,7 @@ class _FeatureHeroPainter extends CustomPainter {
       ..strokeWidth = 4
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
-      ..color = const Color(0xFFFFBA20);
+      ..color = tertiaryColor;
     final star = Path();
     for (var i = 0; i < 10; i++) {
       final r = i.isEven ? radius * 0.52 : radius * 0.24;
@@ -1208,7 +1198,7 @@ class _FeatureHeroPainter extends CustomPainter {
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2
-        ..color = const Color(0xFFA8DCE7).withValues(alpha: 0.8),
+        ..color = primaryColor.withValues(alpha: 0.8),
     );
   }
 
@@ -1220,7 +1210,7 @@ class _FeatureHeroPainter extends CustomPainter {
           fontFamily: icon.fontFamily,
           package: icon.fontPackage,
           fontSize: radius * 0.44,
-          color: const Color(0xFFC3F5FF),
+          color: primaryColor,
         ),
       ),
       textDirection: TextDirection.ltr,
@@ -1235,6 +1225,9 @@ class _FeatureHeroPainter extends CustomPainter {
   bool shouldRepaint(covariant _FeatureHeroPainter oldDelegate) {
     return oldDelegate.progress != progress ||
         oldDelegate.heroType != heroType ||
-        oldDelegate.icon != icon;
+        oldDelegate.icon != icon ||
+        oldDelegate.primaryColor != primaryColor ||
+        oldDelegate.secondaryColor != secondaryColor ||
+        oldDelegate.tertiaryColor != tertiaryColor;
   }
 }

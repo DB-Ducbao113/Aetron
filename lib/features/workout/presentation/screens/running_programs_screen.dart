@@ -370,18 +370,11 @@ class RunningProgramsScreen extends ConsumerWidget {
                     clipBehavior: Clip.antiAlias,
                     decoration: BoxDecoration(
                       color: colors.surface1,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
                       border: Border.all(
                         color: colors.borderSubtle,
-                        width: 1.2,
+                        width: 1,
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.15),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -396,11 +389,14 @@ class RunningProgramsScreen extends ConsumerWidget {
                               Image.asset(
                                 prog.imageAsset,
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Container(
-                                  color: colors.surface2,
-                                  child: Center(
-                                    child: Icon(Icons.directions_run_rounded, color: colors.primary, size: 36),
-                                  ),
+                                errorBuilder: (context, error, stackTrace) => Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    SceneBackdrop(tint: colors.secondary),
+                                    Center(
+                                      child: Icon(Icons.directions_run_rounded, color: colors.primary, size: 36),
+                                    ),
+                                  ],
                                 ),
                               ),
                               // Smooth Gradient Overlay
@@ -500,13 +496,13 @@ class RunningProgramsScreen extends ConsumerWidget {
                               ),
                               const SizedBox(height: 14),
 
-                              // Targets metrics preview bar
+                              // Targets metrics preview — V4: flat, hairline top
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                                padding: const EdgeInsets.fromLTRB(8, 12, 8, 2),
                                 decoration: BoxDecoration(
-                                  color: colors.surface2,
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(color: colors.borderSubtle),
+                                  border: Border(
+                                    top: BorderSide(color: colors.borderSubtle),
+                                  ),
                                 ),
                                 child: Row(
                                   children: [
@@ -572,7 +568,7 @@ class RunningProgramsScreen extends ConsumerWidget {
                                         ),
                                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
                                         ),
                                       ),
                                       child: Row(
@@ -714,8 +710,10 @@ class _ProgramGuideSheet extends ConsumerWidget {
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
       decoration: BoxDecoration(
         color: colors.surface1,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        border: Border(top: BorderSide(color: colors.borderSubtle, width: 1.5)),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(KineticTokens.radiusHero),
+        ),
+        border: Border(top: BorderSide(color: colors.borderSubtle, width: 1)),
       ),
       child: SafeArea(
         top: false,
@@ -785,13 +783,14 @@ class _ProgramGuideSheet extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
 
-            // Target Parameters Summary Card
+            // Target Parameters Summary — V4: flat, hairline frame
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
               decoration: BoxDecoration(
-                color: colors.surface2,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: colors.borderSubtle),
+                border: Border(
+                  top: BorderSide(color: colors.borderSubtle),
+                  bottom: BorderSide(color: colors.borderSubtle),
+                ),
               ),
               child: Row(
                 children: [

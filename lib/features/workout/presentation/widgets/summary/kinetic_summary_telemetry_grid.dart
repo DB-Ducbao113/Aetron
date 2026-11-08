@@ -1,7 +1,7 @@
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_card.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
 import 'package:flutter/material.dart';
 
@@ -92,66 +92,88 @@ class KineticSummaryTelemetryGrid extends StatelessWidget {
       }
     }
 
-    return Column(
-      children: [
-        Row(
-          children: [
-            // 1. Moving Time
-            Expanded(
-              child: _TelemetryCard(
-                label: currentLang == AppLanguage.vi ? 'THỜI GIAN DI CHUYỂN' : 'MOVING TIME',
-                value: movingTimeFormatted,
-                unit: null,
-                icon: Icons.timer_rounded,
-                subtitle: hasPausedTime
-                    ? (currentLang == AppLanguage.vi
-                        ? 'Tổng: $totalTimeFormatted'
-                        : 'Elapsed: $totalTimeFormatted')
-                    : null,
-              ),
-            ),
-            const SizedBox(width: 10),
+    final colors = context.kinetic;
+    final hairline = colors.borderSubtle;
 
-            // 2. Pace / Speed
-            Expanded(
-              child: _TelemetryCard(
-                label: paceSpeedLabel,
-                value: primaryPaceSpeedValue,
-                unit: primaryPaceSpeedUnit,
-                icon: Icons.speed_rounded,
-                subtitle: null,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            // 3. Active Calories
-            Expanded(
-              child: _TelemetryCard(
-                label: currentLang == AppLanguage.vi ? 'NĂNG LƯỢNG' : 'ENERGY BURN',
-                value: '$calories',
-                unit: 'kcal',
-                icon: Icons.local_fire_department_rounded,
-                subtitle: currentLang == AppLanguage.vi ? 'Calo hoạt động' : 'Active burn',
-              ),
-            ),
-            const SizedBox(width: 10),
+    // V4: flat 2x2 grid — hairline dividers instead of boxed bento cards.
+    Widget cell(Widget child) => Expanded(child: child);
+    Widget vDivider() => Container(width: 1, color: hairline);
+    Widget hDivider() => Container(height: 1, color: hairline);
 
-            // 4. Steps / Max speed
-            Expanded(
-              child: _TelemetryCard(
-                label: fourthLabel,
-                value: fourthValue,
-                unit: fourthUnit,
-                icon: fourthIcon,
-                subtitle: fourthSubtitle,
-              ),
-            ),
-          ],
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(color: hairline),
+          bottom: BorderSide(color: hairline),
         ),
-      ],
+      ),
+      child: Column(
+        children: [
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // 1. Moving Time
+                cell(
+                  _TelemetryCard(
+                    label: currentLang == AppLanguage.vi ? 'THỜI GIAN DI CHUYỂN' : 'MOVING TIME',
+                    value: movingTimeFormatted,
+                    unit: null,
+                    icon: Icons.timer_rounded,
+                    subtitle: hasPausedTime
+                        ? (currentLang == AppLanguage.vi
+                            ? 'Tổng: $totalTimeFormatted'
+                            : 'Elapsed: $totalTimeFormatted')
+                        : null,
+                  ),
+                ),
+                vDivider(),
+
+                // 2. Pace / Speed
+                cell(
+                  _TelemetryCard(
+                    label: paceSpeedLabel,
+                    value: primaryPaceSpeedValue,
+                    unit: primaryPaceSpeedUnit,
+                    icon: Icons.speed_rounded,
+                    subtitle: null,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          hDivider(),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // 3. Active Calories
+                cell(
+                  _TelemetryCard(
+                    label: currentLang == AppLanguage.vi ? 'NĂNG LƯỢNG' : 'ENERGY BURN',
+                    value: '$calories',
+                    unit: 'kcal',
+                    icon: Icons.local_fire_department_rounded,
+                    subtitle: currentLang == AppLanguage.vi ? 'Calo hoạt động' : 'Active burn',
+                  ),
+                ),
+                vDivider(),
+
+                // 4. Steps / Max speed
+                cell(
+                  _TelemetryCard(
+                    label: fourthLabel,
+                    value: fourthValue,
+                    unit: fourthUnit,
+                    icon: fourthIcon,
+                    subtitle: fourthSubtitle,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -175,8 +197,12 @@ class _TelemetryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.kinetic;
 
-    return KineticCard(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+    // V4: flat cell — no card chrome; the grid's hairlines do the framing.
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: KineticTokens.spaceSM,
+        vertical: 14,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

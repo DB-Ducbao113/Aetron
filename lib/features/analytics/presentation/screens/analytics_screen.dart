@@ -89,7 +89,12 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
 
                     return ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 112),
+                      padding: const EdgeInsets.fromLTRB(
+                        KineticTokens.page,
+                        KineticTokens.spaceSM,
+                        KineticTokens.page,
+                        112,
+                      ),
                       children: [
                         KineticAnalyticsHeader(
                           selectedPeriod: period,
@@ -101,10 +106,10 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                           isVi: isVi,
                         ),
                         if (isOffline) ...[
-                          const SizedBox(height: 12),
+                          const SizedBox(height: KineticTokens.spaceSM),
                           const AetronOfflineBanner(),
                         ],
-                        const SizedBox(height: 16),
+                        const SizedBox(height: KineticTokens.spaceMD),
                         if (workouts.isEmpty || filtered.isEmpty) ...[
                           _EmptyAnalyticsPanel(period: period),
                         ] else ...[
@@ -119,7 +124,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                               isVi: isVi,
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: KineticTokens.spaceMD),
 
                           // 2. 4 Key Telemetry Metrics Bento
                           RepaintBoundary(
@@ -129,7 +134,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                               isVi: isVi,
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: KineticTokens.spaceMD),
 
                           // 3. Multi-sport Endurance Activity Mix
                           RepaintBoundary(
@@ -139,7 +144,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                               isVi: isVi,
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: KineticTokens.spaceMD),
 
                           // 4. Goal Progress Section
                           RepaintBoundary(
@@ -147,7 +152,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                               progress: ref.watch(goalProgressProvider),
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: KineticTokens.spaceMD),
 
                           // 5. Recovery Guidance Card
                           RepaintBoundary(
@@ -157,7 +162,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                               period: period,
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: KineticTokens.spaceMD),
 
                           // 6. Personal Records Trophy Wall
                           RepaintBoundary(
@@ -179,7 +184,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                       physics: const AlwaysScrollableScrollPhysics(),
                       children: [
                         Padding(
-                          padding: const EdgeInsets.all(24),
+                          padding: const EdgeInsets.all(KineticTokens.spaceXL),
                           child: AetronStatePanel(
                             title: isVi
                                 ? 'Không thể tải phân tích'
@@ -219,21 +224,14 @@ class _GoalProgressCard extends ConsumerWidget {
     if (progress == null) {
       return Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(KineticTokens.spaceLG),
         decoration: BoxDecoration(
           color: colors.surface1,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
           border: Border.all(
-            color: colors.borderSubtle.withValues(alpha: 0.8),
-            width: 1.2,
+            color: colors.borderSubtle,
+            width: 1,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.35),
-              blurRadius: 18,
-              offset: const Offset(0, 6),
-            ),
-          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -256,7 +254,7 @@ class _GoalProgressCard extends ConsumerWidget {
                 fontWeight: FontWeight.w800,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: KineticTokens.spaceXXS),
             Text(
               isVi
                   ? 'Tạo mục tiêu để theo dõi tiến độ tuần/tháng của bạn.'
@@ -265,7 +263,7 @@ class _GoalProgressCard extends ConsumerWidget {
                 color: colors.textSecondary,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: KineticTokens.spaceMD),
             KineticButton(
               label: isVi ? 'ĐẶT MỤC TIÊU' : 'SET A GOAL',
               icon: Icons.flag_rounded,
@@ -289,23 +287,16 @@ class _GoalProgressCard extends ConsumerWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(KineticTokens.spaceLG),
       decoration: BoxDecoration(
         color: colors.surface1,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
         border: Border.all(
           color: goal.isAchieved
               ? colors.primary.withValues(alpha: 0.8)
-              : colors.borderSubtle.withValues(alpha: 0.8),
-          width: 1.2,
+              : colors.borderSubtle,
+          width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.35),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -337,7 +328,7 @@ class _GoalProgressCard extends ConsumerWidget {
                           MaterialPageRoute(builder: (_) => const GoalScreen()),
                         );
                       },
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
                       child: Padding(
                         padding: const EdgeInsets.all(4),
                         child: Icon(
@@ -384,14 +375,14 @@ class _GoalProgressCard extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: KineticTokens.spaceXS),
           Text(
             '${goal.currentLabel} / ${goal.targetLabel} ${goal.unit}',
             style: KineticTypography.metricSmall.copyWith(
               color: colors.textPrimary,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: KineticTokens.spaceXXS),
           Text(
             remainingLabel,
             style: KineticTypography.bodySmall.copyWith(
@@ -401,7 +392,7 @@ class _GoalProgressCard extends ConsumerWidget {
           ),
           const SizedBox(height: 14),
           ClipRRect(
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
             child: LinearProgressIndicator(
               value: (goal.percent / 100.0).clamp(0.0, 1.0),
               backgroundColor: colors.surface2,
@@ -430,16 +421,16 @@ class _EmptyAnalyticsPanel extends ConsumerWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(KineticTokens.spaceXL),
       decoration: BoxDecoration(
         color: colors.surface1,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
         border: Border.all(color: colors.borderSubtle),
       ),
       child: Column(
         children: [
           Icon(Icons.analytics_outlined, size: 44, color: colors.textSecondary),
-          const SizedBox(height: 12),
+          const SizedBox(height: KineticTokens.spaceSM),
           Text(
             isVi
                 ? 'Chưa có hoạt động ($label)'

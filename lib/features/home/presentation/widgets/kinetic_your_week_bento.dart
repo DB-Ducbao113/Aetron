@@ -36,10 +36,12 @@ class KineticYourWeekBento extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: KineticTokens.page,
-        vertical: 8,
+        vertical: KineticTokens.spaceXS,
       ),
       child: KineticCard(
         padding: const EdgeInsets.all(KineticTokens.spaceMD),
+        borderRadius: KineticTokens.radiusLG,
+        gradient: KineticGradients.heroMesh(colors),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -57,7 +59,7 @@ class KineticYourWeekBento extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: KineticTokens.spaceXXS),
                     Text(
                       dateRangeText,
                       style: KineticTypography.bodySmall.copyWith(
@@ -70,15 +72,17 @@ class KineticYourWeekBento extends StatelessWidget {
                   color: Colors.transparent,
                   child: InkWell(
                     onTap: onSetGoalTap,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
+                        horizontal: KineticTokens.spaceSM,
+                        vertical: KineticTokens.spaceXS,
                       ),
                       decoration: BoxDecoration(
                         color: colors.primary.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(
+                          KineticTokens.radiusPill,
+                        ),
                         border: Border.all(
                           color: colors.primary.withValues(alpha: 0.4),
                           width: 1,
@@ -92,7 +96,7 @@ class KineticYourWeekBento extends StatelessWidget {
                             size: 13,
                             color: colors.primary,
                           ),
-                          const SizedBox(width: 5),
+                          const SizedBox(width: KineticTokens.spaceXXS),
                           Text(
                             isVi ? 'Mục tiêu: $percent%' : 'Goal: $percent%',
                             style: KineticTypography.unitLabel.copyWith(
@@ -100,7 +104,7 @@ class KineticYourWeekBento extends StatelessWidget {
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                          const SizedBox(width: 3),
+                          const SizedBox(width: KineticTokens.spaceXXS),
                           Icon(
                             Icons.chevron_right_rounded,
                             size: 14,
@@ -113,148 +117,144 @@ class KineticYourWeekBento extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: KineticTokens.spaceMD),
 
-            // 2. Bento Stats Grid
+            // 2. Week Stats — V4: flat divided row (no boxes-in-boxes)
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Box 1: Distance
+                // Distance
                 Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: colors.surface2,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: colors.borderSubtle, width: 1),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          isVi ? 'Tổng quãng đường' : 'Total Distance',
-                          style: KineticTypography.caption.copyWith(
-                            color: colors.textMuted,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isVi ? 'Tổng quãng đường' : 'Total Distance',
+                        style: KineticTypography.caption.copyWith(
+                          color: colors.textMuted,
+                        ),
+                      ),
+                      const SizedBox(height: KineticTokens.spaceXXS),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(
+                            weeklyDistanceKm.toStringAsFixed(1),
+                            style: KineticTypography.metricHero.copyWith(
+                              color: colors.textPrimary,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
-                          children: [
-                            Text(
-                              weeklyDistanceKm.toStringAsFixed(1),
-                              style: KineticTypography.metricHero.copyWith(
-                                color: colors.textPrimary,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              unit.toUpperCase(),
-                              style: KineticTypography.unitLabel.copyWith(
-                                color: colors.primary,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.trending_up_rounded,
-                              size: 14,
-                              color: colors.secondary,
-                            ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                isVi
-                                    ? '+12% so với tuần trước'
-                                    : '+12% vs last week',
-                                style: KineticTypography.unitLabel.copyWith(
-                                  color: colors.secondary,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-
-                // Box 2: Workouts Count
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: colors.surface2,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: colors.borderSubtle, width: 1),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          isVi ? 'Số buổi tập' : 'Workouts',
-                          style: KineticTypography.caption.copyWith(
-                            color: colors.textMuted,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
-                          children: [
-                            Text(
-                              '$workoutCount',
-                              style: KineticTypography.metricHero.copyWith(
-                                color: colors.textPrimary,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              isVi ? 'BUỔI' : 'SESSIONS',
-                              style: KineticTypography.unitLabel.copyWith(
-                                color: colors.primary,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.check_circle_outline_rounded,
-                              size: 14,
+                          const SizedBox(width: KineticTokens.spaceXXS),
+                          Text(
+                            unit.toUpperCase(),
+                            style: KineticTypography.unitLabel.copyWith(
                               color: colors.primary,
                             ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                isVi
-                                    ? 'Mục tiêu: $targetWorkoutCount buổi/tuần'
-                                    : 'Target: $targetWorkoutCount sessions/wk',
-                                style: KineticTypography.unitLabel.copyWith(
-                                  color: colors.textMuted,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: KineticTokens.spaceXXS),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.trending_up_rounded,
+                            size: 14,
+                            color: colors.secondary,
+                          ),
+                          const SizedBox(width: KineticTokens.spaceXXS),
+                          Expanded(
+                            child: Text(
+                              isVi
+                                  ? '+12% so với tuần trước'
+                                  : '+12% vs last week',
+                              style: KineticTypography.unitLabel.copyWith(
+                                color: colors.secondary,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Hairline divider
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: KineticTokens.spaceMD,
+                  ),
+                  child: Container(
+                    width: 1,
+                    height: 76,
+                    color: colors.borderSubtle,
+                  ),
+                ),
+
+                // Workouts Count
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isVi ? 'Số buổi tập' : 'Workouts',
+                        style: KineticTypography.caption.copyWith(
+                          color: colors.textMuted,
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: KineticTokens.spaceXXS),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(
+                            '$workoutCount',
+                            style: KineticTypography.metricHero.copyWith(
+                              color: colors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(width: KineticTokens.spaceXXS),
+                          Text(
+                            isVi ? 'BUỔI' : 'SESSIONS',
+                            style: KineticTypography.unitLabel.copyWith(
+                              color: colors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: KineticTokens.spaceXXS),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.check_circle_outline_rounded,
+                            size: 14,
+                            color: colors.primary,
+                          ),
+                          const SizedBox(width: KineticTokens.spaceXXS),
+                          Expanded(
+                            child: Text(
+                              isVi
+                                  ? 'Mục tiêu: $targetWorkoutCount buổi/tuần'
+                                  : 'Target: $targetWorkoutCount sessions/wk',
+                              style: KineticTypography.unitLabel.copyWith(
+                                color: colors.textMuted,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: KineticTokens.spaceMD),
 
-            // 3. Progress Bar with Glow
+            // 3. Progress Bar (flat)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -275,7 +275,7 @@ class KineticYourWeekBento extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: KineticTokens.spaceXXS),
             ClipRRect(
               borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
               child: Container(
@@ -290,12 +290,6 @@ class KineticYourWeekBento extends StatelessWidget {
                           color: colors.primary,
                           borderRadius:
                               BorderRadius.circular(KineticTokens.radiusPill),
-                          boxShadow: [
-                            BoxShadow(
-                              color: colors.primary.withValues(alpha: 0.6),
-                              blurRadius: 8,
-                            ),
-                          ],
                         ),
                       ),
                     ),
@@ -303,16 +297,18 @@ class KineticYourWeekBento extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: KineticTokens.spaceSM),
 
             // 4. Dedicated Adjust Goal Action Button
             Material(
               color: Colors.transparent,
               child: InkWell(
                 onTap: onSetGoalTap,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: KineticTokens.spaceXXS,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -324,7 +320,7 @@ class KineticYourWeekBento extends StatelessWidget {
                             size: 14,
                             color: colors.textSecondary,
                           ),
-                          const SizedBox(width: 6),
+                          const SizedBox(width: KineticTokens.spaceXXS),
                           Text(
                             isVi
                                 ? 'Điều chỉnh mục tiêu rèn luyện'
@@ -346,7 +342,7 @@ class KineticYourWeekBento extends StatelessWidget {
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                          const SizedBox(width: 2),
+                          const SizedBox(width: KineticTokens.spaceXXS),
                           Icon(
                             Icons.arrow_forward_ios_rounded,
                             size: 10,

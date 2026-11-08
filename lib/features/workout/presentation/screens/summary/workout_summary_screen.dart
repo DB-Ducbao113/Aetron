@@ -10,6 +10,7 @@ import 'package:fitness_exercise_application/features/workout/presentation/widge
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/summary/kinetic_summary_splits_card.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/summary/kinetic_summary_telemetry_grid.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/workout_share_card.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_backdrop.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_entrance.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
@@ -144,20 +145,49 @@ class WorkoutSummaryScreen extends ConsumerWidget {
         body: SafeArea(
           child: Column(
             children: [
-              // Top Sticky Header
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  KineticTokens.page,
-                  12,
-                  KineticTokens.page,
-                  8,
-                ),
-                child: KineticSummaryHeader(
-                  activityType: activityType,
-                  trackingMode: trackingMode,
-                  currentLang: currentLang,
-                  onBackToHome: () => _navigateToHome(context),
-                ),
+              // Hero Zone — topographic backdrop behind header + headline
+              // distance (V4: decoration lives in the background).
+              Stack(
+                children: [
+                  const Positioned.fill(child: TopographicBackdrop()),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          KineticTokens.page,
+                          12,
+                          KineticTokens.page,
+                          8,
+                        ),
+                        child: KineticSummaryHeader(
+                          activityType: activityType,
+                          trackingMode: trackingMode,
+                          currentLang: currentLang,
+                          onBackToHome: () => _navigateToHome(context),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          KineticTokens.page,
+                          4,
+                          KineticTokens.page,
+                          20,
+                        ),
+                        child: KineticEntrance(
+                          index: 0,
+                          child: KineticSummaryHeroDistance(
+                            distanceKm: effectiveDistanceKm,
+                            activityType: activityType,
+                            useMetricUnits: useMetricUnits,
+                            validityFlag: gpsAnalysis.validityFlag,
+                            currentLang: currentLang,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
 
               // Scrollable Telemetry Body
@@ -166,27 +196,14 @@ class WorkoutSummaryScreen extends ConsumerWidget {
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(
                     KineticTokens.page,
-                    8,
+                    16,
                     KineticTokens.page,
                     32,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // 1. Hero Distance & Celebration Bento
-                      KineticEntrance(
-                        index: 0,
-                        child: KineticSummaryHeroDistance(
-                          distanceKm: effectiveDistanceKm,
-                          activityType: activityType,
-                          useMetricUnits: useMetricUnits,
-                          validityFlag: gpsAnalysis.validityFlag,
-                          currentLang: currentLang,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-
-                      // 2. Telemetry Grid (4 Bento Cards)
+                      // 1. Telemetry Grid (flat 2x2, hairline dividers)
                       KineticEntrance(
                         index: 1,
                         child: KineticSummaryTelemetryGrid(
@@ -204,7 +221,7 @@ class WorkoutSummaryScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 12),
 
-                      // 3. Route Map Recap (Outdoor GPS routes)
+                      // 2. Route Map Recap (Outdoor GPS routes)
                       if (effectiveRoutePoints.length >= 2) ...[
                         KineticEntrance(
                           index: 2,
@@ -218,7 +235,7 @@ class WorkoutSummaryScreen extends ConsumerWidget {
                         const SizedBox(height: 12),
                       ],
 
-                      // 4. Lap Splits Breakdown (If available)
+                      // 3. Lap Splits Breakdown (If available)
                       if (lapSplits.isNotEmpty) ...[
                         KineticEntrance(
                           index: 3,
@@ -231,7 +248,7 @@ class WorkoutSummaryScreen extends ConsumerWidget {
                         const SizedBox(height: 16),
                       ],
 
-                      // 5. Action Dock (Share, Done, Details)
+                      // 4. Action Dock (Share, Done, Details)
                       KineticEntrance(
                         index: 4,
                         child: KineticSummaryActionDock(

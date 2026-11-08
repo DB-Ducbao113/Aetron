@@ -32,56 +32,43 @@ class KineticHeroCard extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.symmetric(
           horizontal: KineticTokens.page,
-          vertical: 8,
+          vertical: KineticTokens.spaceXS,
         ),
         height: 320,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
           border: Border.all(color: colors.borderSubtle, width: 1),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.35),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
+          boxShadow: KineticTokens.shadowPanel(colors.background),
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // 1. Background Photo
+              // 1. Duotone scene base (V4) — also the photo error fallback
+              SceneBackdrop(tint: colors.secondary),
+
+              // 2. Background Photo
               Image.asset(
                 imageAsset,
                 fit: BoxFit.cover,
                 alignment: Alignment.centerRight,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  color: colors.surface2,
-                ),
+                errorBuilder: (context, error, stackTrace) =>
+                    SceneBackdrop(tint: colors.secondary),
               ),
 
-              // 2. High-contrast Scrim Gradient
+              // 3. Legibility Scrim Gradient (DS)
               DecoratedBox(
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withValues(alpha: 0.25),
-                      colors.background.withValues(alpha: 0.65),
-                      colors.background.withValues(alpha: 0.95),
-                    ],
-                    stops: const [0.0, 0.45, 0.9],
-                  ),
+                  gradient: KineticGradients.scrimBottom(colors),
                 ),
               ),
 
-              // 3. Bottom Content Overlay
+              // 4. Bottom Content Overlay
               Positioned(
-                bottom: 16,
-                left: 16,
-                right: 16,
+                bottom: KineticTokens.spaceMD,
+                left: KineticTokens.spaceMD,
+                right: KineticTokens.spaceMD,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -96,7 +83,7 @@ class KineticHeroCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: KineticTokens.spaceXS),
                     Row(
                       children: [
                         Icon(
@@ -104,7 +91,7 @@ class KineticHeroCard extends StatelessWidget {
                           size: 14,
                           color: colors.primary,
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: KineticTokens.spaceXXS),
                         Text(
                           weeklyProgressText,
                           style: KineticTypography.bodySmall.copyWith(
@@ -112,21 +99,21 @@ class KineticHeroCard extends StatelessWidget {
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: KineticTokens.spaceXS),
                         Text(
                           '•',
                           style: TextStyle(color: colors.textMuted),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: KineticTokens.spaceXS),
                         if (onGoalTap != null)
                           Material(
                             color: Colors.transparent,
                             child: InkWell(
                               onTap: onGoalTap,
-                              borderRadius: BorderRadius.circular(6),
+                              borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 4,
+                                  horizontal: KineticTokens.spaceXXS,
                                   vertical: 2,
                                 ),
                                 child: Row(
@@ -137,7 +124,7 @@ class KineticHeroCard extends StatelessWidget {
                                       size: 14,
                                       color: colors.primary,
                                     ),
-                                    const SizedBox(width: 4),
+                                    const SizedBox(width: KineticTokens.spaceXXS),
                                     Text(
                                       targetGoalText,
                                       style: KineticTypography.bodySmall.copyWith(
@@ -147,7 +134,7 @@ class KineticHeroCard extends StatelessWidget {
                                         decorationColor: colors.primary.withValues(alpha: 0.6),
                                       ),
                                     ),
-                                    const SizedBox(width: 2),
+                                    const SizedBox(width: KineticTokens.spaceXXS),
                                     Icon(
                                       Icons.chevron_right_rounded,
                                       size: 13,
@@ -167,7 +154,7 @@ class KineticHeroCard extends StatelessWidget {
                                 size: 14,
                                 color: colors.primary,
                               ),
-                              const SizedBox(width: 4),
+                              const SizedBox(width: KineticTokens.spaceXXS),
                               Text(
                                 targetGoalText,
                                 style: KineticTypography.bodySmall.copyWith(
@@ -179,7 +166,7 @@ class KineticHeroCard extends StatelessWidget {
                           ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: KineticTokens.spaceMD),
 
                     // Primary Action CTA
                     KineticButton(

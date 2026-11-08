@@ -1,4 +1,5 @@
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_gradients.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
 import 'package:flutter/material.dart';
@@ -19,7 +20,7 @@ enum KineticButtonVariant {
 /// - Loading state with spinner
 /// - Built-in semantics for accessibility
 /// - Material ink ripple feedback
-/// - Primary variant has glow shadow
+/// - Primary variant: lit cyan gradient + bright edge + soft shadow (board v3)
 /// - 120ms press-scale micro-interaction (scale 0.97, easeOut)
 ///   with light haptic — instant under OS Reduce Motion
 class KineticButton extends StatefulWidget {
@@ -98,35 +99,51 @@ class _KineticButtonState extends State<KineticButton>
     final Color fgColor;
     final BorderSide? border;
     final List<BoxShadow>? shadows;
+    final Gradient? gradient;
 
     switch (widget.variant) {
       case KineticButtonVariant.primary:
+        // Board v3: lit cyan gradient pill, bright 1.5px edge, soft cyan
+        // shadow. The gradient is a brand object — identical in dark and
+        // light ("Morning") themes, so the ink on it is a fixed dark teal,
+        // NOT onPrimary (which is white in the light palette).
+        gradient = isDisabled ? null : KineticGradients.buttonPrimary(colors);
         bgColor = isDisabled ? colors.surface3 : colors.primary;
-        fgColor = isDisabled ? colors.textMuted : colors.onPrimary;
-        border = null;
+        fgColor = isDisabled ? colors.textMuted : const Color(0xFF06222B);
+        border = isDisabled
+            ? null
+            : BorderSide(
+                color: Color.lerp(colors.accentFill, Colors.white, 0.78)!,
+                width: 1.5,
+              );
         shadows = isDisabled
             ? null
             : [
                 BoxShadow(
-                  color: colors.primary.withValues(alpha: 0.25),
-                  blurRadius: 16,
-                  offset: const Offset(0, 2),
+                  color: colors.accentFill.withValues(alpha: 0.45),
+                  blurRadius: 28,
+                  offset: const Offset(0, 14),
+                  spreadRadius: -10,
                 ),
               ];
         break;
       case KineticButtonVariant.secondary:
+        // Board v3 secondary: surface fill + strong 1.5px edge.
+        gradient = null;
         bgColor = isDisabled ? colors.surface1 : colors.surface2;
         fgColor = isDisabled ? colors.textMuted : colors.textPrimary;
-        border = BorderSide(color: colors.borderAccent, width: 1);
+        border = BorderSide(color: colors.borderStrong, width: 1.5);
         shadows = null;
         break;
       case KineticButtonVariant.ghost:
+        gradient = null;
         bgColor = Colors.transparent;
         fgColor = isDisabled ? colors.textMuted : colors.textSecondary;
         border = null;
         shadows = null;
         break;
       case KineticButtonVariant.danger:
+        gradient = null;
         bgColor = isDisabled ? colors.surface1 : colors.error.withValues(alpha: 0.15);
         fgColor = isDisabled ? colors.textMuted : colors.error;
         border = BorderSide(color: colors.error.withValues(alpha: 0.4), width: 1);
@@ -182,8 +199,9 @@ class _KineticButtonState extends State<KineticButton>
           child: Container(
             height: widget.height,
             decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
+              color: gradient == null ? bgColor : null,
+              gradient: gradient,
+              borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
               border: border != null ? Border.fromBorderSide(border) : null,
               boxShadow: shadows,
             ),
@@ -192,7 +210,7 @@ class _KineticButtonState extends State<KineticButton>
               child: InkWell(
                 onTap: isDisabled ? null : _handleTap,
                 onHighlightChanged: isDisabled ? null : _handleHighlightChanged,
-                borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
+                borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
                 splashColor: fgColor.withValues(alpha: 0.12),
                 highlightColor: fgColor.withValues(alpha: 0.06),
                 child: Padding(

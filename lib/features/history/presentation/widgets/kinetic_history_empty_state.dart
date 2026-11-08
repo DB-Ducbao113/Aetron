@@ -1,6 +1,8 @@
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/shell/presentation/providers/main_tab_controller_provider.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_backdrop.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_button.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
 import 'package:flutter/material.dart';
@@ -20,12 +22,20 @@ class KineticHistoryEmptyState extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.kinetic;
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
+      child: Stack(
+        children: [
+          const Positioned.fill(child: TopographicBackdrop()),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(
+              horizontal: KineticTokens.spaceXL,
+              vertical: KineticTokens.spaceXXXL,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
             Container(
               width: 72,
               height: 72,
@@ -44,7 +54,7 @@ class KineticHistoryEmptyState extends ConsumerWidget {
                 color: colors.primary,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: KineticTokens.spaceMD),
             Text(
               isFiltered
                   ? (currentLang == AppLanguage.vi
@@ -53,11 +63,10 @@ class KineticHistoryEmptyState extends ConsumerWidget {
                   : AppTranslations.get('no_workouts_yet', currentLang),
               style: KineticTypography.headlineMedium.copyWith(
                 color: colors.textPrimary,
-                fontSize: 18,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: KineticTokens.spaceXS),
             Text(
               isFiltered
                   ? (currentLang == AppLanguage.vi
@@ -70,7 +79,7 @@ class KineticHistoryEmptyState extends ConsumerWidget {
               textAlign: TextAlign.center,
             ),
             if (!isFiltered) ...[
-              const SizedBox(height: 24),
+              const SizedBox(height: KineticTokens.spaceXL),
               KineticButton(
                 label: currentLang == AppLanguage.vi
                     ? 'BẮT ĐẦU BUỔI TẬP'
@@ -83,8 +92,10 @@ class KineticHistoryEmptyState extends ConsumerWidget {
                 },
               ),
             ],
-          ],
-        ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

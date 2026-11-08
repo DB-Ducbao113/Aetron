@@ -77,31 +77,20 @@ class WorkoutTargetProgressHud extends StatelessWidget {
     }
 
     final isDone = progress >= 1.0;
-    const completedGold = Color(0xFFFFD54F);
-    final displayColor = isDone ? completedGold : accentColor;
+    final displayColor = isDone ? colors.tertiary : accentColor;
     final percentInt = (progress * 100).toInt();
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: colors.surface1.withValues(alpha: 0.94),
-        borderRadius: BorderRadius.circular(16),
+        gradient: KineticGradients.hudSurface(colors),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
         border: Border.all(
           color: displayColor.withValues(alpha: 0.45),
           width: 1.2,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: displayColor.withValues(alpha: 0.15),
-            blurRadius: 14,
-            offset: const Offset(0, 3),
-          ),
-          const BoxShadow(
-            color: Colors.black45,
-            blurRadius: 8,
-          ),
-        ],
+        boxShadow: KineticTokens.shadowPanel(Colors.black),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -134,7 +123,7 @@ class WorkoutTargetProgressHud extends StatelessWidget {
                     remainingLabel,
                     style: KineticTypography.caption.copyWith(
                       fontWeight: FontWeight.w700,
-                      color: isDone ? completedGold : colors.textSecondary,
+                      color: isDone ? colors.tertiary : colors.textSecondary,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -142,7 +131,8 @@ class WorkoutTargetProgressHud extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: displayColor.withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius:
+                          BorderRadius.circular(KineticTokens.radiusSM),
                     ),
                     child: Text(
                       '$percentInt%',
@@ -158,14 +148,14 @@ class WorkoutTargetProgressHud extends StatelessWidget {
           ),
           const SizedBox(height: 8),
 
-          // Glowing Progress Bar
+          // Progress Bar
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: SizedBox(
               height: 6,
               child: LinearProgressIndicator(
                 value: progress,
-                backgroundColor: const Color(0xFF162032),
+                backgroundColor: colors.surface3,
                 valueColor: AlwaysStoppedAnimation<Color>(displayColor),
               ),
             ),

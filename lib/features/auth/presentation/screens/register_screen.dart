@@ -8,18 +8,9 @@ import 'package:fitness_exercise_application/features/legal/presentation/screens
 import 'package:fitness_exercise_application/features/legal/presentation/screens/terms_of_service_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// ─── Design tokens (mirrors stitch dark palette) ────────────────────────────
-const _bg = Color(0xFF0C1316);
-const _surface = Color(0xFF162025);
-const _surfaceLow = Color(0xFF11181C);
-const _outlineVariant = Color(0xFF23323A);
-const _primary = Color(0xFFA8DCE7);
-const _onPrimary = Color(0xFF09181C);
-const _onSurface = Color(0xFFE2E8EA);
-const _onSurfaceVariant = Color(0xFF90A2A7);
-const _error = Color(0xFFFF4B6E);
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -158,45 +149,50 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final currentLang = ref.watch(appLanguageProvider);
     final isVi = currentLang == AppLanguage.vi;
     final topPad = MediaQuery.of(context).padding.top;
+    final colors = context.kinetic;
 
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: colors.background,
       body: Column(
         children: [
           // ── Top App Bar ───────────────────────────────────────────────────
-          Container(
-            color: _bg.withValues(alpha: 0.97),
-            padding: EdgeInsets.fromLTRB(16, topPad + 8, 16, 12),
-            child: SizedBox(
-              height: 40,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: _AppBarIconButton(
-                      icon: Icons.arrow_back_rounded,
-                      onTap: () => Navigator.of(context).pop(),
-                    ),
+          Stack(
+            children: [
+              const Positioned.fill(child: TopographicBackdrop()),
+              Container(
+                padding: EdgeInsets.fromLTRB(16, topPad + 8, 16, 12),
+                child: SizedBox(
+                  height: 40,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: _AppBarIconButton(
+                          icon: Icons.arrow_back_rounded,
+                          onTap: () => Navigator.of(context).pop(),
+                        ),
+                      ),
+                      Text(
+                        isVi ? 'Đăng ký' : 'Sign Up',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: colors.textPrimary,
+                          letterSpacing: -0.01 * 18,
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: const AuthLanguageToggle(),
+                      ),
+                    ],
                   ),
-                  Text(
-                    isVi ? 'Đăng ký' : 'Sign Up',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: _onSurface,
-                      letterSpacing: -0.01 * 18,
-                    ),
-                  ),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: const AuthLanguageToggle(),
-                  ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
-          const Divider(height: 1, thickness: 1, color: _outlineVariant),
+          Divider(height: 1, thickness: 1, color: colors.borderSubtle),
 
           // ── Scrollable body ───────────────────────────────────────────────
           Expanded(
@@ -223,11 +219,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                   errorBuilder: (context, error, stackTrace) =>
                                       Container(
                                         height: 150,
-                                        color: _surface,
-                                        child: const Center(
+                                        color: colors.surface2,
+                                        child: Center(
                                           child: Icon(
                                             Icons.fitness_center_rounded,
-                                            color: _primary,
+                                            color: colors.primary,
                                             size: 40,
                                           ),
                                         ),
@@ -236,19 +232,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 Positioned.fill(
                                   child: DecoratedBox(
                                     decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        begin: Alignment.topCenter,
-                                        end: Alignment.bottomCenter,
-                                        colors: [
-                                          _bg.withValues(alpha: 0.1),
-                                          _bg.withValues(alpha: 0.85),
-                                        ],
+                                      gradient: KineticGradients.scrimBottom(
+                                        colors,
                                       ),
                                     ),
                                   ),
                                 ),
                                 Positioned(
-                                  bottom: 14,
+                                  bottom: 34,
                                   left: 16,
                                   right: 16,
                                   child: Column(
@@ -259,10 +250,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                         isVi
                                             ? 'Bắt đầu ngay hôm nay'
                                             : 'Start today',
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 11,
                                           fontWeight: FontWeight.w600,
-                                          color: _primary,
+                                          color: colors.primary,
                                           letterSpacing: 0.05 * 10,
                                         ),
                                       ),
@@ -270,10 +261,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                         isVi
                                             ? 'Theo dõi hành trình fitness'
                                             : 'Track your fitness journey',
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 20,
                                           fontWeight: FontWeight.w700,
-                                          color: _onSurface,
+                                          color: colors.textPrimary,
                                           letterSpacing: -0.015 * 20,
                                         ),
                                       ),
@@ -283,237 +274,258 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 24),
 
-                          // ── Username field ──────────────────────────────────────
-                          _SectionLabel(isVi ? 'TÊN ĐĂNG NHẬP' : 'USERNAME'),
-                          const SizedBox(height: 6),
-                          _StitchTextField(
-                            controller: _usernameController,
-                            hintText: isVi
-                                ? 'Nhập tên đăng nhập'
-                                : 'Enter username',
-                            prefixIcon: Icons.person_outline_rounded,
-                            keyboardType: TextInputType.text,
-                            validator: (value) =>
-                                validateUsername(value, isVi: isVi),
-                          ),
-                          const SizedBox(height: 16),
+                          Transform.translate(
+                            offset: const Offset(0, -22),
+                            child: Container(
+                              padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
+                              decoration: BoxDecoration(
+                                color: colors.surface1,
+                                borderRadius: BorderRadius.circular(
+                                  KineticTokens.radiusXXL,
+                                ),
+                                border: Border.all(
+                                  color: colors.borderStrong,
+                                  width: 1.5,
+                                ),
+                                boxShadow: KineticTokens.shadowPanel(Colors.black),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                // ── Username field ──────────────────────────────────────
+                                _SectionLabel(isVi ? 'TÊN ĐĂNG NHẬP' : 'USERNAME'),
+                                const SizedBox(height: 6),
+                                _StitchTextField(
+                                  controller: _usernameController,
+                                  hintText: isVi
+                                      ? 'Nhập tên đăng nhập'
+                                      : 'Enter username',
+                                  prefixIcon: Icons.person_outline_rounded,
+                                  keyboardType: TextInputType.text,
+                                  validator: (value) =>
+                                      validateUsername(value, isVi: isVi),
+                                ),
+                                const SizedBox(height: 16),
 
-                          // ── Password field ──────────────────────────────────────
-                          _SectionLabel(isVi ? 'MẬT KHẨU' : 'PASSWORD'),
-                          const SizedBox(height: 6),
-                          _StitchTextField(
-                            controller: _passwordController,
-                            hintText: isVi ? 'Tạo mật khẩu' : 'Create password',
-                            prefixIcon: Icons.lock_outline_rounded,
-                            obscureText: _obscurePassword,
-                            suffixIcon: IconButton(
-                              onPressed: () => setState(
-                                () => _obscurePassword = !_obscurePassword,
-                              ),
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_outlined
-                                    : Icons.visibility_off_outlined,
-                                color: _primary.withValues(alpha: 0.7),
-                                size: 20,
-                              ),
-                            ),
-                            validator: (value) =>
-                                validatePasswordStrict(value, currentLang),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            isVi
-                                ? 'Tối thiểu 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt.'
-                                : 'At least 8 characters with uppercase, lowercase, a number, and a special character.',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w400,
-                              color: _onSurfaceVariant,
-                              height: 1.35,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // ── Confirm password field ──────────────────────────────
-                          _SectionLabel(
-                            isVi ? 'XÁC NHẬN MẬT KHẨU' : 'CONFIRM PASSWORD',
-                          ),
-                          const SizedBox(height: 6),
-                          _StitchTextField(
-                            controller: _confirmPasswordController,
-                            hintText: isVi
-                                ? 'Xác nhận lại mật khẩu'
-                                : 'Confirm password',
-                            prefixIcon: Icons.lock_reset_rounded,
-                            obscureText: _obscureConfirmPassword,
-                            suffixIcon: IconButton(
-                              onPressed: () => setState(
-                                () => _obscureConfirmPassword =
-                                    !_obscureConfirmPassword,
-                              ),
-                              icon: Icon(
-                                _obscureConfirmPassword
-                                    ? Icons.visibility_outlined
-                                    : Icons.visibility_off_outlined,
-                                color: _primary.withValues(alpha: 0.7),
-                                size: 20,
-                              ),
-                            ),
-                            validator: (value) {
-                              if (value != _passwordController.text) {
-                                return isVi
-                                    ? 'Mật khẩu không khớp'
-                                    : 'Passwords do not match';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 20),
-
-                          // ── Terms & Privacy checkbox ────────────────────────────
-                          Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: _surfaceLow,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: _acceptedTerms
-                                    ? _primary.withValues(alpha: 0.4)
-                                    : _outlineVariant,
-                              ),
-                            ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                SizedBox(
-                                  width: 22,
-                                  height: 22,
-                                  child: Checkbox(
-                                    value: _acceptedTerms,
-                                    activeColor: _primary,
-                                    checkColor: _onPrimary,
-                                    side: const BorderSide(
-                                      color: _outlineVariant,
-                                      width: 1.5,
+                                // ── Password field ──────────────────────────────────────
+                                _SectionLabel(isVi ? 'MẬT KHẨU' : 'PASSWORD'),
+                                const SizedBox(height: 6),
+                                _StitchTextField(
+                                  controller: _passwordController,
+                                  hintText: isVi ? 'Tạo mật khẩu' : 'Create password',
+                                  prefixIcon: Icons.lock_outline_rounded,
+                                  obscureText: _obscurePassword,
+                                  suffixIcon: IconButton(
+                                    onPressed: () => setState(
+                                      () => _obscurePassword = !_obscurePassword,
                                     ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(5),
-                                    ),
-                                    onChanged: (val) => setState(
-                                      () => _acceptedTerms = val ?? false,
+                                    icon: Icon(
+                                      _obscurePassword
+                                          ? Icons.visibility_outlined
+                                          : Icons.visibility_off_outlined,
+                                      color: colors.primary.withValues(alpha: 0.7),
+                                      size: 20,
                                     ),
                                   ),
+                                  validator: (value) =>
+                                      validatePasswordStrict(value, currentLang),
                                 ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Wrap(
-                                    crossAxisAlignment:
-                                        WrapCrossAlignment.center,
+                                const SizedBox(height: 6),
+                                Text(
+                                  isVi
+                                      ? 'Tối thiểu 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt.'
+                                      : 'At least 8 characters with uppercase, lowercase, a number, and a special character.',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w400,
+                                    color: colors.textMuted,
+                                    height: 1.35,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+
+                                // ── Confirm password field ──────────────────────────────
+                                _SectionLabel(
+                                  isVi ? 'XÁC NHẬN MẬT KHẨU' : 'CONFIRM PASSWORD',
+                                ),
+                                const SizedBox(height: 6),
+                                _StitchTextField(
+                                  controller: _confirmPasswordController,
+                                  hintText: isVi
+                                      ? 'Xác nhận lại mật khẩu'
+                                      : 'Confirm password',
+                                  prefixIcon: Icons.lock_reset_rounded,
+                                  obscureText: _obscureConfirmPassword,
+                                  suffixIcon: IconButton(
+                                    onPressed: () => setState(
+                                      () => _obscureConfirmPassword =
+                                          !_obscureConfirmPassword,
+                                    ),
+                                    icon: Icon(
+                                      _obscureConfirmPassword
+                                          ? Icons.visibility_outlined
+                                          : Icons.visibility_off_outlined,
+                                      color: colors.primary.withValues(alpha: 0.7),
+                                      size: 20,
+                                    ),
+                                  ),
+                                  validator: (value) {
+                                    if (value != _passwordController.text) {
+                                      return isVi
+                                          ? 'Mật khẩu không khớp'
+                                          : 'Passwords do not match';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 20),
+
+                                // ── Terms & Privacy checkbox ────────────────────────────
+                                Container(
+                                  padding: const EdgeInsets.all(14),
+                                  decoration: BoxDecoration(
+                                    color: colors.background,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: _acceptedTerms
+                                          ? colors.primary.withValues(alpha: 0.4)
+                                          : colors.borderSubtle,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.center,
                                     children: [
-                                      Text(
-                                        isVi
-                                            ? 'Tôi đồng ý với '
-                                            : 'I agree to the ',
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          color: _onSurfaceVariant,
-                                        ),
-                                      ),
-                                      GestureDetector(
-                                        onTap: () {
-                                          Navigator.of(context).push(
-                                            MaterialPageRoute(
-                                              builder: (_) =>
-                                                  const TermsOfServiceScreen(),
-                                            ),
-                                          );
-                                        },
-                                        child: Text(
-                                          isVi ? 'Điều khoản' : 'Terms',
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w700,
-                                            color: _primary,
+                                      SizedBox(
+                                        width: 22,
+                                        height: 22,
+                                        child: Checkbox(
+                                          value: _acceptedTerms,
+                                          activeColor: colors.primary,
+                                          checkColor: colors.onPrimary,
+                                          side: BorderSide(
+                                            color: colors.borderSubtle,
+                                            width: 1.5,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(5),
+                                          ),
+                                          onChanged: (val) => setState(
+                                            () => _acceptedTerms = val ?? false,
                                           ),
                                         ),
                                       ),
-                                      Text(
-                                        isVi ? ' & ' : ' & ',
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          color: _onSurfaceVariant,
-                                        ),
-                                      ),
-                                      GestureDetector(
-                                        onTap: () {
-                                          Navigator.of(context).push(
-                                            MaterialPageRoute(
-                                              builder: (_) =>
-                                                  const PrivacyPolicyScreen(),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Wrap(
+                                          crossAxisAlignment:
+                                              WrapCrossAlignment.center,
+                                          children: [
+                                            Text(
+                                              isVi
+                                                  ? 'Tôi đồng ý với '
+                                                  : 'I agree to the ',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: colors.textMuted,
+                                              ),
                                             ),
-                                          );
-                                        },
-                                        child: Text(
-                                          isVi
-                                              ? 'Chính sách bảo mật'
-                                              : 'Privacy Policy',
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w700,
-                                            color: _primary,
-                                          ),
+                                            GestureDetector(
+                                              onTap: () {
+                                                Navigator.of(context).push(
+                                                  MaterialPageRoute(
+                                                    builder: (_) =>
+                                                        const TermsOfServiceScreen(),
+                                                  ),
+                                                );
+                                              },
+                                              child: Text(
+                                                isVi ? 'Điều khoản' : 'Terms',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: colors.primary,
+                                                ),
+                                              ),
+                                            ),
+                                            Text(
+                                              isVi ? ' & ' : ' & ',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: colors.textMuted,
+                                              ),
+                                            ),
+                                            GestureDetector(
+                                              onTap: () {
+                                                Navigator.of(context).push(
+                                                  MaterialPageRoute(
+                                                    builder: (_) =>
+                                                        const PrivacyPolicyScreen(),
+                                                  ),
+                                                );
+                                              },
+                                              child: Text(
+                                                isVi
+                                                    ? 'Chính sách bảo mật'
+                                                    : 'Privacy Policy',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: colors.primary,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
-                              ],
+
+                                // ── Error message ───────────────────────────────────────
+                                if (_errorMessage != null) ...[
+                                  const SizedBox(height: 12),
+                                  _ErrorMessage(_errorMessage!),
+                                ],
+                                const SizedBox(height: 20),
+
+                                // ── Primary CTA ─────────────────────────────────────────
+                                _PrimaryButton(
+                                  label: isVi ? 'Tạo Tài Khoản' : 'Create Account',
+                                  isLoading: _isLoading,
+                                  onPressed: _register,
+                                ),
+                                const SizedBox(height: 24),
+
+                                // ── Login link ──────────────────────────────────────────
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      isVi
+                                          ? 'Đã có tài khoản? '
+                                          : 'Already have an account? ',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: colors.textMuted,
+                                      ),
+                                    ),
+                                    GestureDetector(
+                                      onTap: () => Navigator.of(context).pop(),
+                                      child: Text(
+                                        isVi ? 'Đăng nhập ngay' : 'Sign in',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w700,
+                                          color: colors.primary,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                ],
+                              ),
                             ),
-                          ),
-
-                          // ── Error message ───────────────────────────────────────
-                          if (_errorMessage != null) ...[
-                            const SizedBox(height: 12),
-                            _ErrorMessage(_errorMessage!),
-                          ],
-                          const SizedBox(height: 20),
-
-                          // ── Primary CTA ─────────────────────────────────────────
-                          _PrimaryButton(
-                            label: isVi ? 'Tạo Tài Khoản' : 'Create Account',
-                            isLoading: _isLoading,
-                            onPressed: _register,
-                          ),
-                          const SizedBox(height: 24),
-
-                          // ── Login link ──────────────────────────────────────────
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                isVi
-                                    ? 'Đã có tài khoản? '
-                                    : 'Already have an account? ',
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: _onSurfaceVariant,
-                                ),
-                              ),
-                              GestureDetector(
-                                onTap: () => Navigator.of(context).pop(),
-                                child: Text(
-                                  isVi ? 'Đăng nhập ngay' : 'Sign in',
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                    color: _primary,
-                                  ),
-                                ),
-                              ),
-                            ],
                           ),
                         ],
                       ),
@@ -526,6 +538,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   Widget _buildSuccessVerification(BuildContext context, bool isVi) {
+    final colors = context.kinetic;
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
@@ -542,12 +555,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       height: 80,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: _primary.withValues(alpha: 0.15),
-                        border: Border.all(color: _primary, width: 2),
+                        color: colors.primary.withValues(alpha: 0.15),
+                        border: Border.all(color: colors.primary, width: 2),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.check_circle_outline_rounded,
-                        color: _primary,
+                        color: colors.primary,
                         size: 40,
                       ),
                     ),
@@ -555,10 +568,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     Text(
                       isVi ? 'ĐĂNG KÝ THÀNH CÔNG' : 'REGISTRATION SUCCESSFUL',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
-                        color: _onSurface,
+                        color: colors.textPrimary,
                         letterSpacing: 0.5,
                       ),
                     ),
@@ -568,9 +581,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           ? 'Tài khoản của bạn đã được tạo với tên đăng nhập:'
                           : 'Your account was created with username:',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
-                        color: _onSurfaceVariant,
+                        color: colors.textMuted,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -580,16 +593,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: _surfaceLow,
+                        color: colors.surface1,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: _outlineVariant),
+                        border: Border.all(color: colors.borderSubtle),
                       ),
                       child: Text(
                         _registeredUsername ?? '',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
-                          color: _primary,
+                          color: colors.primary,
                         ),
                       ),
                     ),
@@ -599,9 +612,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           ? 'Bạn có thể đăng nhập bằng tên đăng nhập và mật khẩu vừa tạo.'
                           : 'You can sign in with the username and password you just created.',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
-                        color: _onSurfaceVariant,
+                        color: colors.textMuted,
                         height: 1.5,
                       ),
                     ),
@@ -638,17 +651,18 @@ class _AppBarIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.kinetic;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: _surfaceLow,
+          color: colors.surface1,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: _outlineVariant),
+          border: Border.all(color: colors.borderSubtle),
         ),
-        child: Icon(icon, color: _onSurfaceVariant, size: 20),
+        child: Icon(icon, color: colors.textMuted, size: 20),
       ),
     );
   }
@@ -660,12 +674,13 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.kinetic;
     return Text(
       text,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 11,
         fontWeight: FontWeight.w600,
-        color: _onSurfaceVariant,
+        color: colors.textMuted,
         letterSpacing: 0.03 * 10,
       ),
     );
@@ -693,26 +708,27 @@ class _StitchTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.kinetic;
     return TextFormField(
       controller: controller,
       obscureText: obscureText,
       keyboardType: keyboardType,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w500,
-        color: _onSurface,
+        color: colors.textPrimary,
       ),
       validator: validator,
       decoration: InputDecoration(
         hintText: hintText,
-        hintStyle: const TextStyle(
+        hintStyle: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w400,
-          color: _onSurfaceVariant,
+          color: colors.textMuted,
         ),
         filled: true,
-        fillColor: _surfaceLow,
-        prefixIcon: Icon(prefixIcon, color: _onSurfaceVariant, size: 18),
+        fillColor: colors.background,
+        prefixIcon: Icon(prefixIcon, color: colors.textMuted, size: 18),
         suffixIcon: suffixIcon,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
@@ -720,25 +736,27 @@ class _StitchTextField extends StatelessWidget {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: _outlineVariant),
+          borderSide: BorderSide(color: colors.borderSubtle),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: _primary, width: 1.5),
+          borderSide: BorderSide(color: colors.primary, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: _error),
+          borderSide: BorderSide(color: colors.error),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: _error, width: 1.5),
+          borderSide: BorderSide(color: colors.error, width: 1.5),
         ),
       ),
     );
   }
 }
 
+/// Primary action button — V4: delegates to the DS KineticButton
+/// (flat pill, buttonHeightPrimary).
 class _PrimaryButton extends StatelessWidget {
   const _PrimaryButton({
     required this.label,
@@ -752,53 +770,11 @@ class _PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: isLoading ? null : onPressed,
-      child: Container(
-        height: 52,
-        decoration: BoxDecoration(
-          color: _primary,
-          borderRadius: BorderRadius.circular(999),
-          boxShadow: [
-            BoxShadow(
-              color: _primary.withValues(alpha: 0.25),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Center(
-          child: isLoading
-              ? const SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    color: _onPrimary,
-                    strokeWidth: 2.4,
-                  ),
-                )
-              : Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      label,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: _onPrimary,
-                        letterSpacing: 0.01 * 14,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    const Icon(
-                      Icons.arrow_forward_rounded,
-                      color: _onPrimary,
-                      size: 18,
-                    ),
-                  ],
-                ),
-        ),
-      ),
+    return KineticButton(
+      label: label,
+      isLoading: isLoading,
+      height: KineticTokens.buttonHeightPrimary,
+      onPressed: isLoading ? null : onPressed,
     );
   }
 }
@@ -809,23 +785,24 @@ class _ErrorMessage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.kinetic;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: _error.withValues(alpha: 0.12),
+        color: colors.error.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _error.withValues(alpha: 0.35)),
+        border: Border.all(color: colors.error.withValues(alpha: 0.35)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline_rounded, color: _error, size: 16),
+          Icon(Icons.error_outline_rounded, color: colors.error, size: 16),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               message,
               style: TextStyle(
                 fontSize: 12,
-                color: _error.withValues(alpha: 0.9),
+                color: colors.error.withValues(alpha: 0.9),
               ),
             ),
           ),

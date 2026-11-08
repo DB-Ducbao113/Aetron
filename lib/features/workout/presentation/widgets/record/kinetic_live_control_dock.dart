@@ -34,26 +34,17 @@ class KineticLiveControlDock extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: colors.surface1.withValues(alpha: 0.96),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        gradient: KineticGradients.hudSurface(colors),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(KineticTokens.radiusHero),
+        ),
         border: Border(
           top: BorderSide(
             color: colors.borderSubtle.withValues(alpha: 0.75),
             width: 1.2,
           ),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.45),
-            blurRadius: 24,
-            offset: const Offset(0, -6),
-          ),
-          BoxShadow(
-            color: colors.primary.withValues(alpha: 0.08),
-            blurRadius: 16,
-            spreadRadius: -2,
-          ),
-        ],
+        boxShadow: KineticTokens.shadowPanel(Colors.black),
       ),
       child: SafeArea(
         top: false,
@@ -74,7 +65,7 @@ class KineticLiveControlDock extends StatelessWidget {
                       HapticFeedback.heavyImpact();
                       onToggleLock();
                     },
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
                     child: Container(
                       width: 48,
                       height: 52,
@@ -82,7 +73,7 @@ class KineticLiveControlDock extends StatelessWidget {
                         color: isLocked
                             ? colors.primary.withValues(alpha: 0.2)
                             : colors.surface2,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
                         border: Border.all(
                           color: isLocked ? colors.primary : colors.borderSubtle,
                           width: 1.2,
@@ -134,10 +125,12 @@ class KineticLiveControlDock extends StatelessWidget {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: colors.primary,
                         foregroundColor: colors.onPrimary,
-                        elevation: 6,
-                        shadowColor: colors.primary.withValues(alpha: 0.45),
+                        elevation: 0,
+                        shadowColor: Colors.transparent,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(
+                            KineticTokens.radiusPill,
+                          ),
                         ),
                       ),
                     ),
@@ -164,27 +157,20 @@ class KineticLiveControlDock extends StatelessWidget {
                                 HapticFeedback.heavyImpact();
                                 onStop();
                               },
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(
+                          KineticTokens.radiusPill,
+                        ),
                         child: AnimatedContainer(
                           duration: KineticTokens.motionTab,
                           decoration: BoxDecoration(
-                            color: isPaused
-                                ? colors.tertiary
-                                : colors.surface2,
-                            borderRadius: BorderRadius.circular(16),
+                            color: colors.surface2,
+                            borderRadius: BorderRadius.circular(
+                              KineticTokens.radiusPill,
+                            ),
                             border: Border.all(
-                              color: colors.tertiary.withValues(alpha: isPaused ? 1.0 : 0.8),
+                              color: colors.tertiary,
                               width: 1.4,
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: colors.tertiary.withValues(
-                                  alpha: isPaused ? 0.45 : 0.22,
-                                ),
-                                blurRadius: isPaused ? 14 : 10,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -196,7 +182,7 @@ class KineticLiveControlDock extends StatelessWidget {
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2.2,
                                     valueColor: AlwaysStoppedAnimation<Color>(
-                                      isPaused ? Colors.white : colors.tertiary,
+                                      colors.tertiary,
                                     ),
                                   ),
                                 )
@@ -204,7 +190,7 @@ class KineticLiveControlDock extends StatelessWidget {
                                 Icon(
                                   Icons.stop_rounded,
                                   size: 24,
-                                  color: isPaused ? Colors.white : colors.tertiary,
+                                  color: colors.tertiary,
                                 ),
                               const SizedBox(width: 6),
                               Text(
@@ -215,7 +201,7 @@ class KineticLiveControlDock extends StatelessWidget {
                                         : (isVi ? 'DỪNG' : 'STOP')),
                                 style: KineticTypography.unitLabel.copyWith(
                                   fontWeight: FontWeight.w900,
-                                  color: isPaused ? Colors.white : colors.tertiary,
+                                  color: colors.tertiary,
                                   letterSpacing: 0.8,
                                 ),
                               ),

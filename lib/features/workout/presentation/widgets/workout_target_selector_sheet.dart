@@ -77,23 +77,11 @@ class _WorkoutTargetSelectorSheetState
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: colors.surface1,
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
           border: Border.all(
-            color: accent.withValues(alpha: 0.4),
-            width: 1.4,
+            color: colors.borderSubtle,
+            width: 1,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.6),
-              blurRadius: 30,
-              offset: const Offset(0, 10),
-            ),
-            BoxShadow(
-              color: accent.withValues(alpha: 0.15),
-              blurRadius: 20,
-              spreadRadius: -4,
-            ),
-          ],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -105,7 +93,7 @@ class _WorkoutTargetSelectorSheetState
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: colors.textMuted.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -170,7 +158,7 @@ class _WorkoutTargetSelectorSheetState
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
                 color: colors.background,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
                 border: Border.all(color: colors.borderSubtle),
               ),
               child: Row(
@@ -239,17 +227,15 @@ class _WorkoutTargetSelectorSheetState
                 style: ElevatedButton.styleFrom(
                   backgroundColor: accent,
                   foregroundColor: Colors.black,
-                  elevation: 8,
-                  shadowColor: accent.withValues(alpha: 0.5),
+                  elevation: 0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
                   ),
                 ),
                 child: Text(
                   isVi ? 'XÁC NHẬN MỤC TIÊU' : 'CONFIRM TARGET',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
+                  style: KineticTypography.label.copyWith(
+                    fontWeight: FontWeight.w800,
                     letterSpacing: 1.0,
                   ),
                 ),
@@ -293,7 +279,7 @@ class _WorkoutTargetSelectorSheetState
             color: isSelected
                 ? accent.withValues(alpha: 0.2)
                 : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
             border: Border.all(
               color: isSelected ? accent : Colors.transparent,
               width: 1.2,
@@ -313,7 +299,7 @@ class _WorkoutTargetSelectorSheetState
                 style: KineticTypography.unitLabel.copyWith(
                   fontWeight:
                       isSelected ? FontWeight.w900 : FontWeight.w700,
-                  color: isSelected ? Colors.white : colors.textSecondary,
+                  color: isSelected ? colors.textPrimary : colors.textSecondary,
                 ),
               ),
             ],
@@ -328,7 +314,7 @@ class _WorkoutTargetSelectorSheetState
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: colors.background,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
         border: Border.all(color: colors.borderSubtle),
       ),
       child: Row(
@@ -454,19 +440,11 @@ class _WorkoutTargetSelectorSheetState
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: isSelected ? accent.withValues(alpha: 0.22) : colors.background,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
           border: Border.all(
             color: isSelected ? accent : colors.borderSubtle,
-            width: isSelected ? 1.4 : 1.0,
+            width: 1.0,
           ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: accent.withValues(alpha: 0.25),
-                    blurRadius: 10,
-                  ),
-                ]
-              : null,
         ),
         child: Text(
           label,

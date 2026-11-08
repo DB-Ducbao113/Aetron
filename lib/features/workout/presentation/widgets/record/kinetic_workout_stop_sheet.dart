@@ -79,23 +79,12 @@ class KineticWorkoutStopSheet extends StatelessWidget {
       padding: EdgeInsets.fromLTRB(20, 16, 20, 24 + bottomInset),
       decoration: BoxDecoration(
         color: colors.surface1,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusXXL),
         border: Border.all(
           color: colors.tertiary.withValues(alpha: 0.5),
           width: 1.4,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.4),
-            blurRadius: 32,
-            offset: const Offset(0, 12),
-          ),
-          BoxShadow(
-            color: colors.tertiary.withValues(alpha: 0.15),
-            blurRadius: 24,
-            spreadRadius: 2,
-          ),
-        ],
+        boxShadow: KineticTokens.shadowPanel(Colors.black),
       ),
       child: SafeArea(
         top: false,
@@ -130,13 +119,6 @@ class KineticWorkoutStopSheet extends StatelessWidget {
                     color: colors.tertiary.withValues(alpha: 0.55),
                     width: 2,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: colors.tertiary.withValues(alpha: 0.28),
-                      blurRadius: 20,
-                      spreadRadius: 2,
-                    ),
-                  ],
                 ),
                 child: Icon(
                   Icons.flag_circle_rounded,
@@ -177,7 +159,7 @@ class KineticWorkoutStopSheet extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
                 color: colors.surface2,
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
                 border: Border.all(
                   color: colors.borderSubtle.withValues(alpha: 0.8),
                   width: 1.2,
@@ -231,15 +213,8 @@ class KineticWorkoutStopSheet extends StatelessWidget {
             Container(
               height: 52,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
                 color: colors.tertiary,
-                boxShadow: [
-                  BoxShadow(
-                    color: colors.tertiary.withValues(alpha: 0.45),
-                    blurRadius: 18,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
               ),
               child: ElevatedButton.icon(
                 onPressed: () {
@@ -263,7 +238,8 @@ class KineticWorkoutStopSheet extends StatelessWidget {
                   backgroundColor: Colors.transparent,
                   shadowColor: Colors.transparent,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius:
+                        BorderRadius.circular(KineticTokens.radiusLG),
                   ),
                 ),
               ),
@@ -299,7 +275,8 @@ class KineticWorkoutStopSheet extends StatelessWidget {
                     width: 1.4,
                   ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius:
+                        BorderRadius.circular(KineticTokens.radiusLG),
                   ),
                 ),
               ),

@@ -261,9 +261,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               : CustomScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   slivers: [
-                    // 1. Top Bar
+                    // 1. Top Bar — greeting zone sits on the V4 topographic
+                    // backdrop (rich background, clean foreground).
                     SliverToBoxAdapter(
-                      child: KineticHomeTopBar(
+                      child: Stack(
+                        children: [
+                          const Positioned.fill(child: TopographicBackdrop()),
+                          KineticHomeTopBar(
                         avatarImage: avatar.imageProvider,
                         initials: initials,
                         displayName: displayName,
@@ -287,6 +291,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             builder: (_) => const NotificationSettingsScreen(),
                           ),
                         ),
+                          ),
+                        ],
                       ),
                     ),
 
@@ -305,7 +311,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         child: Padding(
                           padding: EdgeInsets.symmetric(
                             horizontal: KineticTokens.page,
-                            vertical: 6,
+                            vertical: KineticTokens.spaceXXS,
                           ),
                           child: KineticOfflineBanner(),
                         ),
@@ -380,7 +386,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         loading: () => const Padding(
                           padding: EdgeInsets.symmetric(
                             horizontal: KineticTokens.page,
-                            vertical: 8,
+                            vertical: KineticTokens.spaceXS,
                           ),
                           child: AetronShimmer(
                             child: AetronSkeletonCard(
@@ -390,10 +396,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 children: [
                                   AetronSkeletonBox(
                                     height: 170,
-                                    borderRadius: 20,
+                                    borderRadius: KineticTokens.radiusXL,
                                   ),
                                   Padding(
-                                    padding: EdgeInsets.all(16),
+                                    padding: EdgeInsets.all(
+                                      KineticTokens.spaceMD,
+                                    ),
                                     child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
@@ -401,12 +409,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                         AetronSkeletonBox(
                                           width: 140,
                                           height: 20,
-                                          borderRadius: 6,
+                                          borderRadius: KineticTokens.radiusSM,
                                         ),
-                                        SizedBox(height: 14),
+                                        SizedBox(
+                                          height: KineticTokens.spaceSM,
+                                        ),
                                         AetronSkeletonBox(
                                           height: 36,
-                                          borderRadius: 10,
+                                          borderRadius: KineticTokens.radiusMD,
                                         ),
                                       ],
                                     ),
@@ -419,7 +429,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         error: (err, _) => Padding(
                           padding: const EdgeInsets.symmetric(
                             horizontal: KineticTokens.page,
-                            vertical: 8,
+                            vertical: KineticTokens.spaceXS,
                           ),
                           child: ErrorState(
                             title: isVi
@@ -635,23 +645,16 @@ class _RecoverableWorkoutBannerState
     return Container(
       margin: const EdgeInsets.symmetric(
         horizontal: KineticTokens.page,
-        vertical: 8,
+        vertical: KineticTokens.spaceXS,
       ),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(KineticTokens.spaceMD),
       decoration: BoxDecoration(
         color: colors.surface2,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
         border: Border.all(
           color: colors.primary.withValues(alpha: 0.3),
           width: 1.5,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: colors.primary.withValues(alpha: 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -659,7 +662,7 @@ class _RecoverableWorkoutBannerState
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(KineticTokens.spaceXS),
                 decoration: BoxDecoration(
                   color: colors.primary.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
@@ -670,7 +673,7 @@ class _RecoverableWorkoutBannerState
                   size: 20,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: KineticTokens.spaceSM),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -684,7 +687,7 @@ class _RecoverableWorkoutBannerState
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: KineticTokens.spaceXXS),
                     Text(
                       widget.isVi
                           ? '${widget.session.activityType} • $km km • $mins phút'
@@ -698,7 +701,7 @@ class _RecoverableWorkoutBannerState
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: KineticTokens.spaceSM),
           Row(
             children: [
               Expanded(
@@ -759,9 +762,9 @@ class _RecoverableWorkoutBannerState
                     foregroundColor: colors.textMuted,
                     side: BorderSide(color: colors.borderSubtle),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
                     ),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    padding: const EdgeInsets.symmetric(vertical: KineticTokens.spaceXS),
                   ),
                   child: Text(
                     widget.isVi ? 'Bỏ qua' : 'Discard',
@@ -771,7 +774,7 @@ class _RecoverableWorkoutBannerState
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: KineticTokens.spaceXS),
               Expanded(
                 child: ElevatedButton(
                   onPressed: _isSaving
@@ -822,9 +825,9 @@ class _RecoverableWorkoutBannerState
                     backgroundColor: colors.primary,
                     foregroundColor: colors.onPrimary,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
                     ),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    padding: const EdgeInsets.symmetric(vertical: KineticTokens.spaceXS),
                     elevation: 0,
                   ),
                   child: _isSaving

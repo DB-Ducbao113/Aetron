@@ -226,10 +226,8 @@ class _NotificationSettingsScreenState
                         ),
                         Text(
                           isVi ? 'NHẮC NHỞ LUYỆN TẬP' : 'SMART REMINDERS',
-                          style: KineticTypography.unitLabel.copyWith(
+                          style: KineticTypography.sectionEyebrow.copyWith(
                             color: colors.textMuted,
-                            fontSize: 11,
-                            letterSpacing: 1.2,
                           ),
                         ),
                       ],
@@ -247,7 +245,12 @@ class _NotificationSettingsScreenState
                       ),
                     )
                   : SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                      padding: const EdgeInsets.fromLTRB(
+                        KineticTokens.spaceMD,
+                        KineticTokens.spaceXS,
+                        KineticTokens.spaceMD,
+                        KineticTokens.spaceXL,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -307,62 +310,81 @@ class _NotificationSettingsScreenState
                             const SizedBox(height: 16),
                           ],
 
-                          // 1. Master Push Notification Card
-                          KineticCard(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                            borderColor: _masterEnabled
-                                ? colors.primary.withValues(alpha: 0.4)
-                                : colors.borderSubtle,
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: _masterEnabled
-                                        ? colors.primary.withValues(alpha: 0.15)
-                                        : colors.surface2,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    _masterEnabled
-                                        ? Icons.notifications_active_rounded
-                                        : Icons.notifications_off_rounded,
-                                    color: _masterEnabled ? colors.primary : colors.textMuted,
-                                    size: 22,
-                                  ),
+                          // 1. Master Push Notification Card (scene card)
+                          Container(
+                            foregroundDecoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(
+                                KineticTokens.radiusHero,
+                              ),
+                              border: Border.all(
+                                color: colors.borderStrong,
+                                width: 1.5,
+                              ),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(
+                                KineticTokens.radiusHero,
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                decoration: BoxDecoration(
+                                  gradient: KineticGradients.heroMesh(colors),
                                 ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        isVi ? 'Nhận thông báo' : 'Push Notifications',
-                                        style: KineticTypography.headlineSmall.copyWith(
-                                          color: colors.textPrimary,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w800,
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 46,
+                                      height: 46,
+                                      decoration: BoxDecoration(
+                                        color: _masterEnabled
+                                            ? colors.primary.withValues(alpha: 0.14)
+                                            : colors.surface2,
+                                        borderRadius: BorderRadius.circular(
+                                          KineticTokens.radiusSM + 2,
                                         ),
                                       ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        isVi
-                                            ? 'Bật hoặc tắt toàn bộ nhắc nhở thể thao'
-                                            : 'Enable or disable all fitness reminders',
-                                        style: KineticTypography.bodySmall.copyWith(
-                                          color: colors.textSecondary,
-                                          fontSize: 12,
-                                        ),
+                                      child: Icon(
+                                        _masterEnabled
+                                            ? Icons.notifications_active_rounded
+                                            : Icons.notifications_off_rounded,
+                                        color: _masterEnabled ? colors.primary : colors.textMuted,
+                                        size: 22,
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                    const SizedBox(width: 14),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            isVi ? 'Nhận thông báo' : 'Push Notifications',
+                                            style: KineticTypography.headlineSmall.copyWith(
+                                              color: colors.textPrimary,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            isVi
+                                                ? 'Bật hoặc tắt toàn bộ nhắc nhở thể thao'
+                                                : 'Enable or disable all fitness reminders',
+                                            style: KineticTypography.bodySmall.copyWith(
+                                              color: colors.textSecondary,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Switch(
+                                      value: _masterEnabled,
+                                      activeThumbColor: colors.primary,
+                                      onChanged: _updateMaster,
+                                    ),
+                                  ],
                                 ),
-                                Switch(
-                                  value: _masterEnabled,
-                                  activeThumbColor: colors.primary,
-                                  onChanged: _updateMaster,
-                                ),
-                              ],
+                              ),
                             ),
                           ),
                           const SizedBox(height: 20),
@@ -372,16 +394,13 @@ class _NotificationSettingsScreenState
                             padding: const EdgeInsets.only(left: 4, bottom: 10),
                             child: Text(
                               (isVi ? 'TÙY CHỌN NHẮC NHỞ' : 'SMART REMINDERS').toUpperCase(),
-                              style: KineticTypography.unitLabel.copyWith(
-                                color: colors.primary,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 1.2,
+                              style: KineticTypography.sectionEyebrow.copyWith(
+                                color: colors.textMuted,
                               ),
                             ),
                           ),
 
-                          // 2. Group 1 Card: Luyện tập & Chuỗi ngày (Daily Workout & Streak)
+                          // 2. Alert groups in ONE inset card: Workouts & Streak + Goals & Achievements
                           Opacity(
                             opacity: _masterEnabled ? 1.0 : 0.5,
                             child: KineticCard(
@@ -392,15 +411,16 @@ class _NotificationSettingsScreenState
                                   Row(
                                     children: [
                                       Container(
-                                        padding: const EdgeInsets.all(9),
+                                        width: 30,
+                                        height: 30,
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFFFF9F43).withValues(alpha: 0.15),
-                                          shape: BoxShape.circle,
+                                          color: colors.tertiary.withValues(alpha: 0.14),
+                                          borderRadius: BorderRadius.circular(KineticTokens.radiusSM + 2),
                                         ),
-                                        child: const Icon(
+                                        child: Icon(
                                           Icons.local_fire_department_rounded,
-                                          color: Color(0xFFFF9F43),
-                                          size: 20,
+                                          color: colors.tertiary,
+                                          size: 16,
                                         ),
                                       ),
                                       const SizedBox(width: 12),
@@ -460,13 +480,13 @@ class _NotificationSettingsScreenState
                                           ),
                                         ),
                                         InkWell(
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
                                           onTap: () => _pickTime(_morningTime, _updateMorningTime),
                                           child: Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                             decoration: BoxDecoration(
                                               color: colors.surface2,
-                                              borderRadius: BorderRadius.circular(8),
+                                              borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
                                               border: Border.all(color: colors.borderSubtle),
                                             ),
                                             child: Row(
@@ -474,12 +494,13 @@ class _NotificationSettingsScreenState
                                               children: [
                                                 Text(
                                                   _morningTime,
-                                                  style: TextStyle(
-                                                    color: colors.primary,
-                                                    fontWeight: FontWeight.w800,
-                                                    fontSize: 13,
-                                                    fontFamily: KineticTypography.fontFamily,
-                                                  ),
+                                                  style: KineticTypography.label
+                                                      .copyWith(
+                                                        color: colors.primary,
+                                                        fontFeatures: const [
+                                                          FontFeature.tabularFigures(),
+                                                        ],
+                                                      ),
                                                 ),
                                                 const SizedBox(width: 4),
                                                 Icon(
@@ -494,60 +515,58 @@ class _NotificationSettingsScreenState
                                       ],
                                     ),
                                   ],
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-
-                          // 3. Group 2 Card: Mục tiêu & Thành tích (Goals & Milestones)
-                          Opacity(
-                            opacity: _masterEnabled ? 1.0 : 0.5,
-                            child: KineticCard(
-                              padding: const EdgeInsets.all(16),
-                              child: Row(
-                                children: [
+                                  const SizedBox(height: 12),
                                   Container(
-                                    padding: const EdgeInsets.all(9),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFFFBA20).withValues(alpha: 0.15),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(
-                                      Icons.emoji_events_rounded,
-                                      color: Color(0xFFFFBA20),
-                                      size: 20,
-                                    ),
+                                    height: 1,
+                                    color: colors.borderSubtle,
                                   ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          isVi ? 'Mục tiêu & Thành tích' : 'Goals & Achievements',
-                                          style: KineticTypography.bodyLarge.copyWith(
-                                            color: colors.textPrimary,
-                                            fontWeight: FontWeight.w700,
-                                          ),
+                                  const SizedBox(height: 12),
+                                  Row(
+                                    children: [
+                                      Container(
+                                        width: 30,
+                                        height: 30,
+                                        decoration: BoxDecoration(
+                                          color: colors.tertiary.withValues(alpha: 0.14),
+                                          borderRadius: BorderRadius.circular(KineticTokens.radiusSM + 2),
                                         ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          isVi
-                                              ? 'Cập nhật tiến độ tuần và thông báo huy hiệu mới'
-                                              : 'Weekly target updates & badge unlocks',
-                                          style: KineticTypography.bodySmall.copyWith(
-                                            color: colors.textSecondary,
-                                            fontSize: 12,
-                                          ),
+                                        child: Icon(
+                                          Icons.emoji_events_rounded,
+                                          color: colors.tertiary,
+                                          size: 16,
                                         ),
-                                      ],
-                                    ),
-                                  ),
-                                  Switch(
-                                    value: _goalsAndMilestonesEnabled && _masterEnabled,
-                                    activeThumbColor: colors.primary,
-                                    onChanged: _masterEnabled ? _toggleGoalsAndMilestones : null,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              isVi ? 'Mục tiêu & Thành tích' : 'Goals & Achievements',
+                                              style: KineticTypography.bodyLarge.copyWith(
+                                                color: colors.textPrimary,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              isVi
+                                                  ? 'Cập nhật tiến độ tuần và thông báo huy hiệu mới'
+                                                  : 'Weekly target updates & badge unlocks',
+                                              style: KineticTypography.bodySmall.copyWith(
+                                                color: colors.textSecondary,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Switch(
+                                        value: _goalsAndMilestonesEnabled && _masterEnabled,
+                                        activeThumbColor: colors.primary,
+                                        onChanged: _masterEnabled ? _toggleGoalsAndMilestones : null,
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
@@ -566,15 +585,16 @@ class _NotificationSettingsScreenState
                                   Row(
                                     children: [
                                       Container(
-                                        padding: const EdgeInsets.all(9),
+                                        width: 30,
+                                        height: 30,
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFF818CF8).withValues(alpha: 0.15),
-                                          shape: BoxShape.circle,
+                                          color: colors.secondary.withValues(alpha: 0.14),
+                                          borderRadius: BorderRadius.circular(KineticTokens.radiusSM + 2),
                                         ),
-                                        child: const Icon(
+                                        child: Icon(
                                           Icons.bedtime_rounded,
-                                          color: Color(0xFF818CF8),
-                                          size: 20,
+                                          color: colors.secondary,
+                                          size: 16,
                                         ),
                                       ),
                                       const SizedBox(width: 12),
@@ -635,7 +655,7 @@ class _NotificationSettingsScreenState
                                         ),
                                         // Start Time Chip
                                         InkWell(
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
                                           onTap: () => _pickTime(
                                             _quietStart,
                                             (val) => _updateQuietTime(start: val),
@@ -644,17 +664,18 @@ class _NotificationSettingsScreenState
                                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                             decoration: BoxDecoration(
                                               color: colors.surface2,
-                                              borderRadius: BorderRadius.circular(8),
+                                              borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
                                               border: Border.all(color: colors.borderSubtle),
                                             ),
                                             child: Text(
                                               _quietStart,
-                                              style: TextStyle(
-                                                color: colors.primary,
-                                                fontWeight: FontWeight.w800,
-                                                fontSize: 12,
-                                                fontFamily: KineticTypography.fontFamily,
-                                              ),
+                                              style: KineticTypography.label
+                                                  .copyWith(
+                                                    color: colors.primary,
+                                                    fontFeatures: const [
+                                                      FontFeature.tabularFigures(),
+                                                    ],
+                                                  ),
                                             ),
                                           ),
                                         ),
@@ -668,7 +689,7 @@ class _NotificationSettingsScreenState
                                         ),
                                         // End Time Chip
                                         InkWell(
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
                                           onTap: () => _pickTime(
                                             _quietEnd,
                                             (val) => _updateQuietTime(end: val),
@@ -677,17 +698,18 @@ class _NotificationSettingsScreenState
                                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                             decoration: BoxDecoration(
                                               color: colors.surface2,
-                                              borderRadius: BorderRadius.circular(8),
+                                              borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
                                               border: Border.all(color: colors.borderSubtle),
                                             ),
                                             child: Text(
                                               _quietEnd,
-                                              style: TextStyle(
-                                                color: colors.primary,
-                                                fontWeight: FontWeight.w800,
-                                                fontSize: 12,
-                                                fontFamily: KineticTypography.fontFamily,
-                                              ),
+                                              style: KineticTypography.label
+                                                  .copyWith(
+                                                    color: colors.primary,
+                                                    fontFeatures: const [
+                                                      FontFeature.tabularFigures(),
+                                                    ],
+                                                  ),
                                             ),
                                           ),
                                         ),

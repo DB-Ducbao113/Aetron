@@ -112,7 +112,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     children: [
               // 1. Top Bar
               KineticProfileTopBar(currentLang: currentLang),
-              const SizedBox(height: 16),
+              const SizedBox(height: KineticTokens.spaceMD),
 
               // 2. Athlete Card
               KineticAthleteCard(
@@ -123,7 +123,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 currentLang: currentLang,
                 onCameraTap: () => _showAvatarSourceSheet(context, ref),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: KineticTokens.spaceSM),
 
               // 3. Biometrics Bento
               KineticBiometricsBento(
@@ -144,11 +144,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       }
                     }),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: KineticTokens.spaceLG),
 
               // 4. System Actions Section
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
+                padding: const EdgeInsets.symmetric(horizontal: KineticTokens.spaceXXS),
                 child: Text(
                   AppTranslations.get('system_actions', currentLang),
                   style: KineticTypography.unitLabel.copyWith(
@@ -157,7 +157,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: KineticTokens.spaceXS),
 
               // Training Goals Action
               KineticProfileActionTile(
@@ -173,7 +173,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   MaterialPageRoute(builder: (_) => const GoalScreen()),
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: KineticTokens.spaceXXS),
 
               // Achievements Action
               KineticProfileActionTile(
@@ -196,7 +196,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       0,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: KineticTokens.spaceXXS),
 
 
               // Security & Password Action
@@ -211,7 +211,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ref,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: KineticTokens.spaceXXS),
 
               // Sign Out Action (Destructive)
               KineticProfileActionTile(
@@ -271,10 +271,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         child: Container(
           decoration: BoxDecoration(
             color: colors.surface1,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(KineticTokens.radiusHero)),
             border: Border(top: BorderSide(color: colors.borderSubtle)),
           ),
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          padding: const EdgeInsets.fromLTRB(KineticTokens.spaceLG, KineticTokens.spaceMD, KineticTokens.spaceLG, KineticTokens.spaceXL),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -808,7 +808,7 @@ class _GoogleGmailRecoverySheetState extends State<_GoogleGmailRecoverySheet> {
       child: Container(
         decoration: BoxDecoration(
           color: colors.surface1,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(KineticTokens.radiusHero)),
           border: Border(top: BorderSide(color: colors.borderSubtle)),
         ),
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
@@ -1143,7 +1143,7 @@ class _UpdatePasswordSheetState extends State<_UpdatePasswordSheet> {
       child: Container(
         decoration: BoxDecoration(
           color: colors.surface1,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(KineticTokens.radiusHero)),
           border: Border(top: BorderSide(color: colors.borderSubtle)),
         ),
         padding: EdgeInsets.fromLTRB(

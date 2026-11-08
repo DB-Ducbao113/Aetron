@@ -138,7 +138,7 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
                       color: accentColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
                       border: Border.all(
                         color: accentColor.withValues(alpha: 0.35),
                         width: 1,
@@ -162,15 +162,17 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                 children: [
-                  // 1. Hero Summary Card
+                  // 1. Hero Summary Card — V4: flat + primary accent bar
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: colors.surface1,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: accentColor.withValues(alpha: 0.35),
-                        width: 1.2,
+                      borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
+                      border: Border(
+                        left: BorderSide(color: colors.primary, width: 3),
+                        top: BorderSide(color: colors.borderSubtle),
+                        right: BorderSide(color: colors.borderSubtle),
+                        bottom: BorderSide(color: colors.borderSubtle),
                       ),
                     ),
                     child: Column(
@@ -276,10 +278,10 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: colors.surface1,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
                       border: Border.all(
-                        color: colors.primary.withValues(alpha: 0.35),
-                        width: 1.2,
+                        color: colors.borderSubtle,
+                        width: 1,
                       ),
                     ),
                     child: Column(
@@ -291,7 +293,7 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
                                 color: colors.surface2,
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
                               ),
                               child: Icon(
                                 Icons.track_changes_rounded,
@@ -374,7 +376,7 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
                             padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
                               color: colors.surface2,
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
                               border: Border.all(
                                 color: colors.borderSubtle,
                                 width: 1,
@@ -414,10 +416,10 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
                       padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
                         color: colors.surface1,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
                         border: Border.all(
                           color: colors.borderSubtle,
-                          width: 1.2,
+                          width: 1,
                         ),
                       ),
                       child: Column(
@@ -517,10 +519,10 @@ class _DetailCardSection extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: colors.surface1,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
         border: Border.all(
-          color: accentColor.withValues(alpha: 0.35),
-          width: 1.2,
+          color: colors.borderSubtle,
+          width: 1,
         ),
       ),
       child: Column(
@@ -600,9 +602,9 @@ class _MetricPillBox extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
       decoration: BoxDecoration(
         color: colors.surface2,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
         border: Border.all(
-          color: accentColor.withValues(alpha: 0.3),
+          color: colors.borderSubtle,
           width: 1,
         ),
       ),

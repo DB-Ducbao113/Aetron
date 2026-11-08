@@ -91,23 +91,17 @@ class KineticLiveMetricsHud extends StatelessWidget {
               children: [
                 Text(
                   displayDistance.toStringAsFixed(2),
-                  style: KineticTypography.metricHero.copyWith(
-                    fontSize: isLargeMetricsMode ? 56 : 52,
-                    fontWeight: FontWeight.w900,
+                  style: (isLargeMetricsMode
+                          ? KineticTypography.metricMega
+                          : KineticTypography.metricHero)
+                      .copyWith(
                     color: colors.textPrimary,
-                    shadows: [
-                      Shadow(
-                        color: colors.primary.withValues(alpha: 0.3),
-                        blurRadius: 16,
-                      ),
-                    ],
                   ),
                 ),
                 const SizedBox(width: 6),
                 Text(
                   distanceUnit,
                   style: KineticTypography.metricUnit.copyWith(
-                    fontWeight: FontWeight.w800,
                     color: colors.primary,
                     letterSpacing: 0.8,
                     fontSize: isLargeMetricsMode ? 20 : 16,
@@ -143,7 +137,7 @@ class KineticLiveMetricsHud extends StatelessWidget {
                 isNotePositive: isSpeedFaster,
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 2),
 
             // Right Metric: Elapsed Time
             Expanded(
@@ -155,6 +149,7 @@ class KineticLiveMetricsHud extends StatelessWidget {
                 note:
                     '${isVi ? 'Di chuyển' : 'Moving'}: ${WorkoutFormatters.formatElapsedClock(movingTimeSeconds)}',
                 isNotePositive: null,
+                showLeftDivider: true,
               ),
             ),
           ],
@@ -175,7 +170,7 @@ class KineticLiveMetricsHud extends StatelessWidget {
                 isNotePositive: null,
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 2),
 
             // Right: Steps or Avg Speed (when Cycling)
             Expanded(
@@ -190,6 +185,7 @@ class KineticLiveMetricsHud extends StatelessWidget {
                       unit: useMetricUnits ? 'km/h' : 'mph',
                       note: null,
                       isNotePositive: null,
+                      showLeftDivider: true,
                     )
                   : _MetricTile(
                       label: isVi ? 'Bước chân' : 'Steps',
@@ -198,6 +194,7 @@ class KineticLiveMetricsHud extends StatelessWidget {
                       unit: isVi ? 'bước' : 'steps',
                       note: isVi ? 'Tổng số bước' : 'Total steps',
                       isNotePositive: null,
+                      showLeftDivider: true,
                     ),
             ),
           ],
@@ -215,6 +212,10 @@ class _MetricTile extends StatelessWidget {
   final String? note;
   final bool? isNotePositive;
 
+  /// V4: when true, the tile carries a hairline divider on its left edge
+  /// instead of living in its own box.
+  final bool showLeftDivider;
+
   const _MetricTile({
     required this.label,
     required this.icon,
@@ -222,6 +223,7 @@ class _MetricTile extends StatelessWidget {
     required this.unit,
     this.note,
     this.isNotePositive,
+    this.showLeftDivider = false,
   });
 
   @override
@@ -229,13 +231,16 @@ class _MetricTile extends StatelessWidget {
     final colors = context.kinetic;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: EdgeInsets.fromLTRB(showLeftDivider ? 14 : 2, 6, 2, 6),
       decoration: BoxDecoration(
-        color: colors.surface2,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: colors.borderSubtle.withValues(alpha: 0.6),
-        ),
+        border: showLeftDivider
+            ? Border(
+                left: BorderSide(
+                  color: colors.borderSubtle.withValues(alpha: 0.7),
+                  width: 1,
+                ),
+              )
+            : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -405,28 +410,17 @@ class KineticMiniMetricsCard extends StatelessWidget {
                 HapticFeedback.selectionClick();
                 onExpand?.call();
               },
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(KineticTokens.radiusXL),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
-                  color: colors.surface1.withValues(alpha: 0.94),
-                  borderRadius: BorderRadius.circular(20),
+                  gradient: KineticGradients.hudSurface(colors),
+                  borderRadius: BorderRadius.circular(KineticTokens.radiusXL),
                   border: Border.all(
                     color: colors.borderSubtle.withValues(alpha: 0.75),
                     width: 1.2,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.45),
-                      blurRadius: 18,
-                      offset: const Offset(0, 4),
-                    ),
-                    BoxShadow(
-                      color: colors.primary.withValues(alpha: 0.08),
-                      blurRadius: 16,
-                      spreadRadius: -2,
-                    ),
-                  ],
+                  boxShadow: KineticTokens.shadowPanel(Colors.black),
                 ),
                 child: Row(
                   children: [

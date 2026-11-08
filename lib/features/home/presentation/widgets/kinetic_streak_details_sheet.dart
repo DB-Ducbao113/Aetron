@@ -8,6 +8,8 @@ import 'package:fitness_exercise_application/features/workout/presentation/provi
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_button.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_card.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_gradients.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -76,7 +78,6 @@ class KineticStreakDetailsSheet extends ConsumerWidget {
     final isTodayCompleted = activeDates.contains(today);
 
     final (tierColor, tierTitle) = getStreakTierInfo(days, isVi, colors);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SafeArea(
       top: false,
@@ -87,32 +88,35 @@ class KineticStreakDetailsSheet extends ConsumerWidget {
         child: Container(
           decoration: BoxDecoration(
             color: colors.surface1,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(KineticTokens.radiusXXL),
+            ),
             border: Border(
               top: BorderSide(
                 color: tierColor.withValues(alpha: 0.4),
                 width: 1.5,
               ),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: tierColor.withValues(alpha: isDark ? 0.14 : 0.08),
-                blurRadius: 28,
-                offset: const Offset(0, -8),
-              ),
-              BoxShadow(
-                color: isDark ? Colors.black54 : Colors.black12,
-                blurRadius: 20,
-                offset: const Offset(0, -4),
-              ),
-            ],
+            boxShadow: KineticTokens.shadowPanel(colors.background),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Top Drag Handle & Navigation Header
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 16, 12),
+              // Top Drag Handle & Navigation Header — V4: heroMesh zone
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: KineticGradients.heroMesh(colors),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(KineticTokens.radiusXXL),
+                  ),
+                ),
+                child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  KineticTokens.page,
+                  KineticTokens.spaceSM,
+                  KineticTokens.spaceMD,
+                  KineticTokens.spaceSM,
+                ),
                 child: Column(
                   children: [
                     // Handle Pill
@@ -126,12 +130,12 @@ class KineticStreakDetailsSheet extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: KineticTokens.spaceSM),
                     // Header Bar
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(7),
+                          padding: const EdgeInsets.all(KineticTokens.spaceXS),
                           decoration: BoxDecoration(
                             color: tierColor.withValues(alpha: 0.15),
                             shape: BoxShape.circle,
@@ -145,7 +149,7 @@ class KineticStreakDetailsSheet extends ConsumerWidget {
                             size: 18,
                           ),
                         ),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: KineticTokens.spaceXS),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -157,7 +161,6 @@ class KineticStreakDetailsSheet extends ConsumerWidget {
                                 ),
                                 style: KineticTypography.headlineSmall.copyWith(
                                   color: colors.textPrimary,
-                                  fontSize: 16,
                                   fontWeight: FontWeight.w800,
                                   letterSpacing: 0.8,
                                 ),
@@ -186,12 +189,18 @@ class KineticStreakDetailsSheet extends ConsumerWidget {
                     ),
                   ],
                 ),
+                ),
               ),
 
               // Scrollable Clean Body
               Flexible(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                  padding: const EdgeInsets.fromLTRB(
+                    KineticTokens.spaceMD,
+                    KineticTokens.spaceXXS,
+                    KineticTokens.spaceMD,
+                    KineticTokens.spaceXL,
+                  ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -202,7 +211,7 @@ class KineticStreakDetailsSheet extends ConsumerWidget {
                         isTodayCompleted: isTodayCompleted,
                         isVi: isVi,
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: KineticTokens.spaceSM),
 
                       // 2. Thanh 7 ngày trong tuần trực quan (This Week Strip)
                       _StreakWeekStrip(
@@ -211,7 +220,7 @@ class KineticStreakDetailsSheet extends ConsumerWidget {
                         tierColor: tierColor,
                         isVi: isVi,
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: KineticTokens.spaceSM),
 
                       // 3. Hai chỉ số cốt lõi: Kỷ lục tốt nhất & Mốc tiếp theo
                       _StreakCoreMetricsRow(
@@ -221,13 +230,13 @@ class KineticStreakDetailsSheet extends ConsumerWidget {
                         tierColor: tierColor,
                         isVi: isVi,
                       ),
-                      const SizedBox(height: 18),
+                      const SizedBox(height: KineticTokens.spaceLG),
 
                       // 4. Lời nhắc giữ chuỗi tinh tế
                       Row(
                         children: [
                           Icon(Icons.bolt_rounded, size: 15, color: tierColor),
-                          const SizedBox(width: 6),
+                          const SizedBox(width: KineticTokens.spaceXXS),
                           Expanded(
                             child: Text(
                               isVi
@@ -242,7 +251,7 @@ class KineticStreakDetailsSheet extends ConsumerWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: KineticTokens.spaceLG),
 
                       // 5. Nút hành động CTA duy nhất
                       KineticButton(
@@ -294,13 +303,14 @@ class _StreakHeroCard extends StatelessWidget {
     final greenColor = isDark
         ? const Color(0xFF10B981)
         : const Color(0xFF059669);
-    final warningColor = isDark
-        ? const Color(0xFFFFBA20)
-        : const Color(0xFFD97706);
+    final warningColor = colors.tertiary;
     final activeStatusColor = isTodayCompleted ? greenColor : warningColor;
 
     return KineticCard(
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+      padding: const EdgeInsets.symmetric(
+        vertical: KineticTokens.spaceLG,
+        horizontal: KineticTokens.spaceMD,
+      ),
       topAccentColor: tierColor,
       child: Column(
         children: [
@@ -332,20 +342,17 @@ class _StreakHeroCard extends StatelessWidget {
                   color: tierColor,
                 ),
               ),
-              const SizedBox(width: 18),
+              const SizedBox(width: KineticTokens.spaceLG),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     '$days',
-                    style: KineticTypography.metricHero.copyWith(
+                    style: KineticTypography.metricMega.copyWith(
                       color: colors.textPrimary,
-                      fontSize: 48,
-                      height: 1.0,
-                      fontWeight: FontWeight.w900,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: KineticTokens.spaceXXS),
                   Text(
                     isVi ? 'NGÀY LIÊN TIẾP' : 'DAYS STREAK',
                     style: KineticTypography.unitLabel.copyWith(
@@ -359,14 +366,17 @@ class _StreakHeroCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: KineticTokens.spaceMD),
 
           // Today Status Pill
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            padding: const EdgeInsets.symmetric(
+              horizontal: KineticTokens.spaceSM,
+              vertical: KineticTokens.spaceXXS,
+            ),
             decoration: BoxDecoration(
               color: activeStatusColor.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
               border: Border.all(
                 color: activeStatusColor.withValues(alpha: 0.4),
               ),
@@ -381,7 +391,7 @@ class _StreakHeroCard extends StatelessWidget {
                   size: 14,
                   color: activeStatusColor,
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: KineticTokens.spaceXXS),
                 Flexible(
                   child: Text(
                     isTodayCompleted
@@ -390,11 +400,9 @@ class _StreakHeroCard extends StatelessWidget {
                               ? 'Hôm nay: Cần 1 buổi tập'
                               : '1 workout needed today'),
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
+                    style: KineticTypography.unitLabel.copyWith(
                       color: activeStatusColor,
-                      fontSize: 11,
                       fontWeight: FontWeight.w700,
-                      letterSpacing: 0.4,
                     ),
                   ),
                 ),
@@ -437,7 +445,7 @@ class _StreakWeekStrip extends StatelessWidget {
     }
 
     return KineticCard(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(KineticTokens.spaceMD),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -448,7 +456,7 @@ class _StreakWeekStrip extends StatelessWidget {
                 color: colors.primary,
                 size: 15,
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: KineticTokens.spaceXXS),
               Text(
                 isVi ? 'TUẦN NÀY' : 'THIS WEEK',
                 style: KineticTypography.unitLabel.copyWith(
@@ -460,10 +468,13 @@ class _StreakWeekStrip extends StatelessWidget {
               ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: KineticTokens.spaceXS,
+                  vertical: KineticTokens.spaceXXS,
+                ),
                 decoration: BoxDecoration(
                   color: colors.primary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
                 ),
                 child: Text(
                   '$activeThisWeek/7 ${isVi ? 'ngày' : 'days'}',
@@ -476,7 +487,7 @@ class _StreakWeekStrip extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: KineticTokens.spaceSM),
 
           // 7 Capsule Day Blocks
           Row(
@@ -493,7 +504,7 @@ class _StreakWeekStrip extends StatelessWidget {
                     tierColor: tierColor,
                   ),
                 ),
-                if (index < 6) const SizedBox(width: 5),
+                if (index < 6) const SizedBox(width: KineticTokens.spaceXXS),
               ],
             ],
           ),
@@ -525,14 +536,14 @@ class _StreakDayCapsule extends StatelessWidget {
     final isFuture = date.isAfter(today);
 
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: KineticTokens.spaceXS),
       decoration: BoxDecoration(
         color: isActive
             ? tierColor.withValues(alpha: 0.16)
             : isToday
             ? colors.surface2
             : colors.surface1,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
         border: Border.all(
           color: isToday
               ? colors.primary
@@ -556,7 +567,7 @@ class _StreakDayCapsule extends StatelessWidget {
                   : colors.textSecondary,
             ),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: KineticTokens.spaceXXS),
           Text(
             '${date.day}',
             style: KineticTypography.bodySmall.copyWith(
@@ -565,7 +576,7 @@ class _StreakDayCapsule extends StatelessWidget {
               color: isToday ? colors.primary : colors.textPrimary,
             ),
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: KineticTokens.spaceXXS),
           Container(
             width: 18,
             height: 18,
@@ -631,12 +642,12 @@ class _StreakCoreMetricsRow extends StatelessWidget {
         // Card 1: Kỷ lục chuỗi dài nhất
         Expanded(
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            padding: const EdgeInsets.all(KineticTokens.spaceSM),
             decoration: BoxDecoration(
               color: colors.surface1,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
               border: Border.all(
-                color: const Color(0xFFFFBA20).withValues(alpha: 0.25),
+                color: colors.tertiary.withValues(alpha: 0.25),
                 width: 1.2,
               ),
             ),
@@ -646,18 +657,18 @@ class _StreakCoreMetricsRow extends StatelessWidget {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(5),
+                      padding: const EdgeInsets.all(KineticTokens.spaceXXS),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFBA20).withValues(alpha: 0.15),
+                        color: colors.tertiary.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.emoji_events_rounded,
-                        color: Color(0xFFFFBA20),
+                        color: colors.tertiary,
                         size: 14,
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: KineticTokens.spaceXS),
                     Expanded(
                       child: Text(
                         (isVi ? 'Kỷ lục tốt nhất' : 'Best Streak')
@@ -673,21 +684,18 @@ class _StreakCoreMetricsRow extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: KineticTokens.spaceXS),
                 Text(
                   '$longestDays ${isVi ? 'Ngày' : 'Days'}',
-                  style: KineticTypography.headlineSmall.copyWith(
+                  style: KineticTypography.headlineMedium.copyWith(
                     color: colors.textPrimary,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: KineticTokens.spaceXXS),
                 Text(
                   isVi ? 'Kỷ lục cá nhân' : 'Personal record',
-                  style: TextStyle(
-                    color: const Color(0xFFFFBA20).withValues(alpha: 0.85),
-                    fontSize: 11,
+                  style: KineticTypography.bodySmall.copyWith(
+                    color: colors.tertiary.withValues(alpha: 0.85),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -695,15 +703,15 @@ class _StreakCoreMetricsRow extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: KineticTokens.spaceSM),
 
         // Card 2: Cột mốc tiếp theo
         Expanded(
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            padding: const EdgeInsets.all(KineticTokens.spaceSM),
             decoration: BoxDecoration(
               color: colors.surface1,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
               border: Border.all(
                 color: colors.primary.withValues(alpha: 0.25),
                 width: 1.2,
@@ -715,7 +723,7 @@ class _StreakCoreMetricsRow extends StatelessWidget {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(5),
+                      padding: const EdgeInsets.all(KineticTokens.spaceXXS),
                       decoration: BoxDecoration(
                         color: colors.primary.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
@@ -726,7 +734,7 @@ class _StreakCoreMetricsRow extends StatelessWidget {
                         size: 14,
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: KineticTokens.spaceXS),
                     Expanded(
                       child: Text(
                         (isVi ? 'Mốc tiếp theo' : 'Next Target').toUpperCase(),
@@ -741,21 +749,18 @@ class _StreakCoreMetricsRow extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: KineticTokens.spaceXS),
                 Text(
                   '$targetDays ${isVi ? 'Ngày' : 'Days'}',
-                  style: KineticTypography.headlineSmall.copyWith(
+                  style: KineticTypography.headlineMedium.copyWith(
                     color: colors.textPrimary,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: KineticTokens.spaceXXS),
                 Text(
                   isVi ? 'Còn $remainingDays ngày' : '$remainingDays days left',
-                  style: TextStyle(
+                  style: KineticTypography.bodySmall.copyWith(
                     color: colors.primary.withValues(alpha: 0.85),
-                    fontSize: 11,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

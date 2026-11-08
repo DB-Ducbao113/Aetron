@@ -130,24 +130,22 @@ class _AetronDock extends ConsumerWidget {
 
     return RepaintBoundary(
       child: Padding(
-        padding: EdgeInsets.fromLTRB(16, 0, 16, bottom > 0 ? bottom : 14),
+        padding: EdgeInsets.fromLTRB(
+          KineticTokens.spaceMD,
+          0,
+          KineticTokens.spaceMD,
+          bottom > 0 ? bottom : KineticTokens.spaceSM,
+        ),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+          padding: const EdgeInsets.symmetric(
+            horizontal: KineticTokens.spaceXS,
+            vertical: KineticTokens.spaceXS,
+          ),
           decoration: BoxDecoration(
-            color: colors.surface1.withValues(alpha: 0.94),
-            borderRadius: BorderRadius.circular(28),
+            color: colors.surface1,
+            borderRadius: BorderRadius.circular(KineticTokens.radiusXXL),
             border: Border.all(color: colors.borderSubtle, width: 1.0),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.50),
-                blurRadius: 24,
-                offset: const Offset(0, 8),
-              ),
-              BoxShadow(
-                color: colors.primary.withValues(alpha: 0.05),
-                blurRadius: 16,
-              ),
-            ],
+            boxShadow: KineticTokens.shadowPanel(colors.background),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -193,7 +191,7 @@ class _DockItem extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -204,24 +202,16 @@ class _DockItem extends StatelessWidget {
               height: 32,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: selected
-                    ? colors.primary.withValues(alpha: 0.14)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(999),
-                border: selected
-                    ? Border.all(
-                        color: colors.primary.withValues(alpha: 0.35),
-                        width: 1.0,
-                      )
-                    : null,
+                color: selected ? colors.primary : Colors.transparent,
+                borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
               ),
               child: Icon(
                 selected ? selectedIcon : icon,
-                color: selected ? colors.primary : colors.textMuted,
+                color: selected ? colors.onPrimary : colors.textMuted,
                 size: selected ? 20 : 18,
               ),
             ),
-            const SizedBox(height: 3),
+            const SizedBox(height: KineticTokens.spaceXXS),
             Text(
               label,
               maxLines: 1,

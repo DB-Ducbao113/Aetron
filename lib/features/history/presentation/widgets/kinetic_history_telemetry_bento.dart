@@ -2,6 +2,7 @@ import 'package:fitness_exercise_application/core/localization/app_translations.
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_card.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
 import 'package:flutter/material.dart';
 
@@ -54,8 +55,8 @@ class KineticHistoryTelemetryBento extends StatelessWidget {
         : '—';
 
     return KineticCard(
-      padding: const EdgeInsets.all(16),
-      topAccentColor: colors.primary,
+      padding: const EdgeInsets.all(KineticTokens.spaceMD),
+      borderRadius: KineticTokens.radiusLG,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -71,10 +72,10 @@ class KineticHistoryTelemetryBento extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: KineticTokens.spaceXS, vertical: KineticTokens.spaceXXS),
                 decoration: BoxDecoration(
                   color: colors.surface2,
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
                   border: Border.all(color: colors.borderSubtle),
                 ),
                 child: Text(
@@ -87,7 +88,7 @@ class KineticHistoryTelemetryBento extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: KineticTokens.spaceMD),
 
           // Hero Distance & Secondary Metrics Grid
           Row(
@@ -97,10 +98,10 @@ class KineticHistoryTelemetryBento extends StatelessWidget {
               Expanded(
                 flex: 5,
                 child: Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(KineticTokens.spaceSM),
                   decoration: BoxDecoration(
                     color: colors.surface2,
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
                     border: Border.all(color: colors.borderSubtle),
                   ),
                   child: Column(
@@ -119,7 +120,7 @@ class KineticHistoryTelemetryBento extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: KineticTokens.spaceXS),
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.baseline,
                         textBaseline: TextBaseline.alphabetic,
@@ -129,8 +130,6 @@ class KineticHistoryTelemetryBento extends StatelessWidget {
                               distanceStr.replaceAll(RegExp(r'[a-zA-Z]'), '').trim(),
                               style: KineticTypography.metricMedium.copyWith(
                                 color: colors.textPrimary,
-                                fontSize: 28,
-                                fontWeight: FontWeight.w800,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -151,7 +150,7 @@ class KineticHistoryTelemetryBento extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: KineticTokens.spaceXS),
 
               // Duration & Energy Right Column
               Expanded(
@@ -159,10 +158,10 @@ class KineticHistoryTelemetryBento extends StatelessWidget {
                 child: Column(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: KineticTokens.spaceXS, vertical: KineticTokens.spaceXS),
                       decoration: BoxDecoration(
                         color: colors.surface2,
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
                         border: Border.all(color: colors.borderSubtle),
                       ),
                       child: Row(
@@ -186,10 +185,10 @@ class KineticHistoryTelemetryBento extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: KineticTokens.spaceXS, vertical: KineticTokens.spaceXS),
                       decoration: BoxDecoration(
                         color: colors.surface2,
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
                         border: Border.all(color: colors.borderSubtle),
                       ),
                       child: Row(
@@ -217,14 +216,14 @@ class KineticHistoryTelemetryBento extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: KineticTokens.spaceXS),
 
           // Bottom Bar: Average Pace
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: KineticTokens.spaceSM, vertical: KineticTokens.spaceXS),
             decoration: BoxDecoration(
               color: colors.surface2,
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
               border: Border.all(color: colors.borderSubtle),
             ),
             child: Row(

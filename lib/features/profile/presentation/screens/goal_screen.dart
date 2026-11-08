@@ -347,7 +347,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
       builder: (ctx) => AlertDialog(
         backgroundColor: colors.surface2,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(KineticTokens.radiusXL),
           side: BorderSide(color: colors.borderAccent, width: 1.2),
         ),
         title: Row(
@@ -436,18 +436,12 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
           bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
         ),
         child: Container(
-          margin: const EdgeInsets.all(16),
-          padding: const EdgeInsets.all(24),
+          margin: const EdgeInsets.all(KineticTokens.spaceMD),
+          padding: const EdgeInsets.all(KineticTokens.spaceXL),
           decoration: BoxDecoration(
             color: colors.surface1,
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
             border: Border.all(color: accent.withValues(alpha: 0.3), width: 1.2),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.6),
-                blurRadius: 32,
-              ),
-            ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -473,7 +467,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: KineticTokens.spaceSM),
               TextField(
                 controller: controller,
                 autofocus: true,
@@ -483,7 +477,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                 ),
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: colors.surface2,
+                  fillColor: colors.surface1,
                   suffixText: _unitLabel(
                     _selectedType,
                     useMetricUnits: _useMetricUnits,
@@ -494,21 +488,25 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                     fontWeight: FontWeight.w800,
                   ),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
+                    borderSide: BorderSide(color: colors.borderSubtle),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
                     borderSide: BorderSide(color: colors.borderSubtle),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
                     borderSide: BorderSide(color: accent, width: 1.6),
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: KineticTokens.spaceLG),
               KineticButton(
                 label: isVi ? 'ÁP DỤNG MỤC TIÊU' : 'APPLY TARGET',
                 icon: Icons.check_circle_rounded,
                 variant: KineticButtonVariant.primary,
-                height: 48,
+                height: KineticTokens.buttonHeightPrimary,
                 onPressed: () {
                   final parsed = double.tryParse(controller.text.trim());
                   if (parsed != null && parsed > 0) {
@@ -552,15 +550,20 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
             Expanded(
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(18, 6, 18, 120),
+                padding: const EdgeInsets.fromLTRB(
+                  KineticTokens.page,
+                  KineticTokens.spaceXS,
+                  KineticTokens.page,
+                  120,
+                ),
                 children: [
                   // 2.1 Athletic Discipline Selector (Distance / Sessions / Calories)
                   _buildDisciplineSelector(colors, currentLang),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: KineticTokens.spaceSM),
 
                   // 2.2 Cadence Selector (Weekly Sprint vs Monthly Campaign)
                   _buildCadenceSelector(colors, currentLang),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: KineticTokens.spaceLG),
 
                   // 2.3 HERO: Kinetic Target Energy Reactor Dial
                   _buildEnergyReactorCard(
@@ -573,15 +576,15 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                     maxVal,
                     step,
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: KineticTokens.spaceLG),
 
                   // 2.4 Real-World Impact & Benchmark Projection
                   _buildRealWorldImpactCard(colors, currentLang, useMetricUnits, accent),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: KineticTokens.spaceLG),
 
                   // 2.5 Athletic Goal Presets (Starter, Pro, Elite, Beast)
                   _buildAthleticPresets(colors, currentLang, useMetricUnits, accent),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: KineticTokens.spaceLG),
 
                   // 2.6 Target Reward / Badge Unlock Spotlight
                   _buildBadgeUnlockPreview(colors, currentLang, accent),
@@ -611,7 +614,12 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
     final isVi = currentLang == AppLanguage.vi;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 12, 18, 10),
+      padding: const EdgeInsets.fromLTRB(
+        KineticTokens.page,
+        KineticTokens.spaceSM,
+        KineticTokens.page,
+        KineticTokens.spaceXS,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -619,12 +627,12 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
             color: Colors.transparent,
             child: InkWell(
               onTap: () => Navigator.of(context).maybePop(),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
               child: Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(KineticTokens.spaceXS),
                 decoration: BoxDecoration(
                   color: colors.surface1,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
                   border: Border.all(color: colors.borderSubtle),
                 ),
                 child: Icon(
@@ -635,7 +643,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
               ),
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: KineticTokens.spaceSM),
           Expanded(
             child: Text(
               isVi ? 'Mục tiêu rèn luyện' : 'Fitness Goals',
@@ -651,12 +659,12 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
               color: Colors.transparent,
               child: InkWell(
                 onTap: () => _confirmDeleteGoal(currentLang),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
                 child: Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(KineticTokens.spaceXS),
                   decoration: BoxDecoration(
                     color: colors.error.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
                     border: Border.all(color: colors.error.withValues(alpha: 0.35)),
                   ),
                   child: Icon(
@@ -704,7 +712,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
     return Row(
       children: [
         for (int i = 0; i < items.length; i++) ...[
-          if (i > 0) const SizedBox(width: 10),
+          if (i > 0) const SizedBox(width: KineticTokens.spaceXS),
           Expanded(
             child: _buildDisciplineCard(
               colors: colors,
@@ -740,31 +748,25 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
             _targetValue = _defaultTargetFor(type, _selectedPeriod);
           });
         },
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
         child: AnimatedContainer(
           duration: KineticTokens.motionTab,
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
+          padding: const EdgeInsets.symmetric(
+            vertical: KineticTokens.spaceSM,
+            horizontal: KineticTokens.spaceXS,
+          ),
           decoration: BoxDecoration(
             color: isSelected ? accent.withValues(alpha: 0.14) : colors.surface1,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
             border: Border.all(
               color: isSelected ? accent : colors.borderSubtle,
               width: isSelected ? 1.5 : 1.0,
             ),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: accent.withValues(alpha: 0.22),
-                      blurRadius: 14,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                : null,
           ),
           child: Column(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(KineticTokens.spaceXS),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: isSelected ? accent : colors.surface2,
@@ -772,10 +774,10 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                 child: Icon(
                   icon,
                   size: 18,
-                  color: isSelected ? Colors.black : colors.textSecondary,
+                  color: isSelected ? colors.onPrimary : colors.textSecondary,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: KineticTokens.spaceXS),
               Text(
                 title,
                 style: KineticTypography.label.copyWith(
@@ -807,10 +809,10 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
     final isVi = currentLang == AppLanguage.vi;
 
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(KineticTokens.spaceXXS),
       decoration: BoxDecoration(
         color: colors.surface1,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
         border: Border.all(color: colors.borderSubtle),
       ),
       child: Row(
@@ -864,14 +866,14 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
         child: AnimatedContainer(
           duration: KineticTokens.motionTab,
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: isSelected ? colors.surface3 : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
             border: isSelected
                 ? Border.all(color: colors.borderAccent, width: 1.2)
                 : null,
@@ -938,21 +940,19 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
     final intensity = _getIntensityInfo(colors);
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+      padding: const EdgeInsets.fromLTRB(
+        KineticTokens.spaceLG,
+        KineticTokens.spaceLG,
+        KineticTokens.spaceLG,
+        KineticTokens.spaceLG,
+      ),
       decoration: BoxDecoration(
         color: colors.surface1,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
         border: Border.all(
           color: accent.withValues(alpha: 0.25),
           width: 1.2,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Column(
         children: [
@@ -1012,7 +1012,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
               ),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: KineticTokens.spaceLG),
 
           // 2. Interactive Ergonomic Steppers with Hero Metric Center
           Row(
@@ -1088,14 +1088,17 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: KineticTokens.spaceMD),
 
           // 3. Clean & Subtle Athletic Intensity Tag
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            padding: const EdgeInsets.symmetric(
+              horizontal: KineticTokens.spaceSM,
+              vertical: KineticTokens.spaceXS,
+            ),
             decoration: BoxDecoration(
               color: intensity.color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
               border: Border.all(color: intensity.color.withValues(alpha: 0.25)),
             ),
             child: Row(
@@ -1129,7 +1132,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
       color: Colors.transparent,
       child: InkWell(
         onTap: enabled ? onTap : null,
-        borderRadius: BorderRadius.circular(26),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
         child: AnimatedContainer(
           duration: KineticTokens.motionPress,
           width: 52,
@@ -1164,18 +1167,11 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
     final benchmark = _getRealWorldBenchmark(useMetricUnits);
 
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(KineticTokens.spaceLG),
       decoration: BoxDecoration(
         color: colors.surface1,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusXL),
         border: Border.all(color: colors.borderSubtle, width: 1.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
-            blurRadius: 18,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1201,7 +1197,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: KineticTokens.spaceSM),
 
           _buildImpactItem(
             colors: colors,
@@ -1210,7 +1206,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
             description: isVi ? benchmark.landmarkVi : benchmark.landmarkEn,
             accent: accent,
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: KineticTokens.spaceXS),
           _buildImpactItem(
             colors: colors,
             icon: Icons.local_fire_department_rounded,
@@ -1218,7 +1214,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
             description: isVi ? benchmark.calorieImpactVi : benchmark.calorieImpactEn,
             accent: accent,
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: KineticTokens.spaceXS),
           _buildImpactItem(
             colors: colors,
             icon: Icons.calendar_month_rounded,
@@ -1243,14 +1239,14 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
       children: [
         Container(
           margin: const EdgeInsets.only(top: 2),
-          padding: const EdgeInsets.all(4),
+          padding: const EdgeInsets.all(KineticTokens.spaceXXS),
           decoration: BoxDecoration(
             color: colors.surface2,
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
           ),
           child: Icon(icon, size: 14, color: accent),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: KineticTokens.spaceXS),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1358,11 +1354,11 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
             letterSpacing: 1.0,
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: KineticTokens.spaceXS),
         Row(
           children: [
             for (int i = 0; i < presets.length; i++) ...[
-              if (i > 0) const SizedBox(width: 8),
+              if (i > 0) const SizedBox(width: KineticTokens.spaceXS),
               Expanded(
                 child: _buildPresetCard(
                   colors: colors,
@@ -1405,25 +1401,20 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
         child: AnimatedContainer(
           duration: KineticTokens.motionTab,
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+          padding: const EdgeInsets.symmetric(
+            vertical: KineticTokens.spaceXS,
+            horizontal: KineticTokens.spaceXXS,
+          ),
           decoration: BoxDecoration(
             color: isSelected ? presetColor.withValues(alpha: 0.16) : colors.surface1,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
             border: Border.all(
               color: isSelected ? presetColor : colors.borderSubtle,
               width: isSelected ? 1.5 : 1.0,
             ),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: presetColor.withValues(alpha: 0.25),
-                      blurRadius: 10,
-                    ),
-                  ]
-                : null,
           ),
           child: Column(
             children: [
@@ -1513,23 +1504,26 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(
+        horizontal: KineticTokens.spaceMD,
+        vertical: KineticTokens.spaceSM,
+      ),
       decoration: BoxDecoration(
         color: colors.surface2.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
         border: Border.all(color: colors.borderSubtle),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(KineticTokens.spaceXS),
             decoration: BoxDecoration(
               color: accent.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
             ),
             child: Icon(badgeIcon, size: 20, color: accent),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: KineticTokens.spaceSM),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1580,17 +1574,15 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
         : (isVi ? 'tháng' : 'mo');
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(18, 12, 18, 20),
+      padding: const EdgeInsets.fromLTRB(
+        KineticTokens.page,
+        KineticTokens.spaceSM,
+        KineticTokens.page,
+        KineticTokens.spaceLG,
+      ),
       decoration: BoxDecoration(
         color: colors.surface1.withValues(alpha: 0.95),
         border: Border(top: BorderSide(color: colors.borderSubtle, width: 1.0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.45),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
-          ),
-        ],
       ),
       child: SafeArea(
         top: false,
@@ -1634,7 +1626,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                 ],
               ),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: KineticTokens.spaceSM),
 
             // Main Primary CTA Button
             Expanded(
@@ -1644,7 +1636,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                     : (isVi ? 'KÍCH HOẠT MỤC TIÊU' : 'ACTIVATE GOAL'),
                 icon: Icons.bolt_rounded,
                 variant: KineticButtonVariant.primary,
-                height: 48,
+                height: KineticTokens.buttonHeightPrimary,
                 isLoading: _isSaving,
                 onPressed: _isSaving ? null : _save,
               ),

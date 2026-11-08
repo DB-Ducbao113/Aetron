@@ -38,12 +38,6 @@ class LocateButton extends StatelessWidget {
                 width: 1.5,
               ),
               boxShadow: [
-                if (isFollowEnabled)
-                  BoxShadow(
-                    color: activeColor.withValues(alpha: 0.35),
-                    blurRadius: 12,
-                    spreadRadius: 1,
-                  ),
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.45),
                   blurRadius: 10,

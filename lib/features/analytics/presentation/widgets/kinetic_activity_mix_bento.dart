@@ -76,21 +76,14 @@ class KineticActivityMixBento extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(KineticTokens.spaceLG),
       decoration: BoxDecoration(
         color: colors.surface1,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
         border: Border.all(
-          color: colors.borderSubtle.withValues(alpha: 0.8),
-          width: 1.2,
+          color: colors.borderSubtle,
+          width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.35),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -125,7 +118,7 @@ class KineticActivityMixBento extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: colors.surface2,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
                   border: Border.all(color: colors.borderSubtle),
                 ),
                 child: Text(
@@ -139,11 +132,11 @@ class KineticActivityMixBento extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: KineticTokens.spaceMD),
 
           // Continuous Segmented Bar
           ClipRRect(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
             child: Container(
               height: 10,
               width: double.infinity,
@@ -179,7 +172,7 @@ class KineticActivityMixBento extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: KineticTokens.spaceMD),
 
           // 3 Sport Cards Grid
           Row(
@@ -196,7 +189,7 @@ class KineticActivityMixBento extends StatelessWidget {
                   isVi: isVi,
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: KineticTokens.spaceXS),
 
               // Running
               Expanded(
@@ -210,7 +203,7 @@ class KineticActivityMixBento extends StatelessWidget {
                   isVi: isVi,
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: KineticTokens.spaceXS),
 
               // Walking
               Expanded(
@@ -256,12 +249,12 @@ class _SportTile extends StatelessWidget {
     final colors = context.kinetic;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+      padding: const EdgeInsets.all(KineticTokens.spaceSM),
       decoration: BoxDecoration(
         color: colors.surface2,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
         border: Border.all(
-          color: colors.borderSubtle.withValues(alpha: 0.8),
+          color: colors.borderSubtle,
         ),
       ),
       child: Column(
@@ -281,7 +274,7 @@ class _SportTile extends StatelessWidget {
                       shape: BoxShape.circle,
                     ),
                   ),
-                  const SizedBox(width: 5),
+                  const SizedBox(width: KineticTokens.spaceXXS),
                   Text(
                     name,
                     style: KineticTypography.caption.copyWith(
@@ -294,7 +287,7 @@ class _SportTile extends StatelessWidget {
               Icon(icon, size: 14, color: dotColor),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: KineticTokens.spaceXS),
           Text(
             pct,
             style: KineticTypography.pageTitleCompact.copyWith(

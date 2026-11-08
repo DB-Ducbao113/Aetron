@@ -129,4 +129,21 @@ class KineticTokens {
     Duration duration,
   ) =>
       reduceMotionOf(context) ? Duration.zero : duration;
+
+  // ── V4 Additions (2026-11-08) ───────────────────────────────────────────
+  /// 48px — hero band / major page rhythm spacing
+  static const double spaceXXXL = 48;
+
+  /// 24px — hero panels, feature cards, bottom sheets
+  static const double radiusHero = 24;
+
+  /// Soft elevation for raised panels floating over maps/scenes.
+  static List<BoxShadow> shadowPanel(Color tint) => [
+        BoxShadow(
+          color: tint.withValues(alpha: 0.45),
+          blurRadius: 28,
+          offset: const Offset(0, 10),
+          spreadRadius: -10,
+        ),
+      ];
 }

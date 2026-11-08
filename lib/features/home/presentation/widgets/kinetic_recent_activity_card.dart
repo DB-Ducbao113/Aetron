@@ -28,7 +28,7 @@ class KineticRecentActivityCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: KineticTokens.page,
-        vertical: 8,
+        vertical: KineticTokens.spaceXS,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -56,7 +56,7 @@ class KineticRecentActivityCard extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(width: 2),
+                      const SizedBox(width: KineticTokens.spaceXXS),
                       Icon(
                         Icons.chevron_right_rounded,
                         size: 16,
@@ -67,13 +67,13 @@ class KineticRecentActivityCard extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: KineticTokens.spaceXS),
 
           // Content
           if (workouts.isEmpty)
             // Empty State for New Athletes (Fixing M10)
             KineticCard(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(KineticTokens.spaceXL),
               child: Column(
                 children: [
                   Container(
@@ -92,7 +92,7 @@ class KineticRecentActivityCard extends StatelessWidget {
                       size: 26,
                     ),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: KineticTokens.spaceSM),
                   Text(
                     isVi ? 'CHƯA CÓ HOẠT ĐỘNG NÀO' : 'NO RECENT ACTIVITIES',
                     style: KineticTypography.label.copyWith(
@@ -101,7 +101,7 @@ class KineticRecentActivityCard extends StatelessWidget {
                       letterSpacing: 1.1,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: KineticTokens.spaceXXS),
                   Text(
                     isVi
                         ? 'Bắt đầu ghi lại buổi tập đầu tiên để theo dõi phong độ thời gian thực!'
@@ -112,7 +112,7 @@ class KineticRecentActivityCard extends StatelessWidget {
                       height: 1.4,
                     ),
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: KineticTokens.spaceLG),
                   KineticButton(
                     label: isVi
                         ? 'Bắt đầu buổi tập đầu tiên'
@@ -177,7 +177,7 @@ class KineticRecentActivityCard extends StatelessWidget {
         children: [
           // 1. Activity Header Row
           Padding(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(KineticTokens.spaceMD),
             child: Row(
               children: [
                 Container(
@@ -185,12 +185,12 @@ class KineticRecentActivityCard extends StatelessWidget {
                   height: 38,
                   decoration: BoxDecoration(
                     color: colors.surface2,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
                     border: Border.all(color: colors.borderSubtle),
                   ),
                   child: Icon(activityIcon, color: colors.primary, size: 20),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: KineticTokens.spaceSM),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -204,7 +204,7 @@ class KineticRecentActivityCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: KineticTokens.spaceXXS),
                       Text(
                         dateStr,
                         style: KineticTypography.caption.copyWith(
@@ -225,11 +225,14 @@ class KineticRecentActivityCard extends StatelessWidget {
 
           // 2. Metrics Strip (3 Columns)
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            padding: const EdgeInsets.symmetric(
+              horizontal: KineticTokens.spaceMD,
+              vertical: KineticTokens.spaceSM,
+            ),
             decoration: BoxDecoration(
               color: colors.surface2,
               borderRadius: const BorderRadius.vertical(
-                bottom: Radius.circular(8),
+                bottom: Radius.circular(KineticTokens.radiusSM),
               ),
               border: Border(
                 top: BorderSide(color: colors.borderSubtle, width: 1),
@@ -248,7 +251,7 @@ class KineticRecentActivityCard extends StatelessWidget {
                           fontSize: 11,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: KineticTokens.spaceXXS),
                       Text(
                         distanceStr,
                         style: KineticTypography.metricSmall.copyWith(
@@ -265,7 +268,7 @@ class KineticRecentActivityCard extends StatelessWidget {
                 ),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 12),
+                    padding: const EdgeInsets.only(left: KineticTokens.spaceSM),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -275,7 +278,7 @@ class KineticRecentActivityCard extends StatelessWidget {
                             color: colors.textMuted,
                           ),
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: KineticTokens.spaceXXS),
                         Text(
                           durationStr,
                           style: KineticTypography.metricSmall.copyWith(
@@ -293,7 +296,7 @@ class KineticRecentActivityCard extends StatelessWidget {
                 ),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 12),
+                    padding: const EdgeInsets.only(left: KineticTokens.spaceSM),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -304,7 +307,7 @@ class KineticRecentActivityCard extends StatelessWidget {
                             fontSize: 11,
                           ),
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: KineticTokens.spaceXXS),
                         Text(
                           speedStr,
                           style: KineticTypography.metricSmall.copyWith(

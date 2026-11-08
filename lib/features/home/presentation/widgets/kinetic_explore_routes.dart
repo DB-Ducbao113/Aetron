@@ -34,7 +34,7 @@ class KineticExploreRoutes extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: KineticTokens.page,
-        vertical: 8,
+        vertical: KineticTokens.spaceXS,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -44,10 +44,8 @@ class KineticExploreRoutes extends StatelessWidget {
             children: [
               Text(
                 isVi ? 'GIÁO ÁN LUYỆN TẬP' : 'TRAINING PLANS',
-                style: KineticTypography.unitLabel.copyWith(
+                style: KineticTypography.sectionEyebrow.copyWith(
                   color: colors.textMuted,
-                  fontSize: 11,
-                  letterSpacing: 0.08,
                 ),
               ),
               GestureDetector(
@@ -68,14 +66,14 @@ class KineticExploreRoutes extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: KineticTokens.spaceXS),
           Row(
             children: routes.map((route) {
               return Expanded(
                 child: Padding(
                   padding: EdgeInsets.only(
-                    right: route == routes.first ? 6 : 0,
-                    left: route == routes.last ? 6 : 0,
+                    right: route == routes.first ? KineticTokens.spaceXXS : 0,
+                    left: route == routes.last ? KineticTokens.spaceXXS : 0,
                   ),
                   child: KineticCard(
                     padding: EdgeInsets.zero,
@@ -96,12 +94,12 @@ class KineticExploreRoutes extends StatelessWidget {
                           child: Stack(
                             fit: StackFit.expand,
                             children: [
+                              SceneBackdrop(tint: colors.secondary),
                               Image.asset(
                                 route['image'] as String,
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Container(
-                                  color: colors.surface2,
-                                ),
+                                errorBuilder: (context, error, stackTrace) =>
+                                    SceneBackdrop(tint: colors.secondary),
                               ),
                               Container(
                                 decoration: BoxDecoration(
@@ -116,18 +114,20 @@ class KineticExploreRoutes extends StatelessWidget {
                                 ),
                               ),
                               Positioned(
-                                top: 8,
-                                left: 8,
+                                top: KineticTokens.spaceXS,
+                                left: KineticTokens.spaceXS,
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 2,
+                                    horizontal: KineticTokens.spaceXS,
+                                    vertical: KineticTokens.spaceXXS,
                                   ),
                                   decoration: BoxDecoration(
                                     color: colors.background.withValues(
                                       alpha: 0.85,
                                     ),
-                                    borderRadius: BorderRadius.circular(10),
+                                    borderRadius: BorderRadius.circular(
+                                      KineticTokens.radiusPill,
+                                    ),
                                     border: Border.all(
                                       color: colors.borderSubtle,
                                     ),
@@ -147,7 +147,7 @@ class KineticExploreRoutes extends StatelessWidget {
 
                         // Title & Subtitle
                         Padding(
-                          padding: const EdgeInsets.all(10),
+                          padding: const EdgeInsets.all(KineticTokens.spaceSM),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -161,7 +161,7 @@ class KineticExploreRoutes extends StatelessWidget {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              const SizedBox(height: 2),
+                              const SizedBox(height: KineticTokens.spaceXXS),
                               Row(
                                 children: [
                                   Icon(
@@ -169,7 +169,7 @@ class KineticExploreRoutes extends StatelessWidget {
                                     size: 11,
                                     color: colors.primary,
                                   ),
-                                  const SizedBox(width: 4),
+                                  const SizedBox(width: KineticTokens.spaceXXS),
                                   Expanded(
                                     child: Text(
                                       route['subtitle'] as String,

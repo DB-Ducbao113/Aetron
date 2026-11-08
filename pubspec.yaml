@@ -170,6 +170,11 @@ flutter:
     - family: SpaceGrotesk
       fonts:
         - asset: fonts/SpaceGrotesk-Variable.ttf
+    - family: Archivo
+      fonts:
+        - asset: fonts/Archivo-Variable.ttf
+        - asset: fonts/Archivo-Italic-Variable.ttf
+          style: italic
 
   # - family: Trajan Pro
   #     fonts:

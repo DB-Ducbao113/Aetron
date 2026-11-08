@@ -107,7 +107,10 @@ class _ForcePasswordUpgradeScreenState
       backgroundColor: kinetic.background,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          padding: const EdgeInsets.symmetric(
+            horizontal: KineticTokens.spaceXL,
+            vertical: KineticTokens.spaceLG,
+          ),
           child: Form(
             key: _formKey,
             child: Column(
@@ -161,30 +164,19 @@ class _ForcePasswordUpgradeScreenState
                 ),
                 const SizedBox(height: 16),
 
-                // Kinetic Floating Security Shield Icon
+                // Tertiary-tint medallion (board v2/v3: shield in a tint circle)
                 Center(
                   child: Container(
-                    width: 96,
-                    height: 96,
+                    width: 72,
+                    height: 72,
                     decoration: BoxDecoration(
-                      color: kinetic.surface2,
-                      borderRadius: BorderRadius.circular(26),
-                      border: Border.all(
-                        color: kinetic.tertiary.withValues(alpha: 0.55),
-                        width: 1.5,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: kinetic.tertiary.withValues(alpha: 0.25),
-                          blurRadius: 28,
-                          spreadRadius: 2,
-                        ),
-                      ],
+                      shape: BoxShape.circle,
+                      color: kinetic.tertiary.withValues(alpha: 0.12),
                     ),
                     child: Icon(
                       Icons.security_update_warning_rounded,
                       color: kinetic.tertiary,
-                      size: 46,
+                      size: 34,
                     ),
                   ),
                 ),
@@ -229,115 +221,144 @@ class _ForcePasswordUpgradeScreenState
                 ),
                 const SizedBox(height: 24),
 
-                // New Password Input
-                _FieldLabel(
-                  currentLang == AppLanguage.vi ? 'MẬT KHẨU MỚI' : 'NEW PASSWORD',
-                  color: kinetic.primary,
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
-                  onChanged: (_) => setState(() {}),
-                  style: KineticTypography.bodyMedium.copyWith(
-                    color: kinetic.textPrimary,
-                    fontWeight: FontWeight.w600,
+                Container(
+                  padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
+                  decoration: BoxDecoration(
+                    color: kinetic.surface1,
+                    borderRadius: BorderRadius.circular(
+                      KineticTokens.radiusXXL,
+                    ),
+                    border: Border.all(
+                      color: kinetic.borderStrong,
+                      width: 1.5,
+                    ),
+                    boxShadow: KineticTokens.shadowPanel(Colors.black),
                   ),
-                  validator: (val) => validatePasswordStrict(val, currentLang),
-                  decoration: _inputDecoration(
-                    hintText: '••••••••',
-                    prefixIcon: Icons.lock_outline_rounded,
-                    kinetic: kinetic,
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined,
-                        color: kinetic.primary,
-                        size: 20,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                    // New Password Input
+                    _FieldLabel(
+                      currentLang == AppLanguage.vi ? 'MẬT KHẨU MỚI' : 'NEW PASSWORD',
+                      color: kinetic.primary,
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      onChanged: (_) => setState(() {}),
+                      style: KineticTypography.bodyMedium.copyWith(
+                        color: kinetic.textPrimary,
+                        fontWeight: FontWeight.w600,
                       ),
-                      onPressed: () {
-                        setState(() => _obscurePassword = !_obscurePassword);
+                      validator: (val) => validatePasswordStrict(val, currentLang),
+                      decoration: _inputDecoration(
+                        hintText: '••••••••',
+                        prefixIcon: Icons.lock_outline_rounded,
+                        kinetic: kinetic,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                            color: kinetic.primary,
+                            size: 20,
+                          ),
+                          onPressed: () {
+                            setState(() => _obscurePassword = !_obscurePassword);
+                          },
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: kinetic.surface2,
+                        borderRadius: BorderRadius.circular(
+                          KineticTokens.radiusLG,
+                        ),
+                        border: Border.all(color: kinetic.borderSubtle),
+                      ),
+                      child: PasswordSecurityMeter(
+                        password: _passwordController.text,
+                        lang: currentLang,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Confirm Password Input
+                    _FieldLabel(
+                      currentLang == AppLanguage.vi
+                          ? 'XÁC NHẬN MẬT KHẨU MỚI'
+                          : 'CONFIRM NEW PASSWORD',
+                      color: kinetic.primary,
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _confirmPasswordController,
+                      obscureText: _obscureConfirmPassword,
+                      style: KineticTypography.bodyMedium.copyWith(
+                        color: kinetic.textPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      validator: (val) {
+                        if (val != _passwordController.text) {
+                          return AppTranslations.get('password_mismatch', currentLang);
+                        }
+                        return null;
                       },
-                    ),
-                  ),
-                ),
-                PasswordSecurityMeter(
-                  password: _passwordController.text,
-                  lang: currentLang,
-                ),
-                const SizedBox(height: 12),
-
-                // Confirm Password Input
-                _FieldLabel(
-                  currentLang == AppLanguage.vi
-                      ? 'XÁC NHẬN MẬT KHẨU MỚI'
-                      : 'CONFIRM NEW PASSWORD',
-                  color: kinetic.primary,
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _confirmPasswordController,
-                  obscureText: _obscureConfirmPassword,
-                  style: KineticTypography.bodyMedium.copyWith(
-                    color: kinetic.textPrimary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  validator: (val) {
-                    if (val != _passwordController.text) {
-                      return AppTranslations.get('password_mismatch', currentLang);
-                    }
-                    return null;
-                  },
-                  decoration: _inputDecoration(
-                    hintText: '••••••••',
-                    prefixIcon: Icons.lock_clock_outlined,
-                    kinetic: kinetic,
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscureConfirmPassword
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined,
-                        color: kinetic.primary,
-                        size: 20,
-                      ),
-                      onPressed: () {
-                        setState(
-                            () => _obscureConfirmPassword = !_obscureConfirmPassword);
-                      },
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                if (_errorMessage != null) ...[
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: kinetic.error.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                          color: kinetic.error.withValues(alpha: 0.4)),
-                    ),
-                    child: Text(
-                      _errorMessage!,
-                      style: KineticTypography.bodySmall.copyWith(
-                        color: kinetic.error,
+                      decoration: _inputDecoration(
+                        hintText: '••••••••',
+                        prefixIcon: Icons.lock_clock_outlined,
+                        kinetic: kinetic,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureConfirmPassword
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                            color: kinetic.primary,
+                            size: 20,
+                          ),
+                          onPressed: () {
+                            setState(
+                                () => _obscureConfirmPassword = !_obscureConfirmPassword);
+                          },
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
+                    const SizedBox(height: 16),
 
-                // Submit Button
-                KineticButton(
-                  label: currentLang == AppLanguage.vi
-                      ? 'CẬP NHẬT & ĐĂNG NHẬP LẠI →'
-                      : 'UPDATE & LOG IN AGAIN →',
-                  icon: Icons.shield_rounded,
-                  isLoading: _isLoading,
-                  variant: KineticButtonVariant.primary,
-                  onPressed: _isLoading ? null : _updatePassword,
+                    if (_errorMessage != null) ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: kinetic.error.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                              color: kinetic.error.withValues(alpha: 0.4)),
+                        ),
+                        child: Text(
+                          _errorMessage!,
+                          style: KineticTypography.bodySmall.copyWith(
+                            color: kinetic.error,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+
+                    // Submit Button
+                    KineticButton(
+                      label: currentLang == AppLanguage.vi
+                          ? 'CẬP NHẬT & ĐĂNG NHẬP LẠI →'
+                          : 'UPDATE & LOG IN AGAIN →',
+                      icon: Icons.shield_rounded,
+                      isLoading: _isLoading,
+                      variant: KineticButtonVariant.primary,
+                      onPressed: _isLoading ? null : _updatePassword,
+                    ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -360,7 +381,7 @@ class _ForcePasswordUpgradeScreenState
         fontSize: 14,
       ),
       filled: true,
-      fillColor: kinetic.surface2,
+      fillColor: kinetic.background,
       prefixIcon: Icon(prefixIcon, color: kinetic.primary, size: 20),
       suffixIcon: suffixIcon,
       contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),

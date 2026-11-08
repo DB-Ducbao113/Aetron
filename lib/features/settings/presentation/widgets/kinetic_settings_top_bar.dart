@@ -1,5 +1,6 @@
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
 import 'package:flutter/material.dart';
 
@@ -24,14 +25,14 @@ class KineticSettingsTopBar extends StatelessWidget {
           label: currentLang == AppLanguage.vi ? 'Quay lại' : 'Back',
           child: InkWell(
             onTap: () => Navigator.of(context).maybePop(),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
             child: Container(
               width: 40,
               height: 40,
               decoration: BoxDecoration(
                 color: colors.surface1,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: colors.borderSubtle),
+                borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
+                border: Border.all(color: colors.borderStrong),
               ),
               alignment: Alignment.center,
               child: Icon(
@@ -42,7 +43,7 @@ class KineticSettingsTopBar extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 14),
+        const SizedBox(width: KineticTokens.spaceSM),
 
         // Title
         Expanded(
@@ -61,8 +62,8 @@ class KineticSettingsTopBar extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
             color: colors.surface1,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: colors.borderSubtle),
+            borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
+            border: Border.all(color: colors.borderStrong),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -73,12 +74,6 @@ class KineticSettingsTopBar extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: colors.primary,
                   shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: colors.primary.withValues(alpha: 0.6),
-                      blurRadius: 4,
-                    ),
-                  ],
                 ),
               ),
               const SizedBox(width: 6),

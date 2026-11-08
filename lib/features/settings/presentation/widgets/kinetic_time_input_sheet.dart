@@ -146,24 +146,24 @@ class _KineticTimeInputSheetState extends State<KineticTimeInputSheet> {
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-      padding: EdgeInsets.fromLTRB(20, 16, 20, 24 + bottomInset),
+      padding: EdgeInsets.fromLTRB(
+        KineticTokens.spaceLG,
+        KineticTokens.spaceMD,
+        KineticTokens.spaceLG,
+        KineticTokens.spaceXL + bottomInset,
+      ),
       decoration: BoxDecoration(
         color: colors.surface1,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusXXL),
         border: Border.all(
-          color: colors.borderSubtle,
-          width: 1.4,
+          color: colors.borderStrong,
+          width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.55),
             blurRadius: 36,
             offset: const Offset(0, 10),
-          ),
-          BoxShadow(
-            color: colors.primary.withValues(alpha: 0.12),
-            blurRadius: 20,
-            spreadRadius: 1,
           ),
         ],
       ),
@@ -212,10 +212,9 @@ class _KineticTimeInputSheetState extends State<KineticTimeInputSheet> {
                     children: [
                       Text(
                         isVi ? 'CÀI ĐẶT THỜI GIAN' : 'SET TIME',
-                        style: TextStyle(
-                          fontFamily: KineticTypography.fontFamily,
+                        style: KineticTypography.headlineSmall.copyWith(
                           fontSize: 16,
-                          fontWeight: FontWeight.w900,
+                          fontWeight: FontWeight.w800,
                           color: colors.textPrimary,
                           letterSpacing: 0.5,
                         ),
@@ -225,9 +224,7 @@ class _KineticTimeInputSheetState extends State<KineticTimeInputSheet> {
                         isVi
                             ? 'Nhập số giờ (00-23) và phút (00-59)'
                             : 'Enter hour (00-23) and minute (00-59)',
-                        style: TextStyle(
-                          fontFamily: KineticTypography.fontFamily,
-                          fontSize: 12,
+                        style: KineticTypography.bodySmall.copyWith(
                           color: colors.textMuted,
                         ),
                       ),
@@ -264,10 +261,8 @@ class _KineticTimeInputSheetState extends State<KineticTimeInputSheet> {
                   padding: const EdgeInsets.only(bottom: 24),
                   child: Text(
                     ':',
-                    style: TextStyle(
-                      fontFamily: KineticTypography.fontFamily,
+                    style: KineticTypography.metricHero.copyWith(
                       fontSize: 38,
-                      fontWeight: FontWeight.w900,
                       color: colors.primary,
                     ),
                   ),
@@ -295,12 +290,8 @@ class _KineticTimeInputSheetState extends State<KineticTimeInputSheet> {
             // Quick Preset Chips
             Text(
               isVi ? 'GỢI Ý NHANH:' : 'QUICK PRESETS:',
-              style: TextStyle(
-                fontFamily: KineticTypography.fontFamily,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
+              style: KineticTypography.sectionEyebrow.copyWith(
                 color: colors.textMuted,
-                letterSpacing: 0.5,
               ),
             ),
             const SizedBox(height: 8),
@@ -313,10 +304,7 @@ class _KineticTimeInputSheetState extends State<KineticTimeInputSheet> {
                       padding: const EdgeInsets.only(right: 8),
                       child: ActionChip(
                         label: Text(preset),
-                        labelStyle: TextStyle(
-                          fontFamily: KineticTypography.fontFamily,
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w700,
+                        labelStyle: KineticTypography.label.copyWith(
                           color: (_hourController.text == preset.split(':')[0] &&
                                   _minuteController.text == preset.split(':')[1])
                               ? colors.onPrimary
@@ -361,14 +349,14 @@ class _KineticTimeInputSheetState extends State<KineticTimeInputSheet> {
                         foregroundColor: colors.textSecondary,
                         side: BorderSide(color: colors.borderSubtle),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(
+                            KineticTokens.radiusMD,
+                          ),
                         ),
                       ),
                       child: Text(
                         isVi ? 'HỦY' : 'CANCEL',
-                        style: TextStyle(
-                          fontFamily: KineticTypography.fontFamily,
-                          fontSize: 13.5,
+                        style: KineticTypography.label.copyWith(
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -388,15 +376,15 @@ class _KineticTimeInputSheetState extends State<KineticTimeInputSheet> {
                         elevation: 4,
                         shadowColor: colors.primary.withValues(alpha: 0.4),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(
+                            KineticTokens.radiusMD,
+                          ),
                         ),
                       ),
                       child: Text(
                         isVi ? 'XÁC NHẬN' : 'CONFIRM',
-                        style: TextStyle(
-                          fontFamily: KineticTypography.fontFamily,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w900,
+                        style: KineticTypography.label.copyWith(
+                          fontWeight: FontWeight.w800,
                           letterSpacing: 0.5,
                         ),
                       ),
@@ -456,20 +444,11 @@ class _NumericTimeBox extends StatelessWidget {
           height: 68,
           decoration: BoxDecoration(
             color: colors.surface2,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
             border: Border.all(
               color: isFocused ? colors.primary : colors.borderSubtle,
               width: isFocused ? 2 : 1.2,
             ),
-            boxShadow: isFocused
-                ? [
-                    BoxShadow(
-                      color: colors.primary.withValues(alpha: 0.3),
-                      blurRadius: 12,
-                      spreadRadius: 1,
-                    ),
-                  ]
-                : null,
           ),
           alignment: Alignment.center,
           child: TextField(
@@ -481,12 +460,9 @@ class _NumericTimeBox extends StatelessWidget {
               FilteringTextInputFormatter.digitsOnly,
               LengthLimitingTextInputFormatter(2),
             ],
-            style: TextStyle(
-              fontFamily: KineticTypography.fontFamily,
+            style: KineticTypography.metricHero.copyWith(
               fontSize: 32,
-              fontWeight: FontWeight.w900,
               color: colors.textPrimary,
-              letterSpacing: -0.5,
             ),
             decoration: const InputDecoration(
               border: InputBorder.none,
@@ -510,12 +486,8 @@ class _NumericTimeBox extends StatelessWidget {
         ),
         Text(
           label,
-          style: TextStyle(
-            fontFamily: KineticTypography.fontFamily,
-            fontSize: 10.5,
-            fontWeight: FontWeight.w700,
+          style: KineticTypography.unitLabel.copyWith(
             color: isFocused ? colors.primary : colors.textMuted,
-            letterSpacing: 0.6,
           ),
         ),
       ],
