@@ -583,6 +583,28 @@ void main() {
       final hybMax = hybErrors.last;
       final hybDistErr = ((hybDistM - groundTruthLengthM).abs() / groundTruthLengthM) * 100.0;
 
+      var hybTP = 0;
+      var hybFP = 0;
+      var hybFN = 0;
+
+      for (var i = 0; i < mGvioDecisions.length; i++) {
+        final d = mGvioDecisions[i];
+        final isGroundTruthOutage = measurements[i].isDropped || measurements[i].reportedAccuracyMeters > 30.0;
+        final isGrossRejection = d.status == GpsQualityStatus.reject;
+
+        if (isGrossRejection && isGroundTruthOutage) {
+          hybTP++;
+        } else if (isGrossRejection && !isGroundTruthOutage) {
+          hybFP++;
+        } else if (!isGrossRejection && isGroundTruthOutage) {
+          hybFN++;
+        }
+      }
+
+      final hybPrec = hybTP + hybFP > 0 ? hybTP / (hybTP + hybFP) : 0.0;
+      final hybRec = hybTP + hybFN > 0 ? hybTP / (hybTP + hybFN) : 0.0;
+      final hybF1 = hybPrec + hybRec > 0 ? (2 * hybPrec * hybRec) / (hybPrec + hybRec) : 0.0;
+
       rows.add(BenchmarkComparisonRow(
         pipelineName: 'G. Hybrid: P01 StayPoints + GVIO Gate + AEKF',
         rmseMeters: hybRmse,
@@ -592,10 +614,10 @@ void main() {
         totalDistanceMeters: hybDistM,
         distanceErrorPercent: hybDistErr,
         stationaryDriftMeters: 0.0,
-        outlierPrecision: 1.0,
-        outlierRecall: 1.0,
-        outlierF1: 1.0,
-        falseRejections: 0,
+        outlierPrecision: hybPrec,
+        outlierRecall: hybRec,
+        outlierF1: hybF1,
+        falseRejections: hybFP,
         latencyUs: hybSw.elapsedMicroseconds / rawSamples.length,
       ));
 
@@ -617,13 +639,12 @@ void main() {
       }
 
       print('\nScientific Deconstruction:');
+      print('• Ground-Truth Notice: The OSM circuit is a synthetic simulation along an OpenStreetMap centerline, NOT an independent RTK-GNSS surveyor reference.');
       print('• Current P01 (Full Preprocessing) flags 39 points: exactly 6 true outages + 33 kinematic spikes.');
-      print('  Against test label (isDropped || acc > 30), this produces Outlier F1 = 0.24.');
-      print('  18 of these points were 1Hz white noise derivative spikes (<5m from road centerline).');
-      print('• Candidate 2 (Mobile-GVIO Quality Gate) eliminates false rejections:');
-      print('  Instead of hard-dropping the 18 acceleration spikes, it assigns them DOWNWEIGHT with covariance scaling.');
-      print('  Result: False Rejections drops from 39 -> 0, while retaining 100% of authentic valid GPS fixes.');
-      print('• Hybrid Pipeline G achieves optimal performance:');
+      print('  Against test label (isDropped || acc > 30), this produces Outlier F1 = ${p01F1.toStringAsFixed(2)} with 39 false rejections on non-outages.');
+      print('• Candidate 2 (Mobile-GVIO Quality Gate) handles kinematic noise by downweighting 101 points instead of hard-dropping.');
+      print('  Gross rejections: $hybFP points (Outlier F1 = ${hybF1.toStringAsFixed(2)}).');
+      print('• Hybrid Pipeline G achieves:');
       print('  RMSE = ${hybRmse.toStringAsFixed(2)} m, Distance Error = ${hybDistErr.toStringAsFixed(2)}%, Stationary Drift = 0.0 m.');
 
       // Assertions
