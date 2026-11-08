@@ -38,16 +38,23 @@ class KinematicTrajectoryReconstructionEngine implements ITrajectoryReconstructi
     required List<ProcessedTrajectoryPoint> points,
     required String activityType,
     double samplingStepSec = 1.0,
+    ReconstructionMethod method = ReconstructionMethod.monotonePchip,
   }) {
-    if (points.isEmpty) {
-      return const TrajectoryReconstructionResult(
-        points: [],
+    // Exclude points rejected by prior kinematic preprocessing
+    final validPoints = points.any((p) => !p.isAccepted)
+        ? points.where((p) => p.isAccepted).toList(growable: false)
+        : points;
+
+    if (validPoints.isEmpty) {
+      return TrajectoryReconstructionResult(
+        points: const [],
         originalPointCount: 0,
         reconstructedPointCount: 0,
         interpolatedPointCount: 0,
         indeterminateGapCount: 0,
         totalReconstructedDistanceMeters: 0.0,
         indeterminateChordDistanceMeters: 0.0,
+        method: method,
       );
     }
 
@@ -61,7 +68,7 @@ class KinematicTrajectoryReconstructionEngine implements ITrajectoryReconstructi
     var indeterminateGapCount = 0;
 
     // 1. Initial point
-    final p0 = points.first;
+    final p0 = validPoints.first;
     reconstructedList.add(ReconstructedPoint(
       point: p0.point,
       timestamp: p0.timestamp,
@@ -73,9 +80,9 @@ class KinematicTrajectoryReconstructionEngine implements ITrajectoryReconstructi
     ));
 
     // 2. Iterate adjacent pairs
-    for (var i = 0; i < points.length - 1; i++) {
-      final curr = points[i];
-      final next = points[i + 1];
+    for (var i = 0; i < validPoints.length - 1; i++) {
+      final curr = validPoints[i];
+      final next = validPoints[i + 1];
 
       // If either point is a stay point, maintain centroid without artificial motion
       if (curr.isStayPoint || next.isStayPoint) {
@@ -107,14 +114,22 @@ class KinematicTrajectoryReconstructionEngine implements ITrajectoryReconstructi
           gapType: ReconstructionGapType.nominalDense,
         ));
       } else if (dtSec > minInterpolationGapSec && dtSec <= maxRecoverableGapSec) {
-        // Recoverable sparse gap: apply Monotone PCHIP Spline Interpolation
-        final intermediatePoints = _interpolatePchip(
-          pStart: curr,
-          pEnd: next,
-          dtSec: dtSec,
-          stepSec: samplingStepSec,
-          limits: limits,
-        );
+        // Recoverable sparse gap: apply selected method (Monotone PCHIP or Linear chord)
+        final intermediatePoints = method == ReconstructionMethod.monotonePchip
+            ? _interpolatePchip(
+                pStart: curr,
+                pEnd: next,
+                dtSec: dtSec,
+                stepSec: samplingStepSec,
+                limits: limits,
+              )
+            : _interpolateLinear(
+                pStart: curr,
+                pEnd: next,
+                dtSec: dtSec,
+                stepSec: samplingStepSec,
+                limits: limits,
+              );
 
         var prevInterpPoint = curr.point;
         for (final interp in intermediatePoints) {
@@ -163,7 +178,43 @@ class KinematicTrajectoryReconstructionEngine implements ITrajectoryReconstructi
       indeterminateGapCount: indeterminateGapCount,
       totalReconstructedDistanceMeters: totalReconstructedDist,
       indeterminateChordDistanceMeters: totalIndeterminateChordDist,
+      method: method,
     );
+  }
+
+  /// Generates intermediate points using Linear Chord Interpolation.
+  List<ReconstructedPoint> _interpolateLinear({
+    required ProcessedTrajectoryPoint pStart,
+    required ProcessedTrajectoryPoint pEnd,
+    required double dtSec,
+    required double stepSec,
+    required KinematicLimits limits,
+  }) {
+    final intermediate = <ReconstructedPoint>[];
+    final steps = (dtSec / stepSec).floor();
+    if (steps <= 1) return intermediate;
+
+    final alt0 = pStart.rawSample.altitudeMeters ?? 0.0;
+    final alt1 = pEnd.rawSample.altitudeMeters ?? 0.0;
+
+    for (var s = 1; s < steps; s++) {
+      final tau = (s * stepSec) / dtSec;
+      final lat = pStart.latitude + (pEnd.latitude - pStart.latitude) * tau;
+      final lng = pStart.longitude + (pEnd.longitude - pStart.longitude) * tau;
+      final alt = alt0 + (alt1 - alt0) * tau;
+      final t = pStart.timestamp.add(Duration(milliseconds: (s * stepSec * 1000).round()));
+
+      intermediate.add(ReconstructedPoint(
+        point: LatLng(lat, lng),
+        timestamp: t,
+        impliedSpeedMs: pStart.impliedSpeedMs.clamp(0.0, limits.maxSpeedMs),
+        impliedHeadingDeg: pStart.forwardBearingDeg,
+        elevationMeters: alt,
+        isInterpolated: true,
+        gapType: ReconstructionGapType.sparseRecoverable,
+      ));
+    }
+    return intermediate;
   }
 
   /// Generates intermediate points using Monotone Piecewise Cubic Hermite Interpolation (PCHIP).

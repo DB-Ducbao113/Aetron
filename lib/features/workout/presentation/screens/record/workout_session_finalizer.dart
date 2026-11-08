@@ -48,6 +48,7 @@ class WorkoutSessionFinalizer {
     UserProfile? userProfile,
     bool enableTrajectoryPreprocessing = kEnableTrajectoryPreprocessing,
     bool enableTrajectoryReconstruction = kEnableTrajectoryReconstruction,
+    ReconstructionMethod reconstructionMethod = ReconstructionMethod.monotonePchip,
   }) {
     final gpsAnalysis = trackingEngine.analyzeGpsWorkout(
       GpsWorkoutAnalysisInput(
@@ -94,6 +95,7 @@ class WorkoutSessionFinalizer {
         reconstructionResult = reconstructionEngine.reconstructTrajectory(
           points: preprocessorResult.processedPoints,
           activityType: state.activityType,
+          method: reconstructionMethod,
         );
       } catch (e) {
         // Fallback safely if reconstruction fails
@@ -229,6 +231,7 @@ class WorkoutSessionFinalizer {
       },
       'reconstruction_enabled': reconstructionResult != null,
       if (reconstructionResult != null) ...{
+        'reconstruction_method': reconstructionResult.method.name,
         'reconstruction_interpolated_points':
             reconstructionResult.interpolatedPointCount,
         'reconstruction_indeterminate_outages':
@@ -261,8 +264,11 @@ class WorkoutSessionFinalizer {
       matchedRouteJson: reconstructionResult != null
           ? _encodeReconstructedSegments(reconstructionResult.points)
           : '[]',
-      routeMatchStatus:
-          reconstructionResult != null ? 'reconstructed_pchip' : 'pending',
+      routeMatchStatus: reconstructionResult != null
+          ? (reconstructionResult.method == ReconstructionMethod.monotonePchip
+              ? 'reconstructed_pchip'
+              : 'reconstructed_linear')
+          : 'pending',
       routeDistanceSource: 'filtered',
       routeMatchMetricsJson: jsonEncode(routeMetrics),
     );

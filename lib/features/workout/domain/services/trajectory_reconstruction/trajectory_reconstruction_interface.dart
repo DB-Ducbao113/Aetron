@@ -18,6 +18,7 @@ abstract class ITrajectoryReconstructionEngine {
     required List<ProcessedTrajectoryPoint> points,
     required String activityType,
     double samplingStepSec = 1.0,
+    ReconstructionMethod method = ReconstructionMethod.monotonePchip,
   });
 }
 

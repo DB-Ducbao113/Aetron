@@ -98,6 +98,42 @@ void main() {
       }
     });
 
+    test('Sparse recoverable gap (dt = 5.0s) synthesizes straight intermediate points via Linear Chord', () {
+      final t0 = DateTime(2026, 11, 8, 10, 0, 0);
+      final points = [
+        makePoint(
+          index: 0,
+          timestamp: t0,
+          point: const LatLng(10.776889, 106.700806),
+          speedMs: 5.0,
+          headingDeg: 0.0,
+        ),
+        makePoint(
+          index: 1,
+          timestamp: t0.add(const Duration(seconds: 5)),
+          point: const LatLng(10.777114, 106.700806),
+          speedMs: 5.0,
+          headingDeg: 0.0,
+        ),
+      ];
+
+      final res = engine.reconstructTrajectory(
+        points: points,
+        activityType: 'cycling',
+        method: ReconstructionMethod.linearChord,
+      );
+
+      expect(res.method, equals(ReconstructionMethod.linearChord));
+      expect(res.originalPointCount, equals(2));
+      expect(res.interpolatedPointCount, equals(4));
+      expect(res.reconstructedPointCount, equals(6));
+
+      for (var i = 1; i < res.points.length; i++) {
+        expect(res.points[i].latitude, greaterThan(res.points[i - 1].latitude));
+        expect((res.points[i].longitude - 106.700806).abs(), lessThan(1e-6));
+      }
+    });
+
     test('Severe outage (dt = 30.0s) is isolated as indeterminate without fabricating unobserved path', () {
       final t0 = DateTime(2026, 11, 8, 10, 0, 0);
       final points = [

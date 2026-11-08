@@ -334,6 +334,39 @@ void main() {
       print('| E. P01 + P03 + P02 + AEKF (1Hz Filtered) | ${rmseE.toStringAsFixed(2).padLeft(17)} m | ${p95E.toStringAsFixed(1).padLeft(7)} m | ${distE.toStringAsFixed(1).padLeft(16)} m | ${apexE.toStringAsFixed(1).padLeft(11)} m | ${latencyE.toStringAsFixed(1).padLeft(5)} µs |');
       print('========================================================================================================================\n');
 
+      final segments = ['straight', 'turn_90', 'stationary', 'urban_canyon', 'roundabout', 'outage'];
+      final segmentStats = <String, ({double linearRmse, double pchipRmse, double p01PchipRmse, int count})>{};
+      for (final seg in segments) {
+        final errsA = <double>[];
+        final errsB = <double>[];
+        final errsD = <double>[];
+        for (var t = 0; t < groundTruth.length; t++) {
+          if (groundTruth[t].segmentType == seg) {
+            errsA.add(pipelineAErrors[t]);
+            errsB.add(pipelineBErrors[t]);
+            errsD.add(pipelineDErrors[t]);
+          }
+        }
+        if (errsA.isNotEmpty) {
+          final rA = math.sqrt(errsA.fold(0.0, (acc, e) => acc + e * e) / errsA.length);
+          final rB = math.sqrt(errsB.fold(0.0, (acc, e) => acc + e * e) / errsB.length);
+          final rD = math.sqrt(errsD.fold(0.0, (acc, e) => acc + e * e) / errsD.length);
+          segmentStats[seg] = (linearRmse: rA, pchipRmse: rB, p01PchipRmse: rD, count: errsA.length);
+        }
+      }
+
+      print('========================================================================================================================');
+      print('AETRON RESEARCH P03: FAIR LINEAR VS PCHIP ERROR BREAKDOWN BY SEGMENT TYPE');
+      print('========================================================================================================================');
+      print('| Segment Type            | Epoch Count | Linear RMSE (Pipe A) | PCHIP RMSE (Pipe B) | P01+PCHIP (Pipe D) | Best Method |');
+      print('|:------------------------|:-----------:|:--------------------:|:-------------------:|:------------------:|:-----------:|');
+      for (final entry in segmentStats.entries) {
+        final s = entry.value;
+        final best = s.linearRmse < s.pchipRmse ? 'Linear' : (s.pchipRmse < s.linearRmse ? 'PCHIP' : 'Tie');
+        print('| ${entry.key.padRight(24)}| ${s.count.toString().padLeft(11)} | ${s.linearRmse.toStringAsFixed(2).padLeft(18)} m | ${s.pchipRmse.toStringAsFixed(2).padLeft(17)} m | ${s.p01PchipRmse.toStringAsFixed(2).padLeft(16)} m | ${best.padLeft(11)} |');
+      }
+      print('========================================================================================================================\n');
+
       expect(groundTruthDistanceMeters, greaterThan(0.0));
       expect(resD.interpolatedPointCount, greaterThan(150));
       expect(rmseD, lessThan(rmseC));

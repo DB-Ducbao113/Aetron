@@ -27,6 +27,17 @@ enum ReconstructionGapType {
   stationaryDwell,
 }
 
+/// Algorithm method used for trajectory gap reconstruction.
+enum ReconstructionMethod {
+  /// Monotone Piecewise Cubic Hermite Interpolating Polynomial (Fritsch & Carlson, 1980).
+  /// Preserves continuous curvature and tangent derivatives on curves and athletic tracks.
+  monotonePchip,
+
+  /// Linear chord interpolation on coordinates.
+  /// Lightweight and effective on straight-line road segments without curvature.
+  linearChord,
+}
+
 /// A trajectory point resulting from the P03 reconstruction stage.
 class ReconstructedPoint {
   final LatLng point;
@@ -87,6 +98,9 @@ class TrajectoryReconstructionResult {
   /// Distance covered during indeterminate blackouts (straight-line chord, isolated) (meters).
   final double indeterminateChordDistanceMeters;
 
+  /// Reconstruction interpolation algorithm used.
+  final ReconstructionMethod method;
+
   /// Ratio of synthesized points to total output points.
   double get interpolationRatio =>
       reconstructedPointCount > 0 ? interpolatedPointCount / reconstructedPointCount : 0.0;
@@ -99,6 +113,7 @@ class TrajectoryReconstructionResult {
     required this.indeterminateGapCount,
     required this.totalReconstructedDistanceMeters,
     required this.indeterminateChordDistanceMeters,
+    this.method = ReconstructionMethod.monotonePchip,
   });
 }
 
