@@ -67,11 +67,24 @@ class AdaptiveGnssCorrectionEngine implements IGnssCorrectionEngine {
     required String activityType,
   }) {
     // Robust input validation and numerical sanitization
+    if (!measurementPoint.latitude.isFinite || !measurementPoint.longitude.isFinite) {
+      return GnssCorrectionResult(
+        position: measurementPoint,
+        effectiveAccuracyMeters: 50.0,
+        effectiveSpeedMs: 0.0,
+        effectiveHeadingDeg: null,
+        mahalanobisDistanceSq: double.infinity,
+        quality: GnssCorrectionQuality.multipathRejected,
+        isAccepted: false,
+        headingProcessNoiseMultiplier: 1.0,
+      );
+    }
+
     final dt = (timeDeltaSec.isFinite && timeDeltaSec > 0.0)
         ? timeDeltaSec.clamp(0.05, 5.0)
         : 1.0;
     final safeAcc = (reportedAccuracyMeters.isFinite && reportedAccuracyMeters > 0.0)
-        ? reportedAccuracyMeters
+        ? reportedAccuracyMeters.clamp(1.0, 500.0)
         : 10.0;
     final safeSpeed = (reportedSpeedMs.isFinite && reportedSpeedMs >= 0.0)
         ? reportedSpeedMs
@@ -81,7 +94,9 @@ class AdaptiveGnssCorrectionEngine implements IGnssCorrectionEngine {
         : null;
 
     // Initial fix: no prediction available, accept nominally
-    if (predictedPosition == null) {
+    if (predictedPosition == null ||
+        !predictedPosition.latitude.isFinite ||
+        !predictedPosition.longitude.isFinite) {
       if (safeHeading != null) {
         _prevAcceptedHeadingDeg = safeHeading;
       }
@@ -111,8 +126,8 @@ class AdaptiveGnssCorrectionEngine implements IGnssCorrectionEngine {
     final rMeas = math.max(2.25, safeAcc * safeAcc);
     final rawPEast = predictedPosVarianceEast ?? predictedPosVariance;
     final rawPNorth = predictedPosVarianceNorth ?? predictedPosVariance;
-    final pEast = math.max(0.5, rawPEast.isFinite && rawPEast > 0.0 ? rawPEast : 4.0);
-    final pNorth = math.max(0.5, rawPNorth.isFinite && rawPNorth > 0.0 ? rawPNorth : 4.0);
+    final pEast = (rawPEast.isFinite && rawPEast > 0.0 ? rawPEast : 4.0).clamp(0.5, 10000.0);
+    final pNorth = (rawPNorth.isFinite && rawPNorth > 0.0 ? rawPNorth : 4.0).clamp(0.5, 10000.0);
 
     // Cauchy-Schwarz inequality constraint: |P_EN| <= 0.99 * sqrt(P_EE * P_NN)
     // Mathematically guarantees det(S) >= (1 - 0.99^2)*P_EE*P_NN + rMeas^2 >= 5.0625 > 0 strictly positive.

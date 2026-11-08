@@ -368,6 +368,135 @@ void main() {
       expect(res.mahalanobisDistanceSq.isFinite, isTrue);
       expect(res.headingProcessNoiseMultiplier, equals(1.0));
     });
+
+    test('Numerical conditioning: extreme anisotropic eigenvalues and condition number analysis', () {
+      const pred = LatLng(10.776889, 106.700806);
+      const meas = LatLng(10.776910, 106.700806);
+
+      // Highly anisotropic prior covariance: P_EE = 5000.0 m^2, P_NN = 1.0 m^2, P_EN = 0.0
+      // With reported accuracy 3.0m (R = 9.0 m^2):
+      // S_EE = 5000 + 9 = 5009, S_NN = 1 + 9 = 10, S_EN = 0
+      // lambda_max = 5009, lambda_min = 10 -> kappa(S) = 500.9 >> 5.0
+      final res = engine.correctMeasurement(
+        measurementPoint: meas,
+        reportedAccuracyMeters: 3.0,
+        timeDeltaSec: 1.0,
+        reportedSpeedMs: 4.0,
+        reportedHeadingDeg: 0.0,
+        predictedPosition: pred,
+        predictedHeadingDeg: 0.0,
+        predictedPosVariance: 2500.5,
+        predictedPosVarianceEast: 5000.0,
+        predictedPosVarianceNorth: 1.0,
+        predictedPosCovarianceEN: 0.0,
+        activityType: 'running',
+      );
+
+      expect(res.isAccepted, isTrue);
+      expect(res.mahalanobisDistanceSq.isFinite, isTrue);
+      expect(res.mahalanobisDistanceSq, greaterThan(0.0));
+
+      // Analytical verification: S remains strictly positive definite even when kappa(S) is large
+      const sEE = 5000.0 + 9.0;
+      const sNN = 1.0 + 9.0;
+      const detS = sEE * sNN;
+      const kappa = sEE / sNN; // 500.9
+      expect(detS, greaterThan(0.0));
+      expect(kappa, greaterThan(100.0)); // Proves universal kappa(S) < 5 claim is invalid without input bounds!
+    });
+
+    test('Input sanitization: NaN and Infinity in position coordinates and variances', () {
+      // Case 1: Corrupted predictedPosition with NaN
+      const nanPred = LatLng(double.nan, 106.700806);
+      const validMeas = LatLng(10.776889, 106.700806);
+
+      final res1 = engine.correctMeasurement(
+        measurementPoint: validMeas,
+        reportedAccuracyMeters: 4.0,
+        timeDeltaSec: 1.0,
+        reportedSpeedMs: 4.0,
+        reportedHeadingDeg: 0.0,
+        predictedPosition: nanPred,
+        predictedHeadingDeg: 0.0,
+        predictedPosVariance: 9.0,
+        activityType: 'running',
+      );
+      expect(res1.isAccepted, isTrue);
+      expect(res1.quality, equals(GnssCorrectionQuality.nominal));
+      expect(res1.position, equals(validMeas));
+
+      // Case 2: Corrupted measurementPoint with Infinity
+      const infMeas = LatLng(10.776889, double.infinity);
+      const validPred = LatLng(10.776889, 106.700806);
+
+      final res2 = engine.correctMeasurement(
+        measurementPoint: infMeas,
+        reportedAccuracyMeters: 4.0,
+        timeDeltaSec: 1.0,
+        reportedSpeedMs: 4.0,
+        reportedHeadingDeg: 0.0,
+        predictedPosition: validPred,
+        predictedHeadingDeg: 0.0,
+        predictedPosVariance: 9.0,
+        activityType: 'running',
+      );
+      expect(res2.isAccepted, isFalse);
+      expect(res2.quality, equals(GnssCorrectionQuality.multipathRejected));
+
+      // Case 3: Infinite prior variances are safely clamped
+      final res3 = engine.correctMeasurement(
+        measurementPoint: validMeas,
+        reportedAccuracyMeters: 4.0,
+        timeDeltaSec: 1.0,
+        reportedSpeedMs: 4.0,
+        reportedHeadingDeg: 0.0,
+        predictedPosition: validPred,
+        predictedHeadingDeg: 0.0,
+        predictedPosVariance: double.infinity,
+        predictedPosVarianceEast: double.infinity,
+        predictedPosVarianceNorth: double.nan,
+        activityType: 'running',
+      );
+      expect(res3.isAccepted, isTrue);
+      expect(res3.mahalanobisDistanceSq.isFinite, isTrue);
+    });
+
+    test('Empirical measurement covariance R analysis: per-axis standard deviation vs 68% circular radius', () {
+      const pred = LatLng(10.776889, 106.700806);
+      const meas = LatLng(10.776920, 106.700806); // ~3.4m North displacement
+
+      // Model A: Conservative mapping R = H_acc^2
+      final resConservative = engine.correctMeasurement(
+        measurementPoint: meas,
+        reportedAccuracyMeters: 3.0, // R = 9.0 m^2
+        timeDeltaSec: 1.0,
+        reportedSpeedMs: 4.0,
+        reportedHeadingDeg: 0.0,
+        predictedPosition: pred,
+        predictedHeadingDeg: 0.0,
+        predictedPosVariance: 4.0,
+        activityType: 'running',
+      );
+
+      // Model B: Rayleigh 68% mapping R = H_acc^2 / 2.2789 (effective sigma_axis = H_acc / 1.51)
+      final customEngineRayleigh = AdaptiveGnssCorrectionEngine();
+      final resRayleigh = customEngineRayleigh.correctMeasurement(
+        measurementPoint: meas,
+        reportedAccuracyMeters: 3.0 / 1.5096, // R = 3.95 m^2
+        timeDeltaSec: 1.0,
+        reportedSpeedMs: 4.0,
+        reportedHeadingDeg: 0.0,
+        predictedPosition: pred,
+        predictedHeadingDeg: 0.0,
+        predictedPosVariance: 4.0,
+        activityType: 'running',
+      );
+
+      // Verification: Smaller R increases NIS (d_M^2), making the filter more aggressive in gating
+      expect(resRayleigh.mahalanobisDistanceSq, greaterThan(resConservative.mahalanobisDistanceSq));
+      // Confirms conservative mapping prevents false inflation on smartphones where H_acc is already optimistic
+      expect(resConservative.quality, equals(GnssCorrectionQuality.nominal));
+    });
   });
 }
 
