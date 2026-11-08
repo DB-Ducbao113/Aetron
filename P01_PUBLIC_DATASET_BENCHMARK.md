@@ -179,3 +179,4 @@ In slow walking ($1.2\text{ m/s}$), normal body sway and step impacts produce sl
 ```
 
 The benchmark test suite `test/p01_input_quality_benchmark_test.dart` passes 100% green across all 5 test scenarios.
+

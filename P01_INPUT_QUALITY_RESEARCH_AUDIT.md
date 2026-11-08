@@ -182,3 +182,4 @@ Based on cross-platform mobile compatibility (Apple iOS `CoreLocation` + Android
 1. **OSM Centerline Policy:** OSM road centerlines are validated as geometric topological references for circuit simulation, but are **not** treated as surveyor-grade RTK truth.
 2. **Hard-Rejection Deprecation:** Rigid hard-rejection of acceleration spikes at 1 Hz is scientifically defective. Future architectures must transition to **Adaptive Downweighting**.
 3. **Execution Gate:** In Task 5, Aetron will integrate the 4-tier GPS Input Quality Gate (`ACCEPT`, `DOWNWEIGHT`, `REJECT`, `SEGMENT_BREAK`) backed by a default-OFF compile-time feature flag and bit-for-bit rollback.
+

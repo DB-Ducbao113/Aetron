@@ -186,3 +186,4 @@ Neither Candidate 1 nor Candidate 2 alone can replace P01:
 - Candidate 1 lacks stay-point clustering and retains unacceptable stationary drift (107 m).
 - Candidate 2 alone downweights points but cannot collapse prolonged stationary red-light dwells (140 m).
 - **The decisive breakthrough is the Hybrid Architecture:** pairing P01's Zheng (2009) stay point clustering with Candidate 2's Mobile-GVIO robust M-estimator quality gate and AEKF state estimation.
+

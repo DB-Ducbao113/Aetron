@@ -330,7 +330,7 @@ void main() {
       for (var i = 0; i < p01Result.processedPoints.length; i++) {
         final pt = p01Result.processedPoints[i];
         final m = measurements[i];
-        if (!pt.isAccepted || m.isDropped || pt.isGapRecovery) {
+        if (m.isDropped || pt.isGapRecovery) {
           ekfD.reset();
           lastEkfDPoint = null;
           continue;
@@ -537,7 +537,7 @@ void main() {
       for (var i = 0; i < mGvioDecisions.length; i++) {
         final d = mGvioDecisions[i];
         final m = measurements[i];
-        if (d.status == GpsQualityStatus.reject || m.isDropped || d.isGapRecovery) {
+        if (m.isDropped || d.isGapRecovery) {
           hybridEkf.reset();
           lastHybPoint = null;
           continue;
@@ -547,6 +547,9 @@ void main() {
         final isStay = truth[i].isStationary;
         if (isStay && stayCentroid != null) {
           filtered = stayCentroid;
+        } else if (d.status == GpsQualityStatus.reject) {
+          // Reject: do not feed corrupted measurement to Kalman update; hold state
+          filtered = lastHybPoint ?? d.rawSample.point;
         } else {
           // Inflate measurement noise by M-estimator covariance scale
           final scaledAccuracy = d.rawSample.accuracyMeters * math.sqrt(d.covarianceScale);

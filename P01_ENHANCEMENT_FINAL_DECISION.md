@@ -139,3 +139,4 @@ To guarantee zero regression in live production:
    - `lib/features/workout/domain/services/trajectory_preprocessing/gps_input_quality_gate.dart`
    - `test/p01_input_quality_benchmark_test.dart`
    - `tooling/benchmark/p01_research_evaluation.py`
+
