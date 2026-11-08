@@ -46,6 +46,20 @@ const bool kEnableGnssCorrectionShadowMode = bool.fromEnvironment(
   defaultValue: false,
 );
 
+/// Enables research-based trajectory reconstruction (Phase 3: Czerwiński et al., 2026; Fritsch & Carlson, 1980).
+/// When enabled, reconstructs continuous high-fidelity paths across sparse dropouts (2s-15s) using
+/// shape-preserving Hermite splines (PCHIP), while preserving indeterminate blackouts (>15s) without fabricating data.
+const bool kEnableTrajectoryReconstruction = bool.fromEnvironment(
+  'FLOWFIT_ENABLE_TRAJECTORY_RECONSTRUCTION',
+  defaultValue: false,
+);
+
+/// Enables shadow comparison logging for Phase 3 Trajectory Reconstruction diagnostics.
+const bool kEnableTrajectoryReconstructionShadowMode = bool.fromEnvironment(
+  'FLOWFIT_TRAJECTORY_RECONSTRUCTION_SHADOW',
+  defaultValue: false,
+);
+
 /// Compile-time git revision for experiment provenance.
 /// Injected dynamically via --dart-define=GIT_COMMIT_SHA=... during build.
 const String kGitRevision = String.fromEnvironment(

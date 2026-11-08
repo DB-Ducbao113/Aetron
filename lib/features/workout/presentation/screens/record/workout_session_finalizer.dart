@@ -7,6 +7,8 @@ import 'package:fitness_exercise_application/features/workout/domain/entities/wo
 import 'package:fitness_exercise_application/features/workout/domain/services/trajectory_preprocessing/batch_trajectory_preprocessor.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/trajectory_preprocessing/kinematic_limits.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/trajectory_preprocessing/trajectory_sample.dart';
+import 'package:fitness_exercise_application/features/workout/domain/services/trajectory_reconstruction/kinematic_trajectory_reconstruction_engine.dart';
+import 'package:fitness_exercise_application/features/workout/domain/services/trajectory_reconstruction/trajectory_reconstruction_models.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/workout_metrics_calculator.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/workout_tracking_engine.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/screens/record/workout_session_state.dart';
@@ -45,6 +47,7 @@ class WorkoutSessionFinalizer {
     String gpsAlgorithm = 'ekf_4state',
     UserProfile? userProfile,
     bool enableTrajectoryPreprocessing = kEnableTrajectoryPreprocessing,
+    bool enableTrajectoryReconstruction = kEnableTrajectoryReconstruction,
   }) {
     final gpsAnalysis = trackingEngine.analyzeGpsWorkout(
       GpsWorkoutAnalysisInput(
@@ -58,7 +61,8 @@ class WorkoutSessionFinalizer {
     final movingTimeSec = math.min(state.movingTimeSeconds, durationSec);
 
     TrajectoryPreprocessingResult? preprocessorResult;
-    if (enableTrajectoryPreprocessing && rawGpsPositions.isNotEmpty) {
+    if ((enableTrajectoryPreprocessing || enableTrajectoryReconstruction) &&
+        rawGpsPositions.isNotEmpty) {
       try {
         final limits = KinematicLimits.forActivity(state.activityType);
         final batchPreprocessor = BatchTrajectoryPreprocessor(limits: limits);
@@ -78,6 +82,21 @@ class WorkoutSessionFinalizer {
         preprocessorResult = batchPreprocessor.process(rawSamples);
       } catch (e) {
         // Fallback safely if batch preprocessing fails on unusual inputs
+      }
+    }
+
+    TrajectoryReconstructionResult? reconstructionResult;
+    if (enableTrajectoryReconstruction &&
+        preprocessorResult != null &&
+        preprocessorResult.processedPoints.isNotEmpty) {
+      try {
+        const reconstructionEngine = KinematicTrajectoryReconstructionEngine();
+        reconstructionResult = reconstructionEngine.reconstructTrajectory(
+          points: preprocessorResult.processedPoints,
+          activityType: state.activityType,
+        );
+      } catch (e) {
+        // Fallback safely if reconstruction fails
       }
     }
 
@@ -208,6 +227,17 @@ class WorkoutSessionFinalizer {
         'aekf_vs_clean_delta_km':
             (filteredRouteDistanceM - preprocessorResult.cleanDistanceMeters) / 1000.0,
       },
+      'reconstruction_enabled': reconstructionResult != null,
+      if (reconstructionResult != null) ...{
+        'reconstruction_interpolated_points':
+            reconstructionResult.interpolatedPointCount,
+        'reconstruction_indeterminate_outages':
+            reconstructionResult.indeterminateGapCount,
+        'reconstruction_distance_km':
+            reconstructionResult.totalReconstructedDistanceMeters / 1000.0,
+        'reconstruction_interpolation_ratio':
+            reconstructionResult.interpolationRatio,
+      },
     };
     final session = WorkoutSession(
       id: sessionId,
@@ -228,8 +258,11 @@ class WorkoutSessionFinalizer {
       lapSplits: state.lapSplits,
       gpsAnalysis: gpsAnalysis,
       filteredRouteJson: _encodeRouteSegments(filteredRouteSegments),
-      matchedRouteJson: '[]',
-      routeMatchStatus: 'pending',
+      matchedRouteJson: reconstructionResult != null
+          ? _encodeReconstructedSegments(reconstructionResult.points)
+          : '[]',
+      routeMatchStatus:
+          reconstructionResult != null ? 'reconstructed_pchip' : 'pending',
       routeDistanceSource: 'filtered',
       routeMatchMetricsJson: jsonEncode(routeMetrics),
     );
@@ -260,4 +293,28 @@ String _encodeRouteSegments(List<List<LatLng>> segments) {
       )
       .toList(growable: false);
   return jsonEncode(jsonSegments);
+}
+
+String _encodeReconstructedSegments(List<ReconstructedPoint> points) {
+  if (points.isEmpty) return '[]';
+  final segments = <List<Map<String, dynamic>>>[];
+  var currentSegment = <Map<String, dynamic>>[];
+
+  for (final p in points) {
+    if (p.gapType == ReconstructionGapType.indeterminateOutage &&
+        currentSegment.isNotEmpty) {
+      segments.add(currentSegment);
+      currentSegment = <Map<String, dynamic>>[];
+    }
+    currentSegment.add({
+      'lat': p.point.latitude,
+      'lng': p.point.longitude,
+      'interpolated': p.isInterpolated,
+      'gap_type': p.gapType.name,
+    });
+  }
+  if (currentSegment.isNotEmpty) {
+    segments.add(currentSegment);
+  }
+  return jsonEncode(segments);
 }
