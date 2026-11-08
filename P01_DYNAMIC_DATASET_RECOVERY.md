@@ -119,3 +119,4 @@ $$d_M^2 = \tilde{\mathbf{y}}^T S^{-1} \tilde{\mathbf{y}}$$
 **Verified by:** Antigravity AI Engineering & Research Suite  
 **Flutter Analyze:** 0 issues | **Flutter Test Suite:** 519 / 519 passed  
 **Branch:** `ekf` | **Baseline:** `5193900`
+
