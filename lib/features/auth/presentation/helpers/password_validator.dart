@@ -1,5 +1,6 @@
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:flutter/material.dart';
 
 class PasswordSecurityResult {
@@ -204,8 +205,8 @@ class _RuleChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            isMet ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+          BladeIcon(
+            BladeIconName.check,
             size: 12,
             color: color,
           ),

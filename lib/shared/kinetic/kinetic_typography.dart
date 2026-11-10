@@ -47,6 +47,7 @@ class KineticTypography {
     fontWeight: FontWeight.w800,
     letterSpacing: -0.4,
     height: 1.1,
+    fontFeatures: [FontFeature.tabularFigures()],
   );
 
   /// Telemetry Metric (Medium)
@@ -76,6 +77,7 @@ class KineticTypography {
     fontWeight: FontWeight.w700,
     letterSpacing: -0.64,
     height: 1.2,
+    fontFeatures: [FontFeature.tabularFigures()],
   );
 
   /// Headline Large
@@ -244,5 +246,6 @@ class KineticTypography {
     fontWeight: FontWeight.w700,
     letterSpacing: 1.0,
     height: 1.2,
+    fontFeatures: [FontFeature.tabularFigures()],
   );
 }

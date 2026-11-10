@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
 import 'package:flutter/material.dart';
@@ -232,8 +233,8 @@ class _LiveLapHudToastState extends State<LiveLapHudToast>
                 ),
 
                 // Dismiss Icon
-                Icon(
-                  Icons.close_rounded,
+                BladeIcon(
+                  BladeIconName.x,
                   color: colors.textSecondary,
                   size: 18,
                 ),

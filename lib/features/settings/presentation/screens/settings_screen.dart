@@ -15,7 +15,7 @@ import 'package:fitness_exercise_application/features/settings/presentation/widg
 import 'package:fitness_exercise_application/features/settings/presentation/widgets/kinetic_settings_top_bar.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/providers/workout_providers.dart';
 import 'package:fitness_exercise_application/shared/aetron/aetron_skeleton.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_backdrop.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_theme_provider.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
@@ -953,6 +953,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                       children: [
                         KineticSettingsTile(
                           icon: Icons.language_rounded,
+                          bladeIcon: BladeIconName.globe,
                           title: AppTranslations.get('app_language', currentLang),
                           subtitle: currentLang == AppLanguage.vi ? '🇻🇳 Tiếng Việt' : '🇬🇧 English',
                           accentColor: colors.primary,
@@ -961,6 +962,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                         ),
                         KineticSettingsTile(
                           icon: Icons.straighten_rounded,
+                          bladeIcon: BladeIconName.units,
                           title: AppTranslations.get('units', currentLang),
                           subtitle: _useMetricUnits
                               ? (currentLang == AppLanguage.vi ? 'Hệ mét (km, m, km/h)' : 'Metric (km, m, km/h)')
@@ -987,6 +989,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                         ),
                         KineticSettingsTile(
                           icon: Icons.palette_outlined,
+                          bladeIcon: BladeIconName.moon,
                           title: currentLang == AppLanguage.vi ? 'Giao diện' : 'Appearance',
                           subtitle: switch (ref.watch(themeModeProvider)) {
                             ThemeMode.dark => currentLang == AppLanguage.vi
@@ -1013,6 +1016,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                       children: [
                         KineticSettingsTile(
                           icon: Icons.notifications_active_rounded,
+                          bladeIcon: BladeIconName.bell,
                           title: currentLang == AppLanguage.vi ? 'Thông báo' : 'Notifications',
                           subtitle: _loadingPermissions
                               ? AppTranslations.get('checking_access', currentLang)
@@ -1034,6 +1038,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                         ),
                         KineticSettingsTile(
                           icon: Icons.camera_alt_rounded,
+                          bladeIcon: BladeIconName.cam,
                           title: AppTranslations.get('camera_access', currentLang),
                           subtitle: _loadingPermissions
                               ? AppTranslations.get('checking_access', currentLang)
@@ -1075,6 +1080,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                         ),
                         KineticSettingsTile(
                           icon: Icons.location_on_rounded,
+                          bladeIcon: BladeIconName.gps,
                           title: AppTranslations.get('location_access', currentLang),
                           subtitle: _loadingPermissions
                               ? AppTranslations.get('checking_access', currentLang)
@@ -1103,6 +1109,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                       children: [
                         KineticSettingsTile(
                           icon: Icons.delete_sweep_rounded,
+                          bladeIcon: BladeIconName.trash,
                           title: AppTranslations.get('clear_cache', currentLang),
                           subtitle: _isClearingCache
                               ? AppTranslations.get('clearing_cache', currentLang)
@@ -1130,6 +1137,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                       children: [
                         KineticSettingsTile(
                           icon: Icons.privacy_tip_outlined,
+                          bladeIcon: BladeIconName.shield,
                           title: AppTranslations.get('privacy_policy', currentLang),
                           subtitle: AppTranslations.get('privacy_sub', currentLang),
                           accentColor: colors.primary,
@@ -1142,6 +1150,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                         ),
                         KineticSettingsTile(
                           icon: Icons.description_outlined,
+                          bladeIcon: BladeIconName.doc,
                           title: AppTranslations.get('terms_of_service', currentLang),
                           subtitle: AppTranslations.get('terms_sub', currentLang),
                           accentColor: colors.secondary,
@@ -1154,6 +1163,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                         ),
                         KineticSettingsTile(
                           icon: Icons.info_outline_rounded,
+                          bladeIcon: BladeIconName.info,
                           title: currentLang == AppLanguage.vi ? 'Phiên bản ứng dụng' : 'App Version',
                           subtitle: _appVersion,
                           accentColor: colors.secondary,
@@ -1186,6 +1196,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                       children: [
                         KineticSettingsTile(
                           icon: Icons.person_remove_rounded,
+                          bladeIcon: BladeIconName.trash,
                           title: currentLang == AppLanguage.vi ? 'Xóa tài khoản' : 'Delete Account',
                           subtitle: currentLang == AppLanguage.vi
                               ? 'Xóa vĩnh viễn tài khoản và toàn bộ dữ liệu'
@@ -1418,16 +1429,13 @@ class _ProfileHeroCard extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
           child: Material(
-            color: Colors.transparent,
+            color: colors.surface1,
             child: InkWell(
               onTap: onTap,
-              child: Stack(
-                children: [
-                  const Positioned.fill(child: TopographicBackdrop()),
-                  Padding(
-                    padding: const EdgeInsets.all(KineticTokens.spaceMD),
-                    child: Row(
-                      children: [
+              child: Padding(
+                padding: const EdgeInsets.all(KineticTokens.spaceMD),
+                child: Row(
+                  children: [
                         Container(
                           width: 56,
                           height: 56,
@@ -1509,8 +1517,8 @@ class _ProfileHeroCard extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(width: 4),
-                              Icon(
-                                Icons.edit_outlined,
+                              BladeIcon(
+                                BladeIconName.edit,
                                 size: 12,
                                 color: colors.primary,
                               ),
@@ -1520,8 +1528,6 @@ class _ProfileHeroCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                ],
-              ),
             ),
           ),
         ),

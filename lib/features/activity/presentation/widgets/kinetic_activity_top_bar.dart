@@ -1,3 +1,4 @@
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 
@@ -122,8 +123,8 @@ class KineticActivityTopBar extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 6),
-                Icon(
-                  Icons.satellite_alt_rounded,
+                BladeIcon(
+                  BladeIconName.gps,
                   size: 14,
                   color: colors.primary,
                 ),

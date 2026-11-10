@@ -59,7 +59,7 @@ class KineticColors extends ThemeExtension<KineticColors> {
     error: Color(0xFFFFB4AB),
     textPrimary: Color(0xFFFFFFFF),
     textSecondary: Color(0xFFE1E8EB),
-    textMuted: Color(0xFF7D919A),
+    textMuted: Color(0xFF8FA3A9),
     borderSubtle: Color(0xFF3D4650),
     borderAccent: Color(0x33A8DCE7),
     borderStrong: Color(0xFF57626E),

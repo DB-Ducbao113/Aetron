@@ -1,3 +1,4 @@
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 
@@ -21,17 +22,17 @@ class KineticActivityQuickSwitch extends StatelessWidget {
       {
         'id': 'cycling',
         'label': isVi ? 'Đạp xe' : 'Cycling',
-        'icon': Icons.directions_bike_rounded,
+        'icon': BladeIconName.bike,
       },
       {
         'id': 'running',
         'label': isVi ? 'Chạy bộ' : 'Running',
-        'icon': Icons.directions_run_rounded,
+        'icon': BladeIconName.run,
       },
       {
         'id': 'walking',
         'label': isVi ? 'Đi bộ' : 'Walking',
-        'icon': Icons.directions_walk_rounded,
+        'icon': BladeIconName.walk,
       },
     ];
 
@@ -60,7 +61,7 @@ class KineticActivityQuickSwitch extends StatelessWidget {
                   child: _ActivityQuickSwitchCard(
                     id: activities[i]['id'] as String,
                     label: activities[i]['label'] as String,
-                    icon: activities[i]['icon'] as IconData,
+                    icon: activities[i]['icon'] as BladeIconName,
                     isSelected: selectedActivity == activities[i]['id'],
                     onTap: () => onSelected(activities[i]['id'] as String),
                   ),
@@ -77,7 +78,7 @@ class KineticActivityQuickSwitch extends StatelessWidget {
 class _ActivityQuickSwitchCard extends StatelessWidget {
   final String id;
   final String label;
-  final IconData icon;
+  final BladeIconName icon;
   final bool isSelected;
   final VoidCallback onTap;
 
@@ -125,7 +126,7 @@ class _ActivityQuickSwitchCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
+                BladeIcon(
                   icon,
                   size: 20,
                   color: contentColor,

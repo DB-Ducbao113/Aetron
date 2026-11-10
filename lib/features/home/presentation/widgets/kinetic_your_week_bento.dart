@@ -1,3 +1,4 @@
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 
@@ -91,8 +92,8 @@ class KineticYourWeekBento extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            Icons.track_changes_rounded,
+                          BladeIcon(
+                            BladeIconName.target,
                             size: 13,
                             color: colors.primary,
                           ),
@@ -105,8 +106,8 @@ class KineticYourWeekBento extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: KineticTokens.spaceXXS),
-                          Icon(
-                            Icons.chevron_right_rounded,
+                          BladeIcon(
+                            BladeIconName.chevR,
                             size: 14,
                             color: colors.primary,
                           ),
@@ -157,8 +158,8 @@ class KineticYourWeekBento extends StatelessWidget {
                       const SizedBox(height: KineticTokens.spaceXXS),
                       Row(
                         children: [
-                          Icon(
-                            Icons.trending_up_rounded,
+                          BladeIcon(
+                            BladeIconName.chart,
                             size: 14,
                             color: colors.secondary,
                           ),
@@ -227,8 +228,8 @@ class KineticYourWeekBento extends StatelessWidget {
                       const SizedBox(height: KineticTokens.spaceXXS),
                       Row(
                         children: [
-                          Icon(
-                            Icons.check_circle_outline_rounded,
+                          BladeIcon(
+                            BladeIconName.check,
                             size: 14,
                             color: colors.primary,
                           ),
@@ -315,8 +316,8 @@ class KineticYourWeekBento extends StatelessWidget {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            Icons.tune_rounded,
+                          BladeIcon(
+                            BladeIconName.sliders,
                             size: 14,
                             color: colors.textSecondary,
                           ),
@@ -343,8 +344,8 @@ class KineticYourWeekBento extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: KineticTokens.spaceXXS),
-                          Icon(
-                            Icons.arrow_forward_ios_rounded,
+                          BladeIcon(
+                            BladeIconName.chevR,
                             size: 10,
                             color: colors.primary,
                           ),

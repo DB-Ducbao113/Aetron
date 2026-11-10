@@ -2,6 +2,7 @@ import 'package:fitness_exercise_application/core/legal/legal_documents.dart';
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/legal/presentation/widgets/legal_info_panel.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:flutter/material.dart';
 
 /// Clean, document-oriented layout component for long-form legal reading.
@@ -44,9 +45,10 @@ class LegalDocumentLayout extends StatelessWidget {
                 children: [
                   IconButton(
                     onPressed: () => Navigator.of(context).maybePop(),
-                    icon: Icon(
-                      Icons.arrow_back_rounded,
+                    icon: BladeIcon(
+                      BladeIconName.chevL,
                       color: colors.textPrimary,
+                      size: 22,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -240,8 +242,8 @@ class _TableOfContents extends StatelessWidget {
                         ),
                       ),
                     ),
-                    Icon(
-                      Icons.chevron_right_rounded,
+                    BladeIcon(
+                      BladeIconName.chevR,
                       color: colors.textMuted,
                       size: 18,
                     ),

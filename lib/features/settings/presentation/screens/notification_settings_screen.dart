@@ -7,6 +7,7 @@ import 'package:fitness_exercise_application/features/settings/presentation/prov
 import 'package:fitness_exercise_application/features/settings/presentation/providers/settings_preferences_providers.dart';
 import 'package:fitness_exercise_application/features/settings/presentation/widgets/kinetic_time_input_sheet.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/providers/workout_providers.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -343,12 +344,10 @@ class _NotificationSettingsScreenState
                                           KineticTokens.radiusSM + 2,
                                         ),
                                       ),
-                                      child: Icon(
-                                        _masterEnabled
-                                            ? Icons.notifications_active_rounded
-                                            : Icons.notifications_off_rounded,
+                                      child: BladeIcon(
+                                        BladeIconName.bell,
+                                        size: 24,
                                         color: _masterEnabled ? colors.primary : colors.textMuted,
-                                        size: 22,
                                       ),
                                     ),
                                     const SizedBox(width: 14),
@@ -417,10 +416,10 @@ class _NotificationSettingsScreenState
                                           color: colors.tertiary.withValues(alpha: 0.14),
                                           borderRadius: BorderRadius.circular(KineticTokens.radiusSM + 2),
                                         ),
-                                        child: Icon(
-                                          Icons.local_fire_department_rounded,
+                                        child: BladeIcon(
+                                          BladeIconName.flame,
                                           color: colors.tertiary,
-                                          size: 16,
+                                          size: 17,
                                         ),
                                       ),
                                       const SizedBox(width: 12),
@@ -464,8 +463,8 @@ class _NotificationSettingsScreenState
                                     const SizedBox(height: 12),
                                     Row(
                                       children: [
-                                        Icon(
-                                          Icons.access_time_rounded,
+                                        BladeIcon(
+                                          BladeIconName.clock,
                                           size: 16,
                                           color: colors.textSecondary,
                                         ),
@@ -530,10 +529,10 @@ class _NotificationSettingsScreenState
                                           color: colors.tertiary.withValues(alpha: 0.14),
                                           borderRadius: BorderRadius.circular(KineticTokens.radiusSM + 2),
                                         ),
-                                        child: Icon(
-                                          Icons.emoji_events_rounded,
+                                        child: BladeIcon(
+                                          BladeIconName.trophy,
                                           color: colors.tertiary,
-                                          size: 16,
+                                          size: 17,
                                         ),
                                       ),
                                       const SizedBox(width: 12),
@@ -591,10 +590,10 @@ class _NotificationSettingsScreenState
                                           color: colors.secondary.withValues(alpha: 0.14),
                                           borderRadius: BorderRadius.circular(KineticTokens.radiusSM + 2),
                                         ),
-                                        child: Icon(
-                                          Icons.bedtime_rounded,
+                                        child: BladeIcon(
+                                          BladeIconName.moon,
                                           color: colors.secondary,
-                                          size: 16,
+                                          size: 17,
                                         ),
                                       ),
                                       const SizedBox(width: 12),
@@ -638,8 +637,8 @@ class _NotificationSettingsScreenState
                                     const SizedBox(height: 12),
                                     Row(
                                       children: [
-                                        Icon(
-                                          Icons.nightlight_round,
+                                        BladeIcon(
+                                          BladeIconName.moon,
                                           size: 16,
                                           color: colors.textSecondary,
                                         ),

@@ -1,4 +1,5 @@
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -120,8 +121,8 @@ class KineticWorkoutStopSheet extends StatelessWidget {
                     width: 2,
                   ),
                 ),
-                child: Icon(
-                  Icons.flag_circle_rounded,
+                child: BladeIcon(
+                  BladeIconName.flag,
                   size: 34,
                   color: colors.tertiary,
                 ),
@@ -221,8 +222,8 @@ class KineticWorkoutStopSheet extends StatelessWidget {
                   HapticFeedback.heavyImpact();
                   Navigator.of(context).pop(true);
                 },
-                icon: const Icon(
-                  Icons.stop_rounded,
+                icon: BladeIcon(
+                  BladeIconName.flag,
                   color: Colors.white,
                   size: 24,
                 ),
@@ -254,8 +255,8 @@ class KineticWorkoutStopSheet extends StatelessWidget {
                   HapticFeedback.lightImpact();
                   Navigator.of(context).pop(false);
                 },
-                icon: Icon(
-                  Icons.play_arrow_rounded,
+                icon: BladeIcon(
+                  BladeIconName.play,
                   color: colors.primary,
                   size: 22,
                 ),

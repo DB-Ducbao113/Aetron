@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:fitness_exercise_application/app/bootstrap.dart';
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/features/auth/presentation/helpers/google_oauth.dart';
 import 'package:fitness_exercise_application/features/auth/presentation/helpers/username_auth.dart';
 import 'package:fitness_exercise_application/features/auth/presentation/screens/auth_wrapper.dart';
@@ -173,37 +174,51 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       backgroundColor: colors.background,
       body: Column(
         children: [
-          // ── Top App Bar on the V4 topographic backdrop ────────────────────
-          Stack(
-            children: [
-              const Positioned.fill(child: TopographicBackdrop()),
-              Container(
-                padding: EdgeInsets.fromLTRB(16, topPad + 8, 16, 12),
-                child: SizedBox(
-              height: 36,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Text(
-                    isVi ? 'Đăng nhập' : 'Sign In',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: colors.textPrimary,
-                      letterSpacing: -0.01 * 18,
-                    ),
+          // ── Flat brand row (V5): real logo + hero title/subtitle ─────────
+          Padding(
+            padding: EdgeInsets.fromLTRB(20, topPad + 16, 20, 12),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(11),
+                  child: Image.asset(
+                    'assets/logo.png',
+                    width: 44,
+                    height: 44,
+                    fit: BoxFit.cover,
                   ),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: const AuthLanguageToggle(),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isVi ? 'Hành trình của bạn' : 'Your journey',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: colors.primary,
+                          letterSpacing: 0.05 * 10,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        isVi ? 'Sẵn sàng tiếp tục?' : 'Ready to continue?',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: colors.textPrimary,
+                          letterSpacing: -0.015 * 20,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                const AuthLanguageToggle(),
+              ],
             ),
-              ),
-            ],
           ),
-          // Divider matching stitch border-b border-[#23323a]
           Divider(height: 1, thickness: 1, color: colors.borderSubtle),
 
           // ── Scrollable Body ───────────────────────────────────────────────
@@ -215,76 +230,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // ── Hero image area (editorial athletic photo) ──────────
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Stack(
-                        children: [
-                          Image.asset(
-                            'assets/login_header.png',
-                            height: 180,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                            alignment: Alignment.topCenter,
-                            errorBuilder: (context, error, stackTrace) =>
-                                Container(
-                                  height: 180,
-                                  color: colors.surface2,
-                                  child: Center(
-                                    child: Icon(
-                                      Icons.fitness_center_rounded,
-                                      color: colors.primary,
-                                      size: 48,
-                                    ),
-                                  ),
-                                ),
-                          ),
-                          // Gradient scrim — DS scrimBottom
-                          Positioned.fill(
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                gradient: KineticGradients.scrimBottom(colors),
-                              ),
-                            ),
-                          ),
-                          // Bottom overlay text
-                          Positioned(
-                            bottom: 36,
-                            left: 16,
-                            right: 16,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  isVi ? 'Hành trình của bạn' : 'Your journey',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: colors.primary,
-                                    letterSpacing: 0.05 * 10,
-                                  ),
-                                ),
-                                Text(
-                                  isVi
-                                      ? 'Sẵn sàng tiếp tục?'
-                                      : 'Ready to continue?',
-                                  style: TextStyle(
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.w700,
-                                    color: colors.textPrimary,
-                                    letterSpacing: -0.015 * 22,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    Transform.translate(
-                      offset: const Offset(0, -22),
-                      child: Container(
+                    Container(
                         padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
                         decoration: BoxDecoration(
                           color: colors.surface1,
@@ -308,7 +254,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                             hintText: isVi
                                 ? 'Nhập tên đăng nhập'
                                 : 'Enter your username',
-                            prefixIcon: Icons.person_outline_rounded,
+                            prefixIcon: BladeIconName.user,
                             validator: (value) => validateUsername(value, isVi: isVi),
                           ),
                           const SizedBox(height: 16),
@@ -321,16 +267,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                             hintText: isVi
                                 ? 'Nhập mật khẩu của bạn'
                                 : 'Enter your password',
-                            prefixIcon: Icons.lock_outline_rounded,
+                            prefixIcon: BladeIconName.lock,
                             obscureText: _obscurePassword,
                             suffixIcon: IconButton(
                               onPressed: () => setState(
                                 () => _obscurePassword = !_obscurePassword,
                               ),
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_outlined
-                                    : Icons.visibility_off_outlined,
+                              icon: BladeIcon(
+                                BladeIconName.eye,
                                 color: colors.primary.withValues(alpha: 0.7),
                                 size: 20,
                               ),
@@ -462,7 +406,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           ],
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -509,7 +452,7 @@ class _StitchTextField extends StatelessWidget {
 
   final TextEditingController controller;
   final String hintText;
-  final IconData prefixIcon;
+  final BladeIconName prefixIcon;
   final bool obscureText;
   final Widget? suffixIcon;
   final FormFieldValidator<String>? validator;
@@ -535,7 +478,7 @@ class _StitchTextField extends StatelessWidget {
         ),
         filled: true,
         fillColor: colors.background,
-        prefixIcon: Icon(prefixIcon, color: colors.textMuted, size: 18),
+        prefixIcon: BladeIcon(prefixIcon, color: colors.textMuted, size: 18),
         suffixIcon: suffixIcon,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,

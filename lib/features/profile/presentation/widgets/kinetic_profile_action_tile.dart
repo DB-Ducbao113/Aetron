@@ -1,3 +1,4 @@
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
@@ -13,6 +14,10 @@ class KineticProfileActionTile extends StatelessWidget {
   final VoidCallback onTap;
   final bool isDestructive;
 
+  /// Optional Blade icon: when set, renders this Aetron Blade glyph
+  /// instead of [icon]. Call sites that omit it render as before.
+  final BladeIconName? bladeIcon;
+
   const KineticProfileActionTile({
     super.key,
     required this.icon,
@@ -22,6 +27,7 @@ class KineticProfileActionTile extends StatelessWidget {
     this.iconColor,
     required this.onTap,
     this.isDestructive = false,
+    this.bladeIcon,
   });
 
   @override
@@ -49,7 +55,9 @@ class KineticProfileActionTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(icon, size: 22, color: effectiveColor),
+            bladeIcon != null
+                ? BladeIcon(bladeIcon!, size: 22, color: effectiveColor)
+                : Icon(icon, size: 22, color: effectiveColor),
             const SizedBox(width: KineticTokens.spaceSM),
             Expanded(
               child: Column(

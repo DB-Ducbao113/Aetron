@@ -1,3 +1,4 @@
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 
@@ -90,8 +91,8 @@ class KineticHomeTopBar extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      Icons.local_fire_department_rounded,
+                    BladeIcon(
+                      BladeIconName.flame,
                       color: colors.tertiary,
                       size: 16,
                     ),
@@ -130,8 +131,8 @@ class KineticHomeTopBar extends StatelessWidget {
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    Icon(
-                      Icons.notifications_none_rounded,
+                    BladeIcon(
+                      BladeIconName.bell,
                       size: 20,
                       color: colors.textSecondary,
                     ),

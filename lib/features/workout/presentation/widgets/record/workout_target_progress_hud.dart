@@ -1,5 +1,6 @@
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_target.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 
@@ -101,8 +102,8 @@ class WorkoutTargetProgressHud extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(
-                    isDone ? Icons.military_tech_rounded : Icons.track_changes_rounded,
+                  BladeIcon(
+                    isDone ? BladeIconName.medal : BladeIconName.target,
                     color: displayColor,
                     size: 16,
                   ),

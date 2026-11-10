@@ -1,5 +1,4 @@
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_gradients.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
 import 'package:flutter/material.dart';
@@ -20,7 +19,7 @@ enum KineticButtonVariant {
 /// - Loading state with spinner
 /// - Built-in semantics for accessibility
 /// - Material ink ripple feedback
-/// - Primary variant: lit cyan gradient + bright edge + soft shadow (board v3)
+/// - Primary variant: flat filled pill, no gradient/border/shadow (V5)
 /// - 120ms press-scale micro-interaction (scale 0.97, easeOut)
 ///   with light haptic — instant under OS Reduce Motion
 class KineticButton extends StatefulWidget {
@@ -94,6 +93,7 @@ class _KineticButtonState extends State<KineticButton>
   Widget build(BuildContext context) {
     final colors = context.kinetic;
     final isDisabled = widget.onPressed == null || widget.isLoading;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final Color bgColor;
     final Color fgColor;
@@ -103,29 +103,19 @@ class _KineticButtonState extends State<KineticButton>
 
     switch (widget.variant) {
       case KineticButtonVariant.primary:
-        // Board v3: lit cyan gradient pill, bright 1.5px edge, soft cyan
-        // shadow. The gradient is a brand object — identical in dark and
-        // light ("Morning") themes, so the ink on it is a fixed dark teal,
-        // NOT onPrimary (which is white in the light palette).
-        gradient = isDisabled ? null : KineticGradients.buttonPrimary(colors);
-        bgColor = isDisabled ? colors.surface3 : colors.primary;
-        fgColor = isDisabled ? colors.textMuted : const Color(0xFF06222B);
-        border = isDisabled
-            ? null
-            : BorderSide(
-                color: Color.lerp(colors.accentFill, Colors.white, 0.78)!,
-                width: 1.5,
-              );
-        shadows = isDisabled
-            ? null
-            : [
-                BoxShadow(
-                  color: colors.accentFill.withValues(alpha: 0.45),
-                  blurRadius: 28,
-                  offset: const Offset(0, 14),
-                  spreadRadius: -10,
-                ),
-              ];
+        // V5: flat filled pill — no gradient, no border, no shadow.
+        // Fill follows the approved V5 boards per theme: dark fills with
+        // accentFill (brand cyan) under a fixed dark-teal ink; light
+        // ("Morning") fills with primary (deep teal) under onPrimary.
+        gradient = null;
+        bgColor = isDisabled
+            ? colors.surface3
+            : (isDark ? colors.accentFill : colors.primary);
+        fgColor = isDisabled
+            ? colors.textMuted
+            : (isDark ? const Color(0xFF06222B) : colors.onPrimary);
+        border = null;
+        shadows = null;
         break;
       case KineticButtonVariant.secondary:
         // Board v3 secondary: surface fill + strong 1.5px edge.

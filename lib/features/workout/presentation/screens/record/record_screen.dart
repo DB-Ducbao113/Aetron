@@ -20,6 +20,7 @@ import 'package:fitness_exercise_application/features/workout/presentation/widge
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/record/tracking_map_widget.dart';
 import 'package:fitness_exercise_application/core/services/location_tracking_service.dart';
 import 'package:fitness_exercise_application/shared/aetron/aetron_permission_sheet.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/record/kinetic_live_top_bar.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/record/kinetic_live_metrics_hud.dart';
@@ -53,6 +54,11 @@ class RecordScreen extends ConsumerStatefulWidget {
 class _RecordScreenState extends ConsumerState<RecordScreen> {
   String? _navigatedSessionId;
   static const int _kStartupCountdownSeconds = 3;
+
+  /// Approximate height of the V5 bottom panel's metrics section
+  /// (label row + hero distance + 3-stat row). Used only to float the
+  /// locate button above the merged panel in map mode.
+  static const double _kPanelMetricsHeight = 176;
   bool _isLargeMetricsMode = false;
   bool _isScreenLocked = false;
   Timer? _startupCountdownTimer;
@@ -500,10 +506,10 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
                   shape: BoxShape.circle,
                   color: Color(0xFF2AF598),
                 ),
-                child: const Icon(
-                  Icons.emoji_events_rounded,
+                child: BladeIcon(
+                  BladeIconName.trophy,
                   color: Colors.white,
-                  size: 38,
+                  size: 36,
                 ),
               ),
               const SizedBox(height: 18),
@@ -704,6 +710,26 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
     final isPaused = state.status == RecordingState.paused;
     final isSaving = state.status == RecordingState.stopping;
     final bottomDockHeight = 74.0 + MediaQuery.of(context).padding.bottom;
+
+    // V5 bottom-panel label row content (same wording as the live top bar).
+    final panelIsVi = currentLang == AppLanguage.vi;
+    final panelStatusText = switch (widget.activityType.toLowerCase()) {
+      'cycling' => panelIsVi ? 'ĐẠP XE' : 'CYCLING',
+      'running' => panelIsVi ? 'CHẠY BỘ' : 'RUNNING',
+      'walking' => panelIsVi ? 'ĐI BỘ' : 'WALKING',
+      _ => panelIsVi ? 'TẬP LUYỆN' : 'WORKOUT',
+    };
+    final panelIsOutdoor = state.trackingMode != kIndoorMode;
+    final panelGpsLabel = !panelIsOutdoor
+        ? (panelIsVi ? 'Trong nhà' : 'Indoor')
+        : state.isGpsSignalWeak
+        ? (panelIsVi ? 'GPS Yếu' : 'Weak GPS')
+        : (panelIsVi ? 'GPS Mạnh' : 'GPS Good');
+    final panelGpsColor = !panelIsOutdoor
+        ? context.kinetic.textSecondary
+        : state.isGpsSignalWeak
+        ? context.kinetic.tertiary
+        : context.kinetic.primary;
 
     return PopScope(
       canPop: !isRecording,
@@ -931,11 +957,11 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
                 ),
               ),
 
-            // 5. Locate Button (Map Mode only)
+            // 5. Locate Button (Map Mode only) — floats above the merged panel
             if (!_isPreparingWorkout && !_isLargeMetricsMode)
               Positioned(
                 right: 16,
-                bottom: bottomDockHeight + 82,
+                bottom: bottomDockHeight + _kPanelMetricsHeight + 12,
                 child: LocateButton(
                   isFollowEnabled: state.followUser,
                   onPressed: _onLocatePressed,
@@ -943,46 +969,66 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
                 ),
               ),
 
-            // 6. Floating Mini Telemetry Card (Map Mode only - Shows live distance, clock, pace, calories!)
-            if (!_isPreparingWorkout && !_isLargeMetricsMode)
-              Positioned(
-                left: 14,
-                right: 14,
-                bottom: bottomDockHeight + 8,
-                child: KineticMiniMetricsCard(
-                  distanceMeters: state.distanceMeters,
-                  durationSeconds: state.durationSeconds,
-                  speedKmh: state.speedKmh,
-                  avgSpeedKmh: state.avgSpeedKmh,
-                  calories: state.caloriesBurned,
-                  activityType: widget.activityType,
-                  useMetricUnits: useMetricUnits,
-                  isVi: currentLang == AppLanguage.vi,
-                  onExpand: () {
-                    HapticFeedback.selectionClick();
-                    setState(() {
-                      _isLargeMetricsMode = true;
-                    });
-                  },
-                ),
-              ),
-
-            // 7. FIXED FLOATING CONTROL DOCK (Always visible at bottom!)
+            // 6. V5 BOTTOM PANEL — one flat panel (top radius 24) holding the
+            // map-mode metrics section above the control dock. In large
+            // metrics mode only the controls remain. All callbacks unchanged.
             if (!_isPreparingWorkout)
               Positioned(
                 left: 0,
                 right: 0,
                 bottom: 0,
-                child: KineticLiveControlDock(
-                  isPaused: isPaused,
-                  isLocked: _isScreenLocked,
-                  isSaving: isSaving,
-                  canToggle: canToggle,
-                  isVi: currentLang == AppLanguage.vi,
-                  onPauseResume: () => _handlePauseResume(state.status),
-                  onStop: _confirmStop,
-                  onToggleLock: () =>
-                      setState(() => _isScreenLocked = !_isScreenLocked),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: context.kinetic.surface1,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(KineticTokens.radiusHero),
+                    ),
+                    border: Border(
+                      top: BorderSide(color: context.kinetic.borderSubtle),
+                    ),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(KineticTokens.radiusHero),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (!_isLargeMetricsMode)
+                          KineticMiniMetricsCard(
+                            distanceMeters: state.distanceMeters,
+                            durationSeconds: state.durationSeconds,
+                            speedKmh: state.speedKmh,
+                            avgSpeedKmh: state.avgSpeedKmh,
+                            calories: state.caloriesBurned,
+                            activityType: widget.activityType,
+                            useMetricUnits: useMetricUnits,
+                            isVi: currentLang == AppLanguage.vi,
+                            statusText: panelStatusText,
+                            gpsLabel: panelGpsLabel,
+                            gpsColor: panelGpsColor,
+                            onExpand: () {
+                              HapticFeedback.selectionClick();
+                              setState(() {
+                                _isLargeMetricsMode = true;
+                              });
+                            },
+                          ),
+                        KineticLiveControlDock(
+                          isPaused: isPaused,
+                          isLocked: _isScreenLocked,
+                          isSaving: isSaving,
+                          canToggle: canToggle,
+                          isVi: currentLang == AppLanguage.vi,
+                          onPauseResume: () => _handlePauseResume(state.status),
+                          onStop: _confirmStop,
+                          onToggleLock: () => setState(
+                            () => _isScreenLocked = !_isScreenLocked,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             if (_isScreenLocked)
@@ -1006,8 +1052,8 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
                                   width: 2,
                                 ),
                               ),
-                              child: Icon(
-                                Icons.lock_rounded,
+                              child: BladeIcon(
+                                BladeIconName.lock,
                                 size: 48,
                                 color: context.kinetic.tertiary,
                               ),
@@ -1294,7 +1340,7 @@ class _IntegratedTargetPill extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(Icons.track_changes_rounded, size: 16, color: colors.primary),
+          BladeIcon(BladeIconName.target, size: 16, color: colors.primary),
           const SizedBox(width: 8),
           Expanded(
             child: Text(

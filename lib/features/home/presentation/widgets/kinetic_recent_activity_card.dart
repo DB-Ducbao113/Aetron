@@ -1,5 +1,6 @@
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 
@@ -57,8 +58,8 @@ class KineticRecentActivityCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: KineticTokens.spaceXXS),
-                      Icon(
-                        Icons.chevron_right_rounded,
+                      BladeIcon(
+                        BladeIconName.chevR,
                         size: 16,
                         color: colors.primary,
                       ),
@@ -86,8 +87,8 @@ class KineticRecentActivityCard extends StatelessWidget {
                         color: colors.primary.withValues(alpha: 0.3),
                       ),
                     ),
-                    child: Icon(
-                      Icons.directions_run_rounded,
+                    child: BladeIcon(
+                      BladeIconName.run,
                       color: colors.primary,
                       size: 26,
                     ),
@@ -149,11 +150,11 @@ class KineticRecentActivityCard extends StatelessWidget {
         ? '${workout.avgSpeedKmh.toStringAsFixed(1)} ${useMetricUnits ? "km/h" : "mph"}'
         : '--';
 
-    final IconData activityIcon = switch (workout.activityType.toLowerCase()) {
-      'cycling' || 'bike' => Icons.directions_bike_rounded,
-      'running' || 'run' => Icons.directions_run_rounded,
-      'walking' || 'walk' => Icons.directions_walk_rounded,
-      _ => Icons.fitness_center_rounded,
+    final BladeIconName activityIcon = switch (workout.activityType.toLowerCase()) {
+      'cycling' || 'bike' => BladeIconName.bike,
+      'running' || 'run' => BladeIconName.run,
+      'walking' || 'walk' => BladeIconName.walk,
+      _ => BladeIconName.pulse,
     };
 
     final String title = isVi
@@ -188,7 +189,7 @@ class KineticRecentActivityCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
                     border: Border.all(color: colors.borderSubtle),
                   ),
-                  child: Icon(activityIcon, color: colors.primary, size: 20),
+                  child: BladeIcon(activityIcon, color: colors.primary, size: 20),
                 ),
                 const SizedBox(width: KineticTokens.spaceSM),
                 Expanded(
@@ -214,8 +215,8 @@ class KineticRecentActivityCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                Icon(
-                  Icons.chevron_right_rounded,
+                BladeIcon(
+                  BladeIconName.chevR,
                   color: colors.textMuted,
                   size: 20,
                 ),

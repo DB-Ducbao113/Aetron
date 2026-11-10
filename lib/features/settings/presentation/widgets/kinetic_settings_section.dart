@@ -1,3 +1,4 @@
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
@@ -83,6 +84,11 @@ class KineticSettingsTile extends StatelessWidget {
   final Widget? trailing;
   final VoidCallback onTap;
 
+  /// Optional Blade icon: when set, the tile renders this Aetron Blade
+  /// glyph instead of [icon]. Call sites that omit it render exactly
+  /// as before.
+  final BladeIconName? bladeIcon;
+
   /// Danger-zone rows (log out, delete account): the title takes the
   /// tile's accent color so the row reads as destructive at a glance.
   final bool danger;
@@ -95,6 +101,7 @@ class KineticSettingsTile extends StatelessWidget {
     this.accentColor,
     this.trailing,
     required this.onTap,
+    this.bladeIcon,
     this.danger = false,
   });
 
@@ -122,7 +129,9 @@ class KineticSettingsTile extends StatelessWidget {
             color: effectiveColor.withValues(alpha: 0.14),
             borderRadius: BorderRadius.circular(KineticTokens.radiusSM + 2),
           ),
-          child: Icon(icon, color: effectiveColor, size: 16),
+          child: bladeIcon != null
+              ? BladeIcon(bladeIcon!, size: 17, color: effectiveColor)
+              : Icon(icon, color: effectiveColor, size: 16),
         ),
         title: Text(
           title,

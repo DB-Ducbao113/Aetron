@@ -1,4 +1,5 @@
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -129,8 +130,8 @@ class KineticLiveMetricsHud extends StatelessWidget {
               child: _MetricTile(
                 label: primarySecondaryLabel,
                 icon: isCycling
-                    ? Icons.speed_rounded
-                    : Icons.directions_run_rounded,
+                    ? BladeIconName.bolt
+                    : BladeIconName.run,
                 value: primarySecondaryValue,
                 unit: primarySecondaryUnit,
                 note: comparisonNote,
@@ -143,7 +144,7 @@ class KineticLiveMetricsHud extends StatelessWidget {
             Expanded(
               child: _MetricTile(
                 label: isVi ? 'Thời gian' : 'Time',
-                icon: Icons.timer_rounded,
+                icon: BladeIconName.clock,
                 value: WorkoutFormatters.formatElapsedClock(durationSeconds),
                 unit: '',
                 note:
@@ -163,7 +164,7 @@ class KineticLiveMetricsHud extends StatelessWidget {
             Expanded(
               child: _MetricTile(
                 label: isVi ? 'Calo' : 'Calories',
-                icon: Icons.local_fire_department_rounded,
+                icon: BladeIconName.flame,
                 value: '$calories',
                 unit: 'kcal',
                 note: null,
@@ -177,7 +178,7 @@ class KineticLiveMetricsHud extends StatelessWidget {
               child: isCycling
                   ? _MetricTile(
                       label: isVi ? 'Tốc độ TB' : 'Avg Speed',
-                      icon: Icons.trending_up_rounded,
+                      icon: BladeIconName.chart,
                       value: (useMetricUnits
                               ? avgSpeedKmh
                               : avgSpeedKmh * 0.621371)
@@ -189,7 +190,7 @@ class KineticLiveMetricsHud extends StatelessWidget {
                     )
                   : _MetricTile(
                       label: isVi ? 'Bước chân' : 'Steps',
-                      icon: Icons.directions_walk_rounded,
+                      icon: BladeIconName.walk,
                       value: '$stepCount',
                       unit: isVi ? 'bước' : 'steps',
                       note: isVi ? 'Tổng số bước' : 'Total steps',
@@ -206,7 +207,7 @@ class KineticLiveMetricsHud extends StatelessWidget {
 
 class _MetricTile extends StatelessWidget {
   final String label;
-  final IconData icon;
+  final BladeIconName icon;
   final String value;
   final String unit;
   final String? note;
@@ -257,7 +258,7 @@ class _MetricTile extends StatelessWidget {
                   letterSpacing: 0.6,
                 ),
               ),
-              Icon(
+              BladeIcon(
                 icon,
                 size: 14,
                 color: colors.primary,
@@ -328,8 +329,11 @@ class _MetricTile extends StatelessWidget {
   }
 }
 
-/// Compact glassmorphic live telemetry card floating above the control dock in Map Mode.
-/// Displays instant distance, elapsed time, current speed/pace, and calories in real time.
+/// V5: metrics section of the record screen's single flat bottom panel
+/// (the panel surface/radius/border live in RecordScreen). Layout follows
+/// the V5 board grammar: label row (activity name + GPS chip), HERO
+/// distance, then a 3-stat row (time / pace-or-speed / calories).
+/// Tapping still expands to the large metrics view via [onExpand].
 class KineticMiniMetricsCard extends StatelessWidget {
   final double distanceMeters;
   final int durationSeconds;
@@ -341,6 +345,12 @@ class KineticMiniMetricsCard extends StatelessWidget {
   final bool isVi;
   final VoidCallback? onExpand;
 
+  /// Panel label row content, derived by RecordScreen from session state
+  /// (same wording as the live top bar).
+  final String statusText;
+  final String gpsLabel;
+  final Color gpsColor;
+
   const KineticMiniMetricsCard({
     super.key,
     required this.distanceMeters,
@@ -351,6 +361,9 @@ class KineticMiniMetricsCard extends StatelessWidget {
     required this.activityType,
     required this.useMetricUnits,
     required this.isVi,
+    required this.statusText,
+    required this.gpsLabel,
+    required this.gpsColor,
     this.onExpand,
   });
 
@@ -389,9 +402,6 @@ class KineticMiniMetricsCard extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isNarrow = constraints.maxWidth < 360;
-        final distanceLabel = isNarrow
-            ? (isVi ? 'CỰ LY' : 'DIST')
-            : (isVi ? 'QUÃNG ĐƯỜNG' : 'DISTANCE');
         final timeLabel = isNarrow
             ? (isVi ? 'GIỜ' : 'TIME')
             : (isVi ? 'THỜI GIAN' : 'TIME');
@@ -410,63 +420,130 @@ class KineticMiniMetricsCard extends StatelessWidget {
                 HapticFeedback.selectionClick();
                 onExpand?.call();
               },
-              borderRadius: BorderRadius.circular(KineticTokens.radiusXL),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(
-                  gradient: KineticGradients.hudSurface(colors),
-                  borderRadius: BorderRadius.circular(KineticTokens.radiusXL),
-                  border: Border.all(
-                    color: colors.borderSubtle.withValues(alpha: 0.75),
-                    width: 1.2,
-                  ),
-                  boxShadow: KineticTokens.shadowPanel(Colors.black),
-                ),
-                child: Row(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(KineticTokens.radiusHero),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 2),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // 1. Quãng đường (Distance Hero)
-                    Expanded(
-                      flex: 12,
-                      child: _MiniMetricColumn(
-                        label: distanceLabel,
-                        value: displayDistance.toStringAsFixed(2),
-                        unit: distanceUnit,
-                        valueColor: colors.textPrimary,
-                        highlightUnit: true,
+                    // Label row: activity name + GPS chip
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            statusText,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: KineticTypography.unitLabel.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: colors.textSecondary,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 9,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colors.surface2,
+                            borderRadius: BorderRadius.circular(
+                              KineticTokens.radiusPill,
+                            ),
+                            border: Border.all(color: colors.borderSubtle),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              BladeIcon(
+                                BladeIconName.gps,
+                                size: 11,
+                                color: gpsColor,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                gpsLabel,
+                                style: KineticTypography.caption.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: gpsColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+
+                    // HERO distance (existing metric style)
+                    Semantics(
+                      container: true,
+                      label: isVi ? 'Quãng đường' : 'Distance',
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(
+                            displayDistance.toStringAsFixed(2),
+                            style: KineticTypography.metricHero.copyWith(
+                              color: colors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            distanceUnit,
+                            style: KineticTypography.metricUnit.copyWith(
+                              color: colors.primary,
+                              letterSpacing: 0.8,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    _buildDivider(colors),
-                    // 2. Thời gian (Time Clock)
-                    Expanded(
-                      flex: 11,
-                      child: _MiniMetricColumn(
-                        label: timeLabel,
-                        value: durationFormatted,
-                        unit: '',
-                        valueColor: colors.textPrimary,
-                      ),
+                    const SizedBox(height: 12),
+                    Container(
+                      height: 1,
+                      color: colors.borderSubtle.withValues(alpha: 0.4),
                     ),
-                    _buildDivider(colors),
-                    // 3. Pace / Tốc độ
-                    Expanded(
-                      flex: 10,
-                      child: _MiniMetricColumn(
-                        label: paceOrSpeedLabel.toUpperCase(),
-                        value: paceOrSpeedValue,
-                        unit: paceOrSpeedUnit,
-                        valueColor: colors.textPrimary,
-                      ),
-                    ),
-                    _buildDivider(colors),
-                    // 4. Calo
-                    Expanded(
-                      flex: 9,
-                      child: _MiniMetricColumn(
-                        label: caloriesLabel,
-                        value: '$calories',
-                        unit: 'kcal',
-                        valueColor: colors.textPrimary,
-                      ),
+                    const SizedBox(height: 12),
+
+                    // 3-stat row: time / pace-or-speed / calories
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _MiniMetricColumn(
+                            label: timeLabel,
+                            value: durationFormatted,
+                            unit: '',
+                            valueColor: colors.textPrimary,
+                          ),
+                        ),
+                        _buildDivider(colors),
+                        Expanded(
+                          child: _MiniMetricColumn(
+                            label: paceOrSpeedLabel.toUpperCase(),
+                            value: paceOrSpeedValue,
+                            unit: paceOrSpeedUnit,
+                            valueColor: colors.textPrimary,
+                          ),
+                        ),
+                        _buildDivider(colors),
+                        Expanded(
+                          child: _MiniMetricColumn(
+                            label: caloriesLabel,
+                            value: '$calories',
+                            unit: 'kcal',
+                            valueColor: colors.textPrimary,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

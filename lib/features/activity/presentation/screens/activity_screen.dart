@@ -9,6 +9,7 @@ import 'package:fitness_exercise_application/features/workout/domain/entities/wo
 import 'package:fitness_exercise_application/features/workout/presentation/providers/workout_providers.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/screens/record/record_screen.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/record/tracking_map_widget.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -23,7 +24,7 @@ const List<ActivityOptionItem> _kActivities = [
     nameVi: 'Chạy bộ',
     nameEn: 'Running',
     imagePath: 'assets/activity_running_bright.jpg',
-    icon: Icons.directions_run_rounded,
+    icon: BladeIconName.run,
     accentColor: Color(0xFFA8DCE7),
     requireGps: true,
   ),
@@ -32,7 +33,7 @@ const List<ActivityOptionItem> _kActivities = [
     nameVi: 'Đạp xe',
     nameEn: 'Cycling',
     imagePath: 'assets/activity_cycling_bright.jpg',
-    icon: Icons.directions_bike_rounded,
+    icon: BladeIconName.bike,
     accentColor: Color(0xFF39B5F2),
     requireGps: true,
   ),
@@ -41,7 +42,7 @@ const List<ActivityOptionItem> _kActivities = [
     nameVi: 'Đi bộ',
     nameEn: 'Walking',
     imagePath: 'assets/activity_walking_bright.jpg',
-    icon: Icons.directions_walk_rounded,
+    icon: BladeIconName.walk,
     accentColor: Color(0xFF4EBE9E),
     requireGps: true,
   ),
@@ -194,8 +195,8 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen>
                     children: [
                       Row(
                         children: [
-                          Icon(
-                            Icons.satellite_alt_rounded,
+                          BladeIcon(
+                            BladeIconName.gps,
                             size: 18,
                             color: colors.primary,
                           ),
@@ -213,7 +214,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen>
                         ],
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close_rounded),
+                        icon: const BladeIcon(BladeIconName.x, size: 24),
                         onPressed: () => Navigator.of(ctx).pop(),
                       ),
                     ],

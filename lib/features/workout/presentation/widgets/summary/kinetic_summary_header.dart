@@ -1,4 +1,5 @@
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
@@ -20,15 +21,15 @@ class KineticSummaryHeader extends StatelessWidget {
     this.onShare,
   });
 
-  IconData _getActivityIcon(String type) {
+  BladeIconName _getActivityIcon(String type) {
     switch (type.toLowerCase()) {
       case 'cycling':
-        return Icons.directions_bike_rounded;
+        return BladeIconName.bike;
       case 'walking':
-        return Icons.directions_walk_rounded;
+        return BladeIconName.walk;
       case 'running':
       default:
-        return Icons.directions_run_rounded;
+        return BladeIconName.run;
     }
   }
 
@@ -71,8 +72,8 @@ class KineticSummaryHeader extends StatelessWidget {
                     shape: BoxShape.circle,
                     border: Border.all(color: colors.borderSubtle),
                   ),
-                  child: Icon(
-                    Icons.arrow_back_rounded,
+                  child: BladeIcon(
+                    BladeIconName.chevL,
                     color: colors.textPrimary,
                     size: 20,
                   ),
@@ -106,8 +107,8 @@ class KineticSummaryHeader extends StatelessWidget {
                       shape: BoxShape.circle,
                       border: Border.all(color: colors.borderSubtle),
                     ),
-                    child: Icon(
-                      Icons.ios_share_rounded,
+                    child: BladeIcon(
+                      BladeIconName.share,
                       color: colors.primary,
                       size: 19,
                     ),
@@ -132,7 +133,7 @@ class KineticSummaryHeader extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(activityIcon, size: 15, color: colors.primary),
+                  BladeIcon(activityIcon, size: 15, color: colors.primary),
                   const SizedBox(width: 6),
                   Text(
                     activityName,

@@ -2,6 +2,7 @@ import 'package:fitness_exercise_application/core/localization/app_translations.
 import 'package:fitness_exercise_application/features/auth/presentation/helpers/password_validator.dart';
 import 'package:fitness_exercise_application/features/auth/presentation/screens/auth_wrapper.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -122,8 +123,8 @@ class _ForcePasswordUpgradeScreenState
                   children: [
                     TextButton.icon(
                       onPressed: _logout,
-                      icon: Icon(
-                        Icons.logout_rounded,
+                      icon: BladeIcon(
+                        BladeIconName.logout,
                         color: kinetic.error,
                         size: 18,
                       ),
@@ -173,10 +174,10 @@ class _ForcePasswordUpgradeScreenState
                       shape: BoxShape.circle,
                       color: kinetic.tertiary.withValues(alpha: 0.12),
                     ),
-                    child: Icon(
-                      Icons.security_update_warning_rounded,
+                    child: BladeIcon(
+                      BladeIconName.shield,
                       color: kinetic.tertiary,
-                      size: 34,
+                      size: 30,
                     ),
                   ),
                 ),
@@ -254,13 +255,11 @@ class _ForcePasswordUpgradeScreenState
                       validator: (val) => validatePasswordStrict(val, currentLang),
                       decoration: _inputDecoration(
                         hintText: '••••••••',
-                        prefixIcon: Icons.lock_outline_rounded,
+                        prefixIcon: BladeIconName.lock,
                         kinetic: kinetic,
                         suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
+                          icon: BladeIcon(
+                            BladeIconName.eye,
                             color: kinetic.primary,
                             size: 20,
                           ),
@@ -309,13 +308,11 @@ class _ForcePasswordUpgradeScreenState
                       },
                       decoration: _inputDecoration(
                         hintText: '••••••••',
-                        prefixIcon: Icons.lock_clock_outlined,
+                        prefixIcon: BladeIconName.lock,
                         kinetic: kinetic,
                         suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscureConfirmPassword
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
+                          icon: BladeIcon(
+                            BladeIconName.eye,
                             color: kinetic.primary,
                             size: 20,
                           ),
@@ -370,7 +367,7 @@ class _ForcePasswordUpgradeScreenState
 
   InputDecoration _inputDecoration({
     required String hintText,
-    required IconData prefixIcon,
+    required BladeIconName prefixIcon,
     required KineticColors kinetic,
     Widget? suffixIcon,
   }) {
@@ -382,7 +379,7 @@ class _ForcePasswordUpgradeScreenState
       ),
       filled: true,
       fillColor: kinetic.background,
-      prefixIcon: Icon(prefixIcon, color: kinetic.primary, size: 20),
+      prefixIcon: BladeIcon(prefixIcon, color: kinetic.primary, size: 20),
       suffixIcon: suffixIcon,
       contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       enabledBorder: OutlineInputBorder(

@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
@@ -61,8 +62,8 @@ class KineticSummarySplitsCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(
-                    Icons.splitscreen_rounded,
+                  BladeIcon(
+                    BladeIconName.chart,
                     size: 15,
                     color: colors.primary,
                   ),

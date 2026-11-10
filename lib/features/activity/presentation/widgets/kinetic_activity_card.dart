@@ -1,5 +1,6 @@
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -11,7 +12,7 @@ class ActivityOptionItem {
   final String? tagVi;
   final String? tagEn;
   final String imagePath;
-  final IconData icon;
+  final BladeIconName icon;
   final Color accentColor;
   final bool requireGps;
 
@@ -150,7 +151,7 @@ class KineticActivityCard extends StatelessWidget {
                       Positioned(
                         right: 14,
                         bottom: 10,
-                        child: Icon(
+                        child: BladeIcon(
                           option.icon,
                           size: 56,
                           color: sceneTint.withValues(alpha: 0.4),
@@ -170,8 +171,8 @@ class KineticActivityCard extends StatelessWidget {
                               shape: BoxShape.circle,
                               color: colors.primary,
                             ),
-                            child: Icon(
-                              Icons.check_rounded,
+                            child: BladeIcon(
+                              BladeIconName.check,
                               size: 16,
                               color: colors.onPrimary,
                             ),

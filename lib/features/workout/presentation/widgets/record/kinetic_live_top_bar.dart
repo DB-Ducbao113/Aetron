@@ -1,4 +1,5 @@
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -186,11 +187,17 @@ class _KineticLiveTopBarState extends State<KineticLiveTopBar>
                   ),
                   Semantics(
                     label: gpsLabel,
-                    child: Icon(
-                      widget.isOutdoor ? Icons.satellite_alt_rounded : Icons.sensors_rounded,
-                      size: 13,
-                      color: gpsColor,
-                    ),
+                    child: widget.isOutdoor
+                        ? BladeIcon(
+                            BladeIconName.gps,
+                            size: 13,
+                            color: gpsColor,
+                          )
+                        : Icon(
+                            Icons.sensors_rounded,
+                            size: 13,
+                            color: gpsColor,
+                          ),
                   ),
                 ],
               ),
@@ -224,10 +231,10 @@ class _KineticLiveTopBarState extends State<KineticLiveTopBar>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
+                    BladeIcon(
                       widget.isLargeMetricsMode
-                          ? Icons.map_outlined
-                          : Icons.fullscreen_rounded,
+                          ? BladeIconName.map
+                          : BladeIconName.chart,
                       size: 16,
                       color: colors.primary,
                     ),

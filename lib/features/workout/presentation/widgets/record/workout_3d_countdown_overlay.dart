@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -82,11 +83,11 @@ class _Workout3DCountdownOverlayState extends State<Workout3DCountdownOverlay>
     return colors.tertiary;
   }
 
-  IconData get _activityIcon {
+  BladeIconName get _activityIcon {
     final type = widget.activityType.toLowerCase();
-    if (type == 'cycling') return Icons.directions_bike_rounded;
-    if (type == 'walking') return Icons.directions_walk_rounded;
-    return Icons.directions_run_rounded;
+    if (type == 'cycling') return BladeIconName.bike;
+    if (type == 'walking') return BladeIconName.walk;
+    return BladeIconName.run;
   }
 
   @override
@@ -192,7 +193,7 @@ class _Workout3DCountdownOverlayState extends State<Workout3DCountdownOverlay>
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(_activityIcon, color: accent, size: 18),
+                        BladeIcon(_activityIcon, color: accent, size: 18),
                         const SizedBox(width: 8),
                         Text(
                           widget.activityType.toUpperCase(),

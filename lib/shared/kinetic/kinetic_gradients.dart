@@ -24,20 +24,6 @@ class KineticGradients {
         stops: const [0.0, 0.45, 1.0],
       );
 
-  /// Primary button gradient (board v3) — lit cyan: pale top, brand cyan
-  /// mid, deeper base. Identical in both themes (the button is a brand
-  /// object); pair with a bright 1.5px edge and a soft cyan shadow.
-  static LinearGradient buttonPrimary(KineticColors c) => LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          Color.lerp(c.accentFill, Colors.white, 0.38)!,
-          c.accentFill,
-          Color.lerp(c.accentFill, Colors.black, 0.16)!,
-        ],
-        stops: const [0.0, 0.52, 1.0],
-      );
-
   /// Duotone scene wash for sport/feature cards — tint [base] toward the
   /// background so imagery reads as one designed surface.
   static LinearGradient sceneWash(KineticColors c, Color base) =>

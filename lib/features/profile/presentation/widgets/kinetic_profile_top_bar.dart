@@ -1,5 +1,6 @@
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/settings/presentation/screens/settings_screen.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
@@ -46,8 +47,8 @@ class KineticProfileTopBar extends StatelessWidget {
                 shape: BoxShape.circle,
                 border: Border.all(color: colors.borderSubtle),
               ),
-              child: Icon(
-                Icons.settings_outlined,
+              child: BladeIcon(
+                BladeIconName.gear,
                 color: colors.textPrimary,
                 size: 20,
               ),

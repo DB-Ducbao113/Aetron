@@ -9,6 +9,7 @@ import 'package:fitness_exercise_application/features/legal/presentation/screens
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 
@@ -155,42 +156,64 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       backgroundColor: colors.background,
       body: Column(
         children: [
-          // ── Top App Bar ───────────────────────────────────────────────────
-          Stack(
-            children: [
-              const Positioned.fill(child: TopographicBackdrop()),
-              Container(
-                padding: EdgeInsets.fromLTRB(16, topPad + 8, 16, 12),
-                child: SizedBox(
-                  height: 40,
-                  child: Stack(
-                    alignment: Alignment.center,
+          // ── Flat header (V5): back + language row, then brand row ───────
+          Padding(
+            padding: EdgeInsets.fromLTRB(16, topPad + 8, 16, 0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _AppBarIconButton(
+                  icon: Icons.arrow_back_rounded,
+                  onTap: () => Navigator.of(context).pop(),
+                ),
+                const AuthLanguageToggle(),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(11),
+                  child: Image.asset(
+                    'assets/logo.png',
+                    width: 44,
+                    height: 44,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: _AppBarIconButton(
-                          icon: Icons.arrow_back_rounded,
-                          onTap: () => Navigator.of(context).pop(),
+                      Text(
+                        isVi ? 'Bắt đầu ngay hôm nay' : 'Start today',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: colors.primary,
+                          letterSpacing: 0.05 * 10,
                         ),
                       ),
+                      const SizedBox(height: 2),
                       Text(
-                        isVi ? 'Đăng ký' : 'Sign Up',
+                        isVi
+                            ? 'Theo dõi hành trình fitness'
+                            : 'Track your fitness journey',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: 20,
                           fontWeight: FontWeight.w700,
                           color: colors.textPrimary,
-                          letterSpacing: -0.01 * 18,
+                          letterSpacing: -0.015 * 20,
                         ),
-                      ),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: const AuthLanguageToggle(),
                       ),
                     ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           Divider(height: 1, thickness: 1, color: colors.borderSubtle),
 
@@ -205,79 +228,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          // ── Hero banner ─────────────────────────────────────────
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(16),
-                            child: Stack(
-                              children: [
-                                Image.asset(
-                                  'assets/login_header.png',
-                                  height: 150,
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
-                                  alignment: Alignment.topCenter,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      Container(
-                                        height: 150,
-                                        color: colors.surface2,
-                                        child: Center(
-                                          child: Icon(
-                                            Icons.fitness_center_rounded,
-                                            color: colors.primary,
-                                            size: 40,
-                                          ),
-                                        ),
-                                      ),
-                                ),
-                                Positioned.fill(
-                                  child: DecoratedBox(
-                                    decoration: BoxDecoration(
-                                      gradient: KineticGradients.scrimBottom(
-                                        colors,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                Positioned(
-                                  bottom: 34,
-                                  left: 16,
-                                  right: 16,
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        isVi
-                                            ? 'Bắt đầu ngay hôm nay'
-                                            : 'Start today',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600,
-                                          color: colors.primary,
-                                          letterSpacing: 0.05 * 10,
-                                        ),
-                                      ),
-                                      Text(
-                                        isVi
-                                            ? 'Theo dõi hành trình fitness'
-                                            : 'Track your fitness journey',
-                                        style: TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.w700,
-                                          color: colors.textPrimary,
-                                          letterSpacing: -0.015 * 20,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          Transform.translate(
-                            offset: const Offset(0, -22),
-                            child: Container(
+                          Container(
                               padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
                               decoration: BoxDecoration(
                                 color: colors.surface1,
@@ -301,7 +252,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                   hintText: isVi
                                       ? 'Nhập tên đăng nhập'
                                       : 'Enter username',
-                                  prefixIcon: Icons.person_outline_rounded,
+                                  prefixIcon: BladeIconName.user,
                                   keyboardType: TextInputType.text,
                                   validator: (value) =>
                                       validateUsername(value, isVi: isVi),
@@ -314,16 +265,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 _StitchTextField(
                                   controller: _passwordController,
                                   hintText: isVi ? 'Tạo mật khẩu' : 'Create password',
-                                  prefixIcon: Icons.lock_outline_rounded,
+                                  prefixIcon: BladeIconName.lock,
                                   obscureText: _obscurePassword,
                                   suffixIcon: IconButton(
                                     onPressed: () => setState(
                                       () => _obscurePassword = !_obscurePassword,
                                     ),
-                                    icon: Icon(
-                                      _obscurePassword
-                                          ? Icons.visibility_outlined
-                                          : Icons.visibility_off_outlined,
+                                    icon: BladeIcon(
+                                      BladeIconName.eye,
                                       color: colors.primary.withValues(alpha: 0.7),
                                       size: 20,
                                     ),
@@ -355,17 +304,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                   hintText: isVi
                                       ? 'Xác nhận lại mật khẩu'
                                       : 'Confirm password',
-                                  prefixIcon: Icons.lock_reset_rounded,
+                                  prefixIcon: BladeIconName.lock,
                                   obscureText: _obscureConfirmPassword,
                                   suffixIcon: IconButton(
                                     onPressed: () => setState(
                                       () => _obscureConfirmPassword =
                                           !_obscureConfirmPassword,
                                     ),
-                                    icon: Icon(
-                                      _obscureConfirmPassword
-                                          ? Icons.visibility_outlined
-                                          : Icons.visibility_off_outlined,
+                                    icon: BladeIcon(
+                                      BladeIconName.eye,
                                       color: colors.primary.withValues(alpha: 0.7),
                                       size: 20,
                                     ),
@@ -526,7 +473,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 ],
                               ),
                             ),
-                          ),
                         ],
                       ),
                     ),
@@ -700,7 +646,7 @@ class _StitchTextField extends StatelessWidget {
 
   final TextEditingController controller;
   final String hintText;
-  final IconData prefixIcon;
+  final BladeIconName prefixIcon;
   final bool obscureText;
   final Widget? suffixIcon;
   final FormFieldValidator<String>? validator;
@@ -728,7 +674,7 @@ class _StitchTextField extends StatelessWidget {
         ),
         filled: true,
         fillColor: colors.background,
-        prefixIcon: Icon(prefixIcon, color: colors.textMuted, size: 18),
+        prefixIcon: BladeIcon(prefixIcon, color: colors.textMuted, size: 18),
         suffixIcon: suffixIcon,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,

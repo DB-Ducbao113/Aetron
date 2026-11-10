@@ -19,6 +19,7 @@ import 'package:fitness_exercise_application/features/settings/presentation/prov
 import 'package:fitness_exercise_application/features/workout/presentation/providers/workout_providers.dart';
 import 'package:fitness_exercise_application/features/workout/data/local/local_db.dart';
 import 'package:fitness_exercise_application/shared/aetron/aetron_logout_dialog.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -162,6 +163,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               // Training Goals Action
               KineticProfileActionTile(
                 icon: Icons.track_changes_rounded,
+                bladeIcon: BladeIconName.target,
                 iconColor: colors.primary,
                 label: currentLang == AppLanguage.vi
                     ? 'Mục tiêu rèn luyện'
@@ -178,6 +180,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               // Achievements Action
               KineticProfileActionTile(
                 icon: Icons.emoji_events_outlined,
+                bladeIcon: BladeIconName.trophy,
                 iconColor: colors.tertiary,
                 label: AppTranslations.get('achievements', currentLang),
                 badgeText:
@@ -202,6 +205,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               // Security & Password Action
               KineticProfileActionTile(
                 icon: Icons.shield_outlined,
+                bladeIcon: BladeIconName.shield,
                 iconColor: colors.secondary,
                 label: AppTranslations.get('security', currentLang),
                 onTap: () => _showSecuritySheet(
@@ -216,6 +220,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               // Sign Out Action (Destructive)
               KineticProfileActionTile(
                 icon: Icons.logout_rounded,
+                bladeIcon: BladeIconName.logout,
                 isDestructive: true,
                 label: AppTranslations.get('logout', currentLang),
                 onTap: () => _logout(context, ref),

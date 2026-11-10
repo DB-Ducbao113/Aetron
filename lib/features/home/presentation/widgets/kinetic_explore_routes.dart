@@ -1,4 +1,5 @@
 import 'package:fitness_exercise_application/features/workout/presentation/screens/running_programs_screen.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 
@@ -19,14 +20,14 @@ class KineticExploreRoutes extends StatelessWidget {
         'title': 'Couch to 5K',
         'distance': isVi ? '8 tuần' : '8 weeks',
         'subtitle': isVi ? 'Cho người mới' : 'For beginners',
-        'icon': Icons.directions_run_rounded,
+        'icon': BladeIconName.run,
         'image': 'assets/plan_couch_to_5k.jpg',
       },
       {
         'title': 'Easy Base Run',
         'distance': '45 min',
         'subtitle': isVi ? 'Xây dựng sức bền' : 'Build endurance',
-        'icon': Icons.timer_outlined,
+        'icon': BladeIconName.clock,
         'image': 'assets/plan_easy_base_run.jpg',
       },
     ];
@@ -164,8 +165,8 @@ class KineticExploreRoutes extends StatelessWidget {
                               const SizedBox(height: KineticTokens.spaceXXS),
                               Row(
                                 children: [
-                                  Icon(
-                                    route['icon'] as IconData,
+                                  BladeIcon(
+                                    route['icon'] as BladeIconName,
                                     size: 11,
                                     color: colors.primary,
                                   ),

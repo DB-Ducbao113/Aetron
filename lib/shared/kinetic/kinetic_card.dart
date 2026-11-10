@@ -37,7 +37,7 @@ class KineticCard extends StatelessWidget {
     this.topAccentColor,
     this.glowColor,
     this.hasGlow = false,
-    this.borderRadius = KineticTokens.radiusSM,
+    this.borderRadius = KineticTokens.radiusLG,
     this.semanticLabel,
     this.gradient,
   });

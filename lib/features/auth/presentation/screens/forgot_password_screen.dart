@@ -4,6 +4,7 @@ import 'package:fitness_exercise_application/core/localization/app_translations.
 import 'package:fitness_exercise_application/features/auth/presentation/helpers/password_validator.dart';
 import 'package:fitness_exercise_application/features/auth/presentation/widgets/auth_language_toggle.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -131,96 +132,90 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
     return Scaffold(
       backgroundColor: kinetic.background,
-      body: Stack(
+      body: Column(
         children: [
-          // ── 1. Top Section: Cyber Scenic Athlete Header Artwork ───────────
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: MediaQuery.of(context).size.height * 0.35,
-            child: Stack(
-              fit: StackFit.expand,
+          // ── Flat header (V5): functional row + brand row ──────────────
+          Padding(
+            padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 10, 16, 16),
+            child: Column(
               children: [
-                Image.asset(
-                  'assets/login_header.png',
-                  fit: BoxFit.cover,
-                  alignment: Alignment.topCenter,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: kinetic.surface1,
-                      child: Center(
-                        child: Icon(
-                          Icons.lock_reset_rounded,
-                          size: 64,
-                          color: kinetic.primary,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                  Material(
+                    color: kinetic.surface2,
+                    borderRadius: BorderRadius.circular(16),
+                    child: InkWell(
+                      onTap: () => Navigator.of(context).pop(),
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: kinetic.primary.withValues(alpha: 0.3),
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                ),
-                Positioned.fill(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          kinetic.background.withValues(alpha: 0.35),
-                          Colors.transparent,
-                          kinetic.background.withValues(alpha: 0.85),
-                          kinetic.background,
-                        ],
-                        stops: const [0.0, 0.4, 0.85, 1.0],
+                        child: Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: kinetic.primary,
+                          size: 18,
+                        ),
                       ),
                     ),
                   ),
+                    const AuthLanguageToggle(),
+                  ],
                 ),
-
-                // Back Button & Language Switcher
-                Positioned(
-                  top: MediaQuery.of(context).padding.top + 10,
-                  left: 16,
-                  right: 16,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Material(
-                        color: kinetic.surface2,
-                        borderRadius: BorderRadius.circular(16),
-                        child: InkWell(
-                          onTap: () => Navigator.of(context).pop(),
-                          borderRadius: BorderRadius.circular(16),
-                          child: Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: kinetic.primary.withValues(alpha: 0.3),
-                              ),
-                            ),
-                            child: Icon(
-                              Icons.arrow_back_ios_new_rounded,
-                              color: kinetic.primary,
-                              size: 18,
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(11),
+                      child: Image.asset(
+                        'assets/logo.png',
+                        width: 44,
+                        height: 44,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isVi ? 'KHÔI PHỤC MẬT KHẨU' : 'FORGOT PASSWORD',
+                            style: TextStyle(
+                              fontSize: 19,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.4,
+                              color: kinetic.textPrimary,
                             ),
                           ),
-                        ),
+                          const SizedBox(height: 3),
+                          Text(
+                            isVi
+                                ? 'Nhập email đã đăng ký với Aetron để nhận đường dẫn đặt lại mật khẩu an toàn.'
+                                : 'Enter your registered email address to receive a secure password reset link.',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w400,
+                              color: kinetic.textMuted,
+                              height: 1.35,
+                            ),
+                          ),
+                        ],
                       ),
-                      const AuthLanguageToggle(),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
 
           // ── 2. Bottom Section: V4 flat card ───────────────────────────────
-          Positioned(
-            top: MediaQuery.of(context).size.height * 0.28,
-            left: 0,
-            right: 0,
-            bottom: 0,
+          Expanded(
             child: Container(
               decoration: BoxDecoration(
                 color: kinetic.surface1,
@@ -284,40 +279,14 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 shape: BoxShape.circle,
                 color: kinetic.primary.withValues(alpha: 0.12),
               ),
-              child: Icon(
-                Icons.mail_outline_rounded,
+              child: BladeIcon(
+                BladeIconName.mail,
                 color: kinetic.primary,
                 size: 30,
               ),
             ),
           ),
-          const SizedBox(height: 18),
-
-          // Title & Subtitle
-          Text(
-            isVi ? 'KHÔI PHỤC MẬT KHẨU' : 'FORGOT PASSWORD',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 0.8,
-              color: kinetic.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            isVi
-                ? 'Nhập email đã đăng ký với Aetron để nhận đường dẫn đặt lại mật khẩu an toàn.'
-                : 'Enter your registered email address to receive a secure password reset link.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w400,
-              color: kinetic.textMuted,
-              height: 1.4,
-            ),
-          ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 24),
 
           // Email Input Field
           Text(
@@ -346,8 +315,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               ),
               filled: true,
               fillColor: kinetic.background,
-              prefixIcon: Icon(
-                Icons.alternate_email_rounded,
+              prefixIcon: BladeIcon(
+                BladeIconName.mail,
                 color: kinetic.primary,
                 size: 20,
               ),
@@ -489,8 +458,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           Center(
             child: TextButton.icon(
               onPressed: () => Navigator.of(context).pop(),
-              icon: Icon(
-                Icons.arrow_back_rounded,
+              icon: BladeIcon(
+                BladeIconName.chevL,
                 color: kinetic.primary,
                 size: 16,
               ),
@@ -543,10 +512,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               ),
               border: Border.all(color: kinetic.secondary, width: 1.8),
             ),
-            child: Icon(
-              Icons.mark_email_read_rounded,
+            child: BladeIcon(
+              BladeIconName.mail,
               color: kinetic.secondary,
-              size: 42,
+              size: 30,
             ),
           ),
         ),
@@ -579,8 +548,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.email_rounded,
+                BladeIcon(
+                  BladeIconName.mail,
                   color: kinetic.primary,
                   size: 14,
                 ),
@@ -692,8 +661,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         Center(
           child: TextButton.icon(
             onPressed: () => Navigator.of(context).pop(),
-            icon: Icon(
-              Icons.arrow_back_rounded,
+            icon: BladeIcon(
+              BladeIconName.chevL,
               color: kinetic.textMuted,
               size: 16,
             ),
@@ -799,37 +768,49 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
 
     return Scaffold(
       backgroundColor: kinetic.background,
-      body: Stack(
+      body: Column(
         children: [
-          // ── 1. Top Section: Cyber Scenic Header Artwork ───────────────────
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: MediaQuery.of(context).size.height * 0.35,
-            child: Stack(
-              fit: StackFit.expand,
+          // ── Flat brand header (V5): real logo + screen title/subtitle ────
+          Padding(
+            padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 16, 20, 16),
+            child: Row(
               children: [
-                Image.asset(
-                  'assets/login_header.png',
-                  fit: BoxFit.cover,
-                  alignment: Alignment.topCenter,
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(11),
+                  child: Image.asset(
+                    'assets/logo.png',
+                    width: 44,
+                    height: 44,
+                    fit: BoxFit.cover,
+                  ),
                 ),
-                Positioned.fill(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          kinetic.background.withValues(alpha: 0.35),
-                          Colors.transparent,
-                          kinetic.background.withValues(alpha: 0.85),
-                          kinetic.background,
-                        ],
-                        stops: const [0.0, 0.4, 0.85, 1.0],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isVi ? 'THIẾT LẬP MẬT KHẨU MỚI' : 'SET NEW PASSWORD',
+                        style: TextStyle(
+                          fontSize: 19,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.4,
+                          color: kinetic.textPrimary,
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 3),
+                      Text(
+                        isVi
+                            ? 'Tạo mật khẩu mạnh để bảo vệ hồ sơ và dữ liệu luyện tập của bạn.'
+                            : 'Create a strong password to secure your athlete profile & telemetry.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w400,
+                          color: kinetic.textMuted,
+                          height: 1.35,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -837,11 +818,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
           ),
 
           // ── 2. Bottom Section: V4 flat card ───────────────────────────────
-          Positioned(
-            top: MediaQuery.of(context).size.height * 0.22,
-            left: 0,
-            right: 0,
-            bottom: 0,
+          Expanded(
             child: Container(
               decoration: BoxDecoration(
                 color: kinetic.surface1,
@@ -892,40 +869,14 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                                 width: 1.5,
                               ),
                             ),
-                            child: Icon(
-                              Icons.security_rounded,
+                            child: BladeIcon(
+                              BladeIconName.shield,
                               color: kinetic.primary,
-                              size: 36,
+                              size: 30,
                             ),
                           ),
                         ),
-                        const SizedBox(height: 16),
-
-                        // Title & Subtitle
-                        Text(
-                          isVi ? 'THIẾT LẬP MẬT KHẨU MỚI' : 'SET NEW PASSWORD',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 0.8,
-                            color: kinetic.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          isVi
-                              ? 'Tạo mật khẩu mạnh để bảo vệ hồ sơ và dữ liệu luyện tập của bạn.'
-                              : 'Create a strong password to secure your athlete profile & telemetry.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                            color: kinetic.textMuted,
-                            height: 1.4,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 20),
 
                         // New Password Field
                         Text(
@@ -957,16 +908,14 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                             ),
                             filled: true,
                             fillColor: kinetic.background,
-                            prefixIcon: Icon(
-                              Icons.lock_outline_rounded,
+                            prefixIcon: BladeIcon(
+                              BladeIconName.lock,
                               color: kinetic.primary,
                               size: 20,
                             ),
                             suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_off_outlined
-                                    : Icons.visibility_outlined,
+                              icon: BladeIcon(
+                                BladeIconName.eye,
                                 color: kinetic.textMuted,
                                 size: 20,
                               ),
@@ -1048,16 +997,14 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                             ),
                             filled: true,
                             fillColor: kinetic.background,
-                            prefixIcon: Icon(
-                              Icons.verified_user_outlined,
+                            prefixIcon: BladeIcon(
+                              BladeIconName.lock,
                               color: kinetic.primary,
                               size: 20,
                             ),
                             suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscureConfirmPassword
-                                    ? Icons.visibility_off_outlined
-                                    : Icons.visibility_outlined,
+                              icon: BladeIcon(
+                                BladeIconName.eye,
                                 color: kinetic.textMuted,
                                 size: 20,
                               ),

@@ -1,3 +1,4 @@
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/workout_route_recap_components.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_card.dart';
@@ -47,8 +48,8 @@ class KineticSummaryRouteRecap extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(
-                      Icons.map_rounded,
+                    BladeIcon(
+                      BladeIconName.map,
                       size: 15,
                       color: colors.primary,
                     ),

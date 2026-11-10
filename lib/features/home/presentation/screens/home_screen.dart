@@ -20,6 +20,7 @@ import 'package:fitness_exercise_application/features/workout/providers/workout_
 import 'package:fitness_exercise_application/features/workout/presentation/screens/details/workout_details_screen.dart';
 import 'package:fitness_exercise_application/shared/aetron/aetron_ui.dart';
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:fitness_exercise_application/features/home/presentation/widgets/kinetic_home_top_bar.dart';
 import 'package:fitness_exercise_application/features/home/presentation/widgets/kinetic_hero_card.dart';
@@ -296,46 +297,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                     ),
 
-                    // Recoverable Unsaved Session Banner (H4)
-                    if (recoverableSession != null)
-                      SliverToBoxAdapter(
-                        child: _RecoverableWorkoutBanner(
-                          session: recoverableSession,
-                          isVi: isVi,
-                        ),
-                      ),
-
-                    // Offline Banner if disconnected
-                    if (isOffline)
-                      const SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: KineticTokens.page,
-                            vertical: KineticTokens.spaceXXS,
-                          ),
-                          child: KineticOfflineBanner(),
-                        ),
-                      ),
-
-                    // 2. Quick Activity Selector (Đưa lên trên thay cho thanh trạng thái môi trường)
-                    SliverToBoxAdapter(
-                      child: KineticActivityQuickSwitch(
-                        selectedActivity: _selectedActivity,
-                        isVi: isVi,
-                        onSelected: (act) {
-                          HapticFeedback.selectionClick();
-                          setState(() {
-                            _selectedActivity = act;
-                          });
-                          ref
-                                  .read(selectedActivityTypeProvider.notifier)
-                                  .state =
-                              act;
-                        },
-                      ),
-                    ),
-
-                    // 3. Hero Card
+                    // 2. Week Hero Card
                     SliverToBoxAdapter(
                       child: KineticHeroCard(
                         title: _heroTitleForActivity(_selectedActivity, isVi),
@@ -361,7 +323,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                     ),
 
-                    // 5. Your Week Bento Grid
+                    // 3. Week Stat Strip (Your Week Bento)
                     SliverToBoxAdapter(
                       child: KineticYourWeekBento(
                         weeklyDistanceKm: weekly.weeklyDistanceKm,
@@ -380,7 +342,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                     ),
 
-                    // 6. Recent Activity Section (With Empty State CTA)
+                    // 4. Training Plans (program card)
+                    SliverToBoxAdapter(child: KineticExploreRoutes(isVi: isVi)),
+
+                    // 5. Recent Activity Section (With Empty State CTA)
                     SliverToBoxAdapter(
                       child: workoutsAsync.when(
                         loading: () => const Padding(
@@ -467,8 +432,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                     ),
 
-                    // 6. Explore Routes & Programs
-                    SliverToBoxAdapter(child: KineticExploreRoutes(isVi: isVi)),
+                    // Recoverable Unsaved Session Banner (H4)
+                    if (recoverableSession != null)
+                      SliverToBoxAdapter(
+                        child: _RecoverableWorkoutBanner(
+                          session: recoverableSession,
+                          isVi: isVi,
+                        ),
+                      ),
+
+                    // Offline Banner if disconnected
+                    if (isOffline)
+                      const SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: KineticTokens.page,
+                            vertical: KineticTokens.spaceXXS,
+                          ),
+                          child: KineticOfflineBanner(),
+                        ),
+                      ),
+
+                    // 8. Quick Activity Selector (Đưa lên trên thay cho thanh trạng thái môi trường)
+                    SliverToBoxAdapter(
+                      child: KineticActivityQuickSwitch(
+                        selectedActivity: _selectedActivity,
+                        isVi: isVi,
+                        onSelected: (act) {
+                          HapticFeedback.selectionClick();
+                          setState(() {
+                            _selectedActivity = act;
+                          });
+                          ref
+                                  .read(selectedActivityTypeProvider.notifier)
+                                  .state =
+                              act;
+                        },
+                      ),
+                    ),
 
                     // Bottom Padding for Dock
                     const SliverToBoxAdapter(child: SizedBox(height: 100)),
@@ -667,8 +668,8 @@ class _RecoverableWorkoutBannerState
                   color: colors.primary.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  Icons.history_toggle_off_rounded,
+                child: BladeIcon(
+                  BladeIconName.hist,
                   color: colors.primary,
                   size: 20,
                 ),

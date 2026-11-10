@@ -5,6 +5,7 @@ import 'package:fitness_exercise_application/features/home/presentation/provider
 import 'package:fitness_exercise_application/features/shell/presentation/providers/main_tab_controller_provider.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/providers/workout_providers.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_button.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_card.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
@@ -143,8 +144,8 @@ class KineticStreakDetailsSheet extends ConsumerWidget {
                               color: tierColor.withValues(alpha: 0.35),
                             ),
                           ),
-                          child: Icon(
-                            Icons.local_fire_department_rounded,
+                          child: BladeIcon(
+                            BladeIconName.flame,
                             color: tierColor,
                             size: 18,
                           ),
@@ -178,8 +179,8 @@ class KineticStreakDetailsSheet extends ConsumerWidget {
                           ),
                         ),
                         IconButton(
-                          icon: Icon(
-                            Icons.close_rounded,
+                          icon: BladeIcon(
+                            BladeIconName.x,
                             color: colors.textSecondary,
                             size: 22,
                           ),
@@ -235,7 +236,7 @@ class KineticStreakDetailsSheet extends ConsumerWidget {
                       // 4. Lời nhắc giữ chuỗi tinh tế
                       Row(
                         children: [
-                          Icon(Icons.bolt_rounded, size: 15, color: tierColor),
+                          BladeIcon(BladeIconName.bolt, size: 15, color: tierColor),
                           const SizedBox(width: KineticTokens.spaceXXS),
                           Expanded(
                             child: Text(
@@ -336,8 +337,8 @@ class _StreakHeroCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: Icon(
-                  Icons.local_fire_department_rounded,
+                child: BladeIcon(
+                  BladeIconName.flame,
                   size: 36,
                   color: tierColor,
                 ),
@@ -384,10 +385,10 @@ class _StreakHeroCard extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
+                BladeIcon(
                   isTodayCompleted
-                      ? Icons.check_circle_rounded
-                      : Icons.bolt_rounded,
+                      ? BladeIconName.check
+                      : BladeIconName.bolt,
                   size: 14,
                   color: activeStatusColor,
                 ),
@@ -451,8 +452,8 @@ class _StreakWeekStrip extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.calendar_month_rounded,
+              BladeIcon(
+                BladeIconName.cal,
                 color: colors.primary,
                 size: 15,
               ),
@@ -590,8 +591,8 @@ class _StreakDayCapsule extends StatelessWidget {
                   : Colors.transparent,
             ),
             child: isActive
-                ? Icon(
-                    Icons.local_fire_department_rounded,
+                ? BladeIcon(
+                    BladeIconName.flame,
                     color: Colors.white,
                     size: 12,
                   )
@@ -662,8 +663,8 @@ class _StreakCoreMetricsRow extends StatelessWidget {
                         color: colors.tertiary.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(
-                        Icons.emoji_events_rounded,
+                      child: BladeIcon(
+                        BladeIconName.trophy,
                         color: colors.tertiary,
                         size: 14,
                       ),
@@ -728,8 +729,8 @@ class _StreakCoreMetricsRow extends StatelessWidget {
                         color: colors.primary.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(
-                        Icons.flag_rounded,
+                      child: BladeIcon(
+                        BladeIconName.flag,
                         color: colors.primary,
                         size: 14,
                       ),

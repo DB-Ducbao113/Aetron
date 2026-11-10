@@ -1,3 +1,4 @@
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 
@@ -46,10 +47,8 @@ class LocateButton extends StatelessWidget {
               ],
             ),
             child: Center(
-              child: Icon(
-                isFollowEnabled
-                    ? Icons.my_location_rounded
-                    : Icons.location_searching_rounded,
+              child: BladeIcon(
+                BladeIconName.gps,
                 color: isFollowEnabled ? activeColor : colors.textSecondary,
                 size: 22,
               ),

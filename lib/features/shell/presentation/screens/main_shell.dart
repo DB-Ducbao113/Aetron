@@ -5,6 +5,7 @@ import 'package:fitness_exercise_application/features/home/presentation/screens/
 import 'package:fitness_exercise_application/features/profile/presentation/screens/profile_screen.dart';
 import 'package:fitness_exercise_application/features/analytics/presentation/screens/analytics_screen.dart';
 import 'package:fitness_exercise_application/features/shell/presentation/providers/main_tab_controller_provider.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
@@ -107,19 +108,11 @@ class _AetronDock extends ConsumerWidget {
   final ValueChanged<int> onChanged;
 
   static const _items = [
-    (Icons.home_outlined, Icons.home_rounded, 'nav_home'),
-    (
-      Icons.directions_run_outlined,
-      Icons.directions_run_rounded,
-      'nav_activity',
-    ),
-    (
-      Icons.calendar_month_outlined,
-      Icons.calendar_month_rounded,
-      'nav_history',
-    ),
-    (Icons.analytics_outlined, Icons.analytics_rounded, 'nav_analytics'),
-    (Icons.person_outline, Icons.person_rounded, 'nav_profile'),
+    (BladeIconName.home, 'nav_home'),
+    (BladeIconName.pulse, 'nav_activity'),
+    (BladeIconName.cal, 'nav_history'),
+    (BladeIconName.chart, 'nav_analytics'),
+    (BladeIconName.user, 'nav_profile'),
   ];
 
   @override
@@ -154,8 +147,7 @@ class _AetronDock extends ConsumerWidget {
                 Expanded(
                   child: _DockItem(
                     icon: _items[i].$1,
-                    selectedIcon: _items[i].$2,
-                    label: AppTranslations.get(_items[i].$3, currentLang),
+                    label: AppTranslations.get(_items[i].$2, currentLang),
                     selected: i == currentIndex,
                     onTap: () => onChanged(i),
                   ),
@@ -169,15 +161,13 @@ class _AetronDock extends ConsumerWidget {
 }
 
 class _DockItem extends StatelessWidget {
-  final IconData icon;
-  final IconData selectedIcon;
+  final BladeIconName icon;
   final String label;
   final bool selected;
   final VoidCallback onTap;
 
   const _DockItem({
     required this.icon,
-    required this.selectedIcon,
     required this.label,
     required this.selected,
     required this.onTap,
@@ -205,8 +195,8 @@ class _DockItem extends StatelessWidget {
                 color: selected ? colors.primary : Colors.transparent,
                 borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
               ),
-              child: Icon(
-                selected ? selectedIcon : icon,
+              child: BladeIcon(
+                icon,
                 color: selected ? colors.onPrimary : colors.textMuted,
                 size: selected ? 20 : 18,
               ),

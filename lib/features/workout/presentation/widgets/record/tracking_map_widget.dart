@@ -3,6 +3,7 @@ import "dart:ui" as ui;
 import "package:fitness_exercise_application/core/constants/debug_config.dart";
 import "package:fitness_exercise_application/core/localization/app_translations.dart";
 import "package:fitness_exercise_application/features/workout/presentation/screens/record/workout_session_state.dart";
+import "package:fitness_exercise_application/shared/kinetic/blade_icons.dart";
 import "package:fitness_exercise_application/shared/kinetic/kinetic.dart";
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
@@ -696,8 +697,8 @@ class _MapLayerPickerOrb extends StatelessWidget {
               ],
             ),
             child: Center(
-              child: Icon(
-                Icons.layers_rounded,
+              child: BladeIcon(
+                BladeIconName.layers,
                 color: colors.primary,
                 size: 22,
               ),
@@ -765,8 +766,8 @@ class _MapStylePickerSheet extends ConsumerWidget {
                   shape: BoxShape.circle,
                   color: colors.primary.withValues(alpha: 0.15),
                 ),
-                child: Icon(
-                  Icons.layers_rounded,
+                child: BladeIcon(
+                  BladeIconName.layers,
                   color: colors.primary,
                   size: 20,
                 ),
@@ -798,7 +799,8 @@ class _MapStylePickerSheet extends ConsumerWidget {
             subtitle: isVi
                 ? "Ảnh chụp thực tế độ phân giải cao"
                 : "Photorealistic aerial satellite imagery",
-            icon: Icons.satellite_alt_rounded,
+            iconBuilder: (color, size) =>
+                Icon(Icons.satellite_alt_rounded, color: color, size: size),
             badge: isVi ? "CHÂN THỰC" : "REALISTIC",
           ),
           const SizedBox(height: 12),
@@ -809,7 +811,8 @@ class _MapStylePickerSheet extends ConsumerWidget {
             subtitle: isVi
                 ? "Bản đồ đường xá, công viên tinh tế"
                 : "Clean minimal street & sports map",
-            icon: Icons.map_rounded,
+            iconBuilder: (color, size) =>
+                BladeIcon(BladeIconName.map, color: color, size: size),
             badge: isVi ? "RÕ NÉT" : "CLEAN",
           ),
         ],
@@ -822,7 +825,7 @@ class _MapStylePickerSheet extends ConsumerWidget {
     required AppMapType type,
     required String title,
     required String subtitle,
-    required IconData icon,
+    required Widget Function(Color color, double size) iconBuilder,
     required String badge,
   }) {
     final colors = context.kinetic;
@@ -873,12 +876,9 @@ class _MapStylePickerSheet extends ConsumerWidget {
                   ),
                 ),
                 child: Center(
-                  child: Icon(
-                    icon,
-                    color: isSelected
-                        ? colors.primary
-                        : colors.textSecondary,
-                    size: 22,
+                  child: iconBuilder(
+                    isSelected ? colors.primary : colors.textSecondary,
+                    22,
                   ),
                 ),
               ),
@@ -936,8 +936,8 @@ class _MapStylePickerSheet extends ConsumerWidget {
                 ),
               ),
               if (isSelected)
-                Icon(
-                  Icons.check_circle_rounded,
+                BladeIcon(
+                  BladeIconName.check,
                   color: colors.primary,
                   size: 22,
                 ),

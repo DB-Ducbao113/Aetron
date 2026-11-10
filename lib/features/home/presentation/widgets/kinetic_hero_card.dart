@@ -1,3 +1,4 @@
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 
@@ -86,8 +87,8 @@ class KineticHeroCard extends StatelessWidget {
                     const SizedBox(height: KineticTokens.spaceXS),
                     Row(
                       children: [
-                        Icon(
-                          Icons.route_rounded,
+                        BladeIcon(
+                          BladeIconName.route,
                           size: 14,
                           color: colors.primary,
                         ),
@@ -119,8 +120,8 @@ class KineticHeroCard extends StatelessWidget {
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(
-                                      Icons.flag_rounded,
+                                    BladeIcon(
+                                      BladeIconName.flag,
                                       size: 14,
                                       color: colors.primary,
                                     ),
@@ -135,8 +136,8 @@ class KineticHeroCard extends StatelessWidget {
                                       ),
                                     ),
                                     const SizedBox(width: KineticTokens.spaceXXS),
-                                    Icon(
-                                      Icons.chevron_right_rounded,
+                                    BladeIcon(
+                                      BladeIconName.chevR,
                                       size: 13,
                                       color: colors.primary,
                                     ),
@@ -149,8 +150,8 @@ class KineticHeroCard extends StatelessWidget {
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(
-                                Icons.flag_rounded,
+                              BladeIcon(
+                                BladeIconName.flag,
                                 size: 14,
                                 color: colors.primary,
                               ),

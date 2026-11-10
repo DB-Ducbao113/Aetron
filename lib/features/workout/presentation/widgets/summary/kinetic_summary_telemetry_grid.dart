@@ -1,5 +1,6 @@
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
@@ -68,7 +69,7 @@ class KineticSummaryTelemetryGrid extends StatelessWidget {
     final String fourthLabel;
     final String fourthValue;
     final String fourthUnit;
-    final IconData fourthIcon;
+    final BladeIconName fourthIcon;
     final String? fourthSubtitle;
 
     if (_isCycling) {
@@ -77,13 +78,13 @@ class KineticSummaryTelemetryGrid extends StatelessWidget {
       final dispMax = useMetricUnits ? maxSpeed : maxSpeed * 0.621371;
       fourthValue = dispMax.toStringAsFixed(1);
       fourthUnit = useMetricUnits ? 'km/h' : 'mph';
-      fourthIcon = Icons.speed_rounded;
+      fourthIcon = BladeIconName.pulse;
       fourthSubtitle = currentLang == AppLanguage.vi ? 'Ước tính cao điểm' : 'Peak estimate';
     } else {
       fourthLabel = currentLang == AppLanguage.vi ? 'TỔNG SỐ BƯỚC' : 'TOTAL STEPS';
       fourthValue = steps > 0 ? '$steps' : '--';
       fourthUnit = currentLang == AppLanguage.vi ? 'bước' : 'steps';
-      fourthIcon = Icons.directions_walk_rounded;
+      fourthIcon = BladeIconName.walk;
       if (steps > 0 && effectiveMovingSec > 60) {
         final cadenceSpm = ((steps / effectiveMovingSec) * 60).round();
         fourthSubtitle = '$cadenceSpm spm ${currentLang == AppLanguage.vi ? 'nhịp bước' : 'cadence'}';
@@ -119,7 +120,7 @@ class KineticSummaryTelemetryGrid extends StatelessWidget {
                     label: currentLang == AppLanguage.vi ? 'THỜI GIAN DI CHUYỂN' : 'MOVING TIME',
                     value: movingTimeFormatted,
                     unit: null,
-                    icon: Icons.timer_rounded,
+                    icon: BladeIconName.clock,
                     subtitle: hasPausedTime
                         ? (currentLang == AppLanguage.vi
                             ? 'Tổng: $totalTimeFormatted'
@@ -135,7 +136,7 @@ class KineticSummaryTelemetryGrid extends StatelessWidget {
                     label: paceSpeedLabel,
                     value: primaryPaceSpeedValue,
                     unit: primaryPaceSpeedUnit,
-                    icon: Icons.speed_rounded,
+                    icon: BladeIconName.pulse,
                     subtitle: null,
                   ),
                 ),
@@ -153,7 +154,7 @@ class KineticSummaryTelemetryGrid extends StatelessWidget {
                     label: currentLang == AppLanguage.vi ? 'NĂNG LƯỢNG' : 'ENERGY BURN',
                     value: '$calories',
                     unit: 'kcal',
-                    icon: Icons.local_fire_department_rounded,
+                    icon: BladeIconName.flame,
                     subtitle: currentLang == AppLanguage.vi ? 'Calo hoạt động' : 'Active burn',
                   ),
                 ),
@@ -182,7 +183,7 @@ class _TelemetryCard extends StatelessWidget {
   final String label;
   final String value;
   final String? unit;
-  final IconData icon;
+  final BladeIconName icon;
   final String? subtitle;
 
   const _TelemetryCard({
@@ -219,7 +220,7 @@ class _TelemetryCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              Icon(icon, size: 14, color: colors.textSecondary),
+              BladeIcon(icon, size: 14, color: colors.textSecondary),
             ],
           ),
           const SizedBox(height: 8),
