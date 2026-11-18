@@ -4,18 +4,16 @@ import 'package:latlong2/latlong.dart';
 import 'kinematic_limits.dart';
 import 'trajectory_sample.dart';
 
-/// Candidate Algorithm 1: Adhinugraha et al. (2021) Multi-Stage Trajectory Filter.
-///
-/// Reproduced faithfully from:
+/// Historical Aetron three-stage preprocessing candidate, inspired by the
+/// non-map-matching noise-reduction problem described by:
 /// Kiki Adhinugraha, Wenny Rahayu, Takahiro Hara, and David Taniar (2021).
 /// "Dealing with noise in crowdsourced GPS human trajectory logging data."
 /// Concurrency and Computation: Practice and Experience (Wiley), 33(19), e6139.
 /// DOI: 10.1002/cpe.6139.
 ///
-/// Stages:
-/// 1. Point-level anomaly classification using kinematic velocity boundaries [Published].
-/// 2. Track-level acute heading detour detection [Published].
-/// 3. Density-Adaptive Sliding-Window Median/MAD spatial filter [Published, with Aetron-Adapted activity limits].
+/// The cited paper uses convex-hull based spike reduction and granularity
+/// reduction. This speed/heading/median-MAD candidate does NOT reproduce
+/// those stages. The class name is retained for historical benchmark API parity.
 class AdhinugrahaTrajectoryFilter {
   final KinematicLimits limits;
   static const Distance _distance = Distance();
@@ -29,7 +27,7 @@ class AdhinugrahaTrajectoryFilter {
     );
   }
 
-  /// Processes a complete trajectory sequence using the 3-stage Adhinugraha framework.
+  /// Processes a complete trajectory sequence using the historical Aetron three-stage candidate.
   List<ProcessedTrajectoryPoint> process(List<TrajectoryRawSample> rawSamples) {
     if (rawSamples.isEmpty) return const [];
 
@@ -157,7 +155,7 @@ class AdhinugrahaTrajectoryFilter {
       final pathSum = d1 + d2;
       final chordRatio = dChord > 0.5 ? pathSum / dChord : pathSum / 0.5;
 
-      // Adhinugraha et al. (2021) acute detour criteria: deflection >= 135 deg & path overshoot
+      // Aetron candidate acute detour criteria: deflection >= 135 deg & path overshoot
       if (headingDeflection >= 135.0 && chordRatio > 2.0 && pathSum > 8.0) {
         final updatedFlags = Set<TrajectoryQualityFlag>.from(curr.qualityFlags)
           ..add(TrajectoryQualityFlag.headingSpike)

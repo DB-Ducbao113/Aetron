@@ -31,11 +31,11 @@ class StreamingTrajectoryPreprocessor {
     required this.limits,
     bool? enableQualityGate,
     bool? enableShadowMode,
-  })  : _qualityGate = GpsInputQualityGate(
-          limits: limits,
-          enableQualityGate: enableQualityGate,
-          enableShadowMode: enableShadowMode,
-        );
+  }) : _qualityGate = GpsInputQualityGate(
+         limits: limits,
+         enableQualityGate: enableQualityGate,
+         enableShadowMode: enableShadowMode,
+       );
 
   ProcessedTrajectoryPoint? get lastAcceptedPoint => _lastAcceptedPoint;
   int get totalRawCount => _totalRawCount;
@@ -63,9 +63,8 @@ class StreamingTrajectoryPreprocessor {
 
     double? rawDtSec;
     if (_lastRawSampleTime != null) {
-      rawDtSec = rawSample.timestamp
-              .difference(_lastRawSampleTime!)
-              .inMilliseconds /
+      rawDtSec =
+          rawSample.timestamp.difference(_lastRawSampleTime!).inMilliseconds /
           1000.0;
     }
     _lastRawSampleTime = rawSample.timestamp;
@@ -88,7 +87,7 @@ class StreamingTrajectoryPreprocessor {
       timeDeltaSec: decision.timeDeltaSec,
       impliedSpeedMs: decision.impliedSpeedMs,
       impliedAccelerationMs2: decision.impliedAccelerationMs2,
-      forwardBearingDeg: null,
+      forwardBearingDeg: decision.forwardBearingDeg,
       isAccepted: decision.isAcceptedForPath,
       isGapRecovery: decision.isGapRecovery,
       covarianceScale: decision.covarianceScale,

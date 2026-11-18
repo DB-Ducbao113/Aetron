@@ -176,5 +176,36 @@ void main() {
       expect(res.totalReconstructedDistanceMeters, equals(0.0));
       expect(res.points.last.gapType, equals(ReconstructionGapType.stationaryDwell));
     });
+    test('Severe blackout takes precedence over stay-point labels', () {
+      final t = DateTime.utc(2026, 11, 18);
+      final points = [
+        makePoint(index: 0, timestamp: t, point: const LatLng(10,106),
+          speedMs: 0, isStay: true),
+        makePoint(index: 1, timestamp: t.add(const Duration(seconds: 30)),
+          point: const LatLng(10.001,106), speedMs: 0, isStay: true),
+      ];
+      for (final method in ReconstructionMethod.values) {
+        final result = engine.reconstructTrajectory(points: points,
+          activityType: 'walking', method: method);
+        expect(result.interpolatedPointCount, 0);
+        expect(result.indeterminateGapCount, 1);
+        expect(result.points.last.gapType, ReconstructionGapType.indeterminateOutage);
+      }
+    });
+
+    test('PCHIP opposing tangent is clamped before slope limiting', () {
+      final t = DateTime.utc(2026, 11, 18);
+      final points = [
+        makePoint(index: 0, timestamp: t, point: const LatLng(10,106),
+          speedMs: 8, headingDeg: 180),
+        makePoint(index: 1, timestamp: t.add(const Duration(seconds: 5)),
+          point: const LatLng(10.00001,106), speedMs: 8, headingDeg: 0),
+      ];
+      final result = engine.reconstructTrajectory(points: points, activityType: 'running');
+      for (var i=1; i<result.points.length; i++) {
+        expect(result.points[i].latitude, greaterThanOrEqualTo(result.points[i-1].latitude));
+        expect(result.points[i].latitude, lessThanOrEqualTo(10.00001));
+      }
+    });
   });
 }

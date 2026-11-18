@@ -23,7 +23,7 @@ const String kGpsFilterAlgoConfig = String.fromEnvironment(
 /// Zheng (2009) stay point dwell detection, and blackout partitioning into live tracking and finalization.
 const bool kEnableTrajectoryPreprocessing = bool.fromEnvironment(
   'FLOWFIT_ENABLE_TRAJECTORY_PREPROCESSING',
-  defaultValue: false,
+  defaultValue: true,
 );
 
 /// Enables shadow comparison logging between legacy WorkoutTrackingEngine and research preprocessing.
@@ -37,7 +37,7 @@ const bool kEnableTrajectoryPreprocessingShadowMode = bool.fromEnvironment(
 /// adaptive measurement covariance inflation, and centripetal turn process noise scaling.
 const bool kEnableGnssCorrection = bool.fromEnvironment(
   'FLOWFIT_ENABLE_GNSS_CORRECTION',
-  defaultValue: false,
+  defaultValue: true,
 );
 
 /// Enables shadow comparison logging for Phase 2 GNSS error correction diagnostics.
@@ -46,12 +46,20 @@ const bool kEnableGnssCorrectionShadowMode = bool.fromEnvironment(
   defaultValue: false,
 );
 
-/// Enables research-based trajectory reconstruction (Phase 3: Czerwiński et al., 2026; Fritsch & Carlson, 1980).
-/// When enabled, reconstructs continuous high-fidelity paths across sparse dropouts (2s-15s) using
-/// shape-preserving Hermite splines (PCHIP), while preserving indeterminate blackouts (>15s) without fabricating data.
+/// Enables offline display-only pairwise Hermite reconstruction with the
+/// Fritsch–Carlson (1980) monotonicity limiter; not a full reproduction of
+/// Czerwiński et al. (2026). Reconstructed points never feed live metrics.
 const bool kEnableTrajectoryReconstruction = bool.fromEnvironment(
   'FLOWFIT_ENABLE_TRAJECTORY_RECONSTRUCTION',
-  defaultValue: false,
+  defaultValue: true,
+);
+
+/// Selects the research-based pairwise Hermite adaptation by default.
+/// Linear chord remains the comparator and had slightly lower masked-gap
+/// RMSE on TU Wien. This selection is not a claim of superiority.
+const String kTrajectoryReconstructionMethod = String.fromEnvironment(
+  'FLOWFIT_TRAJECTORY_RECONSTRUCTION_METHOD',
+  defaultValue: 'monotonePchip',
 );
 
 /// Enables shadow comparison logging for Phase 3 Trajectory Reconstruction diagnostics.

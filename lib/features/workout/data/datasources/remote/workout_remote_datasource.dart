@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fitness_exercise_application/features/workout/data/models/workout_session_model.dart';
 import 'package:fitness_exercise_application/features/workout/domain/constants/workout_processing_contract.dart';
@@ -5,6 +6,7 @@ import 'package:fitness_exercise_application/features/workout/domain/entities/wo
 import 'package:fitness_exercise_application/core/constants/db_tables.dart';
 import 'package:flutter/foundation.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:fitness_exercise_application/features/workout/domain/services/scientific_result_metadata.dart';
 
 class WorkoutRemoteDataSource {
   final SupabaseClient _supabase;
@@ -44,11 +46,50 @@ class WorkoutRemoteDataSource {
       ..remove('route_distance_source')
       ..remove('matched_distance_km')
       ..remove('route_match_metrics_json');
+    final research = buildResearchResult(session);
+    final filtered = _decodeRouteSafely(session.filteredRouteJson);
     await _supabase.from(DbTables.workoutSessions).upsert({
       ...payload,
+      'client_research_result_json': ?research,
+      if (filtered.isNotEmpty) 'filtered_route_json': filtered,
       'processing_status': kClientProcessingStatus,
       'metrics_version': kClientMetricsVersion,
     });
+  }
+
+  /// Immutable-in-meaning final client result, separate from server audit.
+  /// This is an unverified client claim, not proof of exact server replay.
+  @visibleForTesting
+  static Map<String, dynamic>? buildResearchResult(WorkoutSession session) {
+    try {
+      final audit = jsonDecode(session.routeMatchMetricsJson);
+      if (audit is! Map<String, dynamic> ||
+          audit['scientific_result_version'] != 1) {
+        return null;
+      }
+      final filtered = jsonDecode(session.filteredRouteJson);
+      final reconstructed = jsonDecode(session.matchedRouteJson);
+      if (filtered is! List || reconstructed is! List) return null;
+      return {
+        'version': 1,
+        'session_id': session.id,
+        'activity_type': session.activityType.toLowerCase(),
+        'mode': session.mode,
+        'distance_km': session.distanceKm,
+        'duration_sec': session.durationSec,
+        'moving_time_sec': session.movingTimeSec,
+        'steps': session.steps,
+        'avg_speed_kmh': session.avgSpeedKmh,
+        'calories_kcal': session.caloriesKcal,
+        'lap_splits': session.lapSplits.map((split) => split.toJson()).toList(),
+        'filtered_route': filtered,
+        'reconstructed_route': reconstructed,
+        'reconstruction_status': session.routeMatchStatus,
+        'audit': audit,
+      };
+    } on FormatException {
+      return null;
+    }
   }
 
   Future<void> saveLiveRouteSnapshot({
@@ -89,7 +130,15 @@ class WorkoutRemoteDataSource {
             'snapshot_synced_at': DateTime.now().toUtc().toIso8601String(),
           },
         })
-        .eq('id', sessionId);
+        .eq('id', sessionId)
+        .eq('processing_status', kClientRecordingStatus);
+  }
+
+  @visibleForTesting
+  static WorkoutSession decodeRemoteSession(Map<String, dynamic> row) {
+    return WorkoutSessionModel.fromJson(row).toEntity().copyWith(
+      routeMatchMetricsJson: ScientificResultMetadata.fromRemote(row),
+    );
   }
 
   /// Fetch workouts from Supabase for a specific user
@@ -103,11 +152,7 @@ class WorkoutRemoteDataSource {
           .order('started_at', ascending: false);
 
       return (response as List)
-          .map(
-            (json) => WorkoutSessionModel.fromJson(
-              json as Map<String, dynamic>,
-            ).toEntity(),
-          )
+          .map((json) => decodeRemoteSession(json as Map<String, dynamic>))
           .where(
             (session) =>
                 session.durationSec > 0 ||
@@ -138,7 +183,7 @@ class WorkoutRemoteDataSource {
           .maybeSingle();
 
       if (response == null) return null;
-      return WorkoutSessionModel.fromJson(response).toEntity();
+      return decodeRemoteSession(response);
     } on PostgrestException catch (e) {
       debugPrint(
         '[WorkoutRemoteDataSource] getSessionById error: ${e.message}',
@@ -204,5 +249,14 @@ class WorkoutRemoteDataSource {
       debugPrint('[WorkoutRemoteDataSource] deleteAllSessions error: $e');
       rethrow;
     }
+  }
+}
+
+List<dynamic> _decodeRouteSafely(String encoded) {
+  try {
+    final value = jsonDecode(encoded);
+    return value is List ? value : const [];
+  } on FormatException {
+    return const [];
   }
 }

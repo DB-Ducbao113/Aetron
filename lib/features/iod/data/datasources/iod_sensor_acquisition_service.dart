@@ -12,9 +12,8 @@ import 'native_sensor_platform_channel.dart';
 class IodSensorAcquisitionService {
   final NativeSensorPlatformChannel _nativeChannel;
 
-  IodSensorAcquisitionService({
-    NativeSensorPlatformChannel? nativeChannel,
-  }) : _nativeChannel = nativeChannel ?? NativeSensorPlatformChannel();
+  IodSensorAcquisitionService({NativeSensorPlatformChannel? nativeChannel})
+    : _nativeChannel = nativeChannel ?? NativeSensorPlatformChannel();
 
   // Active subscriptions
   StreamSubscription<MagnetometerEvent>? _magSub;
@@ -32,12 +31,14 @@ class IodSensorAcquisitionService {
 
   // Latest hardware state
   GnssSatelliteData? _latestGnss;
+  double? _latestLux;
   WifiScanData? _latestWifiScan;
   BleScanData? _latestBleScan;
   Position? _latestPosition;
   int _stepDeltaSinceLastEpoch = 0;
   int _wifiPollCounter = 0;
   bool _isRunning = false;
+  int _sessionGeneration = 0;
 
   final _snapshotController = StreamController<IodSensorSnapshot>.broadcast();
   Stream<IodSensorSnapshot> get snapshotStream => _snapshotController.stream;
@@ -48,7 +49,9 @@ class IodSensorAcquisitionService {
   void start() {
     if (_isRunning) return;
     _isRunning = true;
+    _sessionGeneration++;
     _clearBuffers();
+    _clearHardwareCache();
 
     // 1. Subscribe to IMU Magnetometer
     try {
@@ -114,6 +117,7 @@ class IodSensorAcquisitionService {
           _latestGnss = data;
         },
         onError: (e) {
+          _latestGnss = null;
           debugPrint('[IodAcquisition] GNSS channel unavailable: $e');
         },
       );
@@ -125,9 +129,17 @@ class IodSensorAcquisitionService {
     try {
       _lightSub = _nativeChannel.lightSensorStream.listen(
         (data) {
-          _recentLuxReadings.add(data.lux);
+          if (data.lux.isFinite && data.lux >= 0) {
+            _latestLux = data.lux;
+            _recentLuxReadings.add(data.lux);
+          } else {
+            _latestLux = null;
+            _recentLuxReadings.clear();
+          }
         },
         onError: (e) {
+          _latestLux = null;
+          _recentLuxReadings.clear();
           debugPrint('[IodAcquisition] Light sensor channel unavailable: $e');
         },
       );
@@ -159,6 +171,7 @@ class IodSensorAcquisitionService {
   /// Stops acquisition and releases all sensor listeners.
   void stop() {
     _isRunning = false;
+    _sessionGeneration++;
     _epochTimer?.cancel();
     _epochTimer = null;
 
@@ -177,6 +190,7 @@ class IodSensorAcquisitionService {
     _nativeChannel.stopBleScan();
 
     _clearBuffers();
+    _clearHardwareCache();
   }
 
   void dispose() {
@@ -192,24 +206,43 @@ class IodSensorAcquisitionService {
     _stepDeltaSinceLastEpoch = 0;
   }
 
+  void _clearHardwareCache() {
+    _latestGnss = null;
+    _latestLux = null;
+    _latestWifiScan = null;
+    _latestBleScan = null;
+    _latestPosition = null;
+    _wifiPollCounter = 0;
+  }
+
+  // Health policy only: align with the recording pipeline's 5 s raw-GPS
+  // outage definition. This is not a DeepIOD classification threshold.
+  bool _fresh(DateTime value, DateTime now) {
+    final age = now.difference(value);
+    return !age.isNegative && age < const Duration(seconds: 5);
+  }
+
   /// Aggregates readings over the last 1-second interval into an IodSensorSnapshot.
   IodSensorSnapshot snapshotNow({DateTime? timestamp}) {
     final now = timestamp ?? DateTime.now();
 
     // Accelerometer stats
-    final double? accelMean =
-        _accelMagnitudes.isNotEmpty ? _computeMean(_accelMagnitudes) : null;
+    final double? accelMean = _accelMagnitudes.isNotEmpty
+        ? _computeMean(_accelMagnitudes)
+        : null;
     final double? accelVar = _accelMagnitudes.length >= 2
         ? _computeVariance(_accelMagnitudes, accelMean!)
         : null;
 
     // Gyroscope stats
-    final double? gyroMean =
-        _gyroMagnitudes.isNotEmpty ? _computeMean(_gyroMagnitudes) : null;
+    final double? gyroMean = _gyroMagnitudes.isNotEmpty
+        ? _computeMean(_gyroMagnitudes)
+        : null;
 
     // Magnetometer stats
-    final double? magMean =
-        _magMagnitudes.isNotEmpty ? _computeMean(_magMagnitudes) : null;
+    final double? magMean = _magMagnitudes.isNotEmpty
+        ? _computeMean(_magMagnitudes)
+        : null;
     final double? magVar = _magMagnitudes.length >= 2
         ? _computeVariance(_magMagnitudes, magMean!)
         : null;
@@ -217,10 +250,17 @@ class IodSensorAcquisitionService {
     // Light sensor stats
     final double? ambientLux = _recentLuxReadings.isNotEmpty
         ? _computeMean(_recentLuxReadings)
-        : null;
+        : _latestLux; // Android TYPE_LIGHT is an on-change sensor.
 
     // GPS fix
-    final pos = _latestPosition;
+    final cachedPosition = _latestPosition;
+    final pos = cachedPosition != null && _fresh(cachedPosition.timestamp, now)
+        ? cachedPosition
+        : null;
+    final cachedGnss = _latestGnss;
+    final gnss = cachedGnss != null && _fresh(cachedGnss.timestamp, now)
+        ? cachedGnss
+        : null;
     final hasFix = pos != null;
 
     // Contextual day/night indicator:
@@ -242,12 +282,12 @@ class IodSensorAcquisitionService {
 
     return IodSensorSnapshot(
       timestamp: now,
-      hasGnssStatus: _latestGnss != null,
-      satelliteCount: _latestGnss?.satelliteCount,
-      usedInFixCount: _latestGnss?.usedInFixCount,
-      meanCn0DbHz: _latestGnss?.meanCn0DbHz,
-      maxCn0DbHz: _latestGnss?.maxCn0DbHz,
-      top4Cn0DbHz: _latestGnss?.top4Cn0DbHz,
+      hasGnssStatus: gnss != null,
+      satelliteCount: gnss?.satelliteCount,
+      usedInFixCount: gnss?.usedInFixCount,
+      meanCn0DbHz: gnss?.meanCn0DbHz,
+      maxCn0DbHz: gnss?.maxCn0DbHz,
+      top4Cn0DbHz: gnss?.top4Cn0DbHz,
       hasGpsFix: hasFix,
       latitude: pos?.latitude,
       longitude: pos?.longitude,
@@ -282,17 +322,24 @@ class IodSensorAcquisitionService {
     // Periodically poll Wi-Fi and BLE scans on Android every 5 seconds
     _wifiPollCounter++;
     if (_wifiPollCounter % 5 == 0 && _nativeChannel.isAndroid) {
-      _nativeChannel.getLatestWifiScan().then((wifiData) {
-        if (wifiData != null) {
-          _latestWifiScan = wifiData;
-        }
-      }).catchError((_) {});
+      final generation = _sessionGeneration;
+      _nativeChannel
+          .getLatestWifiScan()
+          .then((wifiData) {
+            if (_isRunning && generation == _sessionGeneration) {
+              _latestWifiScan = wifiData;
+            }
+          })
+          .catchError((_) {});
 
-      _nativeChannel.getLatestBleScan().then((bleData) {
-        if (bleData != null) {
-          _latestBleScan = bleData;
-        }
-      }).catchError((_) {});
+      _nativeChannel
+          .getLatestBleScan()
+          .then((bleData) {
+            if (_isRunning && generation == _sessionGeneration) {
+              _latestBleScan = bleData;
+            }
+          })
+          .catchError((_) {});
     }
 
     final snapshot = snapshotNow();
@@ -327,8 +374,22 @@ class IodSensorAcquisitionService {
 
   /// Day of year calculation (1..366)
   static int _dayOfYear(DateTime date) {
-    const daysBeforeMonth = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
-    final isLeap = (date.year % 4 == 0 && date.year % 100 != 0) || (date.year % 400 == 0);
+    const daysBeforeMonth = [
+      0,
+      31,
+      59,
+      90,
+      120,
+      151,
+      181,
+      212,
+      243,
+      273,
+      304,
+      334,
+    ];
+    final isLeap =
+        (date.year % 4 == 0 && date.year % 100 != 0) || (date.year % 400 == 0);
     int doy = daysBeforeMonth[date.month - 1] + date.day;
     if (isLeap && date.month > 2) doy++;
     return doy;
@@ -343,23 +404,29 @@ class IodSensorAcquisitionService {
     required DateTime utcTime,
   }) {
     final doy = _dayOfYear(utcTime);
-    final fractionalHour = utcTime.hour + (utcTime.minute / 60.0) + (utcTime.second / 3600.0);
+    final fractionalHour =
+        utcTime.hour + (utcTime.minute / 60.0) + (utcTime.second / 3600.0);
 
     // Solar declination (degrees)
     final b = 2.0 * math.pi * (doy - 81) / 365.0;
-    final declinationRad = math.asin(math.sin(23.44 * math.pi / 180.0) * math.sin(b));
+    final declinationRad = math.asin(
+      math.sin(23.44 * math.pi / 180.0) * math.sin(b),
+    );
 
     // Equation of time in minutes
-    final eotMinutes = 9.87 * math.sin(2.0 * b) - 7.53 * math.cos(b) - 1.5 * math.sin(b);
+    final eotMinutes =
+        9.87 * math.sin(2.0 * b) - 7.53 * math.cos(b) - 1.5 * math.sin(b);
 
     // True solar time in hours
-    final solarTimeHours = fractionalHour + (longitude / 15.0) + (eotMinutes / 60.0);
+    final solarTimeHours =
+        fractionalHour + (longitude / 15.0) + (eotMinutes / 60.0);
 
     // Solar hour angle in radians
     final hourAngleRad = (solarTimeHours - 12.0) * 15.0 * math.pi / 180.0;
 
     final latRad = latitude * math.pi / 180.0;
-    final sinElev = math.sin(latRad) * math.sin(declinationRad) +
+    final sinElev =
+        math.sin(latRad) * math.sin(declinationRad) +
         math.cos(latRad) * math.cos(declinationRad) * math.cos(hourAngleRad);
 
     final elevRad = math.asin(sinElev.clamp(-1.0, 1.0));

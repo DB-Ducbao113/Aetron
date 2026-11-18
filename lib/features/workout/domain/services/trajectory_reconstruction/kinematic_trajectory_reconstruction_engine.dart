@@ -84,8 +84,10 @@ class KinematicTrajectoryReconstructionEngine implements ITrajectoryReconstructi
       final curr = validPoints[i];
       final next = validPoints[i + 1];
 
-      // If either point is a stay point, maintain centroid without artificial motion
-      if (curr.isStayPoint || next.isStayPoint) {
+      final dtSec = next.timestamp.difference(curr.timestamp).inMilliseconds / 1000.0;
+      if (dtSec <= 0) continue;
+      // A stay annotation must not override a severe blackout.
+      if (dtSec <= maxRecoverableGapSec && (curr.isStayPoint || next.isStayPoint)) {
         reconstructedList.add(ReconstructedPoint(
           point: next.point,
           timestamp: next.timestamp,
@@ -98,7 +100,6 @@ class KinematicTrajectoryReconstructionEngine implements ITrajectoryReconstructi
         continue;
       }
 
-      final dtSec = next.timestamp.difference(curr.timestamp).inMilliseconds / 1000.0;
       final stepDist = distanceCalculator.distance(curr.point, next.point);
 
       if (dtSec <= minInterpolationGapSec) {
@@ -260,10 +261,10 @@ class KinematicTrajectoryReconstructionEngine implements ITrajectoryReconstructi
       vx0 = 0.0;
       vx1 = 0.0;
     } else {
-      final alphaX = vx0 / secantVx;
-      final betaX = vx1 / secantVx;
-      if (alphaX < 0) vx0 = 0.0;
-      if (betaX < 0) vx1 = 0.0;
+      final alphaX = math.max(0.0, vx0 / secantVx);
+      final betaX = math.max(0.0, vx1 / secantVx);
+      vx0 = alphaX * secantVx;
+      vx1 = betaX * secantVx;
       final hypX = (alphaX * alphaX) + (betaX * betaX);
       if (hypX > 9.0) {
         final tau = 3.0 / math.sqrt(hypX);
@@ -277,10 +278,10 @@ class KinematicTrajectoryReconstructionEngine implements ITrajectoryReconstructi
       vy0 = 0.0;
       vy1 = 0.0;
     } else {
-      final alphaY = vy0 / secantVy;
-      final betaY = vy1 / secantVy;
-      if (alphaY < 0) vy0 = 0.0;
-      if (betaY < 0) vy1 = 0.0;
+      final alphaY = math.max(0.0, vy0 / secantVy);
+      final betaY = math.max(0.0, vy1 / secantVy);
+      vy0 = alphaY * secantVy;
+      vy1 = betaY * secantVy;
       final hypY = (alphaY * alphaY) + (betaY * betaY);
       if (hypY > 9.0) {
         final tau = 3.0 / math.sqrt(hypY);

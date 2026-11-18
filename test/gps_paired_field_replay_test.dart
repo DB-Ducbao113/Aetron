@@ -101,7 +101,10 @@ void main() {
     required GpsFilterAlgorithm algorithm,
   }) {
     final continuity = GpsRawSignalContinuity(gapThresholdSec: 5.0);
-    final smoother = GpsSmoothingService(algorithm: algorithm);
+    final smoother = GpsSmoothingService(
+      algorithm: algorithm,
+      enableGnssCorrection: false,
+    );
     final pipeline = GpsPipeline();
 
     var outOfOrderCount = 0;

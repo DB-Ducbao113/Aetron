@@ -72,6 +72,9 @@ class IodRecordEntry {
       'ground_truth_env',
       'ground_truth_note',
       'reasoning',
+      'native_class',
+      'model_version',
+      'observational_only',
     ];
   }
 
@@ -108,6 +111,9 @@ class IodRecordEntry {
       groundTruth?.code ?? '',
       groundTruthNote ?? '',
       '"${prediction.reasoningSummary.replaceAll('"', '""')}"',
+      prediction.nativeClass,
+      prediction.modelVersion,
+      prediction.isObservationalOnly ? '1' : '0',
     ];
   }
 
@@ -128,10 +134,12 @@ class IodRecordEntry {
       sessionId: json['session_id'] as String,
       epochIndex: json['epoch_index'] as int? ?? 0,
       timestamp: DateTime.parse(json['timestamp'] as String),
-      snapshot:
-          IodSensorSnapshot.fromJson(json['snapshot'] as Map<String, dynamic>),
-      prediction:
-          IodPrediction.fromJson(json['prediction'] as Map<String, dynamic>),
+      snapshot: IodSensorSnapshot.fromJson(
+        json['snapshot'] as Map<String, dynamic>,
+      ),
+      prediction: IodPrediction.fromJson(
+        json['prediction'] as Map<String, dynamic>,
+      ),
       groundTruth: json['ground_truth'] != null
           ? GroundTruthEnvironment.fromCode(json['ground_truth'] as String)
           : null,
@@ -139,4 +147,3 @@ class IodRecordEntry {
     );
   }
 }
-

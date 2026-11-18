@@ -517,6 +517,7 @@ void main() {
           rawGpsPositions: rawPositions,
           filteredRouteSegments: [smoothedPoints],
           gpsAlgorithm: 'ekf_4state',
+          enableTrajectoryPreprocessing: false,
         );
 
         expect(result.session.id, 'fa1af1d3-b209-4649-b928-47bf6e4502f9');
@@ -610,6 +611,7 @@ void main() {
       () {
         final ekfService = GpsSmoothingService(
           algorithm: GpsFilterAlgorithm.ekf4State,
+          enableGnssCorrection: false,
         );
         final alphaService = GpsSmoothingService(
           algorithm: GpsFilterAlgorithm.fixedAlpha,

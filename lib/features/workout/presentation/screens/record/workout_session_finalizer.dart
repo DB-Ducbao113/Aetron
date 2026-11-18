@@ -48,7 +48,7 @@ class WorkoutSessionFinalizer {
     UserProfile? userProfile,
     bool enableTrajectoryPreprocessing = kEnableTrajectoryPreprocessing,
     bool enableTrajectoryReconstruction = kEnableTrajectoryReconstruction,
-    ReconstructionMethod reconstructionMethod = ReconstructionMethod.monotonePchip,
+    ReconstructionMethod? reconstructionMethod,
   }) {
     final gpsAnalysis = trackingEngine.analyzeGpsWorkout(
       GpsWorkoutAnalysisInput(
@@ -61,25 +61,37 @@ class WorkoutSessionFinalizer {
     final durationSec = state.durationSeconds;
     final movingTimeSec = math.min(state.movingTimeSeconds, durationSec);
 
+    final canReconstruct =
+        enableTrajectoryReconstruction &&
+        rawGpsPositions.length >= 2 &&
+        state.trackingMode == 'outdoor' &&
+        state.adaptiveStepCount == 0 &&
+        state.stepDistanceMeters == 0 &&
+        !state.isIndoorSyntheticRoute &&
+        filteredRouteSegments.length <= 1;
     TrajectoryPreprocessingResult? preprocessorResult;
-    if ((enableTrajectoryPreprocessing || enableTrajectoryReconstruction) &&
+    if ((enableTrajectoryPreprocessing || canReconstruct) &&
         rawGpsPositions.isNotEmpty) {
       try {
         final limits = KinematicLimits.forActivity(state.activityType);
         final batchPreprocessor = BatchTrajectoryPreprocessor(limits: limits);
-        final rawSamples = rawGpsPositions.asMap().entries.map((entry) {
-          final pos = entry.value;
-          return TrajectoryRawSample(
-            index: entry.key,
-            timestamp: pos.timestamp,
-            point: LatLng(pos.latitude, pos.longitude),
-            altitudeMeters: pos.altitude,
-            sensorSpeedMs: pos.speed,
-            accuracyMeters: pos.accuracy,
-            sensorHeadingDeg: pos.heading,
-            deviceSource: 'finalizer_batch',
-          );
-        }).toList(growable: false);
+        final rawSamples = rawGpsPositions
+            .asMap()
+            .entries
+            .map((entry) {
+              final pos = entry.value;
+              return TrajectoryRawSample(
+                index: entry.key,
+                timestamp: pos.timestamp,
+                point: LatLng(pos.latitude, pos.longitude),
+                altitudeMeters: pos.altitude,
+                sensorSpeedMs: pos.speed,
+                accuracyMeters: pos.accuracy,
+                sensorHeadingDeg: pos.heading,
+                deviceSource: 'finalizer_batch',
+              );
+            })
+            .toList(growable: false);
         preprocessorResult = batchPreprocessor.process(rawSamples);
       } catch (e) {
         // Fallback safely if batch preprocessing fails on unusual inputs
@@ -87,16 +99,25 @@ class WorkoutSessionFinalizer {
     }
 
     TrajectoryReconstructionResult? reconstructionResult;
-    if (enableTrajectoryReconstruction &&
+    if (canReconstruct &&
         preprocessorResult != null &&
         preprocessorResult.processedPoints.isNotEmpty) {
       try {
         const reconstructionEngine = KinematicTrajectoryReconstructionEngine();
-        reconstructionResult = reconstructionEngine.reconstructTrajectory(
+        final candidate = reconstructionEngine.reconstructTrajectory(
           points: preprocessorResult.processedPoints,
           activityType: state.activityType,
-          method: reconstructionMethod,
+          method:
+              reconstructionMethod ??
+              (kTrajectoryReconstructionMethod == 'monotonePchip'
+                  ? ReconstructionMethod.monotonePchip
+                  : ReconstructionMethod.linearChord),
         );
+        // On dense routes prefer the existing validated display geometry.
+        if (candidate.interpolatedPointCount > 0 ||
+            candidate.indeterminateGapCount > 0) {
+          reconstructionResult = candidate;
+        }
       } catch (e) {
         // Fallback safely if reconstruction fails
       }
@@ -124,7 +145,30 @@ class WorkoutSessionFinalizer {
 
     final double distanceKm;
     final String distanceSelectionPolicy;
-    if (enableTrajectoryPreprocessing) {
+    if (state.stepDistanceMeters > 0) {
+      // The provider records step-only distance separately and breaks its
+      // genuine GNSS route when recovering. Do not re-add the gap or the
+      // display-only P03 route, and never discard step-only contributions.
+      final gpsMeters =
+          enableTrajectoryPreprocessing && filteredRouteDistanceM > 0
+          ? filteredRouteDistanceM
+          : state.gpsDistanceMeters;
+      distanceKm = (gpsMeters + state.stepDistanceMeters) / 1000.0;
+      distanceSelectionPolicy = gpsMeters > 0
+          ? 'segmented_gps_plus_step_distance'
+          : 'live_step_distance_only';
+    } else if (state.adaptiveStepCount > 0 && state.trackingMode == 'indoor') {
+      // Indoor estimated distance is accumulated from step contributions.
+      // Mixed sessions ending outdoors retain the existing GPS validation policy.
+      distanceKm = WorkoutMetricsCalculator.distanceMetersToKm(
+        state.distanceMeters,
+      );
+      distanceSelectionPolicy = state.activityType.toLowerCase() == 'running'
+          ? 'live_accumulated_adaptive_run_steps'
+          : 'live_accumulated_adaptive_walk_steps';
+    } else if (enableTrajectoryPreprocessing &&
+        state.trackingMode == 'outdoor' &&
+        rawGpsPositions.length >= 2) {
       if (filteredRouteDistanceM > 0) {
         distanceKm = filteredRouteDistanceM / 1000.0;
         distanceSelectionPolicy = 'aekf_filtered_then_preprocessed_clean';
@@ -155,25 +199,17 @@ class WorkoutSessionFinalizer {
         durationSec: durationSec,
         movingDurationSec: movingTimeSec,
       );
-      if (distanceKm <= 0 &&
-          userProfile.calculateCalories(
-                activityType: state.activityType,
-                distanceKm: 1.0,
-              ) >
-              0) {
-        resolvedCalories = 0;
-      } else {
-        resolvedCalories = math.max(caloriesBurned, recalculated);
-      }
+      resolvedCalories =
+          UserProfile.compendiumDistanceMet(activityType: state.activityType) !=
+              null
+          ? recalculated
+          : math.max(caloriesBurned, recalculated);
     }
 
-    var finalSteps = state.stepCount;
-    if (finalSteps <= 0 && state.recordingSource != 'step_fallback') {
-      final strideToUse = state.strideLengthMeters > 0
-          ? state.strideLengthMeters
-          : fallbackStrideLengthMeters;
-      finalSteps = math.max(0, (state.distanceMeters / strideToUse).round());
-    }
+    // Missing step measurements are not inferred from GPS distance.
+    final finalSteps = state.activityType.toLowerCase() == 'cycling'
+        ? 0
+        : math.max(0, state.stepCount);
 
     // The DB column is `uuid`, so the fallback must also be a valid UUID.
     // (A raw epoch string here would make the Supabase insert fail with
@@ -183,13 +219,44 @@ class WorkoutSessionFinalizer {
         : const Uuid().v4();
 
     final routeMetrics = <String, dynamic>{
+      if (state.status == RecordingState.stopping ||
+          state.status == RecordingState.finished)
+        'scientific_result_version': 1,
       'gps_algorithm': gpsAlgorithm,
       'dbscan_enabled': false,
       'filter_branch': 'experiment/ekf4-field-recording',
       'source_revision': kGitRevision,
       'source_fingerprint': kSourceFingerprint,
       'distance_selection_policy': distanceSelectionPolicy,
-      'raw_gps_fix_count': rawGpsPositions.length,
+      if (state.adaptiveStepCount > 0) ...{
+        'step_length_model': state.activityType.toLowerCase() == 'running'
+            ? 'renaudin2012_rbds_fit'
+            : 'renaudin2012_sledataset2_fit',
+        'adaptive_step_count': state.adaptiveStepCount,
+      },
+      'step_distance_m': state.stepDistanceMeters,
+      'gps_live_distance_m': state.gpsDistanceMeters,
+      'oxford_detected_step_count': state.researchDetectedSteps,
+      'xu_detected_step_count': state.xuDetectedSteps,
+      if (state.stepDistanceMeters > 0)
+        'step_length_fallback':
+            'renaudin_cohort_mean_frequency_or_population_step',
+      'step_count_policy': state.activityType.toLowerCase() == 'cycling'
+          ? 'not_applicable'
+          : 'sensor_count_only',
+      // Match the remote upsert conflict key, so duplicate observations
+      // cannot leave deterministic finalization waiting for nonexistent rows.
+      'raw_gps_observation_count': rawGpsPositions.length,
+      'raw_gps_fix_count': rawGpsPositions
+          .map(
+            (position) => (
+              position.timestamp.microsecondsSinceEpoch,
+              position.latitude,
+              position.longitude,
+            ),
+          )
+          .toSet()
+          .length,
       'live_distance_km': state.distanceMeters / 1000.0,
       'saved_distance_km': distanceKm,
       'saved_minus_live_distance_km':
@@ -199,6 +266,7 @@ class WorkoutSessionFinalizer {
           filteredRouteDistanceM / 1000.0 - distanceKm,
       'raw_valid_distance_km': gpsAnalysis.validDistanceKm,
       'preprocessing_enabled': preprocessorResult != null,
+      'preprocessing_distance_policy_enabled': enableTrajectoryPreprocessing,
       if (preprocessorResult != null) ...{
         'preprocessing_clean_distance_km':
             preprocessorResult.cleanDistanceMeters / 1000.0,
@@ -206,28 +274,25 @@ class WorkoutSessionFinalizer {
             preprocessorResult.rawTotalDistanceMeters / 1000.0,
         'preprocessing_drift_eliminated_m':
             preprocessorResult.stationaryDriftEliminatedMeters,
-        'preprocessing_stay_points_count':
-            preprocessorResult.stayPointsCount,
+        'preprocessing_stay_points_count': preprocessorResult.stayPointsCount,
         'preprocessing_stay_duration_sec':
             preprocessorResult.totalStayDurationSeconds,
-        'preprocessing_accepted_count':
-            preprocessorResult.acceptedCleanCount,
+        'preprocessing_accepted_count': preprocessorResult.acceptedCleanCount,
         'preprocessing_rejected_count':
-            preprocessorResult.totalRawCount - preprocessorResult.acceptedCleanCount,
-        'preprocessing_speed_spikes':
-            preprocessorResult.speedSpikeCount,
-        'preprocessing_accel_spikes':
-            preprocessorResult.accelerationSpikeCount,
-        'preprocessing_heading_spikes':
-            preprocessorResult.headingSpikeCount,
-        'preprocessing_signal_gaps':
-            preprocessorResult.signalGapCount,
+            preprocessorResult.totalRawCount -
+            preprocessorResult.acceptedCleanCount,
+        'preprocessing_speed_spikes': preprocessorResult.speedSpikeCount,
+        'preprocessing_accel_spikes': preprocessorResult.accelerationSpikeCount,
+        'preprocessing_heading_spikes': preprocessorResult.headingSpikeCount,
+        'preprocessing_signal_gaps': preprocessorResult.signalGapCount,
         'preprocessing_latency_us_per_sample':
             preprocessorResult.latencyPerSampleUs,
         'legacy_vs_clean_delta_km':
-            legacyDistanceKm - (preprocessorResult.cleanDistanceMeters / 1000.0),
+            legacyDistanceKm -
+            (preprocessorResult.cleanDistanceMeters / 1000.0),
         'aekf_vs_clean_delta_km':
-            (filteredRouteDistanceM - preprocessorResult.cleanDistanceMeters) / 1000.0,
+            (filteredRouteDistanceM - preprocessorResult.cleanDistanceMeters) /
+            1000.0,
       },
       'reconstruction_enabled': reconstructionResult != null,
       if (reconstructionResult != null) ...{
@@ -266,8 +331,8 @@ class WorkoutSessionFinalizer {
           : '[]',
       routeMatchStatus: reconstructionResult != null
           ? (reconstructionResult.method == ReconstructionMethod.monotonePchip
-              ? 'reconstructed_pchip'
-              : 'reconstructed_linear')
+                ? 'reconstructed_pchip'
+                : 'reconstructed_linear')
           : 'pending',
       routeDistanceSource: 'filtered',
       routeMatchMetricsJson: jsonEncode(routeMetrics),

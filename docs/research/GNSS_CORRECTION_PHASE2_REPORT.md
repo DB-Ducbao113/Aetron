@@ -90,7 +90,7 @@ flowchart TD
     P02 -- "ω > ω_turn" --> Turn["Centripetal Process Noise Scaling (Q_θ*)"]
     P02 -- "v < v_deadband" --> Deadband["Heading Deadband Clamp"]
     
-    Inflate --> AEKF["4-State Adaptive EKF<br/>(State: [px, py, v, θ]ᵀ, Joseph Form)"]
+    Inflate --> AEKF["4-State Adaptive EKF<br/>(State: [px, py, v, θ]ᵀ, (I−KH)P update)"]
     Turn --> AEKF
     Deadband --> AEKF
     P02 -- "Nominal (d_M² <= 5.991)" --> AEKF

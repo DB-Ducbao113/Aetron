@@ -7,32 +7,34 @@ import 'package:latlong2/latlong.dart';
 
 void main() {
   group('StrideLength', () {
-    test('running stride is gender-aware when height is available', () {
-      final male = computeStrideLength(
-        activityType: 'Running',
-        heightCm: 175,
-        gender: 'male',
-      );
-      final female = computeStrideLength(
-        activityType: 'Running',
-        heightCm: 175,
-        gender: 'female',
-      );
+    test(
+      'running missing-cadence fallback is based on RBDS frequency, not gender',
+      () {
+        final male = computeStrideLength(
+          activityType: 'Running',
+          heightCm: 175,
+          gender: 'male',
+        );
+        final female = computeStrideLength(
+          activityType: 'Running',
+          heightCm: 175,
+          gender: 'female',
+        );
 
-      expect(male, greaterThan(female));
-      expect(male, closeTo(1.1725, 0.0001));
-      expect(female, closeTo(1.085, 0.0001));
-    });
+        expect(male, closeTo(1.2000277854850385, .000001));
+        expect(female, male);
+      },
+    );
 
-    test('walking fallback stride is gender-aware without height', () {
+    test('walking fallback uses SLEDataset2 mean without height', () {
       final male = computeStrideLength(activityType: 'Walking', gender: 'male');
       final female = computeStrideLength(
         activityType: 'Walking',
         gender: 'female',
       );
 
-      expect(male, closeTo(0.73, 0.0001));
-      expect(female, closeTo(0.68, 0.0001));
+      expect(male, closeTo(0.7540663897, 0.0001));
+      expect(female, male);
     });
   });
 

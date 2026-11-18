@@ -54,19 +54,21 @@ final iodStorageProvider = Provider<IodExperimentStorage>((ref) {
   return IodExperimentStorage();
 });
 
-final iodAcquisitionServiceProvider =
-    Provider<IodSensorAcquisitionService>((ref) {
+final iodAcquisitionServiceProvider = Provider<IodSensorAcquisitionService>((
+  ref,
+) {
   final service = IodSensorAcquisitionService();
   ref.onDispose(() => service.dispose());
   return service;
 });
 
 final iodClassifierProvider = Provider<IodCompositeClassifier>((ref) {
-  return IodCompositeClassifier();
+  return IodCompositeClassifier.liveMobile();
 });
 
-final iodControllerProvider =
-    StateNotifierProvider<IodController, IodState>((ref) {
+final iodControllerProvider = StateNotifierProvider<IodController, IodState>((
+  ref,
+) {
   final acquisition = ref.watch(iodAcquisitionServiceProvider);
   final storage = ref.watch(iodStorageProvider);
   final classifier = ref.watch(iodClassifierProvider);
@@ -91,16 +93,14 @@ class IodController extends StateNotifier<IodState> {
     required IodSensorAcquisitionService acquisitionService,
     required IodExperimentStorage storage,
     required IodCompositeClassifier classifier,
-  })  : _acquisition = acquisitionService,
-        _storage = storage,
-        _classifier = classifier,
-        super(
-          IodState(
-            currentPrediction: IodPrediction.unknown(
-              reason: 'initialized_idle',
-            ),
-          ),
-        );
+  }) : _acquisition = acquisitionService,
+       _storage = storage,
+       _classifier = classifier,
+       super(
+         IodState(
+           currentPrediction: IodPrediction.unknown(reason: 'initialized_idle'),
+         ),
+       );
 
   /// Starts IOD recording linked to the active workout session ID.
   void startSession(String sessionId) {
@@ -111,9 +111,13 @@ class IodController extends StateNotifier<IodState> {
     _currentGroundTruthNote = null;
     _classifier.reset();
 
-    state = state.copyWith(
+    state = IodState(
       isRecording: true,
       sessionId: sessionId,
+      currentPrediction: IodPrediction.unknown(
+        reason: 'new_session_warmup',
+        modelVersion: _classifier.activeModelVersion,
+      ),
       totalSamplesCount: 0,
       activeGroundTruth: null,
       statusMessage: 'Recording started',

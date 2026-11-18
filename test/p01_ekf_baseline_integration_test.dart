@@ -637,20 +637,20 @@ void main() {
     // -------------------------------------------------------------------------
     // TEST 4: Production Feature Flags Audit
     // -------------------------------------------------------------------------
-    test('FLAGS AUDIT: Verify production defaults keep experimental flags OFF', () {
+    test('FLAGS AUDIT: Verify research runtime defaults', () {
       // EKF algorithm defaults to 4-State EKF
       expect(kGpsFilterAlgoConfig, equals('ekf4State'));
 
-      // P01 Trajectory Preprocessing feature flags default to false
-      expect(kEnableTrajectoryPreprocessing, isFalse);
+      // P01 active; shadow off
+      expect(kEnableTrajectoryPreprocessing, isTrue);
       expect(kEnableTrajectoryPreprocessingShadowMode, isFalse);
 
-      // Phase 2 GNSS correction (AEKF) defaults to false
-      expect(kEnableGnssCorrection, isFalse);
+      // Phase 2 active; shadow off
+      expect(kEnableGnssCorrection, isTrue);
       expect(kEnableGnssCorrectionShadowMode, isFalse);
 
-      // Phase 3 Trajectory Reconstruction defaults to false
-      expect(kEnableTrajectoryReconstruction, isFalse);
+      // Phase 3 offline visual reconstruction ON
+      expect(kEnableTrajectoryReconstruction, isTrue);
       expect(kEnableTrajectoryReconstructionShadowMode, isFalse);
 
       // Enhanced GPS Input Quality Gate defaults to false

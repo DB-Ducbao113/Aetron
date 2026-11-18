@@ -1148,9 +1148,9 @@ void main() {
       expect(aekfTurnEst.correctionQuality, equals(GnssCorrectionQuality.turnAdapted));
 
       // Case 2: Production flags compile-time check
-      expect(kEnableGnssCorrection, isFalse, reason: 'FLOWFIT_ENABLE_GNSS_CORRECTION must default to false');
+      expect(kEnableGnssCorrection, isTrue, reason: 'FLOWFIT_ENABLE_GNSS_CORRECTION must default to true');
       expect(kEnableGnssCorrectionShadowMode, isFalse, reason: 'FLOWFIT_GNSS_CORRECTION_SHADOW must default to false');
-      expect(kEnableTrajectoryPreprocessing, isFalse, reason: 'FLOWFIT_ENABLE_TRAJECTORY_PREPROCESSING must default to false');
+      expect(kEnableTrajectoryPreprocessing, isTrue, reason: 'FLOWFIT_ENABLE_TRAJECTORY_PREPROCESSING must default to true');
     });
   });
 }

@@ -1,0 +1,373 @@
+{
+  "doi": "10.3390/s120708507",
+  "source_commit": "6b8a8d475e6984b4d2744ff31fe4ad254cf76896",
+  "subjects": 10,
+  "sessions": 114,
+  "reference_cycle_labels": 98320,
+  "summary": {
+    "old_step_m": {
+      "n": 114,
+      "mae_cm": 9.506378651092353,
+      "rmse_cm": 11.733603158987592,
+      "session_mape_pct": 12.988150622427261
+    },
+    "predicted_step_m": {
+      "n": 114,
+      "mae_cm": 8.611971503247217,
+      "rmse_cm": 10.876949603557438,
+      "session_mape_pct": 12.012880878901628
+    }
+  },
+  "subgroups": {
+    "speed": {
+      "fast": {
+        "old_step_m": {
+          "n": 38,
+          "mae_cm": 12.186667154498288,
+          "rmse_cm": 14.053542998512125,
+          "session_mape_pct": 13.997156563263355
+        },
+        "predicted_step_m": {
+          "n": 38,
+          "mae_cm": 8.81615216220349,
+          "rmse_cm": 10.823019195258428,
+          "session_mape_pct": 9.968328028238817
+        }
+      },
+      "normal": {
+        "old_step_m": {
+          "n": 40,
+          "mae_cm": 5.9293723050108005,
+          "rmse_cm": 7.632188475369609,
+          "session_mape_pct": 7.7456057208195235
+        },
+        "predicted_step_m": {
+          "n": 40,
+          "mae_cm": 7.423820600046005,
+          "rmse_cm": 8.80182642812309,
+          "session_mape_pct": 9.653992996941037
+        }
+      },
+      "slow": {
+        "old_step_m": {
+          "n": 36,
+          "mae_cm": 10.651636726476706,
+          "rmse_cm": 12.758589464874145,
+          "session_mape_pct": 17.748138686664426
+        },
+        "predicted_step_m": {
+          "n": 36,
+          "mae_cm": 9.716615144572494,
+          "rmse_cm": 12.841983551640466,
+          "session_mape_pct": 16.792006534557476
+        }
+      }
+    },
+    "placement": {
+      "hand": {
+        "old_step_m": {
+          "n": 28,
+          "mae_cm": 9.542728710575924,
+          "rmse_cm": 11.779795596817534,
+          "session_mape_pct": 12.997423375429912
+        },
+        "predicted_step_m": {
+          "n": 28,
+          "mae_cm": 8.642040761637837,
+          "rmse_cm": 11.079798832294111,
+          "session_mape_pct": 12.213072005553535
+        }
+      },
+      "pelvis": {
+        "old_step_m": {
+          "n": 30,
+          "mae_cm": 9.534966641073423,
+          "rmse_cm": 11.6778470010437,
+          "session_mape_pct": 13.039145051607107
+        },
+        "predicted_step_m": {
+          "n": 30,
+          "mae_cm": 8.287864209469339,
+          "rmse_cm": 10.625175645392849,
+          "session_mape_pct": 11.506094501721869
+        }
+      },
+      "thigh": {
+        "old_step_m": {
+          "n": 28,
+          "mae_cm": 9.472888626717854,
+          "rmse_cm": 11.74025799385297,
+          "session_mape_pct": 12.956195801722451
+        },
+        "predicted_step_m": {
+          "n": 28,
+          "mae_cm": 9.128092818183688,
+          "rmse_cm": 11.251557094780225,
+          "session_mape_pct": 12.714931831074436
+        }
+      },
+      "upperArm": {
+        "old_step_m": {
+          "n": 28,
+          "mae_cm": 9.472888626717854,
+          "rmse_cm": 11.74025799385297,
+          "session_mape_pct": 12.956195801722451
+        },
+        "predicted_step_m": {
+          "n": 28,
+          "mae_cm": 8.413038744682137,
+          "rmse_cm": 10.55296096274169,
+          "session_mape_pct": 11.653624204198087
+        }
+      }
+    },
+    "subject": {
+      "person01": {
+        "old_step_m": {
+          "n": 12,
+          "mae_cm": 12.524873886759472,
+          "rmse_cm": 15.446972780851242,
+          "session_mape_pct": 21.568095926785283
+        },
+        "predicted_step_m": {
+          "n": 12,
+          "mae_cm": 13.600030138197239,
+          "rmse_cm": 16.97712851592605,
+          "session_mape_pct": 23.451273390982806
+        }
+      },
+      "person02": {
+        "old_step_m": {
+          "n": 12,
+          "mae_cm": 8.169444705605084,
+          "rmse_cm": 9.528568968462066,
+          "session_mape_pct": 11.04458450222792
+        },
+        "predicted_step_m": {
+          "n": 12,
+          "mae_cm": 6.035784579571593,
+          "rmse_cm": 6.854289714342456,
+          "session_mape_pct": 7.610854617236227
+        }
+      },
+      "person03": {
+        "old_step_m": {
+          "n": 9,
+          "mae_cm": 6.123863254998092,
+          "rmse_cm": 7.355522689309445,
+          "session_mape_pct": 7.444762285286992
+        },
+        "predicted_step_m": {
+          "n": 9,
+          "mae_cm": 11.645237712199643,
+          "rmse_cm": 12.486730147817433,
+          "session_mape_pct": 13.63184179036186
+        }
+      },
+      "person04": {
+        "old_step_m": {
+          "n": 10,
+          "mae_cm": 6.683703362760432,
+          "rmse_cm": 8.207228760135823,
+          "session_mape_pct": 9.493781221494904
+        },
+        "predicted_step_m": {
+          "n": 10,
+          "mae_cm": 2.664798946553563,
+          "rmse_cm": 3.2727597653433165,
+          "session_mape_pct": 3.6768454390149157
+        }
+      },
+      "person05": {
+        "old_step_m": {
+          "n": 12,
+          "mae_cm": 8.00297484424548,
+          "rmse_cm": 9.622589426665556,
+          "session_mape_pct": 11.7404352224865
+        },
+        "predicted_step_m": {
+          "n": 12,
+          "mae_cm": 5.197789512589686,
+          "rmse_cm": 5.720824077691705,
+          "session_mape_pct": 7.439804159693848
+        }
+      },
+      "person06": {
+        "old_step_m": {
+          "n": 12,
+          "mae_cm": 15.246839428342362,
+          "rmse_cm": 18.12525908520518,
+          "session_mape_pct": 17.482002086383496
+        },
+        "predicted_step_m": {
+          "n": 12,
+          "mae_cm": 12.095942765176797,
+          "rmse_cm": 13.759362037879688,
+          "session_mape_pct": 14.214080313220393
+        }
+      },
+      "person07": {
+        "old_step_m": {
+          "n": 12,
+          "mae_cm": 11.11679276364372,
+          "rmse_cm": 14.07774362068234,
+          "session_mape_pct": 13.63933988907227
+        },
+        "predicted_step_m": {
+          "n": 12,
+          "mae_cm": 9.15935734167425,
+          "rmse_cm": 10.403031268405268,
+          "session_mape_pct": 11.67413670785575
+        }
+      },
+      "person08": {
+        "old_step_m": {
+          "n": 12,
+          "mae_cm": 10.454615188305622,
+          "rmse_cm": 11.540199798913276,
+          "session_mape_pct": 15.66642478599442
+        },
+        "predicted_step_m": {
+          "n": 12,
+          "mae_cm": 11.091473072287307,
+          "rmse_cm": 14.319419067702366,
+          "session_mape_pct": 18.773592540996088
+        }
+      },
+      "person09": {
+        "old_step_m": {
+          "n": 12,
+          "mae_cm": 6.952827257298559,
+          "rmse_cm": 7.17566893423269,
+          "session_mape_pct": 9.826949666486989
+        },
+        "predicted_step_m": {
+          "n": 12,
+          "mae_cm": 5.455145967848981,
+          "rmse_cm": 6.28111480461727,
+          "session_mape_pct": 8.14887347927049
+        }
+      },
+      "person10": {
+        "old_step_m": {
+          "n": 11,
+          "mae_cm": 8.377722401048866,
+          "rmse_cm": 9.21587248724478,
+          "session_mape_pct": 9.735864838266664
+        },
+        "predicted_step_m": {
+          "n": 11,
+          "mae_cm": 8.971212906063624,
+          "rmse_cm": 9.802879756257393,
+          "session_mape_pct": 10.38745519821024
+        }
+      }
+    }
+  },
+  "folds": [
+    {
+      "subject": "person01",
+      "coefficients": [
+        0.14917345057805798,
+        0.08254716386295877,
+        0.12782744856798467
+      ],
+      "test_sessions": 12
+    },
+    {
+      "subject": "person02",
+      "coefficients": [
+        0.13266804788005193,
+        0.015414972836406584,
+        0.28633667176392646
+      ],
+      "test_sessions": 12
+    },
+    {
+      "subject": "person03",
+      "coefficients": [
+        0.14826664911151924,
+        -0.12902887073586222,
+        0.4804558911632382
+      ],
+      "test_sessions": 9
+    },
+    {
+      "subject": "person04",
+      "coefficients": [
+        0.12677089633655927,
+        0.03540590489915732,
+        0.27219373283391146
+      ],
+      "test_sessions": 10
+    },
+    {
+      "subject": "person05",
+      "coefficients": [
+        0.1197426885025854,
+        0.0482679512678253,
+        0.27402685370628077
+      ],
+      "test_sessions": 12
+    },
+    {
+      "subject": "person06",
+      "coefficients": [
+        0.12341391485184643,
+        0.13898859550507084,
+        0.09030046100757996
+      ],
+      "test_sessions": 12
+    },
+    {
+      "subject": "person07",
+      "coefficients": [
+        0.13748211503945382,
+        0.20682890464542908,
+        -0.07623838581605122
+      ],
+      "test_sessions": 12
+    },
+    {
+      "subject": "person08",
+      "coefficients": [
+        0.14686242613412573,
+        -0.0814642184965514,
+        0.42011947777799663
+      ],
+      "test_sessions": 12
+    },
+    {
+      "subject": "person09",
+      "coefficients": [
+        0.1320952607724055,
+        -0.021367129403620837,
+        0.35926116120980794
+      ],
+      "test_sessions": 12
+    },
+    {
+      "subject": "person10",
+      "coefficients": [
+        0.12772614184593273,
+        -0.04297586816284049,
+        0.39744668903925856
+      ],
+      "test_sessions": 11
+    }
+  ],
+  "full_fit_coefficients": [
+    0.13276343484996747,
+    0.02165970371270505,
+    0.27545807799439775
+  ],
+  "observed_height_range_m": [
+    1.6,
+    1.88
+  ],
+  "observed_session_frequency_range_hz": [
+    1.5625,
+    2.401848440712817
+  ],
+  "scope": "session mean step length only; walking; independently estimated spectral cadence, not OS pedometer; fit separately in each held-out subject fold"
+}

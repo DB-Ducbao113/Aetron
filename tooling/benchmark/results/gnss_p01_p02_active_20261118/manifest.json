@@ -1,0 +1,578 @@
+{
+  "scope": "Shared production validation, P01 decision resolver, smoothing service; walking public data; route buffers updated on every accepted sample, no app lifecycle/indoor/backend replay. Held last output on rejects. GPS course branch assumes exported course is usable; native heading accuracy unavailable. Distance only contiguous matched timestamps.",
+  "source_doi": "10.48436/y6gxm-6mg51",
+  "models": {
+    "raw": {
+      "n": 2694.0,
+      "rmse_m": 2.1132118391896872,
+      "mae_m": 1.886320576111206,
+      "mean_adjacent_distance_error_pct": 4.150474117886552
+    },
+    "legacy_ekf": {
+      "n": 2694.0,
+      "rmse_m": 10.18080184197475,
+      "mae_m": 7.400098016433755,
+      "mean_adjacent_distance_error_pct": 11.551361539488099
+    },
+    "p01_ekf": {
+      "n": 2694.0,
+      "rmse_m": 10.18080184197475,
+      "mae_m": 7.400098016433755,
+      "mean_adjacent_distance_error_pct": 11.551361539488099
+    },
+    "p01_p02": {
+      "n": 2694.0,
+      "rmse_m": 3.431657486720801,
+      "mae_m": 2.5139567546775643,
+      "mean_adjacent_distance_error_pct": 1.3363997111363177
+    },
+    "p01_p02_course": {
+      "n": 2694.0,
+      "rmse_m": 3.7184506185593933,
+      "mae_m": 2.563067863051417,
+      "mean_adjacent_distance_error_pct": 2.7020349541908
+    }
+  },
+  "sessions": [
+    {
+      "device": "Pixel_7_Pro",
+      "route": 31,
+      "raw": 397,
+      "common": 290,
+      "models": {
+        "raw": {
+          "n": 290.0,
+          "rmse_m": 2.5156759498677443,
+          "mae_m": 2.3800550989461406,
+          "adjacent_distance_error_pct": 1.9798866490627862
+        },
+        "legacy_ekf": {
+          "n": 290.0,
+          "rmse_m": 6.06811361937486,
+          "mae_m": 4.933887592150183,
+          "adjacent_distance_error_pct": 4.3503603265891995,
+          "accepted": 286,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 263.9366849167448
+        },
+        "p01_ekf": {
+          "n": 290.0,
+          "rmse_m": 6.06811361937486,
+          "mae_m": 4.933887592150183,
+          "adjacent_distance_error_pct": 4.3503603265891995,
+          "accepted": 286,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 263.9366849167448
+        },
+        "p01_p02": {
+          "n": 290.0,
+          "rmse_m": 4.033427607379053,
+          "mae_m": 2.95253670593804,
+          "adjacent_distance_error_pct": 0.6701385095694701,
+          "accepted": 286,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 428.1298330384774
+        },
+        "p01_p02_course": {
+          "n": 290.0,
+          "rmse_m": 5.151102334801363,
+          "mae_m": 3.311531864861142,
+          "adjacent_distance_error_pct": 3.22657947036121,
+          "accepted": 286,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 444.0697878825797
+        }
+      }
+    },
+    {
+      "device": "Pixel_7_Pro",
+      "route": 32,
+      "raw": 275,
+      "common": 194,
+      "models": {
+        "raw": {
+          "n": 194.0,
+          "rmse_m": 3.1114996736946443,
+          "mae_m": 2.8999404756976253,
+          "adjacent_distance_error_pct": 0.11135947499477934
+        },
+        "legacy_ekf": {
+          "n": 194.0,
+          "rmse_m": 7.354821027528724,
+          "mae_m": 6.333160628559146,
+          "adjacent_distance_error_pct": 12.938884843013145,
+          "accepted": 242,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 17.724695426933316
+        },
+        "p01_ekf": {
+          "n": 194.0,
+          "rmse_m": 7.354821027528724,
+          "mae_m": 6.333160628559146,
+          "adjacent_distance_error_pct": 12.938884843013145,
+          "accepted": 242,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 17.724695426933316
+        },
+        "p01_p02": {
+          "n": 194.0,
+          "rmse_m": 4.690593899629986,
+          "mae_m": 3.6000693412148737,
+          "adjacent_distance_error_pct": 0.30880456379039417,
+          "accepted": 242,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 380.1261420083687
+        },
+        "p01_p02_course": {
+          "n": 194.0,
+          "rmse_m": 4.766543452603255,
+          "mae_m": 3.7355976674170828,
+          "adjacent_distance_error_pct": 0.6658936413940023,
+          "accepted": 242,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 382.67908621359095
+        }
+      }
+    },
+    {
+      "device": "Pixel_7_Pro",
+      "route": 33,
+      "raw": 396,
+      "common": 293,
+      "models": {
+        "raw": {
+          "n": 293.0,
+          "rmse_m": 2.323100535851873,
+          "mae_m": 2.2349694613514925,
+          "adjacent_distance_error_pct": 1.7471532185525236
+        },
+        "legacy_ekf": {
+          "n": 293.0,
+          "rmse_m": 9.969337212316434,
+          "mae_m": 7.634272563565986,
+          "adjacent_distance_error_pct": 11.079864795542733,
+          "accepted": 316,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 16.766593760849243
+        },
+        "p01_ekf": {
+          "n": 293.0,
+          "rmse_m": 9.969337212316434,
+          "mae_m": 7.634272563565986,
+          "adjacent_distance_error_pct": 11.079864795542733,
+          "accepted": 316,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 16.766593760849243
+        },
+        "p01_p02": {
+          "n": 293.0,
+          "rmse_m": 3.209554038486257,
+          "mae_m": 2.60048948005155,
+          "adjacent_distance_error_pct": 1.7790781462881662,
+          "accepted": 316,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 472.2226180741181
+        },
+        "p01_p02_course": {
+          "n": 293.0,
+          "rmse_m": 3.2309934737306305,
+          "mae_m": 2.614645069011337,
+          "adjacent_distance_error_pct": 2.141517589363266,
+          "accepted": 316,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 473.95001099756604
+        }
+      }
+    },
+    {
+      "device": "Pixel_7_Pro",
+      "route": 34,
+      "raw": 278,
+      "common": 245,
+      "models": {
+        "raw": {
+          "n": 245.0,
+          "rmse_m": 2.117382913966193,
+          "mae_m": 1.9169150286488357,
+          "adjacent_distance_error_pct": 3.7562734807611013
+        },
+        "legacy_ekf": {
+          "n": 245.0,
+          "rmse_m": 12.39680027014192,
+          "mae_m": 9.84952461309609,
+          "adjacent_distance_error_pct": 29.298480197533344,
+          "accepted": 113,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 118.34526695738575
+        },
+        "p01_ekf": {
+          "n": 245.0,
+          "rmse_m": 12.39680027014192,
+          "mae_m": 9.84952461309609,
+          "adjacent_distance_error_pct": 29.298480197533344,
+          "accepted": 113,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 118.34526695738575
+        },
+        "p01_p02": {
+          "n": 245.0,
+          "rmse_m": 4.253555398765557,
+          "mae_m": 2.6462760580598004,
+          "adjacent_distance_error_pct": 4.500693866913225,
+          "accepted": 113,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 174.2945154014298
+        },
+        "p01_p02_course": {
+          "n": 245.0,
+          "rmse_m": 4.95126692954906,
+          "mae_m": 2.9666920256294893,
+          "adjacent_distance_error_pct": 9.906451415921227,
+          "accepted": 113,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 184.90796715057732
+        }
+      }
+    },
+    {
+      "device": "Pixel_7_Pro",
+      "route": 35,
+      "raw": 351,
+      "common": 326,
+      "models": {
+        "raw": {
+          "n": 326.0,
+          "rmse_m": 1.7869835353246741,
+          "mae_m": 1.6161347421695196,
+          "adjacent_distance_error_pct": 0.0384468620847937
+        },
+        "legacy_ekf": {
+          "n": 326.0,
+          "rmse_m": 18.125470955137576,
+          "mae_m": 14.210431198947523,
+          "adjacent_distance_error_pct": 10.017332963997816,
+          "accepted": 295,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 123.0650258585418
+        },
+        "p01_ekf": {
+          "n": 326.0,
+          "rmse_m": 18.125470955137576,
+          "mae_m": 14.210431198947523,
+          "adjacent_distance_error_pct": 10.017332963997816,
+          "accepted": 295,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 123.0650258585418
+        },
+        "p01_p02": {
+          "n": 326.0,
+          "rmse_m": 3.4377051215693832,
+          "mae_m": 2.203607305894274,
+          "adjacent_distance_error_pct": 2.4465608228178204,
+          "accepted": 295,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 379.5383899684358
+        },
+        "p01_p02_course": {
+          "n": 326.0,
+          "rmse_m": 3.9342472517560405,
+          "mae_m": 2.359900785232063,
+          "adjacent_distance_error_pct": 6.152956692542346,
+          "accepted": 295,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 390.89901552518774
+        }
+      }
+    },
+    {
+      "device": "Pixel_9a",
+      "route": 31,
+      "raw": 398,
+      "common": 290,
+      "models": {
+        "raw": {
+          "n": 290.0,
+          "rmse_m": 2.435227325803478,
+          "mae_m": 2.0957484681655805,
+          "adjacent_distance_error_pct": 5.145308459243987
+        },
+        "legacy_ekf": {
+          "n": 290.0,
+          "rmse_m": 5.477278640457236,
+          "mae_m": 5.087272579065127,
+          "adjacent_distance_error_pct": 5.605662601598765,
+          "accepted": 306,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 200.61060345487965
+        },
+        "p01_ekf": {
+          "n": 290.0,
+          "rmse_m": 5.477278640457236,
+          "mae_m": 5.087272579065127,
+          "adjacent_distance_error_pct": 5.605662601598765,
+          "accepted": 306,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 200.61060345487965
+        },
+        "p01_p02": {
+          "n": 290.0,
+          "rmse_m": 2.821818501074049,
+          "mae_m": 2.57861571128549,
+          "adjacent_distance_error_pct": 0.6629374664687476,
+          "accepted": 306,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 425.99447678435666
+        },
+        "p01_p02_course": {
+          "n": 290.0,
+          "rmse_m": 2.8920802145482845,
+          "mae_m": 2.623272554151244,
+          "adjacent_distance_error_pct": 1.2451912583384037,
+          "accepted": 306,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 422.78653011506793
+        }
+      }
+    },
+    {
+      "device": "Pixel_9a",
+      "route": 32,
+      "raw": 277,
+      "common": 194,
+      "models": {
+        "raw": {
+          "n": 194.0,
+          "rmse_m": 1.5097379986213,
+          "mae_m": 1.390748811022971,
+          "adjacent_distance_error_pct": 2.3171640337874675
+        },
+        "legacy_ekf": {
+          "n": 194.0,
+          "rmse_m": 3.3685055162774127,
+          "mae_m": 2.8849481436943636,
+          "adjacent_distance_error_pct": 4.698622399170776,
+          "accepted": 256,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 0.0
+        },
+        "p01_ekf": {
+          "n": 194.0,
+          "rmse_m": 3.3685055162774127,
+          "mae_m": 2.8849481436943636,
+          "adjacent_distance_error_pct": 4.698622399170776,
+          "accepted": 256,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 0.0
+        },
+        "p01_p02": {
+          "n": 194.0,
+          "rmse_m": 1.9019556235550874,
+          "mae_m": 1.7860761794045643,
+          "adjacent_distance_error_pct": 0.6437105938959238,
+          "accepted": 256,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 382.62973926328175
+        },
+        "p01_p02_course": {
+          "n": 194.0,
+          "rmse_m": 1.5804529730086585,
+          "mae_m": 1.4864923899468527,
+          "adjacent_distance_error_pct": 0.5587434667659904,
+          "accepted": 256,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 382.077339451347
+        }
+      }
+    },
+    {
+      "device": "Pixel_9a",
+      "route": 33,
+      "raw": 399,
+      "common": 293,
+      "models": {
+        "raw": {
+          "n": 293.0,
+          "rmse_m": 1.9856871942588938,
+          "mae_m": 1.8314851634871074,
+          "adjacent_distance_error_pct": 2.05304045808039
+        },
+        "legacy_ekf": {
+          "n": 293.0,
+          "rmse_m": 6.610039645934047,
+          "mae_m": 5.453564112675636,
+          "adjacent_distance_error_pct": 10.278293304102903,
+          "accepted": 331,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 0.0
+        },
+        "p01_ekf": {
+          "n": 293.0,
+          "rmse_m": 6.610039645934047,
+          "mae_m": 5.453564112675636,
+          "adjacent_distance_error_pct": 10.278293304102903,
+          "accepted": 331,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 0.0
+        },
+        "p01_p02": {
+          "n": 293.0,
+          "rmse_m": 2.153458149062245,
+          "mae_m": 1.9804696833022295,
+          "adjacent_distance_error_pct": 0.08532692981481732,
+          "accepted": 331,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 464.8603912945577
+        },
+        "p01_p02_course": {
+          "n": 293.0,
+          "rmse_m": 2.0886253306459013,
+          "mae_m": 1.916545871518085,
+          "adjacent_distance_error_pct": 0.40161345479090144,
+          "accepted": 331,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 463.0123604646358
+        }
+      }
+    },
+    {
+      "device": "Pixel_9a",
+      "route": 34,
+      "raw": 274,
+      "common": 243,
+      "models": {
+        "raw": {
+          "n": 243.0,
+          "rmse_m": 1.5247305186598006,
+          "mae_m": 1.3614733612371934,
+          "adjacent_distance_error_pct": 19.81650486410867
+        },
+        "legacy_ekf": {
+          "n": 243.0,
+          "rmse_m": 5.998233224848708,
+          "mae_m": 4.914828120898076,
+          "adjacent_distance_error_pct": 15.776102400369545,
+          "accepted": 121,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 117.26691139506653
+        },
+        "p01_ekf": {
+          "n": 243.0,
+          "rmse_m": 5.998233224848708,
+          "mae_m": 4.914828120898076,
+          "adjacent_distance_error_pct": 15.776102400369545,
+          "accepted": 121,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 117.26691139506653
+        },
+        "p01_p02": {
+          "n": 243.0,
+          "rmse_m": 4.8359212001418586,
+          "mae_m": 3.451045379840418,
+          "adjacent_distance_error_pct": 0.9585447455897884,
+          "accepted": 121,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 174.05640739634336
+        },
+        "p01_p02_course": {
+          "n": 243.0,
+          "rmse_m": 4.820962697472264,
+          "mae_m": 3.356246019277012,
+          "adjacent_distance_error_pct": 1.4872251216698391,
+          "accepted": 121,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 176.77879656412364
+        }
+      }
+    },
+    {
+      "device": "Pixel_9a",
+      "route": 35,
+      "raw": 351,
+      "common": 326,
+      "models": {
+        "raw": {
+          "n": 326.0,
+          "rmse_m": 1.4800456826324295,
+          "mae_m": 1.3268636077693774,
+          "adjacent_distance_error_pct": 4.539603678189024
+        },
+        "legacy_ekf": {
+          "n": 326.0,
+          "rmse_m": 12.597706025615311,
+          "mae_m": 9.713622773682362,
+          "adjacent_distance_error_pct": 11.47001156296275,
+          "accepted": 308,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 230.25833282768536
+        },
+        "p01_ekf": {
+          "n": 326.0,
+          "rmse_m": 12.597706025615311,
+          "mae_m": 9.713622773682362,
+          "adjacent_distance_error_pct": 11.47001156296275,
+          "accepted": 308,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 230.25833282768536
+        },
+        "p01_p02": {
+          "n": 326.0,
+          "rmse_m": 2.0596562192819965,
+          "mae_m": 1.7672220460009067,
+          "adjacent_distance_error_pct": 1.308201466214826,
+          "accepted": 308,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 380.0051149723563
+        },
+        "p01_p02_course": {
+          "n": 326.0,
+          "rmse_m": 1.9187545416854277,
+          "mae_m": 1.6299145395522245,
+          "adjacent_distance_error_pct": 1.2341774307608113,
+          "accepted": 308,
+          "p01_extra_rejects": 0,
+          "route_breaks": 0,
+          "display_path_m": 381.53832245940174
+        }
+      }
+    }
+  ]
+}

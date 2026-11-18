@@ -145,218 +145,281 @@ void main() {
   });
 
   group('Raw tracking upload lifecycle and persistence resilience', () {
-    test('delayed shell creation holds buffered points in RAM and flushes on ready', () async {
-      const sessionId = 'session-delayed-shell';
-      final baseTime = DateTime.utc(2026, 4, 15, 8, 0, 0);
+    test(
+      'delayed shell creation holds buffered points in RAM and flushes on ready',
+      () async {
+        const sessionId = 'session-delayed-shell';
+        final baseTime = DateTime.utc(2026, 4, 15, 8, 0, 0);
 
-      // Buffer 5 points while remote shell is NOT ready
-      for (var i = 0; i < 5; i++) {
+        // Buffer 5 points while remote shell is NOT ready
+        for (var i = 0; i < 5; i++) {
+          coordinator.bufferRawGpsPoint(
+            _createPosition(
+              latitude: 10.77 + i * 0.001,
+              longitude: 106.69 + i * 0.001,
+              timestamp: baseTime.add(Duration(seconds: i)),
+            ),
+            workoutId: sessionId,
+          );
+        }
+
+        expect(coordinator.pendingRawGpsPointCount, equals(5));
+        expect(fakeRawTracking.uploadedGpsBatches, isEmpty);
+
+        // Explicit flush without shell ready does not upload
+        await coordinator.flushPendingRawTracking(
+          workoutId: sessionId,
+          force: false,
+        );
+        expect(fakeRawTracking.uploadedGpsBatches, isEmpty);
+        expect(coordinator.pendingRawGpsPointCount, equals(5));
+
+        // Now remote shell becomes ready
+        coordinator.markRemoteWorkoutShellReady();
+        // Allow the unawaited flush inside markRemoteWorkoutShellReady to run
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        expect(fakeRawTracking.uploadedGpsBatches.length, equals(1));
+        expect(fakeRawTracking.uploadedGpsBatches.first.length, equals(5));
+        expect(coordinator.pendingRawGpsPointCount, equals(0));
+      },
+    );
+
+    test(
+      'network upload failure retains buffered points without dropping data',
+      () async {
+        const sessionId = 'session-network-failure';
+        final baseTime = DateTime.utc(2026, 4, 15, 8, 10, 0);
+
+        coordinator.markRemoteWorkoutShellReady();
+        fakeRawTracking.shouldThrowGps = true;
+
+        for (var i = 0; i < 4; i++) {
+          coordinator.bufferRawGpsPoint(
+            _createPosition(
+              latitude: 10.77 + i * 0.001,
+              longitude: 106.69 + i * 0.001,
+              timestamp: baseTime.add(Duration(seconds: i)),
+            ),
+            workoutId: sessionId,
+          );
+        }
+
+        expect(coordinator.pendingRawGpsPointCount, equals(4));
+
+        // Attempt flush - fails due to simulated network failure
+        await coordinator.flushPendingRawTracking(
+          workoutId: sessionId,
+          force: true,
+        );
+
+        expect(fakeRawTracking.gpsSaveCalls, equals(1));
+        expect(fakeRawTracking.uploadedGpsBatches, isEmpty);
+        // Points MUST be retained in pending buffer!
+        expect(coordinator.pendingRawGpsPointCount, equals(4));
+
+        // Network recovers
+        fakeRawTracking.shouldThrowGps = false;
+
+        // Retry flush
+        await coordinator.flushPendingRawTracking(
+          workoutId: sessionId,
+          force: true,
+        );
+
+        expect(fakeRawTracking.gpsSaveCalls, equals(2));
+        expect(fakeRawTracking.uploadedGpsBatches.length, equals(1));
+        expect(fakeRawTracking.uploadedGpsBatches.first.length, equals(4));
+        expect(coordinator.pendingRawGpsPointCount, equals(0));
+      },
+    );
+
+    test(
+      'threshold auto-flush flushes batch of 24 points automatically',
+      () async {
+        const sessionId = 'session-threshold-flush';
+        final baseTime = DateTime.utc(2026, 4, 15, 8, 20, 0);
+
+        coordinator.markRemoteWorkoutShellReady();
+
+        // Buffer 23 points (threshold is 24)
+        for (var i = 0; i < 23; i++) {
+          coordinator.bufferRawGpsPoint(
+            _createPosition(
+              latitude: 10.77 + i * 0.0001,
+              longitude: 106.69 + i * 0.0001,
+              timestamp: baseTime.add(Duration(seconds: i)),
+            ),
+            workoutId: sessionId,
+          );
+        }
+
+        // No auto-flush yet
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        expect(coordinator.pendingRawGpsPointCount, equals(23));
+        expect(fakeRawTracking.uploadedGpsBatches, isEmpty);
+
+        // Buffer the 24th point -> triggers auto-flush
         coordinator.bufferRawGpsPoint(
           _createPosition(
-            latitude: 10.77 + i * 0.001,
-            longitude: 106.69 + i * 0.001,
-            timestamp: baseTime.add(Duration(seconds: i)),
+            latitude: 10.7724,
+            longitude: 106.6924,
+            timestamp: baseTime.add(const Duration(seconds: 24)),
           ),
           workoutId: sessionId,
         );
-      }
 
-      expect(coordinator.pendingRawGpsPointCount, equals(5));
-      expect(fakeRawTracking.uploadedGpsBatches, isEmpty);
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+        expect(fakeRawTracking.uploadedGpsBatches.length, equals(1));
+        expect(fakeRawTracking.uploadedGpsBatches.first.length, equals(24));
+        expect(coordinator.pendingRawGpsPointCount, equals(0));
+      },
+    );
 
-      // Explicit flush without shell ready does not upload
-      await coordinator.flushPendingRawTracking(workoutId: sessionId, force: false);
-      expect(fakeRawTracking.uploadedGpsBatches, isEmpty);
-      expect(coordinator.pendingRawGpsPointCount, equals(5));
+    test(
+      'step interval buffering and failure retry mirrors GPS point resilience',
+      () async {
+        const sessionId = 'session-step-intervals';
+        final baseTime = DateTime.utc(2026, 4, 15, 8, 30, 0);
 
-      // Now remote shell becomes ready
-      coordinator.markRemoteWorkoutShellReady();
-      // Allow the unawaited flush inside markRemoteWorkoutShellReady to run
-      await Future<void>.delayed(const Duration(milliseconds: 20));
+        coordinator.markRemoteWorkoutShellReady();
+        fakeRawTracking.shouldThrowStep = true;
 
-      expect(fakeRawTracking.uploadedGpsBatches.length, equals(1));
-      expect(fakeRawTracking.uploadedGpsBatches.first.length, equals(5));
-      expect(coordinator.pendingRawGpsPointCount, equals(0));
-    });
-
-    test('network upload failure retains buffered points without dropping data', () async {
-      const sessionId = 'session-network-failure';
-      final baseTime = DateTime.utc(2026, 4, 15, 8, 10, 0);
-
-      coordinator.markRemoteWorkoutShellReady();
-      fakeRawTracking.shouldThrowGps = true;
-
-      for (var i = 0; i < 4; i++) {
-        coordinator.bufferRawGpsPoint(
-          _createPosition(
-            latitude: 10.77 + i * 0.001,
-            longitude: 106.69 + i * 0.001,
-            timestamp: baseTime.add(Duration(seconds: i)),
-          ),
+        coordinator.bufferRawStepInterval(
+          15,
+          startedAt: baseTime,
           workoutId: sessionId,
+          observationTime: baseTime.add(const Duration(seconds: 8)),
+          deviceSource: 'oxfordWpd',
         );
-      }
-
-      expect(coordinator.pendingRawGpsPointCount, equals(4));
-
-      // Attempt flush - fails due to simulated network failure
-      await coordinator.flushPendingRawTracking(workoutId: sessionId, force: true);
-
-      expect(fakeRawTracking.gpsSaveCalls, equals(1));
-      expect(fakeRawTracking.uploadedGpsBatches, isEmpty);
-      // Points MUST be retained in pending buffer!
-      expect(coordinator.pendingRawGpsPointCount, equals(4));
-
-      // Network recovers
-      fakeRawTracking.shouldThrowGps = false;
-
-      // Retry flush
-      await coordinator.flushPendingRawTracking(workoutId: sessionId, force: true);
-
-      expect(fakeRawTracking.gpsSaveCalls, equals(2));
-      expect(fakeRawTracking.uploadedGpsBatches.length, equals(1));
-      expect(fakeRawTracking.uploadedGpsBatches.first.length, equals(4));
-      expect(coordinator.pendingRawGpsPointCount, equals(0));
-    });
-
-    test('threshold auto-flush flushes batch of 24 points automatically', () async {
-      const sessionId = 'session-threshold-flush';
-      final baseTime = DateTime.utc(2026, 4, 15, 8, 20, 0);
-
-      coordinator.markRemoteWorkoutShellReady();
-
-      // Buffer 23 points (threshold is 24)
-      for (var i = 0; i < 23; i++) {
-        coordinator.bufferRawGpsPoint(
-          _createPosition(
-            latitude: 10.77 + i * 0.0001,
-            longitude: 106.69 + i * 0.0001,
-            timestamp: baseTime.add(Duration(seconds: i)),
-          ),
+        coordinator.bufferRawStepInterval(
+          22,
+          startedAt: baseTime.add(const Duration(seconds: 10)),
           workoutId: sessionId,
+          observationTime: baseTime.add(const Duration(seconds: 20)),
+          deviceSource: 'iosCoreMotion',
         );
-      }
 
-      // No auto-flush yet
-      await Future<void>.delayed(const Duration(milliseconds: 10));
-      expect(coordinator.pendingRawGpsPointCount, equals(23));
-      expect(fakeRawTracking.uploadedGpsBatches, isEmpty);
+        expect(coordinator.pendingRawStepIntervalCount, equals(2));
 
-      // Buffer the 24th point -> triggers auto-flush
-      coordinator.bufferRawGpsPoint(
-        _createPosition(
-          latitude: 10.7724,
-          longitude: 106.6924,
-          timestamp: baseTime.add(const Duration(seconds: 24)),
-        ),
-        workoutId: sessionId,
-      );
-
-      await Future<void>.delayed(const Duration(milliseconds: 30));
-      expect(fakeRawTracking.uploadedGpsBatches.length, equals(1));
-      expect(fakeRawTracking.uploadedGpsBatches.first.length, equals(24));
-      expect(coordinator.pendingRawGpsPointCount, equals(0));
-    });
-
-    test('step interval buffering and failure retry mirrors GPS point resilience', () async {
-      const sessionId = 'session-step-intervals';
-      final baseTime = DateTime.utc(2026, 4, 15, 8, 30, 0);
-
-      coordinator.markRemoteWorkoutShellReady();
-      fakeRawTracking.shouldThrowStep = true;
-
-      coordinator.bufferRawStepInterval(
-        15,
-        startedAt: baseTime,
-        workoutId: sessionId,
-      );
-      coordinator.bufferRawStepInterval(
-        22,
-        startedAt: baseTime.add(const Duration(seconds: 10)),
-        workoutId: sessionId,
-      );
-
-      expect(coordinator.pendingRawStepIntervalCount, equals(2));
-
-      // Attempt forced flush with network error
-      await coordinator.flushPendingRawTracking(workoutId: sessionId, force: true);
-      expect(fakeRawTracking.stepSaveCalls, equals(1));
-      expect(fakeRawTracking.uploadedStepBatches, isEmpty);
-      expect(coordinator.pendingRawStepIntervalCount, equals(2));
-
-      // Recover and retry
-      fakeRawTracking.shouldThrowStep = false;
-      await coordinator.flushPendingRawTracking(workoutId: sessionId, force: true);
-
-      expect(fakeRawTracking.stepSaveCalls, equals(2));
-      expect(fakeRawTracking.uploadedStepBatches.length, equals(1));
-      expect(fakeRawTracking.uploadedStepBatches.first.length, equals(2));
-      expect(coordinator.pendingRawStepIntervalCount, equals(0));
-    });
-
-    test('forced flush flushes remaining sub-threshold points at workout completion', () async {
-      const sessionId = 'session-finish-flush';
-      final baseTime = DateTime.utc(2026, 4, 15, 8, 40, 0);
-
-      coordinator.markRemoteWorkoutShellReady();
-
-      // Buffer only 3 points (well below threshold 24)
-      for (var i = 0; i < 3; i++) {
-        coordinator.bufferRawGpsPoint(
-          _createPosition(
-            latitude: 10.77 + i * 0.001,
-            longitude: 106.69 + i * 0.001,
-            timestamp: baseTime.add(Duration(seconds: i)),
-          ),
+        // Attempt forced flush with network error
+        await coordinator.flushPendingRawTracking(
           workoutId: sessionId,
+          force: true,
         );
-      }
+        expect(fakeRawTracking.stepSaveCalls, equals(1));
+        expect(fakeRawTracking.uploadedStepBatches, isEmpty);
+        expect(coordinator.pendingRawStepIntervalCount, equals(2));
 
-      expect(coordinator.pendingRawGpsPointCount, equals(3));
-      expect(fakeRawTracking.uploadedGpsBatches, isEmpty);
-
-      // Emulate workout finalization: await forced flush
-      await coordinator.flushPendingRawTracking(workoutId: sessionId, force: true);
-
-      expect(fakeRawTracking.uploadedGpsBatches.length, equals(1));
-      expect(fakeRawTracking.uploadedGpsBatches.first.length, equals(3));
-      expect(coordinator.pendingRawGpsPointCount, equals(0));
-
-      // Disposal after flush cleanly terminates without error
-      coordinator.dispose();
-      expect(coordinator.pendingRawGpsPointCount, equals(0));
-    });
-
-    test('simultaneous forced flush calls serialize cleanly without double-flushing', () async {
-      const sessionId = 'session-concurrent-flush';
-      final baseTime = DateTime.utc(2026, 4, 15, 8, 50, 0);
-
-      coordinator.markRemoteWorkoutShellReady();
-
-      for (var i = 0; i < 6; i++) {
-        coordinator.bufferRawGpsPoint(
-          _createPosition(
-            latitude: 10.77 + i * 0.001,
-            longitude: 106.69 + i * 0.001,
-            timestamp: baseTime.add(Duration(seconds: i)),
-          ),
+        // Recover and retry
+        fakeRawTracking.shouldThrowStep = false;
+        await coordinator.flushPendingRawTracking(
           workoutId: sessionId,
+          force: true,
         );
-      }
 
-      expect(coordinator.pendingRawGpsPointCount, equals(6));
+        expect(fakeRawTracking.stepSaveCalls, equals(2));
+        expect(fakeRawTracking.uploadedStepBatches.length, equals(1));
+        expect(fakeRawTracking.uploadedStepBatches.first.length, equals(2));
+        final uploaded = fakeRawTracking.uploadedStepBatches.single;
+        expect(uploaded.map((e) => e.deviceSource), [
+          'oxfordWpd',
+          'iosCoreMotion',
+        ]);
+        expect(
+          uploaded.first.intervalEnd,
+          baseTime.add(const Duration(seconds: 8)),
+        );
+        expect(uploaded.last.intervalStart, uploaded.first.intervalEnd);
+        expect(
+          uploaded.last.intervalEnd,
+          baseTime.add(const Duration(seconds: 20)),
+        );
+        expect(coordinator.pendingRawStepIntervalCount, equals(0));
+      },
+    );
 
-      // Launch 3 simultaneous flushPendingRawTracking calls
-      await Future.wait([
-        coordinator.flushPendingRawTracking(workoutId: sessionId, force: true),
-        coordinator.flushPendingRawTracking(workoutId: sessionId, force: true),
-        coordinator.flushPendingRawTracking(workoutId: sessionId, force: true),
-      ]);
+    test(
+      'forced flush flushes remaining sub-threshold points at workout completion',
+      () async {
+        const sessionId = 'session-finish-flush';
+        final baseTime = DateTime.utc(2026, 4, 15, 8, 40, 0);
 
-      // Exactly 1 upload batch occurred, remaining calls safely observed buffer drained
-      expect(fakeRawTracking.uploadedGpsBatches.length, equals(1));
-      expect(fakeRawTracking.uploadedGpsBatches.first.length, equals(6));
-      expect(coordinator.pendingRawGpsPointCount, equals(0));
-    });
+        coordinator.markRemoteWorkoutShellReady();
+
+        // Buffer only 3 points (well below threshold 24)
+        for (var i = 0; i < 3; i++) {
+          coordinator.bufferRawGpsPoint(
+            _createPosition(
+              latitude: 10.77 + i * 0.001,
+              longitude: 106.69 + i * 0.001,
+              timestamp: baseTime.add(Duration(seconds: i)),
+            ),
+            workoutId: sessionId,
+          );
+        }
+
+        expect(coordinator.pendingRawGpsPointCount, equals(3));
+        expect(fakeRawTracking.uploadedGpsBatches, isEmpty);
+
+        // Emulate workout finalization: await forced flush
+        await coordinator.flushPendingRawTracking(
+          workoutId: sessionId,
+          force: true,
+        );
+
+        expect(fakeRawTracking.uploadedGpsBatches.length, equals(1));
+        expect(fakeRawTracking.uploadedGpsBatches.first.length, equals(3));
+        expect(coordinator.pendingRawGpsPointCount, equals(0));
+
+        // Disposal after flush cleanly terminates without error
+        coordinator.dispose();
+        expect(coordinator.pendingRawGpsPointCount, equals(0));
+      },
+    );
+
+    test(
+      'simultaneous forced flush calls serialize cleanly without double-flushing',
+      () async {
+        const sessionId = 'session-concurrent-flush';
+        final baseTime = DateTime.utc(2026, 4, 15, 8, 50, 0);
+
+        coordinator.markRemoteWorkoutShellReady();
+
+        for (var i = 0; i < 6; i++) {
+          coordinator.bufferRawGpsPoint(
+            _createPosition(
+              latitude: 10.77 + i * 0.001,
+              longitude: 106.69 + i * 0.001,
+              timestamp: baseTime.add(Duration(seconds: i)),
+            ),
+            workoutId: sessionId,
+          );
+        }
+
+        expect(coordinator.pendingRawGpsPointCount, equals(6));
+
+        // Launch 3 simultaneous flushPendingRawTracking calls
+        await Future.wait([
+          coordinator.flushPendingRawTracking(
+            workoutId: sessionId,
+            force: true,
+          ),
+          coordinator.flushPendingRawTracking(
+            workoutId: sessionId,
+            force: true,
+          ),
+          coordinator.flushPendingRawTracking(
+            workoutId: sessionId,
+            force: true,
+          ),
+        ]);
+
+        // Exactly 1 upload batch occurred, remaining calls safely observed buffer drained
+        expect(fakeRawTracking.uploadedGpsBatches.length, equals(1));
+        expect(fakeRawTracking.uploadedGpsBatches.first.length, equals(6));
+        expect(coordinator.pendingRawGpsPointCount, equals(0));
+      },
+    );
   });
 }

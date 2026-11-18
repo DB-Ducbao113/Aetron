@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/gps_validation_models.dart';
 import 'package:geolocator/geolocator.dart';
+import 'trajectory_preprocessing/trajectory_sample.dart';
 import 'package:latlong2/latlong.dart';
 
 enum TrackingGpsDecisionType { skip, seedRoute, resetAnchor, acceptRoute }
@@ -141,6 +142,132 @@ class WorkoutTrackingEngine {
   /// NOTE: stationary fixes rejected by validation may appear as a GPS gap;
   /// baseline parity does not itself fix that distinction.
   static const double kStaleSignalGapThresholdSec = 5.0;
+
+  TrackingGpsDecision resolveTrajectoryPreprocessingDecision({
+    required TrackingGpsDecision legacyDecision,
+    required ProcessedTrajectoryPoint processedSample,
+    required LatLng livePoint,
+    required double pendingGapDurationSec,
+  }) {
+    // 1. First fix / route seeding
+    if (legacyDecision.type == TrackingGpsDecisionType.seedRoute) {
+      if (!processedSample.isAccepted) {
+        return TrackingGpsDecision(
+          type: TrackingGpsDecisionType.skip,
+          livePoint: livePoint,
+          previewPoint: legacyDecision.previewPoint,
+          outcome: GpsPointOutcome.softRejected,
+          reason: GpsRejectReason.waitingForBetterFirstFix,
+          skipReason:
+              'preprocessor_rejected_first_fix: ${processedSample.qualityFlags}',
+        );
+      }
+      return legacyDecision;
+    }
+
+    // 2. Pause-resume lifecycle anchor reset
+    if (legacyDecision.type == TrackingGpsDecisionType.resetAnchor) {
+      return legacyDecision;
+    }
+
+    // Respect hard/soft safety rejection before considering an outage anchor.
+    if (legacyDecision.type == TrackingGpsDecisionType.skip) {
+      return legacyDecision;
+    }
+
+    // 3. Outage / Signal Gap recovery
+    final isOutageGap =
+        (processedSample.isAccepted &&
+            processedSample.isGapRecovery &&
+            pendingGapDurationSec > 5.0) ||
+        (processedSample.isAccepted &&
+            legacyDecision.type == TrackingGpsDecisionType.acceptRoute &&
+            legacyDecision.outcome == GpsPointOutcome.signalGap);
+    if (isOutageGap) {
+      final gapDuration = math.max(
+        pendingGapDurationSec,
+        processedSample.timeDeltaSec,
+      );
+      return TrackingGpsDecision(
+        type: TrackingGpsDecisionType.acceptRoute,
+        livePoint: livePoint,
+        previewPoint: legacyDecision.previewPoint,
+        segmentMeters: 0,
+        rawSegmentMeters: legacyDecision.rawSegmentMeters,
+        routeSegmentMeters: legacyDecision.routeSegmentMeters,
+        candidateSpeedKmh: 0,
+        shouldAddDistance: false,
+        shouldBreakRouteForDisplay: true,
+        gpsGapDurationSec: gapDuration,
+        outcome: GpsPointOutcome.signalGap,
+        reason: GpsRejectReason.staleSignalGap,
+      );
+    }
+
+    // 5. Kinematic & accuracy outliers flagged by Preprocessor
+    if (!processedSample.isAccepted) {
+      final GpsRejectReason reason;
+      final GpsPointOutcome outcome;
+      if (processedSample.qualityFlags.contains(
+        TrajectoryQualityFlag.lowAccuracy,
+      )) {
+        reason = GpsRejectReason.lowAccuracy;
+        outcome = GpsPointOutcome.softRejected;
+      } else if (processedSample.qualityFlags.contains(
+        TrajectoryQualityFlag.speedSpike,
+      )) {
+        reason = GpsRejectReason.gpsSpeedHardSpike;
+        outcome = GpsPointOutcome.hardRejected;
+      } else if (processedSample.qualityFlags.contains(
+        TrajectoryQualityFlag.accelerationSpike,
+      )) {
+        reason = GpsRejectReason.impliedSpeedHardSpike;
+        outcome = GpsPointOutcome.hardRejected;
+      } else if (processedSample.qualityFlags.contains(
+        TrajectoryQualityFlag.headingSpike,
+      )) {
+        reason = GpsRejectReason.headingSpike;
+        outcome = GpsPointOutcome.hardRejected;
+      } else {
+        reason = GpsRejectReason.tinySegment;
+        outcome = GpsPointOutcome.softRejected;
+      }
+      return TrackingGpsDecision(
+        type: TrackingGpsDecisionType.skip,
+        livePoint: livePoint,
+        previewPoint: legacyDecision.previewPoint,
+        skipReason: 'preprocessor_outlier: ${processedSample.qualityFlags}',
+        segmentMeters: legacyDecision.segmentMeters,
+        rawSegmentMeters: legacyDecision.rawSegmentMeters,
+        routeSegmentMeters: legacyDecision.routeSegmentMeters,
+        outcome: outcome,
+        reason: reason,
+      );
+    }
+
+    // 6. Stationary stay point drift suppression
+    if (processedSample.isStayPoint) {
+      return TrackingGpsDecision(
+        type: TrackingGpsDecisionType.skip,
+        livePoint: livePoint,
+        previewPoint: legacyDecision.previewPoint,
+        skipReason: 'preprocessor_stay_point_dwell',
+        segmentMeters: legacyDecision.segmentMeters,
+        rawSegmentMeters: legacyDecision.rawSegmentMeters,
+        routeSegmentMeters: legacyDecision.routeSegmentMeters,
+        outcome: GpsPointOutcome.softRejected,
+        reason: GpsRejectReason.tinySegment,
+      );
+    }
+
+    // 7. Clean accepted sample
+    if (processedSample.covarianceScale != 1.0) {
+      return legacyDecision.copyWith(
+        covarianceScale: processedSample.covarianceScale,
+      );
+    }
+    return legacyDecision;
+  }
 
   TrackingGpsDecision evaluateGpsUpdate({
     required Position position,

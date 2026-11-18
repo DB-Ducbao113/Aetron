@@ -28,7 +28,8 @@ class GnssSatelliteData {
       maxCn0DbHz: (map['maxCn0DbHz'] as num?)?.toDouble() ?? 0.0,
       top4Cn0DbHz: (map['top4Cn0DbHz'] as num?)?.toDouble() ?? 0.0,
       timestamp: DateTime.fromMillisecondsSinceEpoch(
-        (map['timestamp'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
+        (map['timestamp'] as num?)?.toInt() ??
+            DateTime.now().millisecondsSinceEpoch,
       ),
     );
   }
@@ -39,16 +40,18 @@ class LightSensorData {
   final double lux;
   final DateTime timestamp;
 
-  const LightSensorData({
-    required this.lux,
-    required this.timestamp,
-  });
+  const LightSensorData({required this.lux, required this.timestamp});
 
   factory LightSensorData.fromMap(Map<dynamic, dynamic> map) {
+    final lux = map['lux'];
+    if (lux is! num || !lux.isFinite || lux < 0) {
+      throw const FormatException('Missing or invalid native lux measurement');
+    }
     return LightSensorData(
-      lux: (map['lux'] as num?)?.toDouble() ?? 0.0,
+      lux: lux.toDouble(),
       timestamp: DateTime.fromMillisecondsSinceEpoch(
-        (map['timestamp'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
+        (map['timestamp'] as num?)?.toInt() ??
+            DateTime.now().millisecondsSinceEpoch,
       ),
     );
   }
@@ -88,7 +91,8 @@ class WifiScanData {
       meanRssiDbm: (map['meanRssiDbm'] as num?)?.toDouble(),
       fingerprint: fp,
       timestamp: DateTime.fromMillisecondsSinceEpoch(
-        (map['timestamp'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
+        (map['timestamp'] as num?)?.toInt() ??
+            DateTime.now().millisecondsSinceEpoch,
       ),
       reason: map['reason'] as String?,
     );
@@ -129,7 +133,8 @@ class BleScanData {
       meanRssiDbm: (map['meanRssiDbm'] as num?)?.toDouble(),
       fingerprint: fp,
       timestamp: DateTime.fromMillisecondsSinceEpoch(
-        (map['timestamp'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
+        (map['timestamp'] as num?)?.toInt() ??
+            DateTime.now().millisecondsSinceEpoch,
       ),
       reason: map['reason'] as String?,
     );
@@ -147,21 +152,19 @@ class NativeSensorPlatformChannel {
   final bool? _isAndroidOverride;
 
   NativeSensorPlatformChannel({bool? isAndroidOverride})
-      : _isAndroidOverride = isAndroidOverride;
+    : _isAndroidOverride = isAndroidOverride;
 
   Stream<GnssSatelliteData>? _gnssStream;
   Stream<LightSensorData>? _lightStream;
 
   bool get isAndroid =>
-      _isAndroidOverride ?? (!kIsWeb && defaultTargetPlatform == TargetPlatform.android);
+      _isAndroidOverride ??
+      (!kIsWeb && defaultTargetPlatform == TargetPlatform.android);
 
   /// Probes hardware sensor availability via Android native channel.
   Future<Map<String, bool>> checkAvailability() async {
     if (!isAndroid) {
-      return {
-        'hasLightSensor': false,
-        'hasGnssStatus': false,
-      };
+      return {'hasLightSensor': false, 'hasGnssStatus': false};
     }
 
     try {
@@ -174,10 +177,7 @@ class NativeSensorPlatformChannel {
       };
     } catch (e) {
       debugPrint('[NativeSensorChannel] checkAvailability failed: $e');
-      return {
-        'hasLightSensor': false,
-        'hasGnssStatus': false,
-      };
+      return {'hasLightSensor': false, 'hasGnssStatus': false};
     }
   }
 
@@ -190,6 +190,7 @@ class NativeSensorPlatformChannel {
         .map((event) => GnssSatelliteData.fromMap(event as Map))
         .handleError((error) {
           debugPrint('[NativeSensorChannel] GNSS stream error: $error');
+          throw error;
         });
     return _gnssStream!;
   }
@@ -203,6 +204,7 @@ class NativeSensorPlatformChannel {
         .map((event) => LightSensorData.fromMap(event as Map))
         .handleError((error) {
           debugPrint('[NativeSensorChannel] Light sensor error: $error');
+          throw error;
         });
     return _lightStream!;
   }
@@ -211,7 +213,9 @@ class NativeSensorPlatformChannel {
   Future<WifiScanData?> getLatestWifiScan() async {
     if (!isAndroid) return null;
     try {
-      final res = await _checkChannel.invokeMapMethod<String, dynamic>('getWifiScan');
+      final res = await _checkChannel.invokeMapMethod<String, dynamic>(
+        'getWifiScan',
+      );
       if (res != null) {
         return WifiScanData.fromMap(res);
       }
@@ -225,7 +229,9 @@ class NativeSensorPlatformChannel {
   Future<BleScanData?> getLatestBleScan() async {
     if (!isAndroid) return null;
     try {
-      final res = await _checkChannel.invokeMapMethod<String, dynamic>('getBleScan');
+      final res = await _checkChannel.invokeMapMethod<String, dynamic>(
+        'getBleScan',
+      );
       if (res != null) {
         return BleScanData.fromMap(res);
       }
@@ -239,7 +245,9 @@ class NativeSensorPlatformChannel {
   Future<bool> startBleScan() async {
     if (!isAndroid) return false;
     try {
-      final res = await _checkChannel.invokeMapMethod<String, dynamic>('startBleScan');
+      final res = await _checkChannel.invokeMapMethod<String, dynamic>(
+        'startBleScan',
+      );
       return res?['started'] as bool? ?? false;
     } catch (e) {
       debugPrint('[NativeSensorChannel] startBleScan error: $e');
@@ -259,4 +267,3 @@ class NativeSensorPlatformChannel {
     }
   }
 }
-

@@ -12,6 +12,7 @@ import 'package:fitness_exercise_application/features/workout/domain/entities/ro
 import 'package:fitness_exercise_application/features/workout/domain/repositories/workout_repository.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/route_match_quality_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:fitness_exercise_application/features/workout/domain/services/scientific_result_metadata.dart';
 
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
 
@@ -472,6 +473,7 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
       debugPrint(
         '[WorkoutRepository] Failed to enqueue route correction for ${session.id}: $e',
       );
+      rethrow;
     }
   }
 
@@ -504,18 +506,23 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
     try {
       final payload = await _remoteDataSource.getRouteMatchPayload(sessionId);
       if (payload == null) return false;
+      final metadata = ScientificResultMetadata.fromRemote(payload);
+      if (ScientificResultMetadata.hasResearchSummary(metadata) &&
+          !ScientificResultMetadata.hasFinalServerVerdict(metadata)) {
+        // Keep local P03 until the server finishes auditing the raw evidence.
+        return false;
+      }
 
       final rawResult = RouteMatchResult(
         sessionId: sessionId,
-        matchedRouteJson: payload['matched_route_json'] as String? ?? '[]',
+        matchedRouteJson: _jsonField(payload['matched_route_json'], '[]'),
         routeMatchStatus: payload['route_match_status'] as String? ?? 'pending',
         routeMatchConfidence: (payload['route_match_confidence'] as num?)
             ?.toDouble(),
         routeDistanceSource:
             payload['route_distance_source'] as String? ?? 'filtered',
         matchedDistanceKm: (payload['matched_distance_km'] as num?)?.toDouble(),
-        routeMatchMetricsJson:
-            payload['route_match_metrics_json'] as String? ?? '{}',
+        routeMatchMetricsJson: metadata,
       );
 
       final normalized = _routeMatchQualityService.normalize(rawResult);
@@ -551,3 +558,6 @@ class _RouteSegmentSummary {
     required this.pointCount,
   });
 }
+
+String _jsonField(Object? value, String fallback) =>
+    value == null ? fallback : (value is String ? value : jsonEncode(value));

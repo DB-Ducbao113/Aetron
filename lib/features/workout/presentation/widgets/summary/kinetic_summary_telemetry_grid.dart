@@ -127,14 +127,14 @@ class KineticSummaryTelemetryGrid extends StatelessWidget {
         const SizedBox(height: 10),
         Row(
           children: [
-            // 3. Active Calories
+            // 3. Estimated workout energy
             Expanded(
               child: _TelemetryCard(
                 label: currentLang == AppLanguage.vi ? 'NĂNG LƯỢNG' : 'ENERGY BURN',
                 value: '$calories',
                 unit: 'kcal',
                 icon: Icons.local_fire_department_rounded,
-                subtitle: currentLang == AppLanguage.vi ? 'Calo hoạt động' : 'Active burn',
+                subtitle: currentLang == AppLanguage.vi ? 'Calo ước tính' : 'Estimated kcal',
               ),
             ),
             const SizedBox(width: 10),

@@ -1,4 +1,6 @@
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
+import 'package:fitness_exercise_application/features/workout/domain/services/gnss_correction/gnss_correction_models.dart';
 
 import 'package:fitness_exercise_application/core/constants/debug_config.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/ekf/extended_kalman_filter.dart';
@@ -8,6 +10,7 @@ import 'package:fitness_exercise_application/features/workout/domain/services/gp
 import 'package:latlong2/latlong.dart';
 
 const Distance _gpsDistance = Distance();
+const Distance _preciseGpsDistance = Distance(roundResult: false);
 
 class GpsSmoothingUpdate {
   final LatLng smoothedPoint;
@@ -55,8 +58,10 @@ class GpsSmoothingService {
                : GpsFilterAlgorithm.ekf4State),
        enableGnssCorrection = enableGnssCorrection ?? kEnableGnssCorrection,
        enableShadowMode = enableShadowMode ?? kEnableGnssCorrectionShadowMode,
-       _gnssCorrectionEngine = gnssCorrectionEngine ??
-           ((enableGnssCorrection ?? kEnableGnssCorrection) || (enableShadowMode ?? kEnableGnssCorrectionShadowMode)
+       _gnssCorrectionEngine =
+           gnssCorrectionEngine ??
+           ((enableGnssCorrection ?? kEnableGnssCorrection) ||
+                   (enableShadowMode ?? kEnableGnssCorrectionShadowMode)
                ? AdaptiveGnssCorrectionEngine()
                : null),
        _ekf =
@@ -65,17 +70,22 @@ class GpsSmoothingService {
              processPosStd: 0.6,
              processSpeedStd: 1.2,
              processHeadingStd: 0.5,
-             gnssCorrectionEngine: gnssCorrectionEngine ??
-                 ((enableGnssCorrection ?? kEnableGnssCorrection) || (enableShadowMode ?? kEnableGnssCorrectionShadowMode)
+             gnssCorrectionEngine:
+                 gnssCorrectionEngine ??
+                 ((enableGnssCorrection ?? kEnableGnssCorrection) ||
+                         (enableShadowMode ?? kEnableGnssCorrectionShadowMode)
                      ? AdaptiveGnssCorrectionEngine()
                      : null),
-             enableGnssCorrection: enableGnssCorrection ?? kEnableGnssCorrection,
-             enableShadowMode: enableShadowMode ?? kEnableGnssCorrectionShadowMode,
+             enableGnssCorrection:
+                 enableGnssCorrection ?? kEnableGnssCorrection,
+             enableShadowMode:
+                 enableShadowMode ?? kEnableGnssCorrectionShadowMode,
            );
 
   /// Human-readable identifier of the active smoothing algorithm.
-  String get algorithmName =>
-      algorithm == GpsFilterAlgorithm.ekf4State ? 'ekf_4state' : 'fixed_alpha';
+  String get algorithmName => algorithm == GpsFilterAlgorithm.ekf4State
+      ? (enableGnssCorrection ? 'aekf_4state' : 'ekf_4state')
+      : 'fixed_alpha';
 
   /// Resets filter state (e.g. at workout start, mode flip, or after long GPS blackout)
   void reset() {
@@ -93,7 +103,11 @@ class GpsSmoothingService {
     required double speedMs,
     required double timeDeltaSec,
     required double gpsGapDurationSec,
+    double? sensorHeadingDeg,
+    bool resetAnchor = false,
   }) {
+    final researchMotion =
+        algorithm == GpsFilterAlgorithm.ekf4State && enableGnssCorrection;
     final confidence = _confidenceFor(
       accuracyMeters: accuracyMeters,
       speedMs: speedMs,
@@ -102,12 +116,19 @@ class GpsSmoothingService {
     );
     final acceptedDelta = previousAcceptedPoint == null
         ? 0.0
-        : _gpsDistance.distance(previousAcceptedPoint, acceptedPoint);
+        : (researchMotion ? _preciseGpsDistance : _gpsDistance).distance(
+            previousAcceptedPoint,
+            acceptedPoint,
+          );
     final isStationary =
         previousAcceptedPoint != null &&
         gpsGapDurationSec <= 0 &&
         acceptedDelta <= _stationaryRadiusMeters(activityType) &&
-        (speedMs <= 0.8 || timeDeltaSec >= 1.0);
+        (researchMotion
+            ? (speedMs.isFinite && speedMs >= 0
+                  ? speedMs <= 0.8
+                  : timeDeltaSec > 0 && acceptedDelta / timeDeltaSec <= 0.8)
+            : (speedMs <= 0.8 || timeDeltaSec >= 1.0));
 
     final smoothedPoint = _smoothPoint(
       acceptedPoint: acceptedPoint,
@@ -121,6 +142,9 @@ class GpsSmoothingService {
       speedMs: speedMs,
       timeDeltaSec: timeDeltaSec,
       gpsGapDurationSec: gpsGapDurationSec,
+      sensorHeadingDeg: sensorHeadingDeg,
+      resetAnchor: resetAnchor,
+      researchMotion: researchMotion,
     );
 
     final appendThreshold = _minAppendDistanceMeters(activityType);
@@ -128,6 +152,7 @@ class GpsSmoothingService {
         ? double.infinity
         : _gpsDistance.distance(lastSmoothedRoutePoint, smoothedPoint);
     final shouldAppendRoutePoint =
+        resetAnchor ||
         gpsGapDurationSec > kGpsGapThresholdSec ||
         lastSmoothedRoutePoint == null ||
         (!isStationary &&
@@ -169,19 +194,33 @@ class GpsSmoothingService {
     required double speedMs,
     required double timeDeltaSec,
     required double gpsGapDurationSec,
+    required double? sensorHeadingDeg,
+    required bool resetAnchor,
+    required bool researchMotion,
   }) {
-    if (previousSmoothedPoint == null ||
+    final validHeading =
+        sensorHeadingDeg != null &&
+            sensorHeadingDeg.isFinite &&
+            sensorHeadingDeg >= 0 &&
+            sensorHeadingDeg < 360
+        ? sensorHeadingDeg
+        : null;
+    if (resetAnchor ||
+        previousSmoothedPoint == null ||
         gpsGapDurationSec > kGpsGapThresholdSec) {
       _ekf.reset();
       _ekf.init(
         initialPoint: acceptedPoint,
         initialAccuracyMeters: accuracyMeters,
-        initialSpeedMs: speedMs,
+        initialSpeedMs: speedMs.isFinite && speedMs >= 0 ? speedMs : 0,
+        initialHeadingDeg: researchMotion ? validHeading : null,
       );
       return acceptedPoint;
     }
 
-    if (isStationary && acceptedDelta < _stationaryFreezeMeters(activityType)) {
+    final freezeMarker =
+        isStationary && acceptedDelta < _stationaryFreezeMeters(activityType);
+    if (freezeMarker && !researchMotion) {
       return previousSmoothedPoint;
     }
 
@@ -196,14 +235,19 @@ class GpsSmoothingService {
     }
 
     // Default: 4-State Extended Kalman Filter (EKF) Core
-    return _smoothPointEkf(
+    final estimate = _smoothPointEkf(
       acceptedPoint: acceptedPoint,
       previousAcceptedPoint: previousAcceptedPoint,
       accuracyMeters: accuracyMeters,
       speedMs: speedMs,
       timeDeltaSec: timeDeltaSec,
       activityType: activityType,
+      sensorHeadingDeg: researchMotion ? validHeading : null,
+      researchMotion: researchMotion,
+      acceptedDelta: acceptedDelta,
     );
+    // Update filter time even while freezing the stationary display marker.
+    return freezeMarker ? previousSmoothedPoint : estimate;
   }
 
   LatLng _smoothPointEkf({
@@ -213,20 +257,35 @@ class GpsSmoothingService {
     required double speedMs,
     required double timeDeltaSec,
     required String activityType,
+    required double? sensorHeadingDeg,
+    required bool researchMotion,
+    required double acceptedDelta,
   }) {
-    final headingDeg = previousAcceptedPoint != null
-        ? _bearing(previousAcceptedPoint, acceptedPoint)
-        : null;
+    // Noisy coordinate-derived heading is unreliable over short displacements.
+    final headingDeg =
+        sensorHeadingDeg ??
+        (previousAcceptedPoint != null &&
+                (!researchMotion || acceptedDelta >= 2.0)
+            ? _bearing(previousAcceptedPoint, acceptedPoint)
+            : null);
 
     final estimate = _ekf.update(
       measurementPoint: acceptedPoint,
       accuracyMeters: accuracyMeters,
       timeDeltaSec: timeDeltaSec,
-      speedMs: speedMs >= 0.0 ? speedMs : null,
+      speedMs: speedMs.isFinite && speedMs >= 0.0 ? speedMs : null,
       headingDeg: headingDeg,
       activityType: activityType,
     );
 
+    if (enableShadowMode &&
+        estimate.correctionQuality != null &&
+        estimate.correctionQuality != GnssCorrectionQuality.nominal) {
+      debugPrint(
+        '[GPS-P02-SHADOW] quality=${estimate.correctionQuality!.name} '
+        'NIS=${estimate.mahalanobisDistanceSq}',
+      );
+    }
     return estimate.position;
   }
 

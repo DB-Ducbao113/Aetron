@@ -32,6 +32,7 @@ class GpsQualityGateDecision {
   final double segmentDistanceMeters;
   final double timeDeltaSec;
   final bool isGapRecovery;
+  final double? forwardBearingDeg;
 
   const GpsQualityGateDecision({
     required this.rawSample,
@@ -44,6 +45,7 @@ class GpsQualityGateDecision {
     required this.segmentDistanceMeters,
     required this.timeDeltaSec,
     required this.isGapRecovery,
+    this.forwardBearingDeg,
   });
 
   bool get isAcceptedForPath =>
@@ -124,7 +126,8 @@ class MobileGvioQualityGate {
     }
 
     // 2. Temporal Gap (Blackout) Detection
-    final dtSec = candidate.timestamp
+    final dtSec =
+        candidate.timestamp
             .difference(previousSample.timestamp)
             .inMilliseconds /
         1000.0;
@@ -147,8 +150,13 @@ class MobileGvioQualityGate {
     }
 
     // 3. Segment displacement & implied speed
-    final segmentDistM = _distance.distance(previousSample.point, candidate.point);
-    final impliedSpeedMs = dtSec > 0.05 ? segmentDistM / dtSec : (candidate.sensorSpeedMs ?? 0.0);
+    final segmentDistM = _distance.distance(
+      previousSample.point,
+      candidate.point,
+    );
+    final impliedSpeedMs = dtSec > 0.05
+        ? segmentDistM / dtSec
+        : (candidate.sensorSpeedMs ?? 0.0);
 
     // 4. Implied acceleration
     var impliedAccMs2 = 0.0;
@@ -167,12 +175,18 @@ class MobileGvioQualityGate {
     // 6. Multi-Tier Decision:
     // A. Clear gross physical outlier (Reject)
     final isGrossSpeedViolation = impliedSpeedMs > limits.maxSpeedMs * 1.5;
-    final isCriticalInnovationJump = normalizedInnovation > criticalSigmaMultiplier;
-    final isSevereInaccurateSpike = candidate.accuracyMeters > limits.maxAccuracyMeters * 2.0;
+    final isCriticalInnovationJump =
+        normalizedInnovation > criticalSigmaMultiplier;
+    final isSevereInaccurateSpike =
+        candidate.accuracyMeters > limits.maxAccuracyMeters * 2.0;
 
-    if (isGrossSpeedViolation || isCriticalInnovationJump || isSevereInaccurateSpike) {
+    if (isGrossSpeedViolation ||
+        isCriticalInnovationJump ||
+        isSevereInaccurateSpike) {
       if (isGrossSpeedViolation) flags.add(TrajectoryQualityFlag.speedSpike);
-      if (isCriticalInnovationJump) flags.add(TrajectoryQualityFlag.statisticalOutlier);
+      if (isCriticalInnovationJump) {
+        flags.add(TrajectoryQualityFlag.statisticalOutlier);
+      }
       if (isSevereInaccurateSpike) flags.add(TrajectoryQualityFlag.lowAccuracy);
 
       return GpsQualityGateDecision(
@@ -192,14 +206,23 @@ class MobileGvioQualityGate {
     // B. Moderate uncertainty: Acceleration noise spike or moderate innovation (Downweight)
     final isAccelerationSpike = impliedAccMs2 > limits.maxAccelerationMs2;
     final isModerateInnovation = normalizedInnovation > nominalSigmaMultiplier;
-    final isModerateLowAccuracy = flags.contains(TrajectoryQualityFlag.lowAccuracy);
+    final isModerateLowAccuracy = flags.contains(
+      TrajectoryQualityFlag.lowAccuracy,
+    );
 
     if (isAccelerationSpike || isModerateInnovation || isModerateLowAccuracy) {
-      if (isAccelerationSpike) flags.add(TrajectoryQualityFlag.accelerationSpike);
-      if (isModerateInnovation) flags.add(TrajectoryQualityFlag.statisticalOutlier);
+      if (isAccelerationSpike) {
+        flags.add(TrajectoryQualityFlag.accelerationSpike);
+      }
+      if (isModerateInnovation) {
+        flags.add(TrajectoryQualityFlag.statisticalOutlier);
+      }
 
       // Cauchy robust loss weight: w = 1 / (1 + (r - r_nominal)^2)
-      final excess = math.max(0.0, normalizedInnovation - nominalSigmaMultiplier);
+      final excess = math.max(
+        0.0,
+        normalizedInnovation - nominalSigmaMultiplier,
+      );
       final cauchyWeight = 1.0 / (1.0 + (excess * excess));
 
       // Acceleration penalty factor

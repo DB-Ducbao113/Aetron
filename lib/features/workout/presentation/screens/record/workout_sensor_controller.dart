@@ -49,8 +49,13 @@ class WorkoutSensorController {
   Future<StreamSubscription<WorkoutStepUpdate>> startWorkoutStepTracking({
     required StepTrackingService stepService,
     required void Function(WorkoutStepUpdate update) onStepUpdate,
+    String? activityType,
   }) async {
-    await stepService.startTracking();
+    final activity = activityType?.toLowerCase();
+    await stepService.startTracking(
+      activityType: activity,
+      useResearchImu: activity == 'walking' || activity == 'running',
+    );
     return stepService.updateStream.listen(onStepUpdate);
   }
 

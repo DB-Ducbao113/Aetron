@@ -32,10 +32,7 @@ class WorkoutMetricsCalculator {
     int? movingDurationSec,
   }) {
     final distanceKm = distanceMetersToKm(distanceMeters);
-    final effectiveMovingSec =
-        (movingDurationSec != null && movingDurationSec > 0)
-            ? movingDurationSec
-            : durationSec;
+    final effectiveMovingSec = movingDurationSec ?? durationSec;
     final avgMovingSpeedKmh = computeAverageSpeedKmh(
       distanceKm: distanceKm,
       durationSec: effectiveMovingSec,
@@ -47,7 +44,7 @@ class WorkoutMetricsCalculator {
           distanceKm: distanceKm,
           speedKmh: avgMovingSpeedKmh,
           durationSec: durationSec,
-          movingDurationSec: movingDurationSec ?? 0,
+          movingDurationSec: movingDurationSec,
         )
         .round();
   }

@@ -9,6 +9,7 @@ import 'package:fitness_exercise_application/features/workout/data/local/schema/
 import 'package:fitness_exercise_application/features/workout/domain/entities/route_match_result.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
 import 'package:isar/isar.dart';
+import 'package:fitness_exercise_application/features/workout/domain/services/scientific_result_metadata.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -542,12 +543,18 @@ class LocalDB {
               remote.gpsAnalysis.validDistanceKm <= 0 &&
               existing.gpsAnalysisJson.isNotEmpty &&
               existing.gpsAnalysisJson != '{}';
+          final hasFinalScienceVerdict =
+              ScientificResultMetadata.hasFinalServerVerdict(
+                remote.routeMatchMetricsJson,
+              );
           final shouldPreserveFilteredRoute =
+              !hasFinalScienceVerdict &&
               (remote.filteredRouteJson.isEmpty ||
                   remote.filteredRouteJson == '[]') &&
               existing.filteredRouteJson.isNotEmpty &&
               existing.filteredRouteJson != '[]';
           final shouldPreserveMatchedRoute =
+              !hasFinalScienceVerdict &&
               (remote.matchedRouteJson.isEmpty ||
                   remote.matchedRouteJson == '[]') &&
               existing.matchedRouteJson.isNotEmpty &&
@@ -561,20 +568,28 @@ class LocalDB {
           if (!shouldPreserveMatchedRoute) {
             existing.matchedRouteJson = remote.matchedRouteJson;
           }
-          existing.routeMatchStatus = remote.routeMatchStatus.isNotEmpty
-              ? remote.routeMatchStatus
-              : existing.routeMatchStatus;
+          if (!shouldPreserveMatchedRoute || hasFinalScienceVerdict) {
+            existing.routeMatchStatus = remote.routeMatchStatus.isNotEmpty
+                ? remote.routeMatchStatus
+                : existing.routeMatchStatus;
+          }
           existing.routeMatchConfidence = remote.routeMatchConfidence;
           existing.routeDistanceSource = remote.routeDistanceSource.isNotEmpty
               ? remote.routeDistanceSource
               : existing.routeDistanceSource;
           existing.matchedDistanceKm = remote.matchedDistanceKm;
-          existing.routeMatchMetricsJson =
-              (remote.routeMatchMetricsJson.isNotEmpty &&
-                  remote.routeMatchMetricsJson != '{}')
-              ? remote.routeMatchMetricsJson
-              : existing.routeMatchMetricsJson;
-          existing.isSynced = true;
+          existing.routeMatchMetricsJson = ScientificResultMetadata.mergeCache(
+            existing.routeMatchMetricsJson,
+            remote.routeMatchMetricsJson,
+          );
+          // A server row can exist while this device still owes raw records
+          // and a processing job. Do not discard that pending retry state.
+          existing.isSynced =
+              existing.isSynced ||
+              !ScientificResultMetadata.hasResearchSummary(
+                remote.routeMatchMetricsJson,
+              ) ||
+              hasFinalScienceVerdict;
 
           await isar.localWorkouts.put(existing);
         }
@@ -822,9 +837,7 @@ class LocalDB {
     final unsynced = await getUnsyncedStepIntervalsForSession(sessionId);
     final targetIntervals = upToTimestamp == null
         ? unsynced
-        : unsynced
-            .where((i) => !i.intervalEnd.isAfter(upToTimestamp))
-            .toList();
+        : unsynced.where((i) => !i.intervalEnd.isAfter(upToTimestamp)).toList();
     if (targetIntervals.isEmpty) return;
     await isar.writeTxn(() async {
       for (final interval in targetIntervals) {
@@ -874,7 +887,10 @@ class LocalDB {
       workout.routeMatchConfidence = result.routeMatchConfidence;
       workout.routeDistanceSource = result.routeDistanceSource;
       workout.matchedDistanceKm = result.matchedDistanceKm;
-      workout.routeMatchMetricsJson = result.routeMatchMetricsJson;
+      workout.routeMatchMetricsJson = ScientificResultMetadata.mergeCache(
+        workout.routeMatchMetricsJson,
+        result.routeMatchMetricsJson,
+      );
 
       await isar.localWorkouts.put(workout);
     });

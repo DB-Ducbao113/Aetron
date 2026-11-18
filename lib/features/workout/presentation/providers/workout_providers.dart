@@ -9,6 +9,7 @@ import 'package:fitness_exercise_application/features/workout/data/local/local_d
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
 import 'package:fitness_exercise_application/features/profile/presentation/providers/user_profile_providers.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/workout_tracking_engine.dart';
+import 'package:fitness_exercise_application/features/workout/domain/services/scientific_result_metadata.dart';
 import 'package:fitness_exercise_application/features/workout/providers/workout_providers_infra.dart';
 import 'package:fitness_exercise_application/core/utils/date_time_helper.dart';
 import 'package:uuid/uuid.dart';
@@ -319,11 +320,15 @@ final workoutRoutePresentationProvider =
 
       if (workout != null) {
         final matchedSegments = _decodeRouteSegments(workout.matchedRouteJson);
-        if (matchedSegments.isNotEmpty) {
+        if (matchedSegments.isNotEmpty &&
+            workout.routeMatchStatus != 'match_failed_fallback_filtered' &&
+            workout.routeMatchStatus != 'not_requested') {
           return WorkoutRoutePresentation(
             routePoints: matchedSegments.expand((segment) => segment).toList(),
             routeSegments: matchedSegments,
-            source: 'matched',
+            source: workout.routeMatchStatus.startsWith('reconstructed_')
+                ? 'reconstructed'
+                : 'matched',
             matchStatus: workout.routeMatchStatus,
             matchConfidence: workout.routeMatchConfidence,
           );
@@ -341,9 +346,23 @@ final workoutRoutePresentationProvider =
             matchConfidence: workout.routeMatchConfidence,
           );
         }
+        if (ScientificResultMetadata.hasFinalServerVerdict(
+          workout.routeMatchMetricsJson,
+        )) {
+          // An explicit empty server route is not permission to display the
+          // rejected raw fixes or a stale reconstructed route.
+          return WorkoutRoutePresentation(
+            routePoints: const [],
+            routeSegments: const [],
+            source: 'filtered',
+            matchStatus: workout.routeMatchStatus,
+          );
+        }
       }
 
-      final points = await LocalDB.getPointsForSession(id);
+      final points = (await LocalDB.getPointsForSession(id))
+          .where((point) => point.deviceSource != 'indoor_synthetic_route')
+          .toList(growable: false);
       final rawRoute = points
           .map((point) => LatLng(point.latitude, point.longitude))
           .toList(growable: false);
@@ -354,8 +373,8 @@ final workoutRoutePresentationProvider =
           LatLng(points.first.latitude, points.first.longitude),
         ];
         for (var i = 1; i < points.length; i++) {
-          final dtSec = points[i]
-                  .timestamp
+          final dtSec =
+              points[i].timestamp
                   .difference(points[i - 1].timestamp)
                   .abs()
                   .inMilliseconds /
@@ -364,13 +383,9 @@ final workoutRoutePresentationProvider =
             if (currentSegment.length >= 2) {
               rawSegments.add(currentSegment);
             }
-            currentSegment = [
-              LatLng(points[i].latitude, points[i].longitude),
-            ];
+            currentSegment = [LatLng(points[i].latitude, points[i].longitude)];
           } else {
-            currentSegment.add(
-              LatLng(points[i].latitude, points[i].longitude),
-            );
+            currentSegment.add(LatLng(points[i].latitude, points[i].longitude));
           }
         }
         if (currentSegment.length >= 2) {

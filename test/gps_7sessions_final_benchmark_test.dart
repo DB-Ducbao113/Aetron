@@ -114,7 +114,10 @@ DetailedSessionReplayResult executePipelineReplay({
   final stopwatch = Stopwatch()..start();
 
   final continuity = GpsRawSignalContinuity(gapThresholdSec: 5.0);
-  final smoother = GpsSmoothingService(algorithm: algorithm);
+  final smoother = GpsSmoothingService(
+    algorithm: algorithm,
+    enableGnssCorrection: false,
+  );
   final pipeline = GpsPipeline();
 
   var outOfOrderCount = 0;
@@ -159,8 +162,9 @@ DetailedSessionReplayResult executePipelineReplay({
       position: pos,
       activityType: 'cycling',
       routePoints: pipeline.routePoints,
-      currentLatLng:
-          pipeline.routePoints.isNotEmpty ? pipeline.routePoints.last : null,
+      currentLatLng: pipeline.routePoints.isNotEmpty
+          ? pipeline.routePoints.last
+          : null,
       distanceAnchorPoint: distanceAnchor,
       lastAcceptedPositionTime: lastAcceptedTime,
       rawGpsGapDurationSec: continuity.pendingGapDurationSec,
@@ -187,24 +191,22 @@ DetailedSessionReplayResult executePipelineReplay({
     } else if (decision.type == TrackingGpsDecisionType.acceptRoute) {
       continuity.acknowledgeRouteAnchor();
       final prevAccepted = pipeline.routePoints.last;
-      final timeDelta =
-          lastAcceptedTime != null
-              ? math.max(
-                0.1,
-                pos.timestamp.difference(lastAcceptedTime).inMilliseconds /
-                    1000.0,
-              )
-              : 1.0;
+      final timeDelta = lastAcceptedTime != null
+          ? math.max(
+              0.1,
+              pos.timestamp.difference(lastAcceptedTime).inMilliseconds /
+                  1000.0,
+            )
+          : 1.0;
 
       final update = smoother.smoothAcceptedPoint(
         activityType: 'cycling',
         acceptedPoint: currentPoint,
         previousAcceptedPoint: prevAccepted,
         previousSmoothedPoint: latestSmoothed,
-        lastSmoothedRoutePoint:
-            pipeline.smoothedRoutePoints.isNotEmpty
-                ? pipeline.smoothedRoutePoints.last
-                : null,
+        lastSmoothedRoutePoint: pipeline.smoothedRoutePoints.isNotEmpty
+            ? pipeline.smoothedRoutePoints.last
+            : null,
         accuracyMeters: pos.accuracy,
         speedMs: pos.speed,
         timeDeltaSec: timeDelta,
@@ -258,12 +260,11 @@ DetailedSessionReplayResult executePipelineReplay({
     }
   }
 
-  final totalDurationSec =
-      rawRecords.isNotEmpty
-          ? rawRecords.last.timestamp
-              .difference(rawRecords.first.timestamp)
-              .inSeconds
-          : 0;
+  final totalDurationSec = rawRecords.isNotEmpty
+      ? rawRecords.last.timestamp
+            .difference(rawRecords.first.timestamp)
+            .inSeconds
+      : 0;
 
   final analysis = engine.analyzeGpsWorkout(
     GpsWorkoutAnalysisInput(
@@ -274,12 +275,11 @@ DetailedSessionReplayResult executePipelineReplay({
     ),
   );
 
-  final savedDistanceKm =
-      analysis.validDistanceKm > 0
-          ? analysis.validDistanceKm
-          : (analysis.totalDistanceKm > 0
-              ? analysis.totalDistanceKm
-              : liveDistanceM / 1000.0);
+  final savedDistanceKm = analysis.validDistanceKm > 0
+      ? analysis.validDistanceKm
+      : (analysis.totalDistanceKm > 0
+            ? analysis.totalDistanceKm
+            : liveDistanceM / 1000.0);
 
   var filteredDistanceM = 0.0;
   var dbscanClustersCount = 0;
@@ -299,8 +299,7 @@ DetailedSessionReplayResult executePipelineReplay({
     var currentSeg = <TimedGpsPoint>[];
     for (var i = 0; i < timedPoints.length; i++) {
       if (i > 0 &&
-          timedPoints[i]
-                  .timestamp
+          timedPoints[i].timestamp
                   .difference(timedPoints[i - 1].timestamp)
                   .inSeconds >
               5) {
@@ -313,8 +312,8 @@ DetailedSessionReplayResult executePipelineReplay({
 
     for (final seg in segments) {
       if (seg.isEmpty) continue;
-      final (simplified, clusters, phantomDrift) =
-          simplifier.simplifyTimedPoints(seg);
+      final (simplified, clusters, phantomDrift) = simplifier
+          .simplifyTimedPoints(seg);
       dbscanClustersCount += clusters.length;
       dbscanPhantomDriftMeters += phantomDrift;
       dbscanSimplifiedPointsCount += simplified.length;
@@ -491,10 +490,7 @@ void main() {
       expect(baseline.outOfOrderCount, equals(ekf.outOfOrderCount));
       expect(baseline.liveDistanceKm, equals(ekf.liveDistanceKm));
       expect(baseline.savedDistanceKm, equals(ekf.savedDistanceKm));
-      expect(
-        baseline.routeBreakGapsCount,
-        equals(ekf.routeBreakGapsCount),
-      );
+      expect(baseline.routeBreakGapsCount, equals(ekf.routeBreakGapsCount));
     }
 
     print('\n=============================================================');
@@ -541,4 +537,3 @@ void main() {
     );
   });
 }
-

@@ -1,0 +1,1910 @@
+{
+  "source_commit": "c96f67c79a81a8f2098eee051dd41c0c1ba1d102",
+  "source_doi": "10.3390/s19040840",
+  "source_files": [
+    {
+      "file": "PDR_Raw_2018-10-02-11-22-00.txt",
+      "sha256": "f43ad0c29917e23333d60a03260a8f2351a794c1c6fc9b336dc1e8521acfd02c",
+      "samples": 124699,
+      "valid_cycles": 999,
+      "rejected": {},
+      "duration_s": 1307.021
+    },
+    {
+      "file": "PDR_Raw_2018-10-02-11-54-00.txt",
+      "sha256": "a984b3fe255df2ef5736120a4ab8ca0942a3770e6a6a41e6a5efb2420e39d307",
+      "samples": 125886,
+      "valid_cycles": 999,
+      "rejected": {},
+      "duration_s": 1297.289
+    },
+    {
+      "file": "PDR_Raw_2018-10-03-09-29-57.txt",
+      "sha256": "64ebaab71b00cb417e532611a5874dc831ebd581c2657969193cd0053c296ebc",
+      "samples": 137738,
+      "valid_cycles": 1007,
+      "rejected": {},
+      "duration_s": 1422.402
+    },
+    {
+      "file": "PDR_Raw_2018-10-05-12-01-25.txt",
+      "sha256": "5c456420a268169a312504966deb3c9c4051ef579b5cb49b502983f28539f531",
+      "samples": 138805,
+      "valid_cycles": 1000,
+      "rejected": {},
+      "duration_s": 1419.837
+    },
+    {
+      "file": "PDR_Raw_2018-10-06-09-43-41.txt",
+      "sha256": "2669f7e1205940877b5307d9159e4defa8ad39eca54e0d3303979b6c8206165d",
+      "samples": 134427,
+      "valid_cycles": 1004,
+      "rejected": {},
+      "duration_s": 1381.8
+    },
+    {
+      "file": "PDR_Raw_2018-10-06-12-02-13.txt",
+      "sha256": "7059aeea0361607a97d8e891707dc3de38c08b90afb38f417823f23bdcca6b7b",
+      "samples": 136077,
+      "valid_cycles": 999,
+      "rejected": {},
+      "duration_s": 1390.974
+    },
+    {
+      "file": "PDR_Raw_2018-10-07-12-16-56.txt",
+      "sha256": "19cab23d133cf6f25132a8d7e5931b40973b009fcca7352ed5759540d7bf005d",
+      "samples": 150939,
+      "valid_cycles": 1013,
+      "rejected": {},
+      "duration_s": 1540.622
+    },
+    {
+      "file": "PDR_Raw_2018-10-14-07-31-10.txt",
+      "sha256": "9ec106a119a620c0d3f83bd10ed48abcbc82277146374faeaee0a48222370ab5",
+      "samples": 51677,
+      "valid_cycles": 198,
+      "rejected": {},
+      "duration_s": 535.254
+    },
+    {
+      "file": "PDR_Raw_2018-10-23-10-07-37.txt",
+      "sha256": "2f7f1575308d3399772b3f635ebf5bf15f2ed9cab3fc0b7a4c243eea2e17596d",
+      "samples": 10407,
+      "valid_cycles": 0,
+      "rejected": {},
+      "duration_s": 107.809
+    },
+    {
+      "file": "PDR_Raw_2018-10-24-07-37-35.txt",
+      "sha256": "26b205b1d1ddc23f174bee15adcab72c2bc9c0a617820e90937a6bbdf5b2ea25",
+      "samples": 27081,
+      "valid_cycles": 194,
+      "rejected": {},
+      "duration_s": 274.192
+    },
+    {
+      "file": "PDR_Raw_2018-10-24-07-42-38.txt",
+      "sha256": "d857bae4ea7acd5b678f746b9a5f861c0b6f2285f5445bbff6da34499eb0d92d",
+      "samples": 54860,
+      "valid_cycles": 341,
+      "rejected": {},
+      "duration_s": 555.476
+    },
+    {
+      "file": "PDR_Raw_2018-10-24-07-58-43.txt",
+      "sha256": "245c385661f6ac7b3ccd228627d3cfa4f2af3859660a5be6b75381ab8108ca07",
+      "samples": 30454,
+      "valid_cycles": 202,
+      "rejected": {},
+      "duration_s": 308.622
+    },
+    {
+      "file": "PDR_Raw_2018-10-25-11-33-56.txt",
+      "sha256": "a57c1942108329cec84e6ccf10edb3f33fcd8b475a8793042234c45cf5cd11a4",
+      "samples": 2025,
+      "valid_cycles": 7,
+      "rejected": {},
+      "duration_s": 20.744
+    },
+    {
+      "file": "PDR_Raw_2018-10-25-11-34-35.txt",
+      "sha256": "1789a01c1445310d26d6e0b5c74f1695a01b2b8596d451eaf094dadc38f0ba79",
+      "samples": 1703,
+      "valid_cycles": 7,
+      "rejected": {},
+      "duration_s": 17.468
+    },
+    {
+      "file": "PDR_Raw_2018-10-25-11-35-12.txt",
+      "sha256": "707588311847c0a05df3e6c76ea5f8b25922f6022eeaa3719f9a3f132fc92c32",
+      "samples": 1697,
+      "valid_cycles": 8,
+      "rejected": {},
+      "duration_s": 17.426
+    },
+    {
+      "file": "PDR_Raw_2018-10-25-11-37-09.txt",
+      "sha256": "be8024ab347a3fa00f8d13453409f08e4413493f5644aeb0b72c9dfb7d213aae",
+      "samples": 2775,
+      "valid_cycles": 13,
+      "rejected": {},
+      "duration_s": 28.397
+    },
+    {
+      "file": "PDR_Raw_2018-10-25-11-37-52.txt",
+      "sha256": "b00e5244ffe06decfa08838138ee6d94c5ef10b38d64c01176ffc99fcff45546",
+      "samples": 4127,
+      "valid_cycles": 18,
+      "rejected": {},
+      "duration_s": 42.247
+    },
+    {
+      "file": "PDR_Raw_2018-10-25-11-38-58.txt",
+      "sha256": "fed3e7f5536d75e1fff130337fde3c2f82130c44512c75277e71ec9cadd438be",
+      "samples": 3290,
+      "valid_cycles": 16,
+      "rejected": {},
+      "duration_s": 33.76
+    },
+    {
+      "file": "PDR_Raw_2018-10-25-11-39-50.txt",
+      "sha256": "a742c5c5674e8b27a2230e7530a9e809ccea88e68a8bba61fc9ba50fb4f27ead",
+      "samples": 3783,
+      "valid_cycles": 21,
+      "rejected": {},
+      "duration_s": 38.856
+    },
+    {
+      "file": "PDR_Raw_2018-10-25-11-40-45.txt",
+      "sha256": "e408acddc6649877ae0c9a50622e5643f735a4c0e39328352dae5b27ddc87e3b",
+      "samples": 4057,
+      "valid_cycles": 24,
+      "rejected": {},
+      "duration_s": 41.678
+    },
+    {
+      "file": "PDR_Raw_2018-10-25-11-41-50.txt",
+      "sha256": "1d76b66f6014e782d9ff550103767380df30ac1bf14b44746fa8e4faeb28a8c6",
+      "samples": 4037,
+      "valid_cycles": 23,
+      "rejected": {},
+      "duration_s": 41.443
+    },
+    {
+      "file": "PDR_Raw_2018-10-28-11-43-07.txt",
+      "sha256": "85344e873b2cda9d53608e29265871dacd6a6fed5a9841e31cc06e8288eb3d0f",
+      "samples": 2227,
+      "valid_cycles": 8,
+      "rejected": {},
+      "duration_s": 22.847
+    },
+    {
+      "file": "PDR_Raw_2018-10-28-11-43-48.txt",
+      "sha256": "cc9d51efba51cb6124bdb8b22ff95ba78bcd45526ec7659cecfd8ff8ada4c022",
+      "samples": 2452,
+      "valid_cycles": 8,
+      "rejected": {},
+      "duration_s": 25.138
+    },
+    {
+      "file": "PDR_Raw_2018-10-28-11-45-16.txt",
+      "sha256": "9cdda06ed368814c2887f8ecf2192b1813b13ab78c4fe41d4ef723e65968013e",
+      "samples": 3166,
+      "valid_cycles": 9,
+      "rejected": {},
+      "duration_s": 32.446
+    },
+    {
+      "file": "PDR_Raw_2018-10-28-11-46-08.txt",
+      "sha256": "b42a3e73fdf6c371d76d4f5cd5eece4eaf8c77a42b5733b92473637e2e3cf289",
+      "samples": 4834,
+      "valid_cycles": 17,
+      "rejected": {},
+      "duration_s": 49.492
+    },
+    {
+      "file": "PDR_Raw_2018-10-28-11-47-12.txt",
+      "sha256": "b9b86a83c59524f63b811534e098f1dc9076abed830024d24b28c31e6942dda8",
+      "samples": 4562,
+      "valid_cycles": 16,
+      "rejected": {},
+      "duration_s": 46.73
+    },
+    {
+      "file": "PDR_Raw_2018-10-28-11-48-13.txt",
+      "sha256": "e7dbaaefff66ec7d34d3c3e6b4b6ddb465f766a03727d470115a2fbc3e957074",
+      "samples": 5060,
+      "valid_cycles": 18,
+      "rejected": {},
+      "duration_s": 52.014
+    },
+    {
+      "file": "PDR_Raw_2018-10-28-11-49-27.txt",
+      "sha256": "97e1bc19e8c7858709d96f214ffda79f3c6880a18ded1b998945831bb3e648f1",
+      "samples": 6828,
+      "valid_cycles": 25,
+      "rejected": {},
+      "duration_s": 70.619
+    },
+    {
+      "file": "PDR_Raw_2018-10-28-11-50-49.txt",
+      "sha256": "43b091097505635b2bdb89c29172bd07e4c8aa2e2d1588d5028da8c370e66ee3",
+      "samples": 6744,
+      "valid_cycles": 25,
+      "rejected": {},
+      "duration_s": 69.268
+    },
+    {
+      "file": "PDR_Raw_2018-10-28-11-52-13.txt",
+      "sha256": "9e52bec7c9b07da671f997ee9a60f5eb6e81202e870cb9773580b29de4205731",
+      "samples": 6088,
+      "valid_cycles": 24,
+      "rejected": {},
+      "duration_s": 62.839
+    }
+  ],
+  "models": {
+    "pca2021": "10.3390/s21103527 Eq.15",
+    "cca2022": "10.3390/s22239452 Eq.2",
+    "training_mean": "engineering comparator"
+  },
+  "scope": "annotated cycle equation replay, raw acceleration including gravity, mixed activities, file holdout not subject holdout; no runtime segmentation or production claim",
+  "results": {
+    "file_holdout": {
+      "folds": [
+        {
+          "file": "PDR_Raw_2018-10-02-11-22-00.txt",
+          "train_n": 7244,
+          "test_n": 999,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.357014445099513
+              ],
+              "n": 999,
+              "mae_cm": 34.18819216925011,
+              "rmse_cm": 37.0541557012336,
+              "bias_cm": 29.11333224210247,
+              "reference_m": 1366.6083980976082,
+              "estimated_m": 1657.450587196212,
+              "abs_distance_error_pct": 21.282043159069673
+            },
+            "cca2022": {
+              "coefficients": [
+                -3.1722732469363604,
+                3.7826643160905746
+              ],
+              "n": 999,
+              "mae_cm": 24.25517905384234,
+              "rmse_cm": 35.13173226702544,
+              "bias_cm": 22.093073856613383,
+              "reference_m": 1366.6083980976082,
+              "estimated_m": 1587.3182059251758,
+              "abs_distance_error_pct": 16.150186705628876
+            },
+            "training_mean": {
+              "coefficients": [
+                1.6547271425368932
+              ],
+              "n": 999,
+              "mae_cm": 33.89562971253501,
+              "rmse_cm": 36.954490317169366,
+              "bias_cm": 28.675076806481304,
+              "reference_m": 1366.6083980976082,
+              "estimated_m": 1653.072415394356,
+              "abs_distance_error_pct": 20.961675465738498
+            }
+          }
+        },
+        {
+          "file": "PDR_Raw_2018-10-02-11-54-00.txt",
+          "train_n": 7244,
+          "test_n": 999,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.3390768969280653
+              ],
+              "n": 999,
+              "mae_cm": 31.029598631881022,
+              "rmse_cm": 75.34613212739801,
+              "bias_cm": 11.114594499417038,
+              "reference_m": 1536.1655801384354,
+              "estimated_m": 1647.2003791876114,
+              "abs_distance_error_pct": 7.228048882541037
+            },
+            "cca2022": {
+              "coefficients": [
+                -3.117931912691052,
+                3.7114777890845385
+              ],
+              "n": 999,
+              "mae_cm": 20.475381867880294,
+              "rmse_cm": 57.038269644012885,
+              "bias_cm": -7.666769680586191,
+              "reference_m": 1536.1655801384354,
+              "estimated_m": 1459.574551029379,
+              "abs_distance_error_pct": 4.985857650980167
+            },
+            "training_mean": {
+              "coefficients": [
+                1.6313205740607992
+              ],
+              "n": 999,
+              "mae_cm": 29.80554865223238,
+              "rmse_cm": 75.84406047579014,
+              "bias_cm": 9.36172906389421,
+              "reference_m": 1536.1655801384354,
+              "estimated_m": 1629.689253486738,
+              "abs_distance_error_pct": 6.088124519745784
+            }
+          }
+        },
+        {
+          "file": "PDR_Raw_2018-10-03-09-29-57.txt",
+          "train_n": 7236,
+          "test_n": 1007,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.3261613724964612
+              ],
+              "n": 1007,
+              "mae_cm": 42.69106802876817,
+              "rmse_cm": 80.66466726024858,
+              "bias_cm": -1.5792674271749736,
+              "reference_m": 1655.235161884873,
+              "estimated_m": 1639.331938893221,
+              "abs_distance_error_pct": 0.9607832988239836
+            },
+            "cca2022": {
+              "coefficients": [
+                -3.139441919677257,
+                3.7298529682810897
+              ],
+              "n": 1007,
+              "mae_cm": 29.6939675180124,
+              "rmse_cm": 51.1153947240572,
+              "bias_cm": -5.377780418527564,
+              "reference_m": 1655.235161884873,
+              "estimated_m": 1601.0809130703005,
+              "abs_distance_error_pct": 3.271695168250611
+            },
+            "training_mean": {
+              "coefficients": [
+                1.6166689685945261
+              ],
+              "n": 1007,
+              "mae_cm": 42.60394380771099,
+              "rmse_cm": 82.01607817672483,
+              "bias_cm": -2.7060089881018077,
+              "reference_m": 1655.235161884873,
+              "estimated_m": 1627.9856513746874,
+              "abs_distance_error_pct": 1.64626218302149
+            }
+          }
+        },
+        {
+          "file": "PDR_Raw_2018-10-05-12-01-25.txt",
+          "train_n": 7243,
+          "test_n": 1000,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.3372246047167782
+              ],
+              "n": 1000,
+              "mae_cm": 35.67831408427091,
+              "rmse_cm": 61.14555599823696,
+              "bias_cm": 9.388793375097256,
+              "reference_m": 1534.2010256570452,
+              "estimated_m": 1628.0889594080177,
+              "abs_distance_error_pct": 6.119663080707668
+            },
+            "cca2022": {
+              "coefficients": [
+                -3.1788677239268113,
+                3.7803948100914577
+              ],
+              "n": 1000,
+              "mae_cm": 27.829955246453856,
+              "rmse_cm": 45.88332644583177,
+              "bias_cm": 15.015945095082216,
+              "reference_m": 1534.2010256570452,
+              "estimated_m": 1684.3604766078674,
+              "abs_distance_error_pct": 9.787469076062836
+            },
+            "training_mean": {
+              "coefficients": [
+                1.631817036169794
+              ],
+              "n": 1000,
+              "mae_cm": 36.45535011882286,
+              "rmse_cm": 62.23329654923477,
+              "bias_cm": 9.761601051274877,
+              "reference_m": 1534.2010256570452,
+              "estimated_m": 1631.8170361697933,
+              "abs_distance_error_pct": 6.362661012493014
+            }
+          }
+        },
+        {
+          "file": "PDR_Raw_2018-10-06-09-43-41.txt",
+          "train_n": 7239,
+          "test_n": 1004,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.330011647836759
+              ],
+              "n": 1004,
+              "mae_cm": 35.262322373882235,
+              "rmse_cm": 65.29423732738377,
+              "bias_cm": 1.9239741581717298,
+              "reference_m": 1619.38848566745,
+              "estimated_m": 1638.705186215494,
+              "abs_distance_error_pct": 1.192839193251554
+            },
+            "cca2022": {
+              "coefficients": [
+                -3.134986132260679,
+                3.728629507251383
+              ],
+              "n": 1004,
+              "mae_cm": 23.1339503719248,
+              "rmse_cm": 35.69185396107562,
+              "bias_cm": -3.5468559926282976,
+              "reference_m": 1619.38848566745,
+              "estimated_m": 1583.778051501462,
+              "abs_distance_error_pct": 2.199005024499162
+            },
+            "training_mean": {
+              "coefficients": [
+                1.6209508679330586
+              ],
+              "n": 1004,
+              "mae_cm": 34.68264999456957,
+              "rmse_cm": 65.96106274496684,
+              "bias_cm": 0.8014129220459014,
+              "reference_m": 1619.38848566745,
+              "estimated_m": 1627.4346714047906,
+              "abs_distance_error_pct": 0.49686568779229767
+            }
+          }
+        },
+        {
+          "file": "PDR_Raw_2018-10-06-12-02-13.txt",
+          "train_n": 7244,
+          "test_n": 999,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.3530484499217807
+              ],
+              "n": 999,
+              "mae_cm": 32.34893258900031,
+              "rmse_cm": 35.93217212338027,
+              "bias_cm": 25.289033441569835,
+              "reference_m": 1388.1903759379513,
+              "estimated_m": 1640.827820019234,
+              "abs_distance_error_pct": 18.19904880917968
+            },
+            "cca2022": {
+              "coefficients": [
+                -3.21689843915159,
+                3.832668170083216
+              ],
+              "n": 999,
+              "mae_cm": 39.1756720466943,
+              "rmse_cm": 46.26253256625578,
+              "bias_cm": 38.43950298270019,
+              "reference_m": 1388.1903759379513,
+              "estimated_m": 1772.2010107351266,
+              "abs_distance_error_pct": 27.662678077400766
+            },
+            "training_mean": {
+              "coefficients": [
+                1.6517478523877571
+              ],
+              "n": 999,
+              "mae_cm": 33.34039665724923,
+              "rmse_cm": 36.907160066075406,
+              "bias_cm": 26.21678964939118,
+              "reference_m": 1388.1903759379513,
+              "estimated_m": 1650.0961045353692,
+              "abs_distance_error_pct": 18.866701076245214
+            }
+          }
+        },
+        {
+          "file": "PDR_Raw_2018-10-07-12-16-56.txt",
+          "train_n": 7230,
+          "test_n": 1013,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.3300885184802043
+              ],
+              "n": 1013,
+              "mae_cm": 42.26179660754791,
+              "rmse_cm": 78.90741280035688,
+              "bias_cm": 2.1484292396546474,
+              "reference_m": 1630.7228894421755,
+              "estimated_m": 1652.4864776398772,
+              "abs_distance_error_pct": 1.3345975786938449
+            },
+            "cca2022": {
+              "coefficients": [
+                -3.1300733326078434,
+                3.7372705196868625
+              ],
+              "n": 1013,
+              "mae_cm": 26.894017312354624,
+              "rmse_cm": 51.287623860375795,
+              "bias_cm": 9.004442277605323,
+              "reference_m": 1630.7228894421755,
+              "estimated_m": 1721.9378897143174,
+              "abs_distance_error_pct": 5.593531608754447
+            },
+            "training_mean": {
+              "coefficients": [
+                1.6214009583945619
+              ],
+              "n": 1013,
+              "mae_cm": 41.98147691441058,
+              "rmse_cm": 79.8044893176147,
+              "bias_cm": 1.160541106763633,
+              "reference_m": 1630.7228894421755,
+              "estimated_m": 1642.4791708536916,
+              "abs_distance_error_pct": 0.7209245352248104
+            }
+          }
+        },
+        {
+          "file": "PDR_Raw_2018-10-14-07-31-10.txt",
+          "train_n": 8045,
+          "test_n": 198,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.29210105342265
+              ],
+              "n": 198,
+              "mae_cm": 219.10895173467958,
+              "rmse_cm": 507.4626627174426,
+              "bias_cm": -172.91291051860657,
+              "reference_m": 666.7068547863872,
+              "estimated_m": 324.33929195954624,
+              "abs_distance_error_pct": 51.35203881120069
+            },
+            "cca2022": {
+              "coefficients": [
+                -2.48883591516105,
+                3.20347486120564
+              ],
+              "n": 198,
+              "mae_cm": 169.57925543272836,
+              "rmse_cm": 432.21608017958886,
+              "bias_cm": -160.18571673193296,
+              "reference_m": 666.7068547863872,
+              "estimated_m": 349.53913565716,
+              "abs_distance_error_pct": 47.57229010804872
+            },
+            "training_mean": {
+              "coefficients": [
+                1.5769726493285867
+              ],
+              "n": 198,
+              "mae_cm": 219.11640087704387,
+              "rmse_cm": 511.5513179940027,
+              "bias_cm": -179.0233687976399,
+              "reference_m": 666.7068547863872,
+              "estimated_m": 312.2405845670601,
+              "abs_distance_error_pct": 53.166735526200334
+            }
+          }
+        },
+        {
+          "file": "PDR_Raw_2018-10-24-07-37-35.txt",
+          "train_n": 8049,
+          "test_n": 194,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.3200226921146792
+              ],
+              "n": 194,
+              "mae_cm": 69.46061628256159,
+              "rmse_cm": 124.00173994004933,
+              "bias_cm": -41.53694365933853,
+              "reference_m": 405.74290509544153,
+              "estimated_m": 325.16123439632474,
+              "abs_distance_error_pct": 19.86027843916625
+            },
+            "cca2022": {
+              "coefficients": [
+                -3.184886524214824,
+                3.754922122481415
+              ],
+              "n": 194,
+              "mae_cm": 79.83582209616677,
+              "rmse_cm": 94.65747845855053,
+              "bias_cm": -78.88478439846665,
+              "reference_m": 405.74290509544153,
+              "estimated_m": 252.70642336241616,
+              "abs_distance_error_pct": 37.71759895518741
+            },
+            "training_mean": {
+              "coefficients": [
+                1.6086108725977666
+              ],
+              "n": 194,
+              "mae_cm": 67.04865943469486,
+              "rmse_cm": 126.95446596457678,
+              "bias_cm": -48.28474010900761,
+              "reference_m": 405.74290509544153,
+              "estimated_m": 312.0705092839667,
+              "abs_distance_error_pct": 23.086638024992826
+            }
+          }
+        },
+        {
+          "file": "PDR_Raw_2018-10-24-07-42-38.txt",
+          "train_n": 7902,
+          "test_n": 341,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.30288638056047
+              ],
+              "n": 341,
+              "mae_cm": 99.31714201881596,
+              "rmse_cm": 191.49108858867058,
+              "bias_cm": -72.80664299269152,
+              "reference_m": 809.527969146315,
+              "estimated_m": 561.257316541237,
+              "abs_distance_error_pct": 30.668570088676628
+            },
+            "cca2022": {
+              "coefficients": [
+                -3.0814027336075673,
+                3.657819823566765
+              ],
+              "n": 341,
+              "mae_cm": 97.21687142827479,
+              "rmse_cm": 135.92800734931686,
+              "bias_cm": -96.14272975543652,
+              "reference_m": 809.527969146315,
+              "estimated_m": 481.68126068027635,
+              "abs_distance_error_pct": 40.49850295003003
+            },
+            "training_mean": {
+              "coefficients": [
+                1.5874365792822767
+              ],
+              "n": 341,
+              "mae_cm": 97.72501522363511,
+              "rmse_cm": 194.20361433848717,
+              "bias_cm": -78.65457349297907,
+              "reference_m": 809.527969146315,
+              "estimated_m": 541.3158735352563,
+              "abs_distance_error_pct": 33.13191215541334
+            }
+          }
+        },
+        {
+          "file": "PDR_Raw_2018-10-24-07-58-43.txt",
+          "train_n": 8041,
+          "test_n": 202,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.3213793075949014
+              ],
+              "n": 202,
+              "mae_cm": 74.46980851662389,
+              "rmse_cm": 150.7193957970155,
+              "bias_cm": -33.479655443189905,
+              "reference_m": 402.5567795460441,
+              "estimated_m": 334.9278755508005,
+              "abs_distance_error_pct": 16.799842266104047
+            },
+            "cca2022": {
+              "coefficients": [
+                -3.1274774668547707,
+                3.715637797974189
+              ],
+              "n": 202,
+              "mae_cm": 65.28044853387563,
+              "rmse_cm": 109.63106413738511,
+              "bias_cm": -53.07946158642922,
+              "reference_m": 402.5567795460441,
+              "estimated_m": 295.3362671414571,
+              "abs_distance_error_pct": 26.634879314539837
+            },
+            "training_mean": {
+              "coefficients": [
+                1.610607516364733
+              ],
+              "n": 202,
+              "mae_cm": 72.7301605488341,
+              "rmse_cm": 152.55508040833232,
+              "bias_cm": -38.22478279226137,
+              "reference_m": 402.5567795460441,
+              "estimated_m": 325.34271830567616,
+              "abs_distance_error_pct": 19.180911902028047
+            }
+          }
+        },
+        {
+          "file": "PDR_Raw_2018-10-25-11-33-56.txt",
+          "train_n": 8236,
+          "test_n": 7,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.3285688569614846
+              ],
+              "n": 7,
+              "mae_cm": 54.34921314832882,
+              "rmse_cm": 61.50824505756148,
+              "bias_cm": 32.86739773069411,
+              "reference_m": 8.509353713842435,
+              "estimated_m": 10.810071554991023,
+              "abs_distance_error_pct": 27.037515638889676
+            },
+            "cca2022": {
+              "coefficients": [
+                -3.131278702792217,
+                3.7303206409011955
+              ],
+              "n": 7,
+              "mae_cm": 124.75399013666062,
+              "rmse_cm": 131.98905152305448,
+              "bias_cm": 124.75399013666062,
+              "reference_m": 8.509353713842435,
+              "estimated_m": 17.24213302340868,
+              "abs_distance_error_pct": 102.62564706130802
+            },
+            "training_mean": {
+              "coefficients": [
+                1.620318414876278
+              ],
+              "n": 7,
+              "mae_cm": 60.79299677343608,
+              "rmse_cm": 66.83603174432386,
+              "bias_cm": 40.46964557559301,
+              "reference_m": 8.509353713842435,
+              "estimated_m": 11.342228904133947,
+              "abs_distance_error_pct": 33.291308430194675
+            }
+          }
+        },
+        {
+          "file": "PDR_Raw_2018-10-25-11-34-35.txt",
+          "train_n": 8236,
+          "test_n": 7,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.3285758127254692
+              ],
+              "n": 7,
+              "mae_cm": 33.43396555389593,
+              "rmse_cm": 33.549676047087154,
+              "bias_cm": 33.43396555389593,
+              "reference_m": 8.49822023654976,
+              "estimated_m": 10.838597825322474,
+              "abs_distance_error_pct": 27.539620339645353
+            },
+            "cca2022": {
+              "coefficients": [
+                -3.127956188866528,
+                3.727581847811492
+              ],
+              "n": 7,
+              "mae_cm": 95.2521324889436,
+              "rmse_cm": 97.69793255473341,
+              "bias_cm": 95.2521324889436,
+              "reference_m": 8.49822023654976,
+              "estimated_m": 15.16586951077581,
+              "abs_distance_error_pct": 78.45936076767397
+            },
+            "training_mean": {
+              "coefficients": [
+                1.6203197666826512
+              ],
+              "n": 7,
+              "mae_cm": 40.62883043184001,
+              "rmse_cm": 40.70202917745785,
+              "bias_cm": 40.62883043184001,
+              "reference_m": 8.49822023654976,
+              "estimated_m": 11.34223836677856,
+              "abs_distance_error_pct": 33.466044078229956
+            }
+          }
+        },
+        {
+          "file": "PDR_Raw_2018-10-25-11-35-12.txt",
+          "train_n": 8235,
+          "test_n": 8,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.3286817707931147
+              ],
+              "n": 8,
+              "mae_cm": 43.85986169494398,
+              "rmse_cm": 49.0109099217458,
+              "bias_cm": 43.85986169494398,
+              "reference_m": 8.871704180822972,
+              "estimated_m": 12.38049311641849,
+              "abs_distance_error_pct": 39.55033738816605
+            },
+            "cca2022": {
+              "coefficients": [
+                -3.1280715031396045,
+                3.727774468977729
+              ],
+              "n": 8,
+              "mae_cm": 97.86626034115906,
+              "rmse_cm": 103.1356881318757,
+              "bias_cm": 97.86626034115906,
+              "reference_m": 8.871704180822972,
+              "estimated_m": 16.7010050081157,
+              "abs_distance_error_pct": 88.25024671377682
+            },
+            "training_mean": {
+              "coefficients": [
+                1.6204711735827617
+              ],
+              "n": 8,
+              "mae_cm": 51.150815097989025,
+              "rmse_cm": 57.066751299777685,
+              "bias_cm": 51.150815097989025,
+              "reference_m": 8.871704180822972,
+              "estimated_m": 12.963769388662094,
+              "abs_distance_error_pct": 46.12490593052582
+            }
+          }
+        },
+        {
+          "file": "PDR_Raw_2018-10-25-11-37-09.txt",
+          "train_n": 8230,
+          "test_n": 13,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.3284649061834042
+              ],
+              "n": 13,
+              "mae_cm": 57.66520804290393,
+              "rmse_cm": 77.54691612875176,
+              "bias_cm": 10.275001239020156,
+              "reference_m": 18.781756122393993,
+              "estimated_m": 20.117506283466614,
+              "abs_distance_error_pct": 7.111955625278137
+            },
+            "cca2022": {
+              "coefficients": [
+                -3.1275359008874175,
+                3.727322739337519
+              ],
+              "n": 13,
+              "mae_cm": 59.963515443683136,
+              "rmse_cm": 76.88961954140302,
+              "bias_cm": 57.88518504850724,
+              "reference_m": 18.781756122393993,
+              "estimated_m": 26.306830178699933,
+              "abs_distance_error_pct": 40.065870343900336
+            },
+            "training_mean": {
+              "coefficients": [
+                1.6202515264292192
+              ],
+              "n": 13,
+              "mae_cm": 63.74104687410043,
+              "rmse_cm": 81.63091721626321,
+              "bias_cm": 17.55010554758351,
+              "reference_m": 18.781756122393993,
+              "estimated_m": 21.063269843579846,
+              "abs_distance_error_pct": 12.147499447432107
+            }
+          }
+        },
+        {
+          "file": "PDR_Raw_2018-10-25-11-37-52.txt",
+          "train_n": 8225,
+          "test_n": 18,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.3291454884371103
+              ],
+              "n": 18,
+              "mae_cm": 48.08654595391823,
+              "rmse_cm": 51.88922405012389,
+              "bias_cm": 48.08654595391823,
+              "reference_m": 18.790109685336617,
+              "estimated_m": 27.445687957041898,
+              "abs_distance_error_pct": 46.06454361711312
+            },
+            "cca2022": {
+              "coefficients": [
+                -3.141187486691575,
+                3.739004044837353
+              ],
+              "n": 18,
+              "mae_cm": 116.43291367328221,
+              "rmse_cm": 133.01651267398586,
+              "bias_cm": 116.43291367328221,
+              "reference_m": 18.790109685336617,
+              "estimated_m": 39.74803414652742,
+              "abs_distance_error_pct": 111.53699904980276
+            },
+            "training_mean": {
+              "coefficients": [
+                1.6212354661336807
+              ],
+              "n": 18,
+              "mae_cm": 57.73404836149799,
+              "rmse_cm": 62.919712203849485,
+              "bias_cm": 57.73404836149799,
+              "reference_m": 18.790109685336617,
+              "estimated_m": 29.18223839040625,
+              "abs_distance_error_pct": 55.30637595574775
+            }
+          }
+        },
+        {
+          "file": "PDR_Raw_2018-10-25-11-38-58.txt",
+          "train_n": 8227,
+          "test_n": 16,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.3288827582549507
+              ],
+              "n": 16,
+              "mae_cm": 45.60831467573565,
+              "rmse_cm": 48.92584467965227,
+              "bias_cm": 35.68754123168826,
+              "reference_m": 18.922497933051574,
+              "estimated_m": 24.632504530121693,
+              "abs_distance_error_pct": 30.17575489912756
+            },
+            "cca2022": {
+              "coefficients": [
+                -3.1336779283356346,
+                3.7327812320494984
+              ],
+              "n": 16,
+              "mae_cm": 96.72009620173637,
+              "rmse_cm": 104.95387993054663,
+              "bias_cm": 96.72009620173637,
+              "reference_m": 18.922497933051574,
+              "estimated_m": 34.39771332532939,
+              "abs_distance_error_pct": 81.78209582598261
+            },
+            "training_mean": {
+              "coefficients": [
+                1.6208252486570813
+              ],
+              "n": 16,
+              "mae_cm": 53.353963266107904,
+              "rmse_cm": 56.44368113607874,
+              "bias_cm": 43.816912784135795,
+              "reference_m": 18.922497933051574,
+              "estimated_m": 25.9332039785133,
+              "abs_distance_error_pct": 37.04958018896786
+            }
+          }
+        },
+        {
+          "file": "PDR_Raw_2018-10-25-11-39-50.txt",
+          "train_n": 8222,
+          "test_n": 21,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.328874533929223
+              ],
+              "n": 21,
+              "mae_cm": 35.03941746519735,
+              "rmse_cm": 39.32881849080205,
+              "bias_cm": 26.07731360441543,
+              "reference_m": 27.42567918595955,
+              "estimated_m": 32.901915042886785,
+              "abs_distance_error_pct": 19.9675487334176
+            },
+            "cca2022": {
+              "coefficients": [
+                -3.1284369545685444,
+                3.7282687786848703
+              ],
+              "n": 21,
+              "mae_cm": 49.64314663245348,
+              "rmse_cm": 62.62140438159138,
+              "bias_cm": 47.95096969377478,
+              "reference_m": 27.42567918595955,
+              "estimated_m": 37.49538282165226,
+              "abs_distance_error_pct": 36.71633277489749
+            },
+            "training_mean": {
+              "coefficients": [
+                1.6207767136279376
+              ],
+              "n": 21,
+              "mae_cm": 39.8357414118331,
+              "rmse_cm": 43.63051636319371,
+              "bias_cm": 31.479199048700657,
+              "reference_m": 27.42567918595955,
+              "estimated_m": 34.03631098618669,
+              "abs_distance_error_pct": 24.103803429639115
+            }
+          }
+        },
+        {
+          "file": "PDR_Raw_2018-10-25-11-40-45.txt",
+          "train_n": 8219,
+          "test_n": 24,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.329134370216024
+              ],
+              "n": 24,
+              "mae_cm": 34.1988389825892,
+              "rmse_cm": 34.61090084709929,
+              "bias_cm": 34.1988389825892,
+              "reference_m": 29.31966441737668,
+              "estimated_m": 37.52738577319809,
+              "abs_distance_error_pct": 27.99391302363269
+            },
+            "cca2022": {
+              "coefficients": [
+                -3.12923288755727,
+                3.7293606317671895
+              ],
+              "n": 24,
+              "mae_cm": 62.75250833457026,
+              "rmse_cm": 68.99133835349905,
+              "bias_cm": 62.75250833457026,
+              "reference_m": 29.31966441737668,
+              "estimated_m": 44.38026641767354,
+              "abs_distance_error_pct": 51.36689760804697
+            },
+            "training_mean": {
+              "coefficients": [
+                1.6211378700836458
+              ],
+              "n": 24,
+              "mae_cm": 39.94851860262842,
+              "rmse_cm": 40.415263515428954,
+              "bias_cm": 39.94851860262842,
+              "reference_m": 29.31966441737668,
+              "estimated_m": 38.9073088820075,
+              "abs_distance_error_pct": 32.70038950019011
+            }
+          }
+        },
+        {
+          "file": "PDR_Raw_2018-10-25-11-41-50.txt",
+          "train_n": 8220,
+          "test_n": 23,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.3289940266544755
+              ],
+              "n": 23,
+              "mae_cm": 36.649219534519446,
+              "rmse_cm": 38.30353874154999,
+              "bias_cm": 29.466322603760613,
+              "reference_m": 29.03099110520366,
+              "estimated_m": 35.8082453040686,
+              "abs_distance_error_pct": 23.344894338278902
+            },
+            "cca2022": {
+              "coefficients": [
+                -3.1300754945949683,
+                3.729978348988437
+              ],
+              "n": 23,
+              "mae_cm": 64.38396650389498,
+              "rmse_cm": 70.01327313194797,
+              "bias_cm": 64.38396650389498,
+              "reference_m": 29.03099110520366,
+              "estimated_m": 43.83930340109951,
+              "abs_distance_error_pct": 51.00863502121885
+            },
+            "training_mean": {
+              "coefficients": [
+                1.6209757697724654
+              ],
+              "n": 23,
+              "mae_cm": 42.736731195494514,
+              "rmse_cm": 43.8337725967989,
+              "bias_cm": 35.87587651983933,
+              "reference_m": 29.03099110520366,
+              "estimated_m": 37.282442704766694,
+              "abs_distance_error_pct": 28.422906988125575
+            }
+          }
+        },
+        {
+          "file": "PDR_Raw_2018-10-28-11-43-07.txt",
+          "train_n": 8235,
+          "test_n": 8,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.32868208990034
+              ],
+              "n": 8,
+              "mae_cm": 43.68978337144481,
+              "rmse_cm": 44.074252882269896,
+              "bias_cm": 43.68978337144481,
+              "reference_m": 8.798996768969324,
+              "estimated_m": 12.294179438684909,
+              "abs_distance_error_pct": 39.72251338972813
+            },
+            "cca2022": {
+              "coefficients": [
+                -3.1335581653410163,
+                3.7322666340351276
+              ],
+              "n": 8,
+              "mae_cm": 136.73706112025891,
+              "rmse_cm": 140.09449554080064,
+              "bias_cm": 136.73706112025891,
+              "reference_m": 8.798996768969324,
+              "estimated_m": 19.737961658590038,
+              "abs_distance_error_pct": 124.3205921861255
+            },
+            "training_mean": {
+              "coefficients": [
+                1.6204800026552395
+              ],
+              "n": 8,
+              "mae_cm": 52.060540653407415,
+              "rmse_cm": 52.41700382586484,
+              "bias_cm": 52.060540653407415,
+              "reference_m": 8.798996768969324,
+              "estimated_m": 12.963840021241916,
+              "abs_distance_error_pct": 47.333160377560226
+            }
+          }
+        },
+        {
+          "file": "PDR_Raw_2018-10-28-11-43-48.txt",
+          "train_n": 8235,
+          "test_n": 8,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.3286483572605794
+              ],
+              "n": 8,
+              "mae_cm": 39.83413315230931,
+              "rmse_cm": 44.74101586464012,
+              "bias_cm": 39.83413315230931,
+              "reference_m": 9.095374708175509,
+              "estimated_m": 12.282105360360255,
+              "abs_distance_error_pct": 35.03682645774128
+            },
+            "cca2022": {
+              "coefficients": [
+                -3.139054892889233,
+                3.7367078312805515
+              ],
+              "n": 8,
+              "mae_cm": 166.73096981798082,
+              "rmse_cm": 169.58076633803472,
+              "bias_cm": 166.73096981798082,
+              "reference_m": 9.095374708175509,
+              "estimated_m": 22.433852293613974,
+              "abs_distance_error_pct": 146.65121573769778
+            },
+            "training_mean": {
+              "coefficients": [
+                1.6204440126201203
+              ],
+              "n": 8,
+              "mae_cm": 48.35221740981817,
+              "rmse_cm": 54.58850605781219,
+              "bias_cm": 48.35221740981817,
+              "reference_m": 9.095374708175509,
+              "estimated_m": 12.963552100960962,
+              "abs_distance_error_pct": 42.52906028498734
+            }
+          }
+        },
+        {
+          "file": "PDR_Raw_2018-10-28-11-45-16.txt",
+          "train_n": 8234,
+          "test_n": 9,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.3287626725865636
+              ],
+              "n": 9,
+              "mae_cm": 50.42231396695546,
+              "rmse_cm": 57.09700573719064,
+              "bias_cm": 50.42231396695546,
+              "reference_m": 8.893728283550638,
+              "estimated_m": 13.431736540576631,
+              "abs_distance_error_pct": 51.024813355488355
+            },
+            "cca2022": {
+              "coefficients": [
+                -3.14783317133268,
+                3.743828563644793
+              ],
+              "n": 9,
+              "mae_cm": 200.53383194837568,
+              "rmse_cm": 204.02897882590665,
+              "bias_cm": 200.53383194837568,
+              "reference_m": 8.893728283550638,
+              "estimated_m": 26.94177315890445,
+              "abs_distance_error_pct": 202.93002326970685
+            },
+            "training_mean": {
+              "coefficients": [
+                1.6206653012328536
+              ],
+              "n": 9,
+              "mae_cm": 63.247326972722696,
+              "rmse_cm": 69.91253873928186,
+              "bias_cm": 63.247326972722696,
+              "reference_m": 8.893728283550638,
+              "estimated_m": 14.585987711095683,
+              "abs_distance_error_pct": 64.00307324514445
+            }
+          }
+        },
+        {
+          "file": "PDR_Raw_2018-10-28-11-46-08.txt",
+          "train_n": 8226,
+          "test_n": 17,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.3290065689445887
+              ],
+              "n": 17,
+              "mae_cm": 41.579633063731286,
+              "rmse_cm": 42.12918234751235,
+              "bias_cm": 41.579633063731286,
+              "reference_m": 18.689389377048496,
+              "estimated_m": 25.757926997882816,
+              "abs_distance_error_pct": 37.8211266201925
+            },
+            "cca2022": {
+              "coefficients": [
+                -3.1579556135901146,
+                3.7526528591061434
+              ],
+              "n": 17,
+              "mae_cm": 172.07688202639687,
+              "rmse_cm": 174.31583960425613,
+              "bias_cm": 172.07688202639687,
+              "reference_m": 18.689389377048496,
+              "estimated_m": 47.942459321535964,
+              "abs_distance_error_pct": 156.52234192526217
+            },
+            "training_mean": {
+              "coefficients": [
+                1.6210506235421613
+              ],
+              "n": 17,
+              "mae_cm": 52.16747778334262,
+              "rmse_cm": 52.53785385092712,
+              "bias_cm": 52.16747778334262,
+              "reference_m": 18.689389377048496,
+              "estimated_m": 27.557860600216742,
+              "abs_distance_error_pct": 47.451904630223886
+            }
+          }
+        },
+        {
+          "file": "PDR_Raw_2018-10-28-11-47-12.txt",
+          "train_n": 8227,
+          "test_n": 16,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.3288669420366017
+              ],
+              "n": 16,
+              "mae_cm": 34.5449917441881,
+              "rmse_cm": 35.74017470021943,
+              "bias_cm": 34.5449917441881,
+              "reference_m": 18.8297636803632,
+              "estimated_m": 24.356962359433293,
+              "abs_distance_error_pct": 29.35352122785369
+            },
+            "cca2022": {
+              "coefficients": [
+                -3.1559461099080246,
+                3.750924605370273
+              ],
+              "n": 16,
+              "mae_cm": 169.22223701494426,
+              "rmse_cm": 170.6751573210711,
+              "bias_cm": 169.22223701494426,
+              "reference_m": 18.8297636803632,
+              "estimated_m": 45.905321602754285,
+              "abs_distance_error_pct": 143.79127843557106
+            },
+            "training_mean": {
+              "coefficients": [
+                1.620836520597362
+              ],
+              "n": 16,
+              "mae_cm": 44.39762905746621,
+              "rmse_cm": 45.37472328127942,
+              "bias_cm": 44.39762905746621,
+              "reference_m": 18.8297636803632,
+              "estimated_m": 25.933384329557793,
+              "abs_distance_error_pct": 37.72549018553362
+            }
+          }
+        },
+        {
+          "file": "PDR_Raw_2018-10-28-11-48-13.txt",
+          "train_n": 8225,
+          "test_n": 18,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.3290578396916144
+              ],
+              "n": 18,
+              "mae_cm": 43.18203325823913,
+              "rmse_cm": 45.5475758986313,
+              "bias_cm": 43.18203325823913,
+              "reference_m": 19.02584094174906,
+              "estimated_m": 26.7986069282321,
+              "abs_distance_error_pct": 40.85373156582527
+            },
+            "cca2022": {
+              "coefficients": [
+                -3.1590502667616107,
+                3.7535904930490855
+              ],
+              "n": 18,
+              "mae_cm": 171.5377291464026,
+              "rmse_cm": 174.1706001620774,
+              "bias_cm": 171.5377291464026,
+              "reference_m": 19.02584094174906,
+              "estimated_m": 49.902632188101535,
+              "abs_distance_error_pct": 162.28870692700085
+            },
+            "training_mean": {
+              "coefficients": [
+                1.621206805798555
+              ],
+              "n": 18,
+              "mae_cm": 56.42156423680515,
+              "rmse_cm": 58.342977496839055,
+              "bias_cm": 56.42156423680515,
+              "reference_m": 19.02584094174906,
+              "estimated_m": 29.181722504373987,
+              "abs_distance_error_pct": 53.37940958152092
+            }
+          }
+        },
+        {
+          "file": "PDR_Raw_2018-10-28-11-49-27.txt",
+          "train_n": 8218,
+          "test_n": 25,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.329170949805791
+              ],
+              "n": 25,
+              "mae_cm": 35.54299604738731,
+              "rmse_cm": 36.19512573112463,
+              "bias_cm": 35.54299604738731,
+              "reference_m": 28.90726387723315,
+              "estimated_m": 37.793012889079975,
+              "abs_distance_error_pct": 30.738810319731048
+            },
+            "cca2022": {
+              "coefficients": [
+                -3.1735394981774907,
+                3.7658100803970678
+              ],
+              "n": 25,
+              "mae_cm": 169.8439752514068,
+              "rmse_cm": 170.93975964338944,
+              "bias_cm": 169.8439752514068,
+              "reference_m": 28.90726387723315,
+              "estimated_m": 71.36825769008485,
+              "abs_distance_error_pct": 146.88693469288606
+            },
+            "training_mean": {
+              "coefficients": [
+                1.6213853193912915
+              ],
+              "n": 25,
+              "mae_cm": 46.509476430196564,
+              "rmse_cm": 47.13608657789338,
+              "bias_cm": 46.509476430196564,
+              "reference_m": 28.90726387723315,
+              "estimated_m": 40.53463298478229,
+              "abs_distance_error_pct": 40.223001239168305
+            }
+          }
+        },
+        {
+          "file": "PDR_Raw_2018-10-28-11-50-49.txt",
+          "train_n": 8218,
+          "test_n": 25,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.3292108627679566
+              ],
+              "n": 25,
+              "mae_cm": 36.934447586117024,
+              "rmse_cm": 39.30607224125669,
+              "bias_cm": 36.934447586117024,
+              "reference_m": 28.98346061202671,
+              "estimated_m": 38.217072508555965,
+              "abs_distance_error_pct": 31.858210515751047
+            },
+            "cca2022": {
+              "coefficients": [
+                -3.1740510913637388,
+                3.766250502889805
+              ],
+              "n": 25,
+              "mae_cm": 170.03625629023682,
+              "rmse_cm": 172.92229697610077,
+              "bias_cm": 170.03625629023682,
+              "reference_m": 28.98346061202671,
+              "estimated_m": 71.49252468458592,
+              "abs_distance_error_pct": 146.66662701734117
+            },
+            "training_mean": {
+              "coefficients": [
+                1.621376047459581
+              ],
+              "n": 25,
+              "mae_cm": 46.20376229785127,
+              "rmse_cm": 48.4649859359496,
+              "bias_cm": 46.20376229785127,
+              "reference_m": 28.98346061202671,
+              "estimated_m": 40.53440118648953,
+              "abs_distance_error_pct": 39.853558997263924
+            }
+          }
+        },
+        {
+          "file": "PDR_Raw_2018-10-28-11-52-13.txt",
+          "train_n": 8219,
+          "test_n": 24,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.3290548813793375
+              ],
+              "n": 24,
+              "mae_cm": 31.473812903770337,
+              "rmse_cm": 31.938687668656122,
+              "bias_cm": 31.473812903770337,
+              "reference_m": 29.03159840548534,
+              "estimated_m": 36.58531350239022,
+              "abs_distance_error_pct": 26.018943192179368
+            },
+            "cca2022": {
+              "coefficients": [
+                -3.1645198353851676,
+                3.7584415102365036
+              ],
+              "n": 24,
+              "mae_cm": 155.20252160896544,
+              "rmse_cm": 156.54642580574156,
+              "bias_cm": 155.20252160896544,
+              "reference_m": 29.03159840548534,
+              "estimated_m": 66.28020359163705,
+              "abs_distance_error_pct": 128.3036664599005
+            },
+            "training_mean": {
+              "coefficients": [
+                1.6211729188744832
+              ],
+              "n": 24,
+              "mae_cm": 41.152298531259405,
+              "rmse_cm": 41.54678626966697,
+              "bias_cm": 41.152298531259405,
+              "reference_m": 29.03159840548534,
+              "estimated_m": 38.908150052987594,
+              "abs_distance_error_pct": 34.0200064411064
+            }
+          }
+        }
+      ],
+      "summary": {
+        "pca2021": {
+          "n": 8243,
+          "mae_cm": 45.07544683775121,
+          "rmse_cm": 110.60161893584718,
+          "bias_cm": 1.653579671059355,
+          "reference_m": 13353.451818634865,
+          "estimated_m": 13489.756390920287,
+          "abs_distance_error_pct": 1.0207441052448203,
+          "mean_file_abs_distance_error_pct": 25.73145978811913
+        },
+        "cca2022": {
+          "n": 8243,
+          "mae_cm": 39.23047990977005,
+          "rmse_cm": 91.00489893765726,
+          "bias_cm": 1.6176621474361712,
+          "reference_m": 13353.451818634865,
+          "estimated_m": 13486.795709448028,
+          "abs_distance_error_pct": 0.9985724487138297,
+          "mean_file_abs_distance_error_pct": 76.62921263646493
+        },
+        "training_mean": {
+          "n": 8243,
+          "mae_cm": 45.12539392645943,
+          "rmse_cm": 111.90685384696405,
+          "bias_cm": 0.7922930148400287,
+          "reference_m": 13353.451818634865,
+          "estimated_m": 13418.760531848126,
+          "abs_distance_error_pct": 0.4890773868830279,
+          "mean_file_abs_distance_error_pct": 30.78761693173992
+        }
+      }
+    },
+    "first_5min": {
+      "folds": [
+        {
+          "file": "PDR_Raw_2018-10-02-11-22-00.txt",
+          "train_n": 229,
+          "test_n": 769,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.1105465496717561
+              ],
+              "n": 769,
+              "mae_cm": 7.197552711504067,
+              "rmse_cm": 23.99033672650198,
+              "bias_cm": -1.3491730616830795,
+              "reference_m": 1052.9840988510878,
+              "estimated_m": 1042.6089580067448,
+              "abs_distance_error_pct": 0.9853084064292339
+            },
+            "cca2022": {
+              "coefficients": [
+                -0.7201630979436857,
+                1.6798544979110595
+              ],
+              "n": 769,
+              "mae_cm": 8.347267072166861,
+              "rmse_cm": 19.608645010326995,
+              "bias_cm": -0.5222824991991714,
+              "reference_m": 1052.9840988510878,
+              "estimated_m": 1048.9677464322463,
+              "abs_distance_error_pct": 0.3814257426321893
+            },
+            "training_mean": {
+              "coefficients": [
+                1.3645276551852408
+              ],
+              "n": 769,
+              "mae_cm": 7.804192077163333,
+              "rmse_cm": 24.38927637185852,
+              "bias_cm": -0.4762460355835718,
+              "reference_m": 1052.9840988510878,
+              "estimated_m": 1049.32176683745,
+              "abs_distance_error_pct": 0.3478050634984557
+            }
+          }
+        },
+        {
+          "file": "PDR_Raw_2018-10-02-11-54-00.txt",
+          "train_n": 212,
+          "test_n": 786,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.3893655127046938
+              ],
+              "n": 786,
+              "mae_cm": 33.33277124465361,
+              "rmse_cm": 42.458723938744484,
+              "bias_cm": 21.778474084929247,
+              "reference_m": 1171.7155019978713,
+              "estimated_m": 1342.894308305415,
+              "abs_distance_error_pct": 14.609246529184766
+            },
+            "cca2022": {
+              "coefficients": [
+                -5.09115387745384,
+                5.481529302263962
+              ],
+              "n": 786,
+              "mae_cm": 26.535213648236194,
+              "rmse_cm": 44.185064967034805,
+              "bias_cm": 17.15797809784493,
+              "reference_m": 1171.7155019978713,
+              "estimated_m": 1306.5772098469322,
+              "abs_distance_error_pct": 11.50976560599487
+            },
+            "training_mean": {
+              "coefficients": [
+                1.7110666969632313
+              ],
+              "n": 786,
+              "mae_cm": 33.81505652907326,
+              "rmse_cm": 43.26842993451155,
+              "bias_cm": 22.03345061262451,
+              "reference_m": 1171.7155019978713,
+              "estimated_m": 1344.8984238131,
+              "abs_distance_error_pct": 14.780287665387847
+            }
+          }
+        },
+        {
+          "file": "PDR_Raw_2018-10-03-09-29-57.txt",
+          "train_n": 197,
+          "test_n": 809,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.5086165844783328
+              ],
+              "n": 809,
+              "mae_cm": 57.11942931734909,
+              "rmse_cm": 78.39095075535508,
+              "bias_cm": 25.710440903217908,
+              "reference_m": 1284.9473781831164,
+              "estimated_m": 1492.944845090149,
+              "abs_distance_error_pct": 16.187236180919417
+            },
+            "cca2022": {
+              "coefficients": [
+                -3.434368595957293,
+                4.114597931084706
+              ],
+              "n": 809,
+              "mae_cm": 33.01951363781269,
+              "rmse_cm": 54.89169963104579,
+              "bias_cm": 17.07663582345272,
+              "reference_m": 1284.9473781831164,
+              "estimated_m": 1423.097361994849,
+              "abs_distance_error_pct": 10.751411782097499
+            },
+            "training_mean": {
+              "coefficients": [
+                1.8718742650770137
+              ],
+              "n": 809,
+              "mae_cm": 59.96986865460801,
+              "rmse_cm": 80.58059532572798,
+              "bias_cm": 28.355859365165347,
+              "reference_m": 1284.9473781831164,
+              "estimated_m": 1514.3462804473047,
+              "abs_distance_error_pct": 17.85278573730794
+            }
+          }
+        },
+        {
+          "file": "PDR_Raw_2018-10-05-12-01-25.txt",
+          "train_n": 200,
+          "test_n": 799,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.339211608392997
+              ],
+              "n": 799,
+              "mae_cm": 33.97791836192218,
+              "rmse_cm": 55.80126884623871,
+              "bias_cm": 11.889677428755405,
+              "reference_m": 1204.6562764744735,
+              "estimated_m": 1299.6547991302293,
+              "abs_distance_error_pct": 7.88594427397803
+            },
+            "cca2022": {
+              "coefficients": [
+                -3.1618294371975,
+                3.693817001402169
+              ],
+              "n": 799,
+              "mae_cm": 26.655333962352064,
+              "rmse_cm": 42.91452886686724,
+              "bias_cm": 7.510683695013132,
+              "reference_m": 1204.6562764744735,
+              "estimated_m": 1264.6666391976285,
+              "abs_distance_error_pct": 4.981534060386107
+            },
+            "training_mean": {
+              "coefficients": [
+                1.6406041172405583
+              ],
+              "n": 799,
+              "mae_cm": 35.5409397065107,
+              "rmse_cm": 57.023642485196724,
+              "bias_cm": 13.28991404264486,
+              "reference_m": 1204.6562764744735,
+              "estimated_m": 1310.8426896752062,
+              "abs_distance_error_pct": 8.814664836304658
+            }
+          }
+        },
+        {
+          "file": "PDR_Raw_2018-10-06-09-43-41.txt",
+          "train_n": 219,
+          "test_n": 784,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.3434489703497878
+              ],
+              "n": 784,
+              "mae_cm": 36.27587187263589,
+              "rmse_cm": 64.92131251257139,
+              "bias_cm": 4.504019638101839,
+              "reference_m": 1254.4350047371363,
+              "estimated_m": 1289.7465186998547,
+              "abs_distance_error_pct": 2.8149337215057915
+            },
+            "cca2022": {
+              "coefficients": [
+                -2.886703704325623,
+                3.6463214049513413
+              ],
+              "n": 784,
+              "mae_cm": 23.37185739577437,
+              "rmse_cm": 37.67209868031611,
+              "bias_cm": 12.948913763097195,
+              "reference_m": 1254.4350047371363,
+              "estimated_m": 1355.9544886398185,
+              "abs_distance_error_pct": 8.09284526653935
+            },
+            "training_mean": {
+              "coefficients": [
+                1.6595592531395644
+              ],
+              "n": 784,
+              "mae_cm": 37.79298395184535,
+              "rmse_cm": 65.76158087971749,
+              "bias_cm": 5.951460424015577,
+              "reference_m": 1254.4350047371363,
+              "estimated_m": 1301.0944544614188,
+              "abs_distance_error_pct": 3.7195589686258392
+            }
+          }
+        },
+        {
+          "file": "PDR_Raw_2018-10-06-12-02-13.txt",
+          "train_n": 216,
+          "test_n": 782,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.1507408357853044
+              ],
+              "n": 782,
+              "mae_cm": 9.39613850695529,
+              "rmse_cm": 23.83960748570055,
+              "bias_cm": 0.8756101781916565,
+              "reference_m": 1084.6115314572278,
+              "estimated_m": 1091.4588030506866,
+              "abs_distance_error_pct": 0.6313109712432353
+            },
+            "cca2022": {
+              "coefficients": [
+                -1.6758979886893017,
+                2.4009838979797937
+              ],
+              "n": 782,
+              "mae_cm": 11.23103290208682,
+              "rmse_cm": 17.220843593812063,
+              "bias_cm": 3.1753608668072086,
+              "reference_m": 1084.6115314572278,
+              "estimated_m": 1109.4428534356603,
+              "abs_distance_error_pct": 2.289420797976424
+            },
+            "training_mean": {
+              "coefficients": [
+                1.399339331681859
+              ],
+              "n": 782,
+              "mae_cm": 9.749532801013123,
+              "rmse_cm": 24.083908713267576,
+              "bias_cm": 1.2368063833741536,
+              "reference_m": 1084.6115314572278,
+              "estimated_m": 1094.2833573752134,
+              "abs_distance_error_pct": 0.8917317986644783
+            }
+          }
+        },
+        {
+          "file": "PDR_Raw_2018-10-07-12-16-56.txt",
+          "train_n": 171,
+          "test_n": 841,
+          "models": {
+            "pca2021": {
+              "coefficients": [
+                1.652304505630936
+              ],
+              "n": 841,
+              "mae_cm": 68.44148509971608,
+              "rmse_cm": 73.43003660469446,
+              "bias_cm": 50.09415702872365,
+              "reference_m": 1279.8972288460282,
+              "estimated_m": 1701.189089457594,
+              "abs_distance_error_pct": 32.9160694403103
+            },
+            "cca2022": {
+              "coefficients": [
+                -4.35728113457864,
+                4.746609284118538
+              ],
+              "n": 841,
+              "mae_cm": 36.42667081940317,
+              "rmse_cm": 54.992240154721685,
+              "bias_cm": 23.629228966416285,
+              "reference_m": 1279.8972288460282,
+              "estimated_m": 1478.6190444535891,
+              "abs_distance_error_pct": 15.526388457511633
+            },
+            "training_mean": {
+              "coefficients": [
+                2.034637183113571
+              ],
+              "n": 841,
+              "mae_cm": 69.75809903560545,
+              "rmse_cm": 74.8821091385153,
+              "bias_cm": 51.27617623691852,
+              "reference_m": 1279.8972288460282,
+              "estimated_m": 1711.129870998513,
+              "abs_distance_error_pct": 33.692755358279015
+            }
+          }
+        }
+      ],
+      "summary": {
+        "pca2021": {
+          "n": 5570,
+          "mae_cm": 35.62653575436309,
+          "rmse_cm": 56.215694376928425,
+          "bias_cm": 16.647222642616384,
+          "reference_m": 8333.24702054694,
+          "estimated_m": 9260.497321740673,
+          "abs_distance_error_pct": 11.127118863840831,
+          "mean_file_abs_distance_error_pct": 10.861435646224395
+        },
+        "cca2022": {
+          "n": 5570,
+          "mae_cm": 23.882793314498528,
+          "rmse_cm": 41.573930049140664,
+          "bias_cm": 11.74287833848801,
+          "reference_m": 8333.24702054694,
+          "estimated_m": 8987.325344000725,
+          "abs_distance_error_pct": 7.849021177951985,
+          "mean_file_abs_distance_error_pct": 7.64754167330544
+        },
+        "training_mean": {
+          "n": 5570,
+          "mae_cm": 36.878507731391984,
+          "rmse_cm": 57.38136891047066,
+          "bias_cm": 17.821720342213,
+          "reference_m": 8333.24702054694,
+          "estimated_m": 9325.916843608207,
+          "abs_distance_error_pct": 11.912161257354779,
+          "mean_file_abs_distance_error_pct": 11.442798489724035
+        }
+      }
+    }
+  }
+}

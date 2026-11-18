@@ -8,6 +8,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 import 'cadence_calculator_service.dart';
 import 'sensor/composite_step_sensor_adapter.dart';
+import 'sensor/research_walking_step_sensor_adapter.dart';
 import 'sensor/step_sensor_adapter.dart';
 import 'sensor/step_sensor_types.dart';
 
@@ -36,13 +37,18 @@ const Duration _kEmitThrottle = Duration(milliseconds: 300);
 /// In such cases, the service allocates the steps to the state active when the event
 /// is processed and documents this inherent hardware limitation.
 class StepTrackingService {
-  final StepSensorAdapter _adapter;
+  final StepSensorAdapter _osAdapter;
+  late final ResearchWalkingStepSensorAdapter _researchAdapter;
+  late final ResearchWalkingStepSensorAdapter _runningResearchAdapter;
+  ResearchWalkingStepSensorAdapter? _activeResearchAdapter;
+  StepSensorAdapter get _adapter => _activeResearchAdapter ?? _osAdapter;
   final CadenceCalculatorService _cadenceCalculator;
 
   // Stream controllers
   final _stepController = StreamController<int>.broadcast();
   final _updateController = StreamController<WorkoutStepUpdate>.broadcast();
   StreamSubscription<StepSensorSample>? _sensorSub;
+  Future<void>? _pendingStop;
 
   // Session state
   bool _isTracking = false;
@@ -78,8 +84,17 @@ class StepTrackingService {
   StepTrackingService({
     StepSensorAdapter? adapter,
     CadenceCalculatorService? cadenceCalculator,
-  })  : _adapter = adapter ?? CompositeStepSensorAdapter(),
-        _cadenceCalculator = cadenceCalculator ?? CadenceCalculatorService();
+    ResearchWalkingStepSensorAdapter? researchAdapter,
+    ResearchWalkingStepSensorAdapter? runningResearchAdapter,
+  }) : _osAdapter = adapter ?? CompositeStepSensorAdapter(),
+       _cadenceCalculator = cadenceCalculator ?? CadenceCalculatorService() {
+    _researchAdapter =
+        researchAdapter ??
+        ResearchWalkingStepSensorAdapter(fallback: _osAdapter);
+    _runningResearchAdapter =
+        runningResearchAdapter ??
+        ResearchWalkingStepSensorAdapter(fallback: _osAdapter, running: true);
+  }
 
   /// Stream emitting active workout step counts (backward compatible).
   Stream<int> get stepStream => _stepController.stream;
@@ -136,13 +151,26 @@ class StepTrackingService {
   // Public Session Lifecycle
 
   /// Starts a new step tracking session.
-  Future<void> startTracking() async {
+  Future<void> startTracking({
+    String? activityType,
+    bool useResearchImu = false,
+  }) async {
     if (_isTracking) {
       debugPrint('[Steps] startTracking ignored — already tracking');
       return;
     }
 
+    // Select a single research source according to the workout mode.
+    _activeResearchAdapter = useResearchImu
+        ? switch (activityType?.toLowerCase()) {
+            'walking' => _researchAdapter,
+            'running' => _runningResearchAdapter,
+            _ => null,
+          }
+        : null;
     _isTracking = true;
+    await _pendingStop;
+    if (!_isTracking) return;
     _isPaused = false;
     _baselineSteps = -1;
     _lastRawSteps = -1;
@@ -179,14 +207,16 @@ class StepTrackingService {
     _sensorSub = null;
 
     try {
-      await _adapter.startStream();
       _sensorSub = _adapter.sampleStream.listen(
         _onSensorSample,
         onError: (err) => debugPrint('[Steps] sensor stream error: $err'),
         cancelOnError: false,
       );
+      await _adapter.startStream();
       debugPrint('[Steps] step sensor subscription active');
     } catch (e) {
+      await _sensorSub?.cancel();
+      _sensorSub = null;
       _isTracking = false;
       debugPrint('[Steps] adapter start failed: $e');
       rethrow;
@@ -200,6 +230,7 @@ class StepTrackingService {
 
     final now = timestamp ?? _lastEventTime ?? DateTime.now();
     _isPaused = true;
+    _activeResearchAdapter?.resetSegment();
     _currentCadenceSpm = 0;
 
     if (_lastResumeTime != null) {
@@ -211,11 +242,7 @@ class StepTrackingService {
     }
 
     debugPrint('[Steps] pauseTracking at rawSteps=$_lastRawSteps');
-    _emitUpdate(
-      delta: 0,
-      timestamp: now,
-      source: StepSensorSource.unknown,
-    );
+    _emitUpdate(delta: 0, timestamp: now, source: StepSensorSource.unknown);
   }
 
   /// Resumes workout step accumulation.
@@ -223,6 +250,7 @@ class StepTrackingService {
     if (!_isTracking || !_isPaused) return;
 
     _isPaused = false;
+    _activeResearchAdapter?.resetSegment();
     _lastResumeTime = timestamp;
     _cadenceCalculator.reset();
 
@@ -240,7 +268,7 @@ class StepTrackingService {
     _isPaused = false;
     _sensorSub?.cancel();
     _sensorSub = null;
-    _adapter.stopStream();
+    _pendingStop = _adapter.stopStream();
 
     _baselineSteps = -1;
     _lastRawSteps = -1;
@@ -274,7 +302,9 @@ class StepTrackingService {
       _lastEventTime = now;
       _activeTrackingStartTime = now;
       _lastResumeTime = now;
-      debugPrint('[Steps] baseline=$_baselineSteps at $now (source=${sample.source})');
+      debugPrint(
+        '[Steps] baseline=$_baselineSteps at $now (source=${sample.source})',
+      );
       _emit(0, now);
       _emitUpdate(delta: 0, timestamp: now, source: sample.source);
       return;
@@ -295,8 +325,12 @@ class StepTrackingService {
     final rawDelta = rawSteps - _lastRawSteps;
 
     // 3. Duplicate packet rejection
-    if (rawDelta == 0 && _lastEventTime != null && now.isAtSameMomentAs(_lastEventTime!)) {
-      debugPrint('[Steps] Duplicate packet ignored: rawSteps=$rawSteps at $now');
+    if (rawDelta == 0 &&
+        _lastEventTime != null &&
+        now.isAtSameMomentAs(_lastEventTime!)) {
+      debugPrint(
+        '[Steps] Duplicate packet ignored: rawSteps=$rawSteps at $now',
+      );
       return;
     }
 
@@ -325,6 +359,11 @@ class StepTrackingService {
         );
         _updateAverageCadence(now);
       }
+      // Raw IMU sends periodic heartbeats even when there are no steps.
+      // Publish the decay and provenance without manufacturing a step.
+      if (_activeResearchAdapter != null) {
+        _emitUpdate(delta: 0, timestamp: now, source: sample.source);
+      }
       return;
     }
 
@@ -335,7 +374,8 @@ class StepTrackingService {
     // We only reject if rawDelta > 5 (cannot be a single stride/micro-batch burst)
     // AND the rate over elapsed time exceeds _kMaxStepsPerSec.
     if (_lastEventTime != null) {
-      final elapsedSec = now.difference(_lastEventTime!).inMilliseconds / 1000.0;
+      final elapsedSec =
+          now.difference(_lastEventTime!).inMilliseconds / 1000.0;
       if (rawDelta > 5 && elapsedSec > 0) {
         final stepsPerSec = rawDelta / elapsedSec;
         if (stepsPerSec > _kMaxStepsPerSec) {
@@ -435,6 +475,8 @@ class StepTrackingService {
     stopTracking();
     _stepController.close();
     _updateController.close();
-    _adapter.dispose();
+    _researchAdapter.dispose();
+    _runningResearchAdapter.dispose();
+    _osAdapter.dispose();
   }
 }

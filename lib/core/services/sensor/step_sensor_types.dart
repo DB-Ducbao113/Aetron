@@ -11,6 +11,12 @@ enum StepSensorSource {
   /// Fallback to pedometer pub package.
   pedometerPlugin,
 
+  /// Steps detected from raw phone acceleration using Oxford WPD adaptation.
+  oxfordWpd,
+
+  /// Raw acceleration steps from the Xu 2022 Running adaptation.
+  xuRunning,
+
   /// Deterministic mock or test harness.
   mock,
 
@@ -144,4 +150,3 @@ class WorkoutStepUpdate {
       'currentCadence: $currentCadenceSpm spm, avgCadence: $avgCadenceSpm spm, '
       'paused: $isPaused, source: $source)';
 }
-

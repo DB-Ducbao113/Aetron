@@ -1,0 +1,58 @@
+{
+  "dataset_commit": "3da2d6e683f56e39eb74cda79eaa8ee93e033d6c",
+  "detector_sha256": "d0a146541db08f50012b180d29fc874de65fe211cd166475b61934dca97e79d1",
+  "scope": "Actual Running adapter and service; replayed timestamps, no OS sensor or independent event cadence reference.",
+  "total_runtime_steps": 1279,
+  "traces": [
+    {
+      "subject_id": 11,
+      "reference_steps": 240,
+      "runtime_steps": 236,
+      "reference_full_session_count_per_min": 146.9969157903362,
+      "runtime_full_session_count_per_min": 144.5469671938306,
+      "last_emitted_average_cadence_spm": 146,
+      "source": "xuRunning",
+      "os_fallback": false
+    },
+    {
+      "subject_id": 12,
+      "reference_steps": 343,
+      "runtime_steps": 339,
+      "reference_full_session_count_per_min": 169.04544881353095,
+      "runtime_full_session_count_per_min": 167.07407331716323,
+      "last_emitted_average_cadence_spm": 168,
+      "source": "xuRunning",
+      "os_fallback": false
+    },
+    {
+      "subject_id": 13,
+      "reference_steps": 230,
+      "runtime_steps": 231,
+      "reference_full_session_count_per_min": 154.33478948952794,
+      "runtime_full_session_count_per_min": 155.00581031339547,
+      "last_emitted_average_cadence_spm": 156,
+      "source": "xuRunning",
+      "os_fallback": false
+    },
+    {
+      "subject_id": 14,
+      "reference_steps": 183,
+      "runtime_steps": 189,
+      "reference_full_session_count_per_min": 153.25465144616282,
+      "runtime_full_session_count_per_min": 158.2793941165288,
+      "last_emitted_average_cadence_spm": 160,
+      "source": "xuRunning",
+      "os_fallback": false
+    },
+    {
+      "subject_id": 15,
+      "reference_steps": 284,
+      "runtime_steps": 284,
+      "reference_full_session_count_per_min": 132.92976148983934,
+      "runtime_full_session_count_per_min": 132.92976148983934,
+      "last_emitted_average_cadence_spm": 133,
+      "source": "xuRunning",
+      "os_fallback": false
+    }
+  ]
+}

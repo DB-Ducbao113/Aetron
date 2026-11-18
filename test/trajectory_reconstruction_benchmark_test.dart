@@ -775,6 +775,7 @@ void main() {
         filteredRouteSegments: const [],
         enableTrajectoryPreprocessing: true,
         enableTrajectoryReconstruction: true,
+        reconstructionMethod: ReconstructionMethod.monotonePchip,
       );
 
       final p03Metrics = jsonDecode(p03Result.session.routeMatchMetricsJson);
@@ -823,6 +824,7 @@ void main() {
         filteredRouteSegments: const [],
         enableTrajectoryPreprocessing: true,
         enableTrajectoryReconstruction: true,
+        reconstructionMethod: ReconstructionMethod.monotonePchip,
       );
 
       final blackoutSegments = jsonDecode(blackoutResult.session.matchedRouteJson) as List;

@@ -160,7 +160,7 @@ void main() {
       expect(finalization.session.distanceKm, closeTo(0.011, 0.005));
     });
 
-    test('Finalizer defaults safely to legacy policy when preprocessing flag is disabled', () {
+    test('Finalizer falls back safely to legacy policy when preprocessing flag is disabled', () {
       const finalizer = WorkoutSessionFinalizer();
       const trackingEngine = WorkoutTrackingEngine();
 
@@ -199,6 +199,8 @@ void main() {
         trackingEngine: trackingEngine,
         rawGpsPositions: rawPositions,
         filteredRouteSegments: const [],
+        enableTrajectoryPreprocessing: false,
+        enableTrajectoryReconstruction: false,
       );
 
       final metrics = jsonDecode(finalization.session.routeMatchMetricsJson) as Map<String, dynamic>;
@@ -299,7 +301,7 @@ void main() {
     });
 
     test('Feature flags are declared and defaulted correctly', () {
-      expect(kEnableTrajectoryPreprocessing, isFalse);
+      expect(kEnableTrajectoryPreprocessing, isTrue);
       expect(kEnableTrajectoryPreprocessingShadowMode, isFalse);
     });
 

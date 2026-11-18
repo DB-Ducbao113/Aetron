@@ -344,7 +344,7 @@ void main() {
       expect(audit['filtered_minus_saved_distance_km'], lessThan(0.0));
     });
 
-    test('estimates steps from stride when sensor steps are unavailable', () {
+    test('does not invent steps when sensor steps are unavailable', () {
       final state = WorkoutSessionState(
         status: RecordingState.stopping,
         activityType: 'Walking',
@@ -369,7 +369,7 @@ void main() {
         ],
       );
 
-      expect(result.session.steps, 1000);
+      expect(result.session.steps, 0);
       expect(result.session.id, isNotEmpty);
       expect(result.session.routeMatchStatus, 'pending');
       expect(result.session.routeDistanceSource, 'filtered');

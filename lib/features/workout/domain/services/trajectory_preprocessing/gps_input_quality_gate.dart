@@ -29,10 +29,10 @@ class GpsInputQualityGate {
     required this.limits,
     bool? enableQualityGate,
     bool? enableShadowMode,
-  })  : enableQualityGate = enableQualityGate ?? kEnableGpsQualityGate,
-        enableShadowMode = enableShadowMode ?? kEnableGpsQualityGateShadowMode,
-        _mGvioGate = MobileGvioQualityGate(limits: limits),
-        _p01Detector = TrajectoryOutlierDetector(limits: limits);
+  }) : enableQualityGate = enableQualityGate ?? kEnableGpsQualityGate,
+       enableShadowMode = enableShadowMode ?? kEnableGpsQualityGateShadowMode,
+       _mGvioGate = MobileGvioQualityGate(limits: limits),
+       _p01Detector = TrajectoryOutlierDetector(limits: limits);
 
   factory GpsInputQualityGate.forActivity(
     String activityType, {
@@ -77,8 +77,8 @@ class GpsInputQualityGate {
     if (enableShadowMode) {
       final p01Status = p01Processed.isAccepted
           ? (p01Processed.isGapRecovery
-              ? GpsQualityStatus.segmentBreak
-              : GpsQualityStatus.accept)
+                ? GpsQualityStatus.segmentBreak
+                : GpsQualityStatus.accept)
           : GpsQualityStatus.reject;
 
       if (p01Status != gateDecision.status) {
@@ -106,6 +106,7 @@ class GpsInputQualityGate {
           innovationMeters: 0.0,
           segmentDistanceMeters: p01Processed.segmentDistanceMeters,
           timeDeltaSec: p01Processed.timeDeltaSec,
+          forwardBearingDeg: p01Processed.forwardBearingDeg,
           isGapRecovery: false,
         );
       }
@@ -121,6 +122,7 @@ class GpsInputQualityGate {
           innovationMeters: 0.0,
           segmentDistanceMeters: p01Processed.segmentDistanceMeters,
           timeDeltaSec: p01Processed.timeDeltaSec,
+          forwardBearingDeg: p01Processed.forwardBearingDeg,
           isGapRecovery: true,
         );
       }
@@ -135,6 +137,7 @@ class GpsInputQualityGate {
         innovationMeters: 0.0,
         segmentDistanceMeters: p01Processed.segmentDistanceMeters,
         timeDeltaSec: p01Processed.timeDeltaSec,
+        forwardBearingDeg: p01Processed.forwardBearingDeg,
         isGapRecovery: false,
       );
     }
@@ -143,4 +146,3 @@ class GpsInputQualityGate {
     return gateDecision;
   }
 }
-
