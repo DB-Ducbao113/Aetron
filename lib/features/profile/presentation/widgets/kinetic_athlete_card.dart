@@ -2,7 +2,6 @@ import 'package:fitness_exercise_application/core/localization/app_translations.
 import 'package:fitness_exercise_application/features/profile/domain/entities/user_profile.dart';
 import 'package:fitness_exercise_application/features/profile/presentation/providers/avatar_providers.dart';
 import 'package:fitness_exercise_application/features/profile/presentation/widgets/edit_display_name_sheet.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_backdrop.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
@@ -66,19 +65,18 @@ class KineticAthleteCard extends ConsumerWidget {
 
     return Container(
       decoration: BoxDecoration(
+        color: colors.surface1,
         borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
-        border: Border.all(color: colors.borderSubtle),
+        boxShadow: colors.isDark ? null : KineticTokens.shadowCardLight(),
+        border: colors.isDark
+            ? Border.all(color: colors.borderSubtle)
+            : null,
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
-        child: Stack(
+      child: Padding(
+        padding: const EdgeInsets.all(KineticTokens.spaceLG),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Positioned.fill(child: TopographicBackdrop()),
-            Padding(
-              padding: const EdgeInsets.all(KineticTokens.spaceLG),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
                   Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -289,12 +287,9 @@ class KineticAthleteCard extends ConsumerWidget {
               ),
             ),
           ],
-                ],
-              ),
-            ),
-          ],
-        ),
+        ],
       ),
-    );
+    ),
+  );
   }
 }

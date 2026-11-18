@@ -1,36 +1,33 @@
-import 'package:flutter/services.dart';
 import 'dart:math' as math;
 
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/core/providers/app_providers.dart';
 import 'package:fitness_exercise_application/core/providers/connectivity_providers.dart';
 import 'package:fitness_exercise_application/core/utils/date_time_helper.dart';
-import 'package:fitness_exercise_application/features/activity/presentation/screens/activity_screen.dart';
 import 'package:fitness_exercise_application/features/home/presentation/providers/streak_providers.dart';
+import 'package:fitness_exercise_application/features/home/presentation/widgets/kinetic_explore_routes.dart';
+import 'package:fitness_exercise_application/features/home/presentation/widgets/kinetic_home_top_bar.dart';
+import 'package:fitness_exercise_application/features/home/presentation/widgets/kinetic_recent_activity_card.dart';
+import 'package:fitness_exercise_application/features/home/presentation/widgets/kinetic_streak_details_sheet.dart';
+import 'package:fitness_exercise_application/features/home/presentation/widgets/kinetic_your_week_bento.dart';
 import 'package:fitness_exercise_application/features/profile/domain/entities/user_goal.dart';
 import 'package:fitness_exercise_application/features/profile/presentation/providers/avatar_providers.dart';
 import 'package:fitness_exercise_application/features/profile/presentation/providers/goal_providers.dart';
 import 'package:fitness_exercise_application/features/profile/presentation/providers/user_profile_providers.dart';
 import 'package:fitness_exercise_application/features/profile/presentation/screens/goal_screen.dart';
-import 'package:fitness_exercise_application/features/shell/presentation/providers/main_tab_controller_provider.dart';
 import 'package:fitness_exercise_application/features/settings/presentation/providers/settings_preferences_providers.dart';
+import 'package:fitness_exercise_application/features/settings/presentation/screens/notification_settings_screen.dart';
+import 'package:fitness_exercise_application/features/shell/presentation/providers/main_tab_controller_provider.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/providers/workout_providers.dart';
-import 'package:fitness_exercise_application/features/workout/providers/workout_providers_infra.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/screens/details/workout_details_screen.dart';
+import 'package:fitness_exercise_application/features/workout/providers/workout_providers_infra.dart';
 import 'package:fitness_exercise_application/shared/aetron/aetron_ui.dart';
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
-import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
-import 'package:fitness_exercise_application/features/home/presentation/widgets/kinetic_home_top_bar.dart';
-import 'package:fitness_exercise_application/features/home/presentation/widgets/kinetic_hero_card.dart';
-import 'package:fitness_exercise_application/features/home/presentation/widgets/kinetic_activity_quick_switch.dart';
-import 'package:fitness_exercise_application/features/home/presentation/widgets/kinetic_your_week_bento.dart';
-import 'package:fitness_exercise_application/features/home/presentation/widgets/kinetic_recent_activity_card.dart';
-import 'package:fitness_exercise_application/features/home/presentation/widgets/kinetic_explore_routes.dart';
-import 'package:fitness_exercise_application/features/settings/presentation/screens/notification_settings_screen.dart';
-import 'package:fitness_exercise_application/features/home/presentation/widgets/kinetic_streak_details_sheet.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -42,14 +39,13 @@ User? _getSafeUser() {
   }
 }
 
-// --- Helper Data Classes ---
 class _WeeklyHomeStats {
   final DateTime startOfWeek;
   final double weeklyDistanceKm;
   final double weeklyCalories;
   final int weeklyWorkoutsDurationSec;
   final int workoutCount;
-  final int activeDayCount;
+  final Set<int> activeWeekdays;
 
   const _WeeklyHomeStats({
     required this.startOfWeek,
@@ -57,29 +53,24 @@ class _WeeklyHomeStats {
     required this.weeklyCalories,
     required this.weeklyWorkoutsDurationSec,
     required this.workoutCount,
-    required this.activeDayCount,
+    required this.activeWeekdays,
   });
 }
 
 class _WeeklyHeroData {
-  final int weekNumber;
   final double current;
   final double target;
   final String unit;
-  final String badgeLabel;
-  final String helperLabel;
+  final double distanceTargetKm;
 
   const _WeeklyHeroData({
-    required this.weekNumber,
     required this.current,
     required this.target,
     required this.unit,
-    required this.badgeLabel,
-    required this.helperLabel,
+    required this.distanceTargetKm,
   });
 }
 
-// --- Business Providers (PRESERVED) ---
 final _weeklyHomeStatsProvider = Provider<_WeeklyHomeStats>((ref) {
   final workouts =
       ref.watch(workoutListProvider).valueOrNull ?? <WorkoutSession>[];
@@ -91,8 +82,8 @@ final _weeklyHomeStatsProvider = Provider<_WeeklyHomeStats>((ref) {
     return !date.isBefore(start) && !date.isAfter(end);
   }).toList()..sort((a, b) => b.startedAt.compareTo(a.startedAt));
 
-  final activeDates = weeklyWorkouts
-      .map((workout) => DateTimeHelper.localDateOnly(workout.startedAt))
+  final activeWeekdays = weeklyWorkouts
+      .map((workout) => workout.startedAt.toLocal().weekday)
       .toSet();
 
   double effectiveDistance(WorkoutSession w) {
@@ -113,7 +104,7 @@ final _weeklyHomeStatsProvider = Provider<_WeeklyHomeStats>((ref) {
       (sum, w) => sum + w.durationSec,
     ),
     workoutCount: weeklyWorkouts.length,
-    activeDayCount: activeDates.length,
+    activeWeekdays: activeWeekdays,
   );
 });
 
@@ -123,13 +114,9 @@ final _weeklyHeroProvider = Provider<_WeeklyHeroData>((ref) {
   final goal = ref.watch(userGoalProvider).valueOrNull;
   final useMetricUnits = ref.watch(metricUnitsPreferenceProvider).value ?? true;
 
-  double current;
-  double target;
-  String unit;
-  String badgeLabel;
-  String helperLabel;
-
   if (goal != null) {
+    final double current;
+    final String unit;
     switch (goal.goalType) {
       case GoalType.distance:
         current = useMetricUnits
@@ -146,75 +133,51 @@ final _weeklyHeroProvider = Provider<_WeeklyHeroData>((ref) {
         unit = 'kcal';
         break;
     }
+
     final rawTarget = goal.period == GoalPeriod.weekly
         ? goal.targetValue
         : _monthlyTargetToWeeklyTarget(goal.targetValue, weekly.startOfWeek);
-    target = (goal.goalType == GoalType.distance && !useMetricUnits)
+    var target = (goal.goalType == GoalType.distance && !useMetricUnits)
         ? WorkoutFormatters.kmToMi(rawTarget)
         : rawTarget;
     target = target <= 0 ? 1 : target;
-    final displayUnit = (unit == 'kcal' && currentLang == AppLanguage.vi)
-        ? 'CALO'
-        : unit.toUpperCase();
-    badgeLabel =
-        '${_formatMetric(current, unit)} / ${_formatMetric(target, unit)} $displayUnit';
-    helperLabel = goal.period == GoalPeriod.weekly
-        ? (currentLang == AppLanguage.vi
-              ? 'Liên kết với mục tiêu tuần của bạn'
-              : 'Linked to your weekly goal')
-        : (currentLang == AppLanguage.vi
-              ? 'Dựa trên mục tiêu tháng của bạn'
-              : 'Based on your monthly goal');
-  } else {
-    current = weekly.weeklyCalories;
-    target = math.max(4200.0, current <= 0 ? 4200.0 : current * 1.35);
-    unit = 'kcal';
-    final displayUnit = currentLang == AppLanguage.vi ? 'CALO' : 'KCAL';
-    badgeLabel =
-        '${_formatMetric(current, unit)} / ${_formatMetric(target, unit)} $displayUnit';
-    helperLabel = currentLang == AppLanguage.vi
-        ? 'Nhấn để đặt mục tiêu'
-        : 'Tap to set your goal';
+
+    return _WeeklyHeroData(
+      current: current,
+      target: target,
+      unit: unit,
+      distanceTargetKm: goal.goalType == GoalType.distance ? rawTarget : 50.0,
+    );
   }
 
+  final dist = useMetricUnits
+      ? weekly.weeklyDistanceKm
+      : WorkoutFormatters.kmToMi(weekly.weeklyDistanceKm);
+  final distUnit =
+      WorkoutFormatters.distanceUnitLabel(useMetric: useMetricUnits);
+
   return _WeeklyHeroData(
-    weekNumber: _weekNumber(weekly.startOfWeek),
-    current: current,
-    target: target,
-    unit: unit,
-    badgeLabel: badgeLabel,
-    helperLabel: helperLabel,
+    current: dist,
+    target: useMetricUnits ? 50.0 : 30.0,
+    unit: distUnit,
+    distanceTargetKm: 50.0,
   );
 });
 
-// --- KINETIC TELEMETRY HOME SCREEN ---
 class HomeScreen extends ConsumerStatefulWidget {
-  const HomeScreen({super.key});
+  final bool showMapTiles;
+
+  const HomeScreen({super.key, this.showMapTiles = true});
 
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  String _selectedActivity = 'cycling';
   bool _isRefreshing = false;
 
   @override
-  void initState() {
-    super.initState();
-    _selectedActivity = ref.read(selectedActivityTypeProvider);
-  }
-
-  @override
   Widget build(BuildContext context) {
-    ref.listen<String>(selectedActivityTypeProvider, (previous, next) {
-      if (next != _selectedActivity && mounted) {
-        setState(() {
-          _selectedActivity = next;
-        });
-      }
-    });
-
     final colors = context.kinetic;
     final currentLang = ref.watch(appLanguageProvider);
     final isVi = currentLang == AppLanguage.vi;
@@ -230,8 +193,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     final displayName = _homeDisplayName(user);
     final initials = _initialsFromEmail(user?.email);
-    final hour = DateTime.now().hour;
-    final greeting = _greetingForHour(hour, isVi);
+    final greeting = _greetingForHour(DateTime.now().hour, isVi);
     final recoverableSession = ref
         .watch(recoverableInterruptedSessionProvider)
         .valueOrNull;
@@ -242,7 +204,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         top: true,
         child: RefreshIndicator(
           color: colors.primary,
-          backgroundColor: colors.surface2,
+          backgroundColor: colors.surface1,
           onRefresh: () async {
             setState(() => _isRefreshing = true);
             try {
@@ -262,13 +224,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               : CustomScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   slivers: [
-                    // 1. Top Bar — greeting zone sits on the V4 topographic
-                    // backdrop (rich background, clean foreground).
+                    // 1. Clean Top Bar ("Hôm nay" + Streak + Bell + Avatar)
                     SliverToBoxAdapter(
-                      child: Stack(
-                        children: [
-                          const Positioned.fill(child: TopographicBackdrop()),
-                          KineticHomeTopBar(
+                      child: KineticHomeTopBar(
                         avatarImage: avatar.imageProvider,
                         initials: initials,
                         displayName: displayName,
@@ -277,8 +235,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         isVi: isVi,
                         onAvatarTap: () {
                           HapticFeedback.selectionClick();
-                          ref.read(mainTabControllerProvider.notifier).state =
-                              4;
+                          ref.read(mainTabControllerProvider.notifier).state = 4;
                         },
                         onStreakTap: () => showModalBottomSheet<void>(
                           context: context,
@@ -292,60 +249,56 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             builder: (_) => const NotificationSettingsScreen(),
                           ),
                         ),
-                          ),
-                        ],
                       ),
                     ),
 
-                    // 2. Week Hero Card
-                    SliverToBoxAdapter(
-                      child: KineticHeroCard(
-                        title: _heroTitleForActivity(_selectedActivity, isVi),
-                        categoryName: _activityName(_selectedActivity, isVi),
-                        imageAsset: _heroImageForActivity(_selectedActivity),
-                        weeklyProgressText:
-                            'Tuần này: ${weekly.weeklyDistanceKm.toStringAsFixed(1)} km',
-                        targetGoalText:
-                            'Mục tiêu: ${hero.target.toStringAsFixed(0)} ${hero.unit}',
-                        ctaLabel: _ctaForActivity(_selectedActivity, isVi),
-                        onStartTap: () {
-                          HapticFeedback.selectionClick();
-                          ref
-                                  .read(selectedActivityTypeProvider.notifier)
-                                  .state =
-                              _selectedActivity;
-                          ref.read(mainTabControllerProvider.notifier).state =
-                              1;
-                        },
-                        onGoalTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const GoalScreen()),
+                    // Recoverable Unsaved Session Banner
+                    if (recoverableSession != null)
+                      SliverToBoxAdapter(
+                        child: _RecoverableWorkoutBanner(
+                          session: recoverableSession,
+                          isVi: isVi,
                         ),
                       ),
-                    ),
 
-                    // 3. Week Stat Strip (Your Week Bento)
+                    // Offline Banner
+                    if (isOffline)
+                      const SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: KineticTokens.page,
+                            vertical: KineticTokens.spaceXXS,
+                          ),
+                          child: KineticOfflineBanner(),
+                        ),
+                      ),
+
+                    // 2. Weekly Goal & 7-Day Activity Strip
                     SliverToBoxAdapter(
                       child: KineticYourWeekBento(
                         weeklyDistanceKm: weekly.weeklyDistanceKm,
                         workoutCount: weekly.workoutCount,
-                        targetDistanceKm: hero.target > 0 ? hero.target : 50.0,
+                        targetDistanceKm: hero.distanceTargetKm,
                         targetWorkoutCount: 5,
-                        dateRangeText: _formatWeekDateRange(
-                          weekly.startOfWeek,
-                          isVi,
-                        ),
+                        dateRangeText:
+                            _formatWeekDateRange(weekly.startOfWeek, isVi),
                         isVi: isVi,
                         useMetricUnits: useMetricUnits,
+                        activeWeekdays: weekly.activeWeekdays,
+                        goalCurrent: hero.current,
+                        goalTarget: hero.target,
+                        goalUnit: hero.unit,
                         onSetGoalTap: () => Navigator.of(context).push(
                           MaterialPageRoute(builder: (_) => const GoalScreen()),
                         ),
                       ),
                     ),
 
-                    // 4. Training Plans (program card)
-                    SliverToBoxAdapter(child: KineticExploreRoutes(isVi: isVi)),
+                    const SliverToBoxAdapter(
+                      child: SizedBox(height: KineticTokens.spaceXS),
+                    ),
 
-                    // 5. Recent Activity Section (With Empty State CTA)
+                    // 3. Recent Activity Card (Strava-style route + 3 metrics)
                     SliverToBoxAdapter(
                       child: workoutsAsync.when(
                         loading: () => const Padding(
@@ -360,30 +313,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   AetronSkeletonBox(
-                                    height: 170,
-                                    borderRadius: KineticTokens.radiusXL,
+                                    height: 150,
+                                    borderRadius: KineticTokens.radiusLG,
                                   ),
                                   Padding(
-                                    padding: EdgeInsets.all(
-                                      KineticTokens.spaceMD,
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        AetronSkeletonBox(
-                                          width: 140,
-                                          height: 20,
-                                          borderRadius: KineticTokens.radiusSM,
-                                        ),
-                                        SizedBox(
-                                          height: KineticTokens.spaceSM,
-                                        ),
-                                        AetronSkeletonBox(
-                                          height: 36,
-                                          borderRadius: KineticTokens.radiusMD,
-                                        ),
-                                      ],
+                                    padding:
+                                        EdgeInsets.all(KineticTokens.spaceMD),
+                                    child: AetronSkeletonBox(
+                                      height: 44,
+                                      borderRadius: KineticTokens.radiusMD,
                                     ),
                                   ),
                                 ],
@@ -412,6 +350,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           workouts: workouts,
                           useMetricUnits: useMetricUnits,
                           isVi: isVi,
+                          showMapTiles: widget.showMapTiles,
                           onSeeAllTap: () {
                             HapticFeedback.selectionClick();
                             ref.read(mainTabControllerProvider.notifier).state =
@@ -432,47 +371,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                     ),
 
-                    // Recoverable Unsaved Session Banner (H4)
-                    if (recoverableSession != null)
-                      SliverToBoxAdapter(
-                        child: _RecoverableWorkoutBanner(
-                          session: recoverableSession,
-                          isVi: isVi,
-                        ),
-                      ),
-
-                    // Offline Banner if disconnected
-                    if (isOffline)
-                      const SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: KineticTokens.page,
-                            vertical: KineticTokens.spaceXXS,
-                          ),
-                          child: KineticOfflineBanner(),
-                        ),
-                      ),
-
-                    // 8. Quick Activity Selector (Đưa lên trên thay cho thanh trạng thái môi trường)
-                    SliverToBoxAdapter(
-                      child: KineticActivityQuickSwitch(
-                        selectedActivity: _selectedActivity,
-                        isVi: isVi,
-                        onSelected: (act) {
-                          HapticFeedback.selectionClick();
-                          setState(() {
-                            _selectedActivity = act;
-                          });
-                          ref
-                                  .read(selectedActivityTypeProvider.notifier)
-                                  .state =
-                              act;
-                        },
-                      ),
+                    const SliverToBoxAdapter(
+                      child: SizedBox(height: KineticTokens.spaceSM),
                     ),
 
-                    // Bottom Padding for Dock
-                    const SliverToBoxAdapter(child: SizedBox(height: 100)),
+                    // 4. Training Plans Horizontal Strip
+                    SliverToBoxAdapter(child: KineticExploreRoutes(isVi: isVi)),
+
+                    const SliverToBoxAdapter(child: SizedBox(height: 28)),
                   ],
                 ),
         ),
@@ -491,96 +397,14 @@ String _greetingForHour(int hour, bool isVi) {
   }
 }
 
-String _heroTitleForActivity(String activity, bool isVi) {
-  switch (activity) {
-    case 'cycling':
-      return isVi
-          ? 'Sẵn sàng cho chuyến đạp xe hôm nay?'
-          : 'Ready for today\'s cycling ride?';
-    case 'running':
-      return isVi
-          ? 'Bứt phá tốc độ cùng buổi chạy bộ!'
-          : 'Break your limits on today\'s run!';
-    case 'walking':
-      return isVi
-          ? 'Thư giãn & tái tạo năng lượng với đi bộ'
-          : 'Recharge with an energizing walk';
-    default:
-      return isVi
-          ? 'Sẵn sàng cho buổi tập hôm nay?'
-          : 'Ready for today\'s workout?';
-  }
-}
-
-String _activityName(String activity, bool isVi) {
-  switch (activity) {
-    case 'cycling':
-      return isVi ? 'Đạp xe ngoài trời' : 'Outdoor Cycling';
-    case 'running':
-      return isVi ? 'Chạy bộ ngoài trời' : 'Outdoor Running';
-    case 'walking':
-      return isVi ? 'Đi bộ thể thao' : 'Power Walking';
-    default:
-      return isVi ? 'Tập luyện' : 'Workout';
-  }
-}
-
-String _heroImageForActivity(String activity) {
-  switch (activity) {
-    case 'cycling':
-      return 'assets/activity_cycling_bright.jpg';
-    case 'running':
-      return 'assets/activity_running_bright.jpg';
-    case 'walking':
-      return 'assets/activity_walking_bright.jpg';
-    default:
-      return 'assets/home_hero_runner.jpg';
-  }
-}
-
-String _ctaForActivity(String activity, bool isVi) {
-  switch (activity) {
-    case 'cycling':
-      return isVi ? 'Bắt đầu đạp xe' : 'Start Cycling';
-    case 'running':
-      return isVi ? 'Bắt đầu chạy bộ' : 'Start Running';
-    case 'walking':
-      return isVi ? 'Bắt đầu đi bộ' : 'Start Walking';
-    default:
-      return isVi ? 'Bắt đầu tập luyện' : 'Start Workout';
-  }
-}
-
 String _formatWeekDateRange(DateTime startOfWeek, bool isVi) {
   final endOfWeek = startOfWeek.add(const Duration(days: 6));
   return '${startOfWeek.day.toString().padLeft(2, '0')}/${startOfWeek.month.toString().padLeft(2, '0')} – ${endOfWeek.day.toString().padLeft(2, '0')}/${endOfWeek.month.toString().padLeft(2, '0')}';
 }
 
-// --- HELPER METHODS (PRESERVED) ---
 DateTime _startOfWeek(DateTime date) {
   final local = DateTimeHelper.localDateOnly(date);
   return local.subtract(Duration(days: local.weekday - 1));
-}
-
-int _weekNumber(DateTime date) {
-  final thursday = date.add(Duration(days: 4 - date.weekday));
-  final firstThursday = DateTime(thursday.year, 1, 4);
-  final firstWeekStart = firstThursday.subtract(
-    Duration(days: firstThursday.weekday - 1),
-  );
-  return ((thursday.difference(firstWeekStart).inDays) / 7).floor() + 1;
-}
-
-String _formatMetric(double value, String unit) {
-  switch (unit) {
-    case 'km':
-    case 'mi':
-      return value.toStringAsFixed(1);
-    case 'sessions':
-    case 'kcal':
-    default:
-      return value.round().toString();
-  }
 }
 
 double _monthlyTargetToWeeklyTarget(
@@ -595,7 +419,7 @@ double _monthlyTargetToWeeklyTarget(
 
 String _initialsFromEmail(String? email) {
   final source = (email ?? 'User').split('@').first.trim();
-  if (source.isEmpty) return 'U';
+  if (source.isEmpty) return 'A';
   final parts = source
       .split(RegExp(r'[._\-\s]+'))
       .where((element) => element.isNotEmpty)
@@ -650,12 +474,15 @@ class _RecoverableWorkoutBannerState
       ),
       padding: const EdgeInsets.all(KineticTokens.spaceMD),
       decoration: BoxDecoration(
-        color: colors.surface2,
+        color: colors.surface1,
         borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
         border: Border.all(
-          color: colors.primary.withValues(alpha: 0.3),
-          width: 1.5,
+          color: colors.primary.withValues(alpha: 0.35),
+          width: 1.2,
         ),
+        boxShadow: Theme.of(context).brightness == Brightness.light
+            ? KineticTokens.shadowCardLight()
+            : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -665,13 +492,13 @@ class _RecoverableWorkoutBannerState
               Container(
                 padding: const EdgeInsets.all(KineticTokens.spaceXS),
                 decoration: BoxDecoration(
-                  color: colors.primary.withValues(alpha: 0.15),
+                  color: colors.primaryTint,
                   shape: BoxShape.circle,
                 ),
-                child: BladeIcon(
-                  BladeIconName.hist,
+                child: Icon(
+                  LucideIcons.clock,
                   color: colors.primary,
-                  size: 20,
+                  size: 18,
                 ),
               ),
               const SizedBox(width: KineticTokens.spaceSM),
@@ -688,7 +515,7 @@ class _RecoverableWorkoutBannerState
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(height: KineticTokens.spaceXXS),
+                    const SizedBox(height: 2),
                     Text(
                       widget.isVi
                           ? '${widget.session.activityType} • $km km • $mins phút'
@@ -713,30 +540,20 @@ class _RecoverableWorkoutBannerState
                           final confirmed = await showDialog<bool>(
                             context: context,
                             builder: (ctx) => AlertDialog(
-                              backgroundColor: colors.surface2,
                               title: Text(
                                 widget.isVi
                                     ? 'Bỏ buổi tập?'
                                     : 'Discard Workout?',
-                                style: KineticTypography.headlineSmall.copyWith(
-                                  color: colors.textPrimary,
-                                ),
                               ),
                               content: Text(
                                 widget.isVi
                                     ? 'Dữ liệu của buổi tập này sẽ bị xóa hoàn toàn.'
                                     : 'This unsaved session will be permanently deleted.',
-                                style: KineticTypography.bodySmall.copyWith(
-                                  color: colors.textSecondary,
-                                ),
                               ),
                               actions: [
                                 TextButton(
                                   onPressed: () => Navigator.of(ctx).pop(false),
-                                  child: Text(
-                                    widget.isVi ? 'Hủy' : 'Cancel',
-                                    style: TextStyle(color: colors.textMuted),
-                                  ),
+                                  child: Text(widget.isVi ? 'Hủy' : 'Cancel'),
                                 ),
                                 TextButton(
                                   onPressed: () => Navigator.of(ctx).pop(true),
@@ -759,20 +576,7 @@ class _RecoverableWorkoutBannerState
                             setState(() => _isDismissed = true);
                           }
                         },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: colors.textMuted,
-                    side: BorderSide(color: colors.borderSubtle),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: KineticTokens.spaceXS),
-                  ),
-                  child: Text(
-                    widget.isVi ? 'Bỏ qua' : 'Discard',
-                    style: KineticTypography.label.copyWith(
-                      color: colors.textMuted,
-                    ),
-                  ),
+                  child: Text(widget.isVi ? 'Bỏ qua' : 'Discard'),
                 ),
               ),
               const SizedBox(width: KineticTokens.spaceXS),
@@ -801,52 +605,26 @@ class _RecoverableWorkoutBannerState
                               recoverableInterruptedSessionProvider,
                             );
                             if (mounted) {
-                              setState(() {
-                                _isSaving = false;
-                                _isDismissed = true;
-                              });
+                              setState(() => _isDismissed = true);
                               messenger?.showSnackBar(
                                 SnackBar(
                                   content: Text(
                                     widget.isVi
-                                        ? 'Đã lưu buổi tập thành công!'
-                                        : 'Workout saved successfully!',
+                                        ? 'Đã khôi phục và lưu buổi tập!'
+                                        : 'Workout recovered and saved!',
                                   ),
-                                  backgroundColor: colors.primary,
                                 ),
                               );
                             }
-                          } catch (e) {
-                            if (mounted) {
-                              setState(() => _isSaving = false);
-                            }
+                          } finally {
+                            if (mounted) setState(() => _isSaving = false);
                           }
                         },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: colors.primary,
-                    foregroundColor: colors.onPrimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: KineticTokens.spaceXS),
-                    elevation: 0,
+                  child: Text(
+                    _isSaving
+                        ? (widget.isVi ? 'Đang lưu...' : 'Saving...')
+                        : (widget.isVi ? 'Lưu lại' : 'Recover & Save'),
                   ),
-                  child: _isSaving
-                      ? SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: colors.onPrimary,
-                          ),
-                        )
-                      : Text(
-                          widget.isVi ? 'Lưu buổi tập' : 'Save Workout',
-                          style: KineticTypography.label.copyWith(
-                            color: colors.onPrimary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
                 ),
               ),
             ],

@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/auth/presentation/screens/auth_wrapper.dart';
-import 'package:fitness_exercise_application/shared/aetron/aetron_globe_orbit_screen.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -21,7 +20,6 @@ class WelcomeGate extends StatefulWidget {
 
 class _WelcomeGateState extends State<WelcomeGate> {
   late final Future<bool> _shouldShowWelcome = _loadShouldShowWelcome();
-  bool _showResourceLoading = false;
 
   Future<bool> _loadShouldShowWelcome() async {
     if (Supabase.instance.client.auth.currentSession != null) {
@@ -32,14 +30,14 @@ class _WelcomeGateState extends State<WelcomeGate> {
   }
 
   Future<void> _completeWelcome() async {
-    if (!mounted) return;
-    setState(() => _showResourceLoading = true);
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(kWelcomeSeenPrefKey, true);
     } catch (error) {
       debugPrint('[WelcomeGate] Could not persist welcome state: $error');
     }
+    if (!mounted) return;
+    _openAuth();
   }
 
   void _openAuth() {
@@ -50,33 +48,53 @@ class _WelcomeGateState extends State<WelcomeGate> {
 
   @override
   Widget build(BuildContext context) {
-    if (_showResourceLoading) {
-      return ResourceLoadingScreen(onComplete: _openAuth);
-    }
-
+    final colors = context.kinetic;
     return FutureBuilder<bool>(
       future: _shouldShowWelcome,
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
-          return const AetronGlobeOrbitScreen(
-            customTitle: 'Aetron',
+          return Scaffold(
+            backgroundColor: colors.background,
+            body: Center(
+              child: CircularProgressIndicator(color: colors.primary),
+            ),
           );
         }
-        return snapshot.data!
-            ? WelcomeScreen(onNext: _completeWelcome)
-            : ResourceLoadingScreen(onComplete: _openAuth);
+        if (snapshot.data!) {
+          return WelcomeScreen(onNext: _completeWelcome);
+        }
+        return ResourceLoadingScreen(onComplete: _openAuth);
       },
     );
   }
 }
 
-class ResourceLoadingScreen extends StatelessWidget {
+class ResourceLoadingScreen extends StatefulWidget {
   final VoidCallback onComplete;
   const ResourceLoadingScreen({super.key, required this.onComplete});
 
   @override
+  State<ResourceLoadingScreen> createState() => _ResourceLoadingScreenState();
+}
+
+class _ResourceLoadingScreenState extends State<ResourceLoadingScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) widget.onComplete();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return AetronGlobeOrbitScreen(onComplete: onComplete);
+    final colors = context.kinetic;
+    return Scaffold(
+      backgroundColor: colors.background,
+      body: Center(
+        child: CircularProgressIndicator(color: colors.primary),
+      ),
+    );
   }
 }
 
@@ -162,8 +180,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
       backgroundColor: colors.background,
       body: Stack(
         children: [
-          // ── Background Ambient Grid & Glow ──
-          Positioned.fill(child: _WelcomeGrid(color: colors.primary)),
+          // ── Soft Ambient Azure Wash ──
           Positioned(
             top: -60,
             right: -60,
@@ -270,56 +287,56 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
       return const [
         _OnboardingPageData(
           step: '01 / 04',
-          eyebrow: '⚡ KINETIC PERFORMANCE OS',
-          titlePrefix: 'CHÀO MỪNG ĐẾN\nKỶ NGUYÊN ',
-          titleAccent: 'THỂ THAO SỐ',
+          eyebrow: 'AETRON FITNESS',
+          titlePrefix: 'NÂNG TẦM\nHIỆU SUẤT ',
+          titleAccent: 'MỖI NGÀY',
           titleSuffix: '',
           description:
-              'Đột phá giới hạn bản thân với công nghệ theo dõi vận động thông minh, tối ưu hóa từng sải bước và chuẩn xác từng nhịp thở.',
-          primaryPill: 'ĐỒNG BỘ: SẴN SÀNG',
-          secondaryPill: 'HIỆU SUẤT: 100%',
+              'Theo dõi từng buổi chạy bộ, đạp xe và đi bộ với giao diện trực quan, nhịp độ rõ ràng và dữ liệu chính xác.',
+          primaryPill: 'GPS TRỰC TIẾP',
+          secondaryPill: 'SẴN SÀNG',
           primaryIcon: Icons.sensors_rounded,
           secondaryIcon: Icons.bolt_rounded,
           heroType: _OnboardingHeroType.runner,
         ),
         _OnboardingPageData(
           step: '02 / 04',
-          eyebrow: '🛰️ GPS SATELLITE TELEMETRY',
+          eyebrow: 'BẢN ĐỒ & GPS',
           titlePrefix: 'THEO DÕI LỘ TRÌNH\nCHÍNH XÁC ',
-          titleAccent: 'REALTIME',
+          titleAccent: 'THỜI GIAN THỰC',
           titleSuffix: '',
           description:
-              'Ghi lại toàn bộ hành trình chạy bộ, đạp xe ngoài trời với bản đồ vệ tinh trực tiếp, tốc độ từng km, khoảng cách và calo tiêu hao.',
-          primaryPill: 'LỘ TRÌNH: TRỰC TIẾP',
-          secondaryPill: 'TÍN HIỆU GPS: MẠNH',
+              'Ghi lại trọn vẹn hành trình ngoài trời với bản đồ đường chạy, pace từng km, quãng đường và calo tiêu hao.',
+          primaryPill: 'LỘ TRÌNH TRỰC TIẾP',
+          secondaryPill: 'GPS CHÍNH XÁC',
           primaryIcon: Icons.route_rounded,
           secondaryIcon: Icons.speed_rounded,
           heroType: _OnboardingHeroType.tracking,
         ),
         _OnboardingPageData(
           step: '03 / 04',
-          eyebrow: '📊 DEEP ANALYTICS CORE',
-          titlePrefix: 'PHÂN TÍCH TIẾN ĐỘ\n',
+          eyebrow: 'PHÂN TÍCH TIẾN ĐỘ',
+          titlePrefix: 'BIỂU ĐỒ\n',
           titleAccent: 'CHUYÊN SÂU',
           titleSuffix: ' & RÕ RÀNG',
           description:
-              'Chuyển hóa mọi dữ liệu vận động thành biểu đồ xu hướng tuần, tỷ lệ tăng trưởng thể lực và kỷ lục cá nhân đáng tự hào.',
-          primaryPill: 'XU HƯỚNG: ĐỒNG BỘ',
-          secondaryPill: 'DỮ LIỆU: THỜI GIAN THỰC',
+              'Tổng hợp khối lượng vận động theo tuần, tháng, năm cùng kỷ lục cá nhân giúp bạn kiểm soát mục tiêu dễ dàng.',
+          primaryPill: 'XU HƯỚNG TUẦN',
+          secondaryPill: 'KỶ LỤC CÁ NHÂN',
           primaryIcon: Icons.query_stats_rounded,
           secondaryIcon: Icons.trending_up_rounded,
           heroType: _OnboardingHeroType.analysis,
         ),
         _OnboardingPageData(
           step: '04 / 04',
-          eyebrow: '🏆 MILESTONES & STREAKS',
-          titlePrefix: 'CHINH PHỤC THỬ THÁCH\n& ',
+          eyebrow: 'MỤC TIÊU & CHUỖI NGÀY',
+          titlePrefix: 'CHINH PHỤC MỤC TIÊU\n& ',
           titleAccent: 'HUY HIỆU',
-          titleSuffix: ' DANH GIÁ',
+          titleSuffix: ' MỖI TUẦN',
           description:
-              'Duy trì chuỗi ngày tập luyện liên tục, mở khóa các thành tích danh giá và biến sự kiên trì thành lối sống đỉnh cao.',
-          primaryPill: 'CHUỖI TẬP: SẴN SÀNG',
-          secondaryPill: 'HUY HIỆU: ĐÃ MỞ',
+              'Duy trì thói quen luyện tập đều đặn, hoàn thành mục tiêu tuần và mở khóa các cột mốc thành tích mới.',
+          primaryPill: 'CHUỖI TẬP LUYỆN',
+          secondaryPill: 'THÀNH TÍCH CÁ NHÂN',
           primaryIcon: Icons.local_fire_department_rounded,
           secondaryIcon: Icons.emoji_events_rounded,
           heroType: _OnboardingHeroType.achievements,
@@ -330,56 +347,56 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
     return const [
       _OnboardingPageData(
         step: '01 / 04',
-        eyebrow: '⚡ KINETIC PERFORMANCE OS',
-        titlePrefix: 'WELCOME TO THE\nFUTURE OF ',
-        titleAccent: 'FITNESS',
+        eyebrow: 'AETRON FITNESS',
+        titlePrefix: 'TRAIN SMARTER\nEVERY ',
+        titleAccent: 'MILE',
         titleSuffix: '',
         description:
-            'Precision tracking meets kinetic intelligence. Your journey to elite athletic performance starts right here.',
-        primaryPill: 'BIO-SYNC: ACTIVE',
-        secondaryPill: 'KINETIC: 100% READY',
+            'Track your runs, rides, and walks with crisp live metrics, intuitive pacing splits, and clean progress views.',
+        primaryPill: 'LIVE TRACKING',
+        secondaryPill: 'READY TO MOVE',
         primaryIcon: Icons.sensors_rounded,
         secondaryIcon: Icons.bolt_rounded,
         heroType: _OnboardingHeroType.runner,
       ),
       _OnboardingPageData(
         step: '02 / 04',
-        eyebrow: '🛰️ GPS SATELLITE TELEMETRY',
+        eyebrow: 'GPS ROUTE MAPPING',
         titlePrefix: 'TRACK EVERY ROUTE\nWITH ',
         titleAccent: 'PRECISION',
         titleSuffix: '',
         description:
-            'Record outdoor runs and rides with live satellite mapping, real-time pace splits, elevation, distance, and burned calories.',
+            'Record outdoor runs and rides with live mapping, real-time pace splits, distance, and calories burned.',
         primaryPill: 'LIVE ROUTE TRACE',
-        secondaryPill: 'GPS SIGNAL: STRONG',
+        secondaryPill: 'ACCURATE GPS',
         primaryIcon: Icons.route_rounded,
         secondaryIcon: Icons.speed_rounded,
         heroType: _OnboardingHeroType.tracking,
       ),
       _OnboardingPageData(
         step: '03 / 04',
-        eyebrow: '📊 DEEP ANALYTICS CORE',
-        titlePrefix: 'ADVANCED TELEMETRY\nFOR ',
+        eyebrow: 'WEEKLY ANALYTICS',
+        titlePrefix: 'CLEAR INSIGHTS\nFOR ',
         titleAccent: 'PROGRESS',
         titleSuffix: '',
         description:
-            'Transform every workout into actionable weekly insights, personal records, consistency scores, and telemetry charts.',
-        primaryPill: 'TREND ENGINE: ACTIVE',
-        secondaryPill: 'METRICS: REAL-TIME',
+            'Turn every workout into weekly distance trends, personal best records, and consistent training insights.',
+        primaryPill: 'WEEKLY TRENDS',
+        secondaryPill: 'PERSONAL BESTS',
         primaryIcon: Icons.query_stats_rounded,
         secondaryIcon: Icons.trending_up_rounded,
         heroType: _OnboardingHeroType.analysis,
       ),
       _OnboardingPageData(
         step: '04 / 04',
-        eyebrow: '🏆 MILESTONES & STREAKS',
-        titlePrefix: 'UNLOCK ACHIEVEMENTS\nAND ',
-        titleAccent: 'STREAKS',
+        eyebrow: 'GOALS & STREAKS',
+        titlePrefix: 'STAY CONSISTENT\nBUILD ',
+        titleAccent: 'MOMENTUM',
         titleSuffix: '',
         description:
-            'Stay relentlessly motivated with daily workout streaks, milestone badges, personal records, and habit-forming goals.',
-        primaryPill: 'STREAK SHIELD: ARMED',
-        secondaryPill: 'BADGES: READY',
+            'Build lasting habits with daily workout streaks, weekly distance targets, and milestone badges.',
+        primaryPill: 'DAILY STREAKS',
+        secondaryPill: 'MILESTONE BADGES',
         primaryIcon: Icons.local_fire_department_rounded,
         secondaryIcon: Icons.emoji_events_rounded,
         heroType: _OnboardingHeroType.achievements,
@@ -563,7 +580,7 @@ class _WelcomeTopBar extends ConsumerWidget {
                   border: Border.all(color: colors.borderAccent),
                 ),
                 child: Text(
-                  currentLang == AppLanguage.vi ? '🇻🇳 VI' : '🇬🇧 EN',
+                  currentLang == AppLanguage.vi ? 'VI' : 'EN',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
@@ -625,56 +642,19 @@ class _OnboardingHero extends StatelessWidget {
         children: [
           // V4 scene backdrop (duotone wash + contours) tinted per page
           Positioned.fill(child: SceneBackdrop(tint: tint)),
-          if (data.heroType == _OnboardingHeroType.runner)
-            Image.asset(
-              'assets/welcome_runner.png',
-              fit: BoxFit.cover,
-              alignment: Alignment.topCenter,
-            )
-          else
-            AnimatedBuilder(
-              animation: animation,
-              builder: (context, _) {
-                return CustomPaint(
-                  painter: _FeatureHeroPainter(
-                    progress: animation.value,
-                    heroType: data.heroType,
-                    icon: data.primaryIcon,
-                    primaryColor: colors.primary,
-                    secondaryColor: colors.secondary,
-                    tertiaryColor: colors.tertiary,
-                  ),
-                );
-              },
-            ),
-
-          // Cyber Gradient Fades (Top and Bottom)
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    colors.background.withValues(alpha: 0.6),
-                    Colors.transparent,
-                    colors.background.withValues(alpha: 0.85),
-                    colors.background,
-                  ],
-                  stops: const [0, 0.4, 0.85, 1.0],
-                ),
-              ),
-            ),
-          ),
-
-          // Cyber Laser Scanline Effect
           AnimatedBuilder(
             animation: animation,
             builder: (context, _) {
               return CustomPaint(
-                painter: _HeroScanPainter(
+                painter: _FeatureHeroPainter(
                   progress: animation.value,
-                  color: colors.primary,
+                  heroType: data.heroType,
+                  icon: data.heroType == _OnboardingHeroType.runner
+                      ? Icons.directions_run_rounded
+                      : data.primaryIcon,
+                  primaryColor: colors.primary,
+                  secondaryColor: colors.secondary,
+                  tertiaryColor: colors.tertiary,
                 ),
               );
             },
@@ -947,79 +927,6 @@ class _PageDots extends StatelessWidget {
   }
 }
 
-class _WelcomeGrid extends StatelessWidget {
-  const _WelcomeGrid({required this.color});
-
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: CustomPaint(painter: _WelcomeGridPainter(color: color)),
-    );
-  }
-}
-
-class _WelcomeGridPainter extends CustomPainter {
-  const _WelcomeGridPainter({required this.color});
-
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color.withValues(alpha: 0.035)
-      ..strokeWidth = 1;
-    const step = 36.0;
-    for (var x = 0.0; x <= size.width; x += step) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-    for (var y = 0.0; y <= size.height; y += step) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _WelcomeGridPainter oldDelegate) {
-    return oldDelegate.color != color;
-  }
-}
-
-class _HeroScanPainter extends CustomPainter {
-  const _HeroScanPainter({required this.progress, required this.color});
-
-  final double progress;
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final y = size.height * progress;
-    final linePaint = Paint()
-      ..shader = LinearGradient(
-        colors: [
-          Colors.transparent,
-          color.withValues(alpha: 0.72),
-          Colors.transparent,
-        ],
-      ).createShader(Rect.fromLTWH(0, y - 12, size.width, 24))
-      ..strokeWidth = 2;
-    canvas.drawLine(Offset(0, y), Offset(size.width, y), linePaint);
-
-    final particlePaint = Paint()..color = color.withValues(alpha: 0.36);
-    for (var i = 0; i < 16; i++) {
-      final seed = i * 38.0;
-      final x = (math.sin(progress * math.pi * 2 + i) * 0.5 + 0.5) * size.width;
-      final py = (y + seed) % size.height;
-      canvas.drawCircle(Offset(x, py), i.isEven ? 1.5 : 1, particlePaint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _HeroScanPainter oldDelegate) {
-    return oldDelegate.progress != progress || oldDelegate.color != color;
-  }
-}
-
 class _FeatureHeroPainter extends CustomPainter {
   const _FeatureHeroPainter({
     required this.progress,
@@ -1078,10 +985,52 @@ class _FeatureHeroPainter extends CustomPainter {
       case _OnboardingHeroType.achievements:
         _drawAchievement(canvas, center, radius, progress);
       case _OnboardingHeroType.runner:
-        break;
+        _drawStrideArc(canvas, center, radius, progress);
     }
 
     _drawIcon(canvas, center, icon, radius);
+  }
+
+  void _drawStrideArc(
+    Canvas canvas,
+    Offset center,
+    double radius,
+    double progress,
+  ) {
+    final arcPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.2
+      ..strokeCap = StrokeCap.round
+      ..color = secondaryColor.withValues(alpha: 0.48);
+
+    final pulseShift = math.sin(progress * math.pi * 2) * 0.14;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius * 0.86),
+      -math.pi * 0.78 + pulseShift,
+      math.pi * 0.56,
+      false,
+      arcPaint,
+    );
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius * 0.86),
+      math.pi * 0.22 + pulseShift,
+      math.pi * 0.56,
+      false,
+      arcPaint..color = primaryColor.withValues(alpha: 0.45),
+    );
+
+    final dotPaint = Paint()..color = primaryColor.withValues(alpha: 0.72);
+    for (final offsetAngle in [-math.pi * 0.5, math.pi * 0.5]) {
+      final angle = offsetAngle + progress * math.pi * 2;
+      canvas.drawCircle(
+        Offset(
+          center.dx + math.cos(angle) * radius * 1.28,
+          center.dy + math.sin(angle) * radius * 1.28,
+        ),
+        3.5,
+        dotPaint,
+      );
+    }
   }
 
   void _drawRoute(

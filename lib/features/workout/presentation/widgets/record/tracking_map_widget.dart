@@ -20,6 +20,111 @@ enum AppMapType {
   streets,
 }
 
+/// Manages the persisted map basemap style across all Aetron map views.
+class AppMapTypeNotifier extends StateNotifier<AppMapType> {
+  AppMapTypeNotifier() : super(AppMapType.satellite) {
+    _initFuture = _loadPreference();
+  }
+
+  late final Future<void> _initFuture;
+  bool _hasExplicitSelection = false;
+
+  /// Resolves once the initial saved map preference has finished loading.
+  @visibleForTesting
+  Future<void> get initialized => _initFuture;
+
+  Future<void> _loadPreference() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getString(kAetronMapTypePrefKey);
+      if (!mounted || saved == null || _hasExplicitSelection) return;
+      state = AppMapType.values.firstWhere(
+        (e) => e.name == saved,
+        orElse: () => AppMapType.satellite,
+      );
+    } catch (_) {}
+  }
+
+  Future<void> setMapType(AppMapType type) async {
+    _hasExplicitSelection = true;
+    state = type;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(kAetronMapTypePrefKey, type.name);
+    } catch (_) {}
+  }
+}
+
+final appMapTypeProvider =
+    StateNotifierProvider<AppMapTypeNotifier, AppMapType>((ref) {
+  return AppMapTypeNotifier();
+});
+
+/// Returns whether a Riverpod [ProviderScope] is available in [context].
+bool hasAetronProviderScope(BuildContext context) {
+  try {
+    ProviderScope.containerOf(context, listen: false);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+/// Reads [appMapTypeProvider] when a [ProviderScope] is present, or falls
+/// back to [fallbackType] in standalone widget harnesses.
+class AetronMapTypeBuilder extends StatelessWidget {
+  const AetronMapTypeBuilder({
+    super.key,
+    this.fallbackType = AppMapType.satellite,
+    required this.builder,
+  });
+
+  final AppMapType fallbackType;
+  final Widget Function(BuildContext context, AppMapType mapType) builder;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!hasAetronProviderScope(context)) {
+      return builder(context, fallbackType);
+    }
+    return Consumer(
+      builder: (context, ref, _) =>
+          builder(context, ref.watch(appMapTypeProvider)),
+    );
+  }
+}
+
+/// Opens the unified Satellite / Clean Street Map style selector sheet.
+Future<void> showAetronMapStylePicker({
+  required BuildContext context,
+  required AppMapType currentType,
+  required AppLanguage currentLang,
+  ValueChanged<AppMapType>? onFallbackSelect,
+}) {
+  HapticFeedback.lightImpact();
+  final hasScope = hasAetronProviderScope(context);
+  return showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: Colors.transparent,
+    isScrollControlled: true,
+    builder: (sheetContext) => _MapStylePickerSheet(
+      currentType: currentType,
+      currentLang: currentLang,
+      onSelectType: (type) async {
+        if (hasScope) {
+          await ProviderScope.containerOf(context, listen: false)
+              .read(appMapTypeProvider.notifier)
+              .setMapType(type);
+        }
+        onFallbackSelect?.call(type);
+        if (sheetContext.mounted) {
+          Navigator.of(sheetContext).pop();
+        }
+      },
+    ),
+  );
+}
+
 class TrackingMapWidget extends StatefulWidget {
   final List<LatLng> routePoints;
   final List<List<LatLng>> routeSegments;
@@ -37,6 +142,9 @@ class TrackingMapWidget extends StatefulWidget {
   final String initials;
   final AppLanguage currentLang;
   final double topControlOffset;
+  final bool showControls;
+  final bool enableTilt;
+  final bool showMapTiles;
 
   const TrackingMapWidget({
     super.key,
@@ -56,6 +164,9 @@ class TrackingMapWidget extends StatefulWidget {
     this.initials = "A",
     this.currentLang = AppLanguage.vi,
     this.topControlOffset = 72,
+    this.showControls = true,
+    this.enableTilt = true,
+    this.showMapTiles = true,
   });
 
   @override
@@ -70,16 +181,16 @@ class _TrackingMapWidgetState extends State<TrackingMapWidget>
 
   DateTime? _lastCameraMove;
   bool _initialCameraSet = false;
-  bool _is3DMode = true;
-  AppMapType _selectedMapType = AppMapType.satellite;
+  late bool _is3DMode;
+  AppMapType _fallbackMapType = AppMapType.satellite;
+  bool _checkedLocalPrefs = false;
   List<LatLng> _cachedDisplayRoute = const <LatLng>[];
   List<List<LatLng>> _cachedDisplaySegments = const <List<LatLng>>[];
   int? _zoomBucket;
 
   static const LatLng _defaultCenter = LatLng(10.7769, 106.7009);
 
-  static const _routeHighlight = Color(0xFFE2F8FC);
-  static const _routeShadow = Color(0x40000000);
+  static const _routeShadow = Color(0x33000000);
 
   static Duration get _cameraThrottle => kDebugLocationMode
       ? const Duration(milliseconds: 120)
@@ -88,6 +199,7 @@ class _TrackingMapWidgetState extends State<TrackingMapWidget>
   @override
   void initState() {
     super.initState();
+    _is3DMode = widget.enableTilt;
     _mapController = MapController();
     _tiltController = AnimationController(
       vsync: this,
@@ -100,7 +212,17 @@ class _TrackingMapWidgetState extends State<TrackingMapWidget>
       _tiltController.value = 1.0;
     }
     _refreshDisplayRoute();
-    _loadSavedPreferences();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_checkedLocalPrefs) {
+      _checkedLocalPrefs = true;
+      if (!hasAetronProviderScope(context)) {
+        _loadSavedPreferences();
+      }
+    }
   }
 
   Future<void> _loadSavedPreferences() async {
@@ -109,7 +231,7 @@ class _TrackingMapWidgetState extends State<TrackingMapWidget>
       final saved = prefs.getString(kAetronMapTypePrefKey);
       if (saved != null && mounted) {
         setState(() {
-          _selectedMapType = AppMapType.values.firstWhere(
+          _fallbackMapType = AppMapType.values.firstWhere(
             (e) => e.name == saved,
             orElse: () => AppMapType.satellite,
           );
@@ -137,25 +259,21 @@ class _TrackingMapWidgetState extends State<TrackingMapWidget>
     });
   }
 
-  void _openMapStylePicker() {
-    HapticFeedback.lightImpact();
-    showModalBottomSheet(
+  void _openMapStylePicker(AppMapType activeMapType) {
+    showAetronMapStylePicker(
       context: context,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) => _MapStylePickerSheet(
-        currentType: _selectedMapType,
-        currentLang: widget.currentLang,
-        onSelectType: (type) async {
-          setState(() {
-            _selectedMapType = type;
-          });
-          Navigator.of(sheetContext).pop();
-          try {
-            final prefs = await SharedPreferences.getInstance();
-            await prefs.setString(kAetronMapTypePrefKey, type.name);
-          } catch (_) {}
-        },
-      ),
+      currentType: activeMapType,
+      currentLang: widget.currentLang,
+      onFallbackSelect: (type) async {
+        if (!mounted) return;
+        setState(() {
+          _fallbackMapType = type;
+        });
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(kAetronMapTypePrefKey, type.name);
+        } catch (_) {}
+      },
     );
   }
 
@@ -390,173 +508,181 @@ class _TrackingMapWidgetState extends State<TrackingMapWidget>
     // and melts the map edges into the paper background instead of black.
     final colors = context.kinetic;
     final isLight = Theme.of(context).brightness == Brightness.light;
-    final routeCore = isLight ? colors.primary : colors.accentFill;
-    final routeGlow = routeCore.withValues(alpha: 0.4);
-    final routeMid = isLight ? colors.secondary : const Color(0xFF2BD9A5);
-    final vignetteColor = isLight ? colors.background : Colors.black;
+    final routeCore = colors.accentFill;
 
-    return Stack(
-      children: [
-        AnimatedBuilder(
-          animation: _tiltAnimation,
-          builder: (context, child) {
-            final tilt = _tiltAnimation.value;
-            return Transform(
-              alignment: Alignment.center,
-              transform: Matrix4.identity()
-                ..setEntry(3, 2, 0.0012)
-                ..rotateX(tilt),
-              child: child,
-            );
-          },
-          child: FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              initialCenter: _visualCameraTarget(center, 17.2),
-              initialZoom: 17.2,
-              minZoom: 4,
-              maxZoom: 20,
-              interactionOptions: const InteractionOptions(
-                flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-              ),
-              onPositionChanged: (camera, hasGesture) {
-                final nextZoomBucket = camera.zoom.round();
-                if (nextZoomBucket != _zoomBucket) {
-                  setState(() {
-                    _zoomBucket = nextZoomBucket;
-                    _refreshDisplayRoute();
-                  });
-                }
-                if (hasGesture) {
-                  widget.onUserGesturePan?.call();
-                }
+    return AetronMapTypeBuilder(
+      fallbackType: _fallbackMapType,
+      builder: (context, activeMapType) {
+        final routeCasing = (isLight || activeMapType == AppMapType.satellite)
+            ? Colors.white.withValues(alpha: 0.92)
+            : Colors.black.withValues(alpha: 0.55);
+
+        return Stack(
+          children: [
+            AnimatedBuilder(
+              animation: _tiltAnimation,
+              builder: (context, child) {
+                final tilt = widget.enableTilt ? _tiltAnimation.value : 0.0;
+                return Transform(
+                  alignment: Alignment.center,
+                  transform: Matrix4.identity()
+                    ..setEntry(3, 2, 0.0012)
+                    ..rotateX(tilt),
+                  child: child,
+                );
               },
+              child: FlutterMap(
+                mapController: _mapController,
+                options: MapOptions(
+                  backgroundColor: colors.surface2,
+                  initialCenter: _visualCameraTarget(center, 17.2),
+                  initialZoom: 17.2,
+                  minZoom: 4,
+                  maxZoom: 20,
+                  interactionOptions: const InteractionOptions(
+                    flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                  ),
+                  onPositionChanged: (camera, hasGesture) {
+                    final nextZoomBucket = camera.zoom.round();
+                    if (nextZoomBucket != _zoomBucket) {
+                      setState(() {
+                        _zoomBucket = nextZoomBucket;
+                        _refreshDisplayRoute();
+                      });
+                    }
+                    if (hasGesture) {
+                      widget.onUserGesturePan?.call();
+                    }
+                  },
+                ),
+                children: [
+                  if (widget.showMapTiles)
+                    ...buildAetronMapTileLayers(activeMapType),
+                  if (widget.showRoute && displaySegments.isNotEmpty)
+                    PolylineLayer(
+                      polylines: [
+                        for (final segment in displaySegments) ...[
+                          if (!useLitePolyline)
+                            Polyline(
+                              points: _offsetShadowPoints(segment),
+                              strokeWidth: 9,
+                              color: _routeShadow,
+                            ),
+                          Polyline(
+                            points: segment,
+                            strokeWidth: useLitePolyline ? 6.5 : 8.5,
+                            color: routeCasing,
+                          ),
+                          Polyline(
+                            points: segment,
+                            strokeWidth: useLitePolyline ? 4.5 : 5.5,
+                            color: routeCore,
+                          ),
+                        ],
+                      ],
+                    ),
+                  MarkerLayer(
+                    markers: [
+                      if (widget.showRoute && displayRoute.isNotEmpty)
+                        Marker(
+                          point: displayRoute.first,
+                          width: 32,
+                          height: 44,
+                          alignment: Alignment.bottomCenter,
+                          child: _Start3DPinMarker(
+                            tiltAnimation: _tiltAnimation,
+                          ),
+                        ),
+                      if (markerPos != null)
+                        Marker(
+                          point: markerPos,
+                          width: 48,
+                          height: 56,
+                          alignment: Alignment.bottomCenter,
+                          child: _Aetron3DUserAvatarMarker(
+                            avatarImage: widget.avatarImage,
+                            initials: widget.initials,
+                            tiltAnimation: _tiltAnimation,
+                          ),
+                        ),
+                      if (widget.gpsGapMarker != null)
+                        Marker(
+                          point: widget.gpsGapMarker!,
+                          width: 20,
+                          height: 20,
+                          alignment: Alignment.center,
+                          child: const _GpsGapMarker(),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            children: [
-              ..._buildMapTileLayers(_selectedMapType),
-              if (widget.showRoute && displaySegments.isNotEmpty)
-                PolylineLayer(
-                  polylines: [
-                    for (final segment in displaySegments) ...[
-                      if (!useLitePolyline)
-                        Polyline(
-                          points: _offsetShadowPoints(segment),
-                          strokeWidth: 9,
-                          color: _routeShadow,
-                        ),
-                      if (!useLitePolyline)
-                        Polyline(
-                          points: segment,
-                          strokeWidth: 16,
-                          color: routeGlow,
-                        ),
-                      Polyline(
-                        points: segment,
-                        strokeWidth: useLitePolyline ? 5.5 : 7.5,
-                        gradientColors: useLitePolyline
-                            ? null
-                            : [routeCore, routeMid, routeCore],
-                        color: routeCore,
+            if (widget.showControls)
+              Positioned(
+                top: widget.topControlOffset,
+                right: 16,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (widget.enableTilt) ...[
+                      _Map3DPerspectiveOrb(
+                        is3D: _is3DMode,
+                        isVi: widget.currentLang == AppLanguage.vi,
+                        onTap: _toggle3DMode,
                       ),
-                      if (!useLitePolyline)
-                        Polyline(
-                          points: segment,
-                          strokeWidth: 2.2,
-                          color: _routeHighlight,
-                        ),
+                      const SizedBox(height: 10),
+                    ],
+                    _MapLayerPickerOrb(
+                      selectedType: activeMapType,
+                      isVi: widget.currentLang == AppLanguage.vi,
+                      onTap: () => _openMapStylePicker(activeMapType),
+                    ),
+                    if (widget.isGpsSignalWeak) ...[
+                      const SizedBox(height: 10),
+                      const _GpsWeakBadge(),
                     ],
                   ],
                 ),
-              MarkerLayer(
-                markers: [
-                  if (widget.showRoute && displayRoute.isNotEmpty)
-                    Marker(
-                      point: displayRoute.first,
-                      width: 32,
-                      height: 44,
-                      alignment: Alignment.bottomCenter,
-                      child: _Start3DPinMarker(
-                        tiltAnimation: _tiltAnimation,
+              ),
+            if (widget.showControls)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          colors.background.withValues(
+                            alpha: isLight ? 0.14 : 0.28,
+                          ),
+                          Colors.transparent,
+                          Colors.transparent,
+                          colors.background.withValues(
+                            alpha: isLight ? 0.20 : 0.36,
+                          ),
+                        ],
+                        stops: const [0.0, 0.14, 0.72, 1.0],
                       ),
                     ),
-                  if (markerPos != null)
-                    Marker(
-                      point: markerPos,
-                      width: 48,
-                      height: 56,
-                      alignment: Alignment.bottomCenter,
-                      child: _Aetron3DUserAvatarMarker(
-                        avatarImage: widget.avatarImage,
-                        initials: widget.initials,
-                        tiltAnimation: _tiltAnimation,
-                      ),
-                    ),
-                  if (widget.gpsGapMarker != null)
-                    Marker(
-                      point: widget.gpsGapMarker!,
-                      width: 20,
-                      height: 20,
-                      alignment: Alignment.center,
-                      child: const _GpsGapMarker(),
-                    ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        Positioned(
-          top: widget.topControlOffset,
-          right: 16,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _Map3DPerspectiveOrb(
-                is3D: _is3DMode,
-                isVi: widget.currentLang == AppLanguage.vi,
-                onTap: _toggle3DMode,
-              ),
-              const SizedBox(height: 10),
-              _MapLayerPickerOrb(
-                selectedType: _selectedMapType,
-                isVi: widget.currentLang == AppLanguage.vi,
-                onTap: _openMapStylePicker,
-              ),
-              if (widget.isGpsSignalWeak) ...[
-                const SizedBox(height: 10),
-                const _GpsWeakBadge(),
-              ],
-            ],
-          ),
-        ),
-        Positioned.fill(
-          child: IgnorePointer(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    vignetteColor.withValues(alpha: isLight ? 0.35 : 0.32),
-                    Colors.transparent,
-                    Colors.transparent,
-                    vignetteColor.withValues(alpha: isLight ? 0.45 : 0.40),
-                  ],
-                  stops: const [0.0, 0.14, 0.65, 1.0],
+                  ),
                 ),
               ),
-            ),
-          ),
-        ),
-      ],
+          ],
+        );
+      },
     );
   }
 }
 
-List<Widget> _buildMapTileLayers(AppMapType type) {
+/// Builds the ArcGIS tile layers for the active [AppMapType].
+List<Widget> buildAetronMapTileLayers(AppMapType type) {
   switch (type) {
     case AppMapType.satellite:
       return [
         TileLayer(
+          key: const ValueKey('aetron-tile-satellite-imagery'),
           urlTemplate:
               "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
           userAgentPackageName: "com.aetron.app",
@@ -564,6 +690,7 @@ List<Widget> _buildMapTileLayers(AppMapType type) {
           maxNativeZoom: 19,
         ),
         TileLayer(
+          key: const ValueKey('aetron-tile-satellite-boundaries'),
           urlTemplate:
               "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
           userAgentPackageName: "com.aetron.app",
@@ -574,6 +701,7 @@ List<Widget> _buildMapTileLayers(AppMapType type) {
     case AppMapType.streets:
       return [
         TileLayer(
+          key: const ValueKey('aetron-tile-streets'),
           urlTemplate:
               "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
           userAgentPackageName: "com.aetron.app",
@@ -607,6 +735,7 @@ class _Map3DPerspectiveOrb extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
+          key: const Key('map-3d-toggle-btn'),
           onTap: onTap,
           borderRadius: BorderRadius.circular(24),
           child: Container(
@@ -616,31 +745,31 @@ class _Map3DPerspectiveOrb extends StatelessWidget {
               shape: BoxShape.circle,
               color: colors.surface1.withValues(alpha: 0.94),
               border: Border.all(
-                color: is3D
-                    ? colors.primary
-                    : Colors.white.withValues(alpha: 0.35),
+                color: is3D ? colors.primary : colors.borderSubtle,
                 width: 1.5,
               ),
-              boxShadow: [
-                if (is3D)
-                  BoxShadow(
-                    color: colors.primary.withValues(alpha: 0.35),
-                    blurRadius: 12,
-                    spreadRadius: 1,
-                  ),
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.5),
-                  blurRadius: 6,
-                  offset: const Offset(0, 3),
-                ),
-              ],
+              boxShadow: colors.isDark
+                  ? [
+                      if (is3D)
+                        BoxShadow(
+                          color: colors.primary.withValues(alpha: 0.35),
+                          blurRadius: 12,
+                          spreadRadius: 1,
+                        ),
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        blurRadius: 6,
+                        offset: const Offset(0, 3),
+                      ),
+                    ]
+                  : KineticTokens.shadowCardLight(),
             ),
             child: Center(
               child: Text(
                 is3D ? "3D" : "2D",
                 style: KineticTypography.unitLabel.copyWith(
                   fontWeight: FontWeight.w900,
-                  color: is3D ? colors.primary : Colors.white70,
+                  color: is3D ? colors.primary : colors.textSecondary,
                   letterSpacing: 0.8,
                 ),
               ),
@@ -666,11 +795,13 @@ class _MapLayerPickerOrb extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.kinetic;
+    final isSatellite = selectedType == AppMapType.satellite;
     return Tooltip(
       message: isVi ? "Chọn kiểu bản đồ" : "Select map style",
       child: Material(
         color: Colors.transparent,
         child: InkWell(
+          key: const Key('map-layer-picker-btn'),
           onTap: onTap,
           borderRadius: BorderRadius.circular(24),
           child: Container(
@@ -680,26 +811,30 @@ class _MapLayerPickerOrb extends StatelessWidget {
               shape: BoxShape.circle,
               color: colors.surface1.withValues(alpha: 0.94),
               border: Border.all(
-                color: colors.primary.withValues(alpha: 0.6),
+                color: isSatellite
+                    ? colors.primary.withValues(alpha: colors.isDark ? 0.75 : 0.55)
+                    : colors.borderSubtle,
                 width: 1.5,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: colors.primary.withValues(alpha: 0.25),
-                  blurRadius: 10,
-                  spreadRadius: 1,
-                ),
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.5),
-                  blurRadius: 6,
-                  offset: const Offset(0, 3),
-                ),
-              ],
+              boxShadow: colors.isDark
+                  ? [
+                      BoxShadow(
+                        color: colors.primary.withValues(alpha: 0.25),
+                        blurRadius: 10,
+                        spreadRadius: 1,
+                      ),
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        blurRadius: 6,
+                        offset: const Offset(0, 3),
+                      ),
+                    ]
+                  : KineticTokens.shadowCardLight(),
             ),
             child: Center(
               child: BladeIcon(
                 BladeIconName.layers,
-                color: colors.primary,
+                color: isSatellite ? colors.primary : colors.textPrimary,
                 size: 22,
               ),
             ),
@@ -710,7 +845,7 @@ class _MapLayerPickerOrb extends StatelessWidget {
   }
 }
 
-class _MapStylePickerSheet extends ConsumerWidget {
+class _MapStylePickerSheet extends StatelessWidget {
   final AppMapType currentType;
   final AppLanguage currentLang;
   final ValueChanged<AppMapType> onSelectType;
@@ -722,118 +857,145 @@ class _MapStylePickerSheet extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final colors = context.kinetic;
-    final activeLang = ref.watch(appLanguageProvider);
-    final isVi = activeLang == AppLanguage.vi;
+    final hasScope = hasAetronProviderScope(context);
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 36),
-      decoration: BoxDecoration(
-        color: colors.surface1,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        border: Border(
-          top: BorderSide(color: colors.borderAccent, width: 1.5),
+    Widget buildSheet(AppLanguage activeLang, AppMapType activeType) {
+      final isVi = activeLang == AppLanguage.vi;
+      return Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * 0.8,
         ),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black87,
-            blurRadius: 30,
-            offset: Offset(0, -10),
+        padding: EdgeInsets.fromLTRB(
+          20,
+          16,
+          20,
+          24 + MediaQuery.paddingOf(context).bottom,
+        ),
+        decoration: BoxDecoration(
+          color: colors.surface1,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          border: Border(
+            top: BorderSide(color: colors.borderAccent, width: 1.5),
           ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.white24,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 18),
-          Row(
+          boxShadow: KineticTokens.shadowPanel(Colors.black),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: colors.primary.withValues(alpha: 0.15),
-                ),
-                child: BladeIcon(
-                  BladeIconName.layers,
-                  color: colors.primary,
-                  size: 20,
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: colors.borderSubtle,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: colors.primary.withValues(alpha: 0.15),
+                    ),
+                    child: BladeIcon(
+                      BladeIconName.layers,
+                      color: colors.primary,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      isVi ? "CHỌN KIỂU BẢN ĐỒ" : "SELECT MAP STYLE",
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: KineticTypography.pageEyebrow.copyWith(
+                        color: colors.textPrimary,
+                        letterSpacing: 1.1,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
               Text(
-                isVi ? "CHỌN KIỂU BẢN ĐỒ" : "SELECT MAP STYLE",
-                style: KineticTypography.pageEyebrow.copyWith(
-                  color: colors.textPrimary,
-                  letterSpacing: 1.1,
+                isVi
+                    ? "Tùy chỉnh góc nhìn bản đồ phù hợp với sở thích của bạn:"
+                    : "Customize your map style to match your preference:",
+                style: KineticTypography.bodySmall.copyWith(
+                  color: colors.textSecondary,
                 ),
+              ),
+              const SizedBox(height: 18),
+              _buildMapOption(
+                context: context,
+                optionKey: const Key('map-style-option-satellite'),
+                type: AppMapType.satellite,
+                activeType: activeType,
+                title: isVi ? "Ảnh Vệ Tinh 3D" : "3D Satellite Imagery",
+                subtitle: isVi
+                    ? "Ảnh chụp thực tế độ phân giải cao"
+                    : "Photorealistic aerial satellite imagery",
+                iconBuilder: (color, size) =>
+                    Icon(Icons.satellite_alt_rounded, color: color, size: size),
+                badge: isVi ? "CHÂN THỰC" : "REALISTIC",
+              ),
+              const SizedBox(height: 12),
+              _buildMapOption(
+                context: context,
+                optionKey: const Key('map-style-option-streets'),
+                type: AppMapType.streets,
+                activeType: activeType,
+                title: isVi ? "Đường Phố Rõ Nét" : "Clean Street Map",
+                subtitle: isVi
+                    ? "Bản đồ đường xá, công viên tinh tế"
+                    : "Clean minimal street & sports map",
+                iconBuilder: (color, size) =>
+                    BladeIcon(BladeIconName.map, color: color, size: size),
+                badge: isVi ? "RÕ NÉT" : "CLEAN",
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Text(
-            isVi
-                ? "Tùy chỉnh góc nhìn bản đồ phù hợp với sở thích của bạn:"
-                : "Customize your map style to match your preference:",
-            style: KineticTypography.bodySmall.copyWith(
-              color: colors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 18),
-          _buildMapOption(
-            context: context,
-            type: AppMapType.satellite,
-            title: isVi ? "Ảnh Vệ Tinh 3D" : "3D Satellite Imagery",
-            subtitle: isVi
-                ? "Ảnh chụp thực tế độ phân giải cao"
-                : "Photorealistic aerial satellite imagery",
-            iconBuilder: (color, size) =>
-                Icon(Icons.satellite_alt_rounded, color: color, size: size),
-            badge: isVi ? "CHÂN THỰC" : "REALISTIC",
-          ),
-          const SizedBox(height: 12),
-          _buildMapOption(
-            context: context,
-            type: AppMapType.streets,
-            title: isVi ? "Đường Phố Rõ Nét" : "Clean Street Map",
-            subtitle: isVi
-                ? "Bản đồ đường xá, công viên tinh tế"
-                : "Clean minimal street & sports map",
-            iconBuilder: (color, size) =>
-                BladeIcon(BladeIconName.map, color: color, size: size),
-            badge: isVi ? "RÕ NÉT" : "CLEAN",
-          ),
-        ],
+        ),
+      );
+    }
+
+    if (!hasScope) {
+      return buildSheet(currentLang, currentType);
+    }
+    return Consumer(
+      builder: (context, ref, _) => buildSheet(
+        ref.watch(appLanguageProvider),
+        ref.watch(appMapTypeProvider),
       ),
     );
   }
 
   Widget _buildMapOption({
     required BuildContext context,
+    required Key optionKey,
     required AppMapType type,
+    required AppMapType activeType,
     required String title,
     required String subtitle,
     required Widget Function(Color color, double size) iconBuilder,
     required String badge,
   }) {
     final colors = context.kinetic;
-    final isSelected = currentType == type;
+    final isSelected = activeType == type;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
+        key: optionKey,
         onTap: () {
           HapticFeedback.selectionClick();
           onSelectType(type);
@@ -843,16 +1005,14 @@ class _MapStylePickerSheet extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
           decoration: BoxDecoration(
             color: isSelected
-                ? colors.primary.withValues(alpha: 0.18)
+                ? colors.primary.withValues(alpha: 0.14)
                 : colors.surface2,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isSelected
-                  ? colors.primary
-                  : colors.borderSubtle,
+              color: isSelected ? colors.primary : colors.borderSubtle,
               width: isSelected ? 1.8 : 1.0,
             ),
-            boxShadow: isSelected
+            boxShadow: isSelected && colors.isDark
                 ? [
                     BoxShadow(
                       color: colors.primary.withValues(alpha: 0.35),
@@ -870,9 +1030,7 @@ class _MapStylePickerSheet extends ConsumerWidget {
                   shape: BoxShape.circle,
                   color: colors.background,
                   border: Border.all(
-                    color: isSelected
-                        ? colors.primary
-                        : Colors.white24,
+                    color: isSelected ? colors.primary : colors.borderSubtle,
                   ),
                 ),
                 child: Center(
@@ -887,10 +1045,15 @@ class _MapStylePickerSheet extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         Text(
                           title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: KineticTypography.bodySmall.copyWith(
                             fontWeight: isSelected
                                 ? FontWeight.w900
@@ -901,7 +1064,6 @@ class _MapStylePickerSheet extends ConsumerWidget {
                             fontSize: 15,
                           ),
                         ),
-                        const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 6,

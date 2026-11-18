@@ -24,6 +24,8 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
   GoalPeriod _selectedPeriod = GoalPeriod.weekly;
   double _targetValue = 35.0;
   bool _isSaving = false;
+  bool _lastMetricUnits = true;
+  bool _hasUserEditedTarget = false;
 
   late final AnimationController _pulseController;
 
@@ -40,6 +42,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
 
     final existing = ref.read(userGoalProvider).valueOrNull;
     final useMetricUnits = _useMetricUnits;
+    _lastMetricUnits = useMetricUnits;
     if (existing != null) {
       _selectedType = existing.goalType;
       _selectedPeriod = existing.period;
@@ -49,6 +52,31 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
     } else {
       _targetValue = _defaultTargetFor(_selectedType, _selectedPeriod, useMetricUnits);
     }
+  }
+
+  void _reconcileMetricUnits(bool isMetric) {
+    if (isMetric == _lastMetricUnits) return;
+    setState(() {
+      _lastMetricUnits = isMetric;
+      if (_selectedType != GoalType.distance) return;
+      if (!_hasUserEditedTarget) {
+        final existing = ref.read(userGoalProvider).valueOrNull;
+        if (existing != null && existing.goalType == GoalType.distance) {
+          _targetValue = isMetric
+              ? existing.targetValue
+              : WorkoutFormatters.kmToMi(existing.targetValue);
+        } else {
+          _targetValue = _defaultTargetFor(_selectedType, _selectedPeriod, isMetric);
+        }
+      } else {
+        final converted = isMetric
+            ? _targetValue / 0.621371
+            : WorkoutFormatters.kmToMi(_targetValue);
+        final minVal = _minTargetFor(_selectedType, _selectedPeriod, isMetric);
+        final maxVal = _maxTargetFor(_selectedType, _selectedPeriod, isMetric);
+        _targetValue = converted.clamp(minVal, maxVal);
+      }
+    });
   }
 
   @override
@@ -116,6 +144,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
     final minVal = _minTargetFor(_selectedType, _selectedPeriod);
     final maxVal = _maxTargetFor(_selectedType, _selectedPeriod);
     setState(() {
+      _hasUserEditedTarget = true;
       _targetValue = value.clamp(minVal, maxVal);
     });
   }
@@ -134,6 +163,30 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
       case GoalType.calories:
         return colors.tertiary; // Coral / Crimson
     }
+  }
+
+  Color _readableAccentForText(Color accent, KineticColors colors) {
+    if (accent == colors.tertiary && !colors.isDark) {
+      return const Color(0xFFB45309);
+    }
+    return accent;
+  }
+
+  Color _readableAccentForIcon(Color accent, KineticColors colors) {
+    if (accent == colors.tertiary && !colors.isDark) {
+      return const Color(0xFFB45309);
+    }
+    return accent;
+  }
+
+  String _formatTargetValue(double value, GoalType type) {
+    if (type == GoalType.calories) {
+      return value.toInt().toString().replaceAllMapped(
+            RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+            (Match m) => '${m[1]},',
+          );
+    }
+    return value % 1 == 0 ? value.toInt().toString() : value.toStringAsFixed(1);
   }
 
   // ── Intensity & Benchmark Calculation ──────────────────────────────────────
@@ -195,20 +248,20 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
         String landmarkVi;
         String landmarkEn;
         if (kmEquiv <= 15) {
-          landmarkVi = 'Tương đương ~3 vòng chạy bờ hồ Hoàn Kiếm';
-          landmarkEn = 'Equivalent to ~3 scenic lake loops';
+          landmarkVi = '~3 vòng bờ hồ Hoàn Kiếm';
+          landmarkEn = '~3 scenic lake loops';
         } else if (kmEquiv <= 35) {
-          landmarkVi = 'Chinh phục trọn vẹn 1 vòng hồ Tây (17km) + các buổi chạy ngắn';
-          landmarkEn = 'Equivalent to a full West Lake perimeter tour + recovery runs';
+          landmarkVi = '~1 vòng hồ Tây (17 km) + chạy nhẹ';
+          landmarkEn = '~1 full West Lake loop + easy runs';
         } else if (kmEquiv <= 60) {
-          landmarkVi = 'Vượt xa cự ly một trận Full Marathon tiêu chuẩn (42.195 km)';
-          landmarkEn = 'Surpasses the iconic Full Marathon distance (42.2 km)';
+          landmarkVi = '~Full Marathon tiêu chuẩn (42.2 km)';
+          landmarkEn = '~Standard Full Marathon (42.2 km)';
         } else if (kmEquiv <= 150) {
-          landmarkVi = 'Tương đương chạy bộ từ Hà Nội tới Phủ Lý (Hà Nam)';
-          landmarkEn = 'Equivalent to an epic cross-provincial endurance trek';
+          landmarkVi = '~Chạy liên tỉnh Hà Nội – Phủ Lý';
+          landmarkEn = '~Cross-city endurance distance';
         } else {
-          landmarkVi = 'Cự ly Ultra Marathon cự phách dành cho chiến binh thép';
-          landmarkEn = 'Ultra Marathon endurance scale reserved for relentless runners';
+          landmarkVi = '~Cự ly Ultra Marathon bền bỉ';
+          landmarkEn = '~Ultra Marathon endurance scale';
         }
 
         final kcal = (kmEquiv * 68).round();
@@ -219,10 +272,10 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
         return (
           landmarkVi: landmarkVi,
           landmarkEn: landmarkEn,
-          calorieImpactVi: 'Giải phóng ~$kcal kcal (tương đương ~$fatKg kg mỡ thuần khiết)',
-          calorieImpactEn: 'Burn ~$kcal kcal (equiv. ~$fatKg kg metabolic fat loss)',
-          scheduleVi: 'Chia đều ~$sessions buổi/chu kỳ (khoảng $perSession $unitStr mỗi buổi)',
-          scheduleEn: 'Split across ~$sessions sessions (~$perSession $unitStr each)',
+          calorieImpactVi: '~$kcal kcal · ~$fatKg kg mỡ',
+          calorieImpactEn: '~$kcal kcal · ~$fatKg kg fat',
+          scheduleVi: '~$sessions buổi · $perSession $unitStr/buổi',
+          scheduleEn: '~$sessions sessions · $perSession $unitStr each',
         );
 
       case GoalType.workouts:
@@ -234,17 +287,17 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
         String landmarkVi;
         String landmarkEn;
         if (sessions <= 3) {
-          landmarkVi = 'Khởi đầu thông minh, tạo đà xây dựng phản xạ vận động';
-          landmarkEn = 'Smart adaptive cadence for consistent recovery & habits';
+          landmarkVi = 'Nhịp độ nhẹ nhàng để duy trì thói quen';
+          landmarkEn = 'Light cadence to build steady habit';
         } else if (sessions <= 5) {
-          landmarkVi = 'Tần suất vàng theo tiêu chuẩn của Tổ chức Y tế Thế giới (WHO)';
-          landmarkEn = 'Gold standard activity frequency recommended by WHO';
+          landmarkVi = 'Đạt tần suất khuyến nghị của WHO';
+          landmarkEn = 'Meets WHO recommended frequency';
         } else if (sessions <= 7) {
-          landmarkVi = 'Kỷ luật thép — Duy trì ngọn lửa vận động đều đặn mỗi ngày';
-          landmarkEn = 'Ironclad discipline — Daily athletic activation without break';
+          landmarkVi = 'Vận động đều đặn mỗi ngày';
+          landmarkEn = 'Daily active discipline';
         } else {
-          landmarkVi = 'Cường độ kép — Hai buổi rèn luyện mỗi ngày của vận động viên';
-          landmarkEn = 'Double-session athlete regimen pushing physical boundaries';
+          landmarkVi = 'Cường độ kép cho vận động viên';
+          landmarkEn = 'Double-session athlete cadence';
         }
 
         final estKcal = sessions * 360;
@@ -252,10 +305,10 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
         return (
           landmarkVi: landmarkVi,
           landmarkEn: landmarkEn,
-          calorieImpactVi: 'Ước tính tiêu hao ~$estKcal kcal qua các buổi tập',
-          calorieImpactEn: 'Estimated ~$estKcal active calories across workouts',
-          scheduleVi: 'Trung bình cứ mỗi $daysBetween ngày hoàn thành 1 buổi tập',
-          scheduleEn: '1 workout completed every $daysBetween days',
+          calorieImpactVi: '~$estKcal kcal tiêu hao ước tính',
+          calorieImpactEn: '~$estKcal estimated kcal burned',
+          scheduleVi: '1 buổi mỗi $daysBetween ngày',
+          scheduleEn: '1 workout every $daysBetween days',
         );
 
       case GoalType.calories:
@@ -266,12 +319,12 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
         final perDay = (kcal / days).round();
 
         return (
-          landmarkVi: 'Giải phóng năng lượng tương đương tiêu hao $phoBowls bữa ăn tiêu chuẩn',
-          landmarkEn: 'Metabolic deficit equivalent to burning $phoBowls standard meals',
-          calorieImpactVi: 'Đốt cháy ~$fatKg kg mô mỡ tích lũy khỏi cơ thể',
-          calorieImpactEn: 'Oxidizes ~$fatKg kg of pure stored body fat',
-          scheduleVi: 'Cần đốt cháy trung bình ~$perDay kcal mỗi ngày',
-          scheduleEn: 'Requires an average burn of ~$perDay kcal daily',
+          landmarkVi: 'Tương đương ~$phoBowls bữa ăn tiêu chuẩn',
+          landmarkEn: 'Equivalent to ~$phoBowls standard meals',
+          calorieImpactVi: '~$fatKg kg mỡ tiêu hao ước tính',
+          calorieImpactEn: '~$fatKg kg stored fat burned',
+          scheduleVi: 'Trung bình ~$perDay kcal/ngày',
+          scheduleEn: 'Average ~$perDay kcal/day',
         );
     }
   }
@@ -345,10 +398,13 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: colors.surface2,
+        backgroundColor: colors.surface1,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(KineticTokens.radiusXL),
-          side: BorderSide(color: colors.borderAccent, width: 1.2),
+          side: BorderSide(
+            color: colors.isDark ? colors.borderAccent : colors.borderSubtle,
+            width: 1.0,
+          ),
         ),
         title: Row(
           children: [
@@ -388,7 +444,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: colors.error,
+              backgroundColor: colors.isDark ? const Color(0xFFDC2626) : colors.error,
               foregroundColor: Colors.white,
             ),
             onPressed: () => Navigator.of(ctx).pop(true),
@@ -421,103 +477,29 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
     final colors = context.kinetic;
     final isVi = currentLang == AppLanguage.vi;
     final accent = _accentColorFor(_selectedType, colors);
+    final accentText = _readableAccentForText(accent, colors);
+    final accentIcon = _readableAccentForIcon(accent, colors);
     final textVal = _targetValue % 1 == 0
         ? _targetValue.toInt().toString()
         : _targetValue.toStringAsFixed(1);
-    final controller = TextEditingController(text: textVal)
-      ..selection = TextSelection(baseOffset: 0, extentOffset: textVal.length);
+    final unitSuffix = _unitLabel(
+      _selectedType,
+      useMetricUnits: _useMetricUnits,
+      isVi: isVi,
+    ).toUpperCase();
 
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (sheetContext) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
-        ),
-        child: Container(
-          margin: const EdgeInsets.all(KineticTokens.spaceMD),
-          padding: const EdgeInsets.all(KineticTokens.spaceXL),
-          decoration: BoxDecoration(
-            color: colors.surface1,
-            borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
-            border: Border.all(color: accent.withValues(alpha: 0.3), width: 1.2),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: accent.withValues(alpha: 0.15),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(Icons.edit_note_rounded, size: 16, color: accent),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    isVi ? 'NHẬP CHÍNH XÁC MỤC TIÊU' : 'ENTER EXACT TARGET',
-                    style: KineticTypography.unitLabel.copyWith(
-                      color: accent,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: KineticTokens.spaceSM),
-              TextField(
-                controller: controller,
-                autofocus: true,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                style: KineticTypography.displayLarge.copyWith(
-                  color: colors.textPrimary,
-                ),
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: colors.surface1,
-                  suffixText: _unitLabel(
-                    _selectedType,
-                    useMetricUnits: _useMetricUnits,
-                    isVi: isVi,
-                  ).toUpperCase(),
-                  suffixStyle: KineticTypography.label.copyWith(
-                    color: accent,
-                    fontWeight: FontWeight.w800,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
-                    borderSide: BorderSide(color: colors.borderSubtle),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
-                    borderSide: BorderSide(color: colors.borderSubtle),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
-                    borderSide: BorderSide(color: accent, width: 1.6),
-                  ),
-                ),
-              ),
-              const SizedBox(height: KineticTokens.spaceLG),
-              KineticButton(
-                label: isVi ? 'ÁP DỤNG MỤC TIÊU' : 'APPLY TARGET',
-                icon: Icons.check_circle_rounded,
-                variant: KineticButtonVariant.primary,
-                height: KineticTokens.buttonHeightPrimary,
-                onPressed: () {
-                  final parsed = double.tryParse(controller.text.trim());
-                  if (parsed != null && parsed > 0) {
-                    _updateTarget(parsed);
-                    Navigator.of(sheetContext).pop();
-                  }
-                },
-              ),
-            ],
-          ),
-        ),
+      builder: (_) => _DirectValueEditorSheet(
+        initialValue: textVal,
+        unitSuffix: unitSuffix,
+        accent: accent,
+        accentText: accentText,
+        accentIcon: accentIcon,
+        isVi: isVi,
+        onApply: _updateTarget,
       ),
     );
   }
@@ -526,6 +508,13 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<AsyncValue<bool>>(metricUnitsPreferenceProvider, (previous, next) {
+      final isMetric = next.valueOrNull;
+      if (isMetric != null) {
+        _reconcileMetricUnits(isMetric);
+      }
+    });
+
     final colors = context.kinetic;
     final currentLang = ref.watch(appLanguageProvider);
     final isVi = currentLang == AppLanguage.vi;
@@ -552,20 +541,20 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(
                   KineticTokens.page,
-                  KineticTokens.spaceXS,
+                  KineticTokens.spaceXXS,
                   KineticTokens.page,
-                  120,
+                  24,
                 ),
                 children: [
                   // 2.1 Athletic Discipline Selector (Distance / Sessions / Calories)
                   _buildDisciplineSelector(colors, currentLang),
+                  const SizedBox(height: 6),
+
+                  // 2.2 Cadence Selector (Weekly vs Monthly)
+                  _buildCadenceSelector(colors, currentLang),
                   const SizedBox(height: KineticTokens.spaceSM),
 
-                  // 2.2 Cadence Selector (Weekly Sprint vs Monthly Campaign)
-                  _buildCadenceSelector(colors, currentLang),
-                  const SizedBox(height: KineticTokens.spaceLG),
-
-                  // 2.3 HERO: Kinetic Target Energy Reactor Dial
+                  // 2.3 Compact Target Card
                   _buildEnergyReactorCard(
                     context,
                     colors,
@@ -576,15 +565,15 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                     maxVal,
                     step,
                   ),
-                  const SizedBox(height: KineticTokens.spaceLG),
+                  const SizedBox(height: KineticTokens.spaceSM),
 
-                  // 2.4 Real-World Impact & Benchmark Projection
-                  _buildRealWorldImpactCard(colors, currentLang, useMetricUnits, accent),
-                  const SizedBox(height: KineticTokens.spaceLG),
-
-                  // 2.5 Athletic Goal Presets (Starter, Pro, Elite, Beast)
+                  // 2.4 Athletic Goal Presets (Starter, Pro, Elite, Beast)
                   _buildAthleticPresets(colors, currentLang, useMetricUnits, accent),
-                  const SizedBox(height: KineticTokens.spaceLG),
+                  const SizedBox(height: KineticTokens.spaceSM),
+
+                  // 2.5 Real-World Impact & Benchmark Projection
+                  _buildRealWorldImpactCard(colors, currentLang, useMetricUnits, accent),
+                  const SizedBox(height: KineticTokens.spaceXS),
 
                   // 2.6 Target Reward / Badge Unlock Spotlight
                   _buildBadgeUnlockPreview(colors, currentLang, accent),
@@ -616,9 +605,9 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         KineticTokens.page,
-        KineticTokens.spaceSM,
+        6,
         KineticTokens.page,
-        KineticTokens.spaceXS,
+        4,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -645,13 +634,21 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
           ),
           const SizedBox(width: KineticTokens.spaceSM),
           Expanded(
-            child: Text(
-              isVi ? 'Mục tiêu rèn luyện' : 'Fitness Goals',
-              style: KineticTypography.pageTitle.copyWith(
-                color: colors.textPrimary,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  isVi ? 'Mục tiêu rèn luyện' : 'Fitness Goals',
+                  style: KineticTypography.pageTitleCompact.copyWith(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: colors.textPrimary,
+                  ),
+                  maxLines: 1,
+                ),
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
           ),
           if (hasGoal)
@@ -709,27 +706,35 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
       ),
     ];
 
-    return Row(
-      children: [
-        for (int i = 0; i < items.length; i++) ...[
-          if (i > 0) const SizedBox(width: KineticTokens.spaceXS),
-          Expanded(
-            child: _buildDisciplineCard(
-              colors: colors,
-              type: items[i].$1,
-              icon: items[i].$2,
-              title: items[i].$3,
-              badge: items[i].$4,
-              accent: items[i].$5,
-              isSelected: _selectedType == items[i].$1,
+    return Container(
+      padding: const EdgeInsets.all(KineticTokens.spaceXXS),
+      decoration: BoxDecoration(
+        color: colors.surface2,
+        borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
+        border: colors.isDark ? Border.all(color: colors.borderSubtle) : null,
+      ),
+      child: Row(
+        children: [
+          for (int i = 0; i < items.length; i++) ...[
+            if (i > 0) const SizedBox(width: KineticTokens.spaceXXS),
+            Expanded(
+              child: _buildDisciplineSegment(
+                colors: colors,
+                type: items[i].$1,
+                icon: items[i].$2,
+                title: items[i].$3,
+                badge: items[i].$4,
+                accent: items[i].$5,
+                isSelected: _selectedType == items[i].$1,
+              ),
             ),
-          ),
+          ],
         ],
-      ],
+      ),
     );
   }
 
-  Widget _buildDisciplineCard({
+  Widget _buildDisciplineSegment({
     required KineticColors colors,
     required GoalType type,
     required IconData icon,
@@ -738,65 +743,85 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
     required Color accent,
     required bool isSelected,
   }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          HapticFeedback.selectionClick();
-          setState(() {
-            _selectedType = type;
-            _targetValue = _defaultTargetFor(type, _selectedPeriod);
-          });
-        },
-        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
-        child: AnimatedContainer(
-          duration: KineticTokens.motionTab,
-          padding: const EdgeInsets.symmetric(
-            vertical: KineticTokens.spaceSM,
-            horizontal: KineticTokens.spaceXS,
-          ),
-          decoration: BoxDecoration(
-            color: isSelected ? accent.withValues(alpha: 0.14) : colors.surface1,
-            borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
-            border: Border.all(
-              color: isSelected ? accent : colors.borderSubtle,
-              width: isSelected ? 1.5 : 1.0,
+    final badgeColor = isSelected
+        ? _readableAccentForText(accent, colors)
+        : colors.textMuted;
+    final iconColor = isSelected
+        ? _readableAccentForIcon(accent, colors)
+        : colors.textMuted;
+
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      label: '$title, $badge',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            if (_selectedType == type) return;
+            HapticFeedback.selectionClick();
+            setState(() {
+              _hasUserEditedTarget = true;
+              _selectedType = type;
+              _targetValue = _defaultTargetFor(type, _selectedPeriod);
+            });
+          },
+          borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
+          child: AnimatedContainer(
+            duration: KineticTokens.motionTab,
+            constraints: const BoxConstraints(
+              minHeight: 40,
             ),
-          ),
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(KineticTokens.spaceXS),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: isSelected ? accent : colors.surface2,
-                ),
-                child: Icon(
-                  icon,
-                  size: 18,
-                  color: isSelected ? colors.onPrimary : colors.textSecondary,
-                ),
+            padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 5),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? (colors.isDark ? colors.surface3 : colors.surface1)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
+              border: isSelected && colors.isDark
+                  ? Border.all(color: accent.withValues(alpha: 0.45), width: 1.0)
+                  : null,
+              boxShadow: isSelected && !colors.isDark
+                  ? KineticTokens.shadowCardLight()
+                  : null,
+            ),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(icon, size: 13, color: iconColor),
+                      const SizedBox(width: 4),
+                      Text(
+                        title,
+                        style: KineticTypography.label.copyWith(
+                          fontSize: 12.5,
+                          fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                          color: isSelected ? colors.textPrimary : colors.textSecondary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                  Text(
+                    badge,
+                    style: KineticTypography.caption.copyWith(
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w700,
+                      color: badgeColor,
+                      letterSpacing: 0.6,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
-              const SizedBox(height: KineticTokens.spaceXS),
-              Text(
-                title,
-                style: KineticTypography.label.copyWith(
-                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                  color: isSelected ? colors.textPrimary : colors.textSecondary,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 2),
-              Text(
-                badge,
-                style: KineticTypography.caption.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: isSelected ? accent : colors.textMuted,
-                  letterSpacing: 0.8,
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -809,40 +834,45 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
     final isVi = currentLang == AppLanguage.vi;
 
     return Container(
-      padding: const EdgeInsets.all(KineticTokens.spaceXXS),
+      padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: colors.surface1,
-        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
-        border: Border.all(color: colors.borderSubtle),
+        color: colors.surface2,
+        borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
+        border: colors.isDark ? Border.all(color: colors.borderSubtle) : null,
       ),
       child: Row(
         children: [
           Expanded(
             child: _buildCadenceTab(
               colors: colors,
-              title: isVi ? 'Sprint Tuần Này' : 'Weekly Sprint',
-              subtitle: isVi ? 'Chu kỳ 7 ngày' : '7-Day Rolling',
+              title: isVi ? 'Tuần' : 'Weekly',
+              subtitle: isVi ? '7 ngày' : '7 days',
               icon: Icons.flash_on_rounded,
               isSelected: _selectedPeriod == GoalPeriod.weekly,
               onTap: () {
+                if (_selectedPeriod == GoalPeriod.weekly) return;
                 HapticFeedback.selectionClick();
                 setState(() {
+                  _hasUserEditedTarget = true;
                   _selectedPeriod = GoalPeriod.weekly;
                   _targetValue = _defaultTargetFor(_selectedType, GoalPeriod.weekly);
                 });
               },
             ),
           ),
+          const SizedBox(width: 3),
           Expanded(
             child: _buildCadenceTab(
               colors: colors,
-              title: isVi ? 'Chiến Dịch Tháng' : 'Monthly Campaign',
-              subtitle: isVi ? 'Mục tiêu 30 ngày' : '30-Day Milestone',
+              title: isVi ? 'Tháng' : 'Monthly',
+              subtitle: isVi ? '30 ngày' : '30 days',
               icon: Icons.flag_rounded,
               isSelected: _selectedPeriod == GoalPeriod.monthly,
               onTap: () {
+                if (_selectedPeriod == GoalPeriod.monthly) return;
                 HapticFeedback.selectionClick();
                 setState(() {
+                  _hasUserEditedTarget = true;
                   _selectedPeriod = GoalPeriod.monthly;
                   _targetValue = _defaultTargetFor(_selectedType, GoalPeriod.monthly);
                 });
@@ -862,58 +892,71 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
     required bool isSelected,
     required VoidCallback onTap,
   }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
-        child: AnimatedContainer(
-          duration: KineticTokens.motionTab,
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: isSelected ? colors.surface3 : Colors.transparent,
-            borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
-            border: isSelected
-                ? Border.all(color: colors.borderAccent, width: 1.2)
-                : null,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 15,
-                color: isSelected ? colors.primary : colors.textMuted,
-              ),
-              const SizedBox(width: 6),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      label: '$title $subtitle',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
+          child: AnimatedContainer(
+            duration: KineticTokens.motionTab,
+            constraints: const BoxConstraints(minHeight: KineticTokens.minTouchTarget),
+            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? (colors.isDark ? colors.surface3 : colors.surface1)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
+              border: isSelected && colors.isDark
+                  ? Border.all(color: colors.borderAccent, width: 1.0)
+                  : null,
+              boxShadow: isSelected && !colors.isDark
+                  ? KineticTokens.shadowCardLight()
+                  : null,
+            ),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  Icon(
+                    icon,
+                    size: 13,
+                    color: isSelected ? colors.primary : colors.textMuted,
+                  ),
+                  const SizedBox(width: 5),
                   Text(
                     title,
-                    style: KineticTypography.bodySmall.copyWith(
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: KineticTypography.label.copyWith(
                       fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                      color: isSelected ? colors.textPrimary : colors.textMuted,
+                      color: isSelected ? colors.textPrimary : colors.textSecondary,
                     ),
                   ),
+                  const SizedBox(width: 5),
                   Text(
                     subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: KineticTypography.caption.copyWith(
+                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                       color: isSelected ? colors.primary : colors.textMuted,
                     ),
                   ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
-
-  // ── 2.3 HERO: Kinetic Target Energy Reactor Dial ───────────────────────────
 
   // ── 2.3 HERO: Kinetic Target Goal Card ─────────────────────────────────────
 
@@ -928,31 +971,20 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
     double step,
   ) {
     final isVi = currentLang == AppLanguage.vi;
-    final displayValue = _selectedType == GoalType.calories
-        ? _targetValue.toInt().toString().replaceAllMapped(
-            RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-            (Match m) => '${m[1]},',
-          )
-        : (_targetValue % 1 == 0
-            ? _targetValue.toInt().toString()
-            : _targetValue.toStringAsFixed(1));
-
+    final displayValue = _formatTargetValue(_targetValue, _selectedType);
+    final accentText = _readableAccentForText(accent, colors);
     final intensity = _getIntensityInfo(colors);
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(
-        KineticTokens.spaceLG,
-        KineticTokens.spaceLG,
-        KineticTokens.spaceLG,
-        KineticTokens.spaceLG,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: colors.surface1,
-        borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
         border: Border.all(
           color: accent.withValues(alpha: 0.25),
-          width: 1.2,
+          width: 1.0,
         ),
+        boxShadow: colors.isDark ? null : KineticTokens.shadowCardLight(),
       ),
       child: Column(
         children: [
@@ -960,61 +992,81 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: accent,
+              Expanded(
+                flex: 3,
+                child: Row(
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: accent,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    _selectedPeriod == GoalPeriod.weekly
-                        ? (isVi ? 'MỤC TIÊU TUẦN' : 'WEEKLY TARGET')
-                        : (isVi ? 'MỤC TIÊU THÁNG' : 'MONTHLY TARGET'),
-                    style: KineticTypography.unitLabel.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: accent,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                ],
-              ),
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    _showDirectValueEditor(context, currentLang);
-                  },
-                  borderRadius: BorderRadius.circular(12),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.edit_note_rounded, size: 16, color: accent),
-                        const SizedBox(width: 4),
-                        Text(
-                          isVi ? 'Nhập số' : 'Enter value',
-                          style: KineticTypography.caption.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: colors.textSecondary,
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          _selectedPeriod == GoalPeriod.weekly
+                              ? (isVi ? 'MỤC TIÊU TUẦN' : 'WEEKLY TARGET')
+                              : (isVi ? 'MỤC TIÊU THÁNG' : 'MONTHLY TARGET'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: KineticTypography.unitLabel.copyWith(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w800,
+                            color: accentText,
+                            letterSpacing: 0.8,
                           ),
                         ),
-                      ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                flex: 2,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        _showDirectValueEditor(context, currentLang);
+                      },
+                      borderRadius: BorderRadius.circular(10),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.edit_note_rounded, size: 15, color: accentText),
+                            const SizedBox(width: 3),
+                            Text(
+                              isVi ? 'Nhập số' : 'Enter value',
+                              style: KineticTypography.caption.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: colors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: KineticTokens.spaceLG),
+          const SizedBox(height: 6),
 
-          // 2. Interactive Ergonomic Steppers with Hero Metric Center
+          // 2. Compact Interactive Ergonomic Steppers with Metric Center
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -1028,7 +1080,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                 onTap: () => _adjustTarget(-step),
               ),
 
-              // Hero Metric Display (Tap to Edit)
+              // Metric Display (Tap to Edit)
               Expanded(
                 child: Material(
                   color: Colors.transparent,
@@ -1037,41 +1089,37 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                       HapticFeedback.lightImpact();
                       _showDirectValueEditor(context, currentLang);
                     },
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(12),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.baseline,
-                            textBaseline: TextBaseline.alphabetic,
-                            children: [
-                              Text(
-                                displayValue,
-                                style: KineticTypography.metricHero.copyWith(
-                                  color: colors.textPrimary,
-                                ),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
+                          children: [
+                            Text(
+                              displayValue,
+                              style: KineticTypography.displayLarge.copyWith(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w800,
+                                height: 1.05,
+                                color: colors.textPrimary,
                               ),
-                              const SizedBox(width: 6),
-                              Text(
-                                unit.toUpperCase(),
-                                style: KineticTypography.metricUnit.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                  color: accent,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            isVi ? 'Chạm để gõ số' : 'Tap to edit',
-                            style: KineticTypography.caption.copyWith(
-                              color: colors.textMuted,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 5),
+                            Text(
+                              unit.toUpperCase(),
+                              style: KineticTypography.metricUnit.copyWith(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                                color: accentText,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -1088,29 +1136,34 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
               ),
             ],
           ),
-          const SizedBox(height: KineticTokens.spaceMD),
+          const SizedBox(height: 5),
 
-          // 3. Clean & Subtle Athletic Intensity Tag
+          // 3. Clean & Compact Athletic Intensity Tag
           Container(
             padding: const EdgeInsets.symmetric(
-              horizontal: KineticTokens.spaceSM,
-              vertical: KineticTokens.spaceXS,
+              horizontal: 10,
+              vertical: 3,
             ),
             decoration: BoxDecoration(
               color: intensity.color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
+              borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
               border: Border.all(color: intensity.color.withValues(alpha: 0.25)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(intensity.icon, size: 14, color: intensity.color),
-                const SizedBox(width: 8),
-                Text(
-                  isVi ? intensity.titleVi : intensity.titleEn,
-                  style: KineticTypography.unitLabel.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: intensity.color,
+                Icon(intensity.icon, size: 13, color: intensity.color),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    isVi ? intensity.titleVi : intensity.titleEn,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: KineticTypography.caption.copyWith(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: intensity.color,
+                    ),
                   ),
                 ),
               ],
@@ -1128,6 +1181,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
     required bool enabled,
     required VoidCallback onTap,
   }) {
+    final accentIcon = _readableAccentForIcon(accent, colors);
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -1135,27 +1189,29 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
         borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
         child: AnimatedContainer(
           duration: KineticTokens.motionPress,
-          width: 52,
-          height: 52,
+          width: 38,
+          height: 38,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: enabled ? colors.surface2 : colors.surface2.withValues(alpha: 0.3),
             border: Border.all(
-              color: enabled ? accent.withValues(alpha: 0.35) : colors.borderSubtle.withValues(alpha: 0.2),
-              width: 1.4,
+              color: enabled
+                  ? accentIcon.withValues(alpha: 0.35)
+                  : colors.borderSubtle.withValues(alpha: 0.2),
+              width: 1.2,
             ),
           ),
           child: Icon(
             icon,
-            size: 26,
-            color: enabled ? accent : colors.textMuted.withValues(alpha: 0.4),
+            size: 18,
+            color: enabled ? accentIcon : colors.textMuted.withValues(alpha: 0.4),
           ),
         ),
       ),
     );
   }
 
-  // ── 2.4 Real-World Impact & Benchmark Projection ───────────────────────────
+  // ── 2.5 Concise Real-World Impact & Benchmark Projection ───────────────────
 
   Widget _buildRealWorldImpactCard(
     KineticColors colors,
@@ -1165,13 +1221,15 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
   ) {
     final isVi = currentLang == AppLanguage.vi;
     final benchmark = _getRealWorldBenchmark(useMetricUnits);
+    final accentText = _readableAccentForText(accent, colors);
 
     return Container(
-      padding: const EdgeInsets.all(KineticTokens.spaceLG),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: colors.surface1,
-        borderRadius: BorderRadius.circular(KineticTokens.radiusXL),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
         border: Border.all(color: colors.borderSubtle, width: 1.0),
+        boxShadow: colors.isDark ? null : KineticTokens.shadowCardLight(),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1179,46 +1237,48 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   color: accent.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.auto_awesome_rounded, size: 15, color: accent),
+                child: Icon(Icons.auto_awesome_rounded, size: 13, color: accentText),
               ),
-              const SizedBox(width: 8),
-              Text(
-                isVi ? 'Ý NGHĨA & HIỆU QUẢ THỰC TẾ' : 'REAL-WORLD PERFORMANCE IMPACT',
-                style: KineticTypography.unitLabel.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: accent,
-                  letterSpacing: 1.0,
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  isVi ? 'Ý NGHĨA & HIỆU QUẢ THỰC TẾ' : 'REAL-WORLD PERFORMANCE IMPACT',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: KineticTypography.unitLabel.copyWith(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
+                    color: accentText,
+                    letterSpacing: 0.8,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: KineticTokens.spaceSM),
+          const SizedBox(height: 6),
 
           _buildImpactItem(
             colors: colors,
             icon: Icons.place_rounded,
-            title: isVi ? 'Cột mốc tương đương:' : 'Equivalent landmark:',
             description: isVi ? benchmark.landmarkVi : benchmark.landmarkEn,
             accent: accent,
           ),
-          const SizedBox(height: KineticTokens.spaceXS),
+          const SizedBox(height: 4),
           _buildImpactItem(
             colors: colors,
             icon: Icons.local_fire_department_rounded,
-            title: isVi ? 'Chuyển hóa năng lượng:' : 'Metabolic energy burn:',
             description: isVi ? benchmark.calorieImpactVi : benchmark.calorieImpactEn,
             accent: accent,
           ),
-          const SizedBox(height: KineticTokens.spaceXS),
+          const SizedBox(height: 4),
           _buildImpactItem(
             colors: colors,
             icon: Icons.calendar_month_rounded,
-            title: isVi ? 'Phân rã lộ trình thực hiện:' : 'Recommended execution pace:',
             description: isVi ? benchmark.scheduleVi : benchmark.scheduleEn,
             accent: accent,
           ),
@@ -1230,44 +1290,33 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
   Widget _buildImpactItem({
     required KineticColors colors,
     required IconData icon,
-    required String title,
     required String description,
     required Color accent,
   }) {
+    final accentIcon = _readableAccentForIcon(accent, colors);
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Container(
-          margin: const EdgeInsets.only(top: 2),
-          padding: const EdgeInsets.all(KineticTokens.spaceXXS),
+          padding: const EdgeInsets.all(3),
           decoration: BoxDecoration(
             color: colors.surface2,
             borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
           ),
-          child: Icon(icon, size: 14, color: accent),
+          child: Icon(icon, size: 12, color: accentIcon),
         ),
-        const SizedBox(width: KineticTokens.spaceXS),
+        const SizedBox(width: 8),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: KineticTypography.caption.copyWith(
-                  color: colors.textMuted,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 1),
-              Text(
-                description,
-                style: KineticTypography.bodySmall.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: colors.textPrimary,
-                  height: 1.35,
-                ),
-              ),
-            ],
+          child: Text(
+            description,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: KineticTypography.bodySmall.copyWith(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w600,
+              color: colors.textPrimary,
+              height: 1.25,
+            ),
           ),
         ),
       ],
@@ -1350,11 +1399,12 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
         Text(
           isVi ? 'GÓI MỤC TIÊU ĐỀ XUẤT' : 'RECOMMENDED GOAL PRESETS',
           style: KineticTypography.unitLabel.copyWith(
+            fontSize: 10.5,
             color: colors.primary,
-            letterSpacing: 1.0,
+            letterSpacing: 0.9,
           ),
         ),
-        const SizedBox(height: KineticTokens.spaceXS),
+        const SizedBox(height: 6),
         Row(
           children: [
             for (int i = 0; i < presets.length; i++) ...[
@@ -1393,9 +1443,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
     required bool isSelected,
     required VoidCallback onTap,
   }) {
-    final displayVal = targetVal % 1 == 0
-        ? targetVal.toInt().toString()
-        : targetVal.toStringAsFixed(0);
+    final displayVal = _formatTargetValue(targetVal, _selectedType);
 
     return Material(
       color: Colors.transparent,
@@ -1405,7 +1453,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
         child: AnimatedContainer(
           duration: KineticTokens.motionTab,
           padding: const EdgeInsets.symmetric(
-            vertical: KineticTokens.spaceXS,
+            vertical: 5,
             horizontal: KineticTokens.spaceXXS,
           ),
           decoration: BoxDecoration(
@@ -1415,36 +1463,48 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
               color: isSelected ? presetColor : colors.borderSubtle,
               width: isSelected ? 1.5 : 1.0,
             ),
+            boxShadow: !isSelected && !colors.isDark
+                ? KineticTokens.shadowCardLight()
+                : null,
           ),
           child: Column(
             children: [
-              Icon(icon, size: 16, color: presetColor),
-              const SizedBox(height: 4),
+              Icon(icon, size: 13, color: presetColor),
+              const SizedBox(height: 2),
               Text(
                 title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: KineticTypography.caption.copyWith(
+                  fontSize: 10.5,
                   fontWeight: FontWeight.w800,
                   color: presetColor,
                 ),
               ),
-              const SizedBox(height: 2),
-              Text(
-                '$displayVal $unitLabel',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: KineticTypography.caption.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: isSelected ? colors.textPrimary : colors.textMuted,
-                  fontFeatures: KineticTypography.tabularFigures,
+              const SizedBox(height: 1),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  '$displayVal $unitLabel',
+                  maxLines: 1,
+                  style: KineticTypography.caption.copyWith(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    color: isSelected ? colors.textPrimary : colors.textMuted,
+                    fontFeatures: KineticTypography.tabularFigures,
+                  ),
                 ),
               ),
-              const SizedBox(height: 2),
-              Text(
-                tag,
-                style: KineticTypography.caption.copyWith(
-                  color: isSelected ? presetColor : colors.textMuted,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  tag,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: KineticTypography.caption.copyWith(
+                    fontSize: 9.5,
+                    color: isSelected ? presetColor : colors.textMuted,
+                  ),
                 ),
               ),
             ],
@@ -1470,15 +1530,15 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
     switch (_selectedType) {
       case GoalType.distance:
         if (_targetValue >= 80) {
-          badgeName = isVi ? '🥇 Huyền Thoại Vi Dã (Ultra 80K)' : '🥇 Century Ultra 80K';
+          badgeName = isVi ? 'Huyền Thoại Vi Dã (Ultra 80K)' : 'Century Ultra 80K';
           badgeDesc = isVi ? 'Mở khóa huy hiệu cự ly đỉnh cao của Aetron.' : 'Unlocks top-tier endurance trophy.';
           badgeIcon = Icons.military_tech_rounded;
         } else if (_targetValue >= 42) {
-          badgeName = isVi ? '🥈 Bán Kỷ Lục Marathon' : '🥈 Marathon Vanguard';
+          badgeName = isVi ? 'Bán Kỷ Lục Marathon' : 'Marathon Vanguard';
           badgeDesc = isVi ? 'Đạt chuẩn cự ly thi đấu quốc tế.' : 'Meets international road race milestone.';
           badgeIcon = Icons.workspace_premium_rounded;
         } else {
-          badgeName = isVi ? '🥉 Ngọn Lửa Khởi Sắc' : '🥉 Pacesetter 15K';
+          badgeName = isVi ? 'Ngọn Lửa Khởi Sắc' : 'Pacesetter 15K';
           badgeDesc = isVi ? 'Xác lập nền tảng thể lực vững bền.' : 'Solidifies foundational endurance.';
           badgeIcon = Icons.emoji_events_rounded;
         }
@@ -1486,18 +1546,18 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
 
       case GoalType.workouts:
         if (_targetValue >= 6) {
-          badgeName = isVi ? '🥇 Kỷ Luật Sắt Đá' : '🥇 Relentless Orbit';
+          badgeName = isVi ? 'Kỷ Luật Sắt Đá' : 'Relentless Orbit';
           badgeDesc = isVi ? 'Bảo vệ và thăng hoa chuỗi ngày rèn luyện Streak.' : 'Shields and extends your daily streak.';
           badgeIcon = Icons.local_fire_department_rounded;
         } else {
-          badgeName = isVi ? '🥈 Nhịp Thể Lực Vàng' : '🥈 Cadence Keeper';
+          badgeName = isVi ? 'Nhịp Thể Lực Vàng' : 'Cadence Keeper';
           badgeDesc = isVi ? 'Duy trì tần suất vận động cân đối theo tuần.' : 'Consistent workout frequency unlocked.';
           badgeIcon = Icons.fitness_center_rounded;
         }
         break;
 
       case GoalType.calories:
-        badgeName = isVi ? '🔥 Lò Phản Ứng Calo' : '🔥 Metabolic Fusion';
+        badgeName = isVi ? 'Chiến Binh Đốt Calo' : 'Metabolic Fusion';
         badgeDesc = isVi ? 'Tăng tốc giải phóng calo và chuyển hóa trao đổi chất.' : 'Maximizes active metabolic caloric output.';
         badgeIcon = Icons.whatshot_rounded;
         break;
@@ -1505,39 +1565,45 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
 
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: KineticTokens.spaceMD,
-        vertical: KineticTokens.spaceSM,
+        horizontal: KineticTokens.spaceSM,
+        vertical: KineticTokens.spaceXS,
       ),
       decoration: BoxDecoration(
         color: colors.surface2.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
         border: Border.all(color: colors.borderSubtle),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(KineticTokens.spaceXS),
+            padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: accent.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
+              borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
             ),
-            child: Icon(badgeIcon, size: 20, color: accent),
+            child: Icon(badgeIcon, size: 17, color: _readableAccentForIcon(accent, colors)),
           ),
-          const SizedBox(width: KineticTokens.spaceSM),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   badgeName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: KineticTypography.label.copyWith(
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w800,
                     color: colors.textPrimary,
                   ),
                 ),
                 Text(
                   badgeDesc,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: KineticTypography.caption.copyWith(
+                    fontSize: 10.5,
                     color: colors.textMuted,
                   ),
                 ),
@@ -1559,9 +1625,8 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
     Color accent,
     String unit,
   ) {
-    final displayValue = _targetValue % 1 == 0
-        ? _targetValue.toInt().toString()
-        : _targetValue.toStringAsFixed(1);
+    final displayValue = _formatTargetValue(_targetValue, _selectedType);
+    final accentText = _readableAccentForText(accent, colors);
 
     final typeLabel = switch (_selectedType) {
       GoalType.distance => isVi ? 'Cự ly' : 'Distance',
@@ -1576,9 +1641,9 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
     return Container(
       padding: const EdgeInsets.fromLTRB(
         KineticTokens.page,
-        KineticTokens.spaceSM,
+        8,
         KineticTokens.page,
-        KineticTokens.spaceLG,
+        10,
       ),
       decoration: BoxDecoration(
         color: colors.surface1.withValues(alpha: 0.95),
@@ -1590,38 +1655,45 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
           children: [
             // Quick Recap
             ConstrainedBox(
-              constraints: const BoxConstraints(minWidth: 80),
+              constraints: const BoxConstraints(minWidth: 72, maxWidth: 126),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     '$typeLabel • $periodLabel',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: KineticTypography.caption.copyWith(
                       color: colors.textMuted,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        displayValue,
-                        style: KineticTypography.metricCard.copyWith(
-                          color: colors.textPrimary,
+                  const SizedBox(height: 1),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          displayValue,
+                          style: KineticTypography.metricCard.copyWith(
+                            fontSize: 20,
+                            color: colors.textPrimary,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        unit,
-                        style: KineticTypography.bodySmall.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: accent,
-                          fontFeatures: KineticTypography.tabularFigures,
+                        const SizedBox(width: 4),
+                        Text(
+                          unit,
+                          style: KineticTypography.bodySmall.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: accentText,
+                            fontFeatures: KineticTypography.tabularFigures,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -1636,7 +1708,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                     : (isVi ? 'KÍCH HOẠT MỤC TIÊU' : 'ACTIVATE GOAL'),
                 icon: Icons.bolt_rounded,
                 variant: KineticButtonVariant.primary,
-                height: KineticTokens.buttonHeightPrimary,
+                height: 46,
                 isLoading: _isSaving,
                 onPressed: _isSaving ? null : _save,
               ),
@@ -1653,5 +1725,152 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
       GoalType.workouts => isVi ? 'buổi' : 'sessions',
       GoalType.calories => 'kcal',
     };
+  }
+}
+
+class _DirectValueEditorSheet extends StatefulWidget {
+  final String initialValue;
+  final String unitSuffix;
+  final Color accent;
+  final Color accentText;
+  final Color accentIcon;
+  final bool isVi;
+  final ValueChanged<double> onApply;
+
+  const _DirectValueEditorSheet({
+    required this.initialValue,
+    required this.unitSuffix,
+    required this.accent,
+    required this.accentText,
+    required this.accentIcon,
+    required this.isVi,
+    required this.onApply,
+  });
+
+  @override
+  State<_DirectValueEditorSheet> createState() => _DirectValueEditorSheetState();
+}
+
+class _DirectValueEditorSheetState extends State<_DirectValueEditorSheet> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialValue)
+      ..selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: widget.initialValue.length,
+      );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.kinetic;
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: SingleChildScrollView(
+        child: Container(
+          margin: const EdgeInsets.all(KineticTokens.spaceMD),
+          padding: const EdgeInsets.all(KineticTokens.spaceXL),
+          decoration: BoxDecoration(
+            color: colors.surface1,
+            borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
+            border: Border.all(
+              color: widget.accent.withValues(alpha: 0.3),
+              width: 1.2,
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: widget.accent.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.edit_note_rounded,
+                      size: 16,
+                      color: widget.accentText,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      widget.isVi ? 'NHẬP CHÍNH XÁC MỤC TIÊU' : 'ENTER EXACT TARGET',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: KineticTypography.unitLabel.copyWith(
+                        color: widget.accentText,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: KineticTokens.spaceSM),
+              TextField(
+                controller: _controller,
+                autofocus: true,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                style: KineticTypography.displayLarge.copyWith(
+                  color: colors.textPrimary,
+                ),
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: colors.surface2,
+                  suffixText: widget.unitSuffix,
+                  suffixStyle: KineticTypography.label.copyWith(
+                    color: widget.accentText,
+                    fontWeight: FontWeight.w800,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
+                    borderSide: BorderSide(color: colors.borderSubtle),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
+                    borderSide: BorderSide(color: colors.borderSubtle),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
+                    borderSide: BorderSide(color: widget.accentIcon, width: 1.6),
+                  ),
+                ),
+              ),
+              const SizedBox(height: KineticTokens.spaceLG),
+              KineticButton(
+                label: widget.isVi ? 'ÁP DỤNG MỤC TIÊU' : 'APPLY TARGET',
+                icon: Icons.check_circle_rounded,
+                variant: KineticButtonVariant.primary,
+                height: KineticTokens.buttonHeightPrimary,
+                onPressed: () {
+                  final parsed = double.tryParse(
+                    _controller.text.trim().replaceAll(',', ''),
+                  );
+                  if (parsed != null && parsed > 0) {
+                    widget.onApply(parsed);
+                    Navigator.of(context).pop();
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

@@ -1,9 +1,20 @@
+import 'package:fitness_exercise_application/core/localization/app_translations.dart';
+import 'package:fitness_exercise_application/features/activity/presentation/screens/activity_screen.dart';
 import 'package:fitness_exercise_application/features/activity/presentation/widgets/kinetic_activity_card.dart';
 import 'package:fitness_exercise_application/features/activity/presentation/widgets/kinetic_activity_cockpit.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
+import 'package:fitness_exercise_application/features/workout/presentation/widgets/record/tracking_map_widget.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+class _TestViLanguageNotifier extends AppLanguageNotifier {
+  _TestViLanguageNotifier() : super() {
+    state = AppLanguage.vi;
+  }
+}
 
 void main() {
   group('Kinetic Activity Widgets Tests', () {
@@ -13,8 +24,8 @@ void main() {
         nameVi: 'Chạy bộ',
         nameEn: 'Running',
         imagePath: 'assets/running_real.jpg',
-        icon: Icons.directions_run_rounded,
-        accentColor: Color(0xFFA8DCE7),
+        icon: BladeIconName.run,
+        accentColor: Color(0xFF006EE6),
         requireGps: true,
       );
 
@@ -57,7 +68,10 @@ void main() {
       expect(find.text('Ngoài trời'), findsNothing);
       // Verify valid stats are shown
       expect(find.text('5.0 km / buổi'), findsOneWidget);
-      expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+      expect(
+        find.byIcon(BladeIcon.iconDataFor(BladeIconName.check)),
+        findsOneWidget,
+      );
     });
 
     testWidgets('KineticActivityCard does not show 0.0km/buoi or TB hoat dong on 0km sessions', (tester) async {
@@ -66,8 +80,8 @@ void main() {
         nameVi: 'Đi bộ',
         nameEn: 'Walking',
         imagePath: 'assets/walking_real.jpg',
-        icon: Icons.directions_walk_rounded,
-        accentColor: Color(0xFF4EBE9E),
+        icon: BladeIconName.walk,
+        accentColor: Color(0xFF0284C7),
         requireGps: true,
       );
 
@@ -159,6 +173,39 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(started, isTrue);
+    });
+  });
+
+  group('Map-First ActivityScreen Tests', () {
+    testWidgets('renders live map, sport switcher pills, and updates start CTA', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appLanguageProvider.overrideWith((_) => _TestViLanguageNotifier()),
+          ],
+          child: MaterialApp(
+            theme: KineticTheme.lightTheme,
+            home: const ActivityScreen(showMapTiles: false),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(TrackingMapWidget), findsOneWidget);
+      expect(find.byKey(const Key('activity-top-sport-pill')), findsOneWidget);
+      expect(find.byKey(const Key('activity-gps-pill')), findsOneWidget);
+      expect(find.byKey(const Key('activity-recenter-btn')), findsOneWidget);
+      expect(find.text('Bắt đầu chạy bộ'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('sport-pill-cycling')));
+      await tester.pump();
+      expect(find.text('Bắt đầu đạp xe'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('sport-pill-walking')));
+      await tester.pump();
+      expect(find.text('Bắt đầu đi bộ'), findsOneWidget);
     });
   });
 }

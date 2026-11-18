@@ -46,49 +46,61 @@ class KineticColors extends ThemeExtension<KineticColors> {
     required this.glow,
   });
 
-  /// Kinetic Telemetry (Dark Mode - Default)
+  /// Aetron Dark — OLED Charcoal + Sky-Azure synced with logo.png
   static const dark = KineticColors(
-    background: Color(0xFF0C1113),
-    surface1: Color(0xFF12181B),
-    surface2: Color(0xFF192226),
-    surface3: Color(0xFF232F35),
-    primary: Color(0xFFA8DCE7),
-    onPrimary: Color(0xFF09181C),
-    secondary: Color(0xFF50B4C8),
-    tertiary: Color(0xFFF38D68),
-    error: Color(0xFFFFB4AB),
+    background: Color(0xFF0B0B0E),
+    surface1: Color(0xFF16161A),
+    surface2: Color(0xFF1F2026),
+    surface3: Color(0xFF2A2B33),
+    primary: Color(0xFF38BDF8),
+    onPrimary: Color(0xFF061926),
+    secondary: Color(0xFF0EA5E9),
+    tertiary: Color(0xFFFBBF24),
+    error: Color(0xFFF87171),
     textPrimary: Color(0xFFFFFFFF),
-    textSecondary: Color(0xFFE1E8EB),
-    textMuted: Color(0xFF8FA3A9),
-    borderSubtle: Color(0xFF3D4650),
-    borderAccent: Color(0x33A8DCE7),
-    borderStrong: Color(0xFF57626E),
-    accentFill: Color(0xFFA8DCE7),
-    glow: Color(0xFFA8DCE7),
+    textSecondary: Color(0xFFD1D5DB),
+    textMuted: Color(0xFF8E8E93),
+    borderSubtle: Color(0xFF26262E),
+    borderAccent: Color(0x4038BDF8),
+    borderStrong: Color(0xFF3A3A44),
+    accentFill: Color(0xFF006EE6),
+    glow: Color(0xFF38BDF8),
   );
 
-  /// Kinetic Morning (Light Mode) — its own identity, not an inverted
-  /// dark theme: paper background, white cards defined by soft shadow,
-  /// deep teal carries text/accents, cyan survives as [accentFill] only.
+  /// Aetron Light (Primary) — Clean Athletic White + Electric Azure Blue (#006EE6)
   static const light = KineticColors(
-    background: Color(0xFFF6F9F6),
+    background: Color(0xFFF7F7FA),
     surface1: Color(0xFFFFFFFF),
-    surface2: Color(0xFFEDF3EE),
-    surface3: Color(0xFFDFE9E0),
-    primary: Color(0xFF2F7E96),
+    surface2: Color(0xFFEFEFF4),
+    surface3: Color(0xFFE4E4EC),
+    primary: Color(0xFF006EE6),
     onPrimary: Color(0xFFFFFFFF),
-    secondary: Color(0xFF4E9DB5),
-    tertiary: Color(0xFFE8734D),
-    error: Color(0xFFBA1A1A),
-    textPrimary: Color(0xFF0D1517),
-    textSecondary: Color(0xFF3E4C52),
-    textMuted: Color(0xFF5A6A70),
-    borderSubtle: Color(0xFFD9E3DB),
-    borderAccent: Color(0x662F7E96),
-    borderStrong: Color(0xFFB7C8BB),
-    accentFill: Color(0xFFA8DCE7),
-    glow: Color(0xFF2F7E96),
+    secondary: Color(0xFF0284C7),
+    tertiary: Color(0xFFF59E0B),
+    error: Color(0xFFDC2626),
+    textPrimary: Color(0xFF16161A),
+    textSecondary: Color(0xFF4B5563),
+    textMuted: Color(0xFF6B7280),
+    borderSubtle: Color(0xFFE8E8EE),
+    borderAccent: Color(0x33006EE6),
+    borderStrong: Color(0xFFD1D5DB),
+    accentFill: Color(0xFF006EE6),
+    glow: Color(0xFF006EE6),
   );
+
+  bool get isDark => background.computeLuminance() < 0.2;
+
+  /// Soft brand tint for subtle pills, streak badges, and active chips.
+  Color get primaryTint =>
+      isDark ? const Color(0xFF12263A) : const Color(0xFFEAF3FF);
+
+  /// Semantic positive status color (GPS lock, growth delta, PR achieved).
+  Color get success =>
+      isDark ? const Color(0xFF22C55E) : const Color(0xFF16A34A);
+
+  /// Soft success pill fill.
+  Color get successTint =>
+      isDark ? const Color(0xFF102A1A) : const Color(0xFFDCFCE7);
 
   @override
   KineticColors copyWith({

@@ -1,6 +1,7 @@
-import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
+import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 
 class KineticYourWeekBento extends StatelessWidget {
   final double weeklyDistanceKm;
@@ -12,6 +13,15 @@ class KineticYourWeekBento extends StatelessWidget {
   final bool isVi;
   final bool useMetricUnits;
 
+  /// Active ISO weekdays (`DateTime.monday == 1` .. `DateTime.sunday == 7`)
+  /// completed during the current week.
+  final Set<int> activeWeekdays;
+
+  /// Optional goal-aligned display override (when goal is workouts or calories).
+  final double? goalCurrent;
+  final double? goalTarget;
+  final String? goalUnit;
+
   const KineticYourWeekBento({
     super.key,
     required this.weeklyDistanceKm,
@@ -22,17 +32,41 @@ class KineticYourWeekBento extends StatelessWidget {
     this.onSetGoalTap,
     this.isVi = true,
     this.useMetricUnits = true,
+    this.activeWeekdays = const <int>{},
+    this.goalCurrent,
+    this.goalTarget,
+    this.goalUnit,
   });
 
   @override
   Widget build(BuildContext context) {
     final colors = context.kinetic;
 
-    final progress = targetDistanceKm > 0
-        ? (weeklyDistanceKm / targetDistanceKm).clamp(0.0, 1.0)
+    final displayCurrent = goalCurrent ??
+        (useMetricUnits
+            ? weeklyDistanceKm
+            : WorkoutFormatters.kmToMi(weeklyDistanceKm));
+    final displayTarget = goalTarget ??
+        (useMetricUnits
+            ? targetDistanceKm
+            : WorkoutFormatters.kmToMi(targetDistanceKm));
+    final unit = goalUnit ?? (useMetricUnits ? 'km' : 'mi');
+
+    final progress = displayTarget > 0
+        ? (displayCurrent / displayTarget).clamp(0.0, 1.0)
         : 0.0;
-    final percent = (progress * 100).round();
-    final unit = useMetricUnits ? 'km' : 'mi';
+
+    final currentStr = (unit == 'km' || unit == 'mi')
+        ? displayCurrent.toStringAsFixed(1)
+        : displayCurrent.round().toString();
+    final targetStr = (unit == 'km' || unit == 'mi')
+        ? displayTarget.toStringAsFixed(0)
+        : displayTarget.round().toString();
+
+    final todayWeekday = DateTime.now().weekday;
+    final dayLabels = isVi
+        ? const ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']
+        : const ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
     return Padding(
       padding: const EdgeInsets.symmetric(
@@ -42,73 +76,45 @@ class KineticYourWeekBento extends StatelessWidget {
       child: KineticCard(
         padding: const EdgeInsets.all(KineticTokens.spaceMD),
         borderRadius: KineticTokens.radiusLG,
-        gradient: KineticGradients.heroMesh(colors),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Header
+            // 1. Header Row
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      isVi ? 'Tuần này của bạn' : 'Your Week',
-                      style: KineticTypography.headlineSmall.copyWith(
-                        color: colors.textPrimary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: KineticTokens.spaceXXS),
-                    Text(
-                      dateRangeText,
-                      style: KineticTypography.bodySmall.copyWith(
-                        color: colors.textMuted,
-                      ),
-                    ),
-                  ],
+                Text(
+                  isVi ? 'Mục tiêu tuần' : 'Weekly goal',
+                  style: KineticTypography.bodyMedium.copyWith(
+                    color: colors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 Material(
                   color: Colors.transparent,
                   child: InkWell(
                     onTap: onSetGoalTap,
-                    borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
-                    child: Container(
+                    borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
+                    child: Padding(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: KineticTokens.spaceSM,
-                        vertical: KineticTokens.spaceXS,
-                      ),
-                      decoration: BoxDecoration(
-                        color: colors.primary.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(
-                          KineticTokens.radiusPill,
-                        ),
-                        border: Border.all(
-                          color: colors.primary.withValues(alpha: 0.4),
-                          width: 1,
-                        ),
+                        horizontal: 6,
+                        vertical: 4,
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          BladeIcon(
-                            BladeIconName.target,
-                            size: 13,
-                            color: colors.primary,
-                          ),
-                          const SizedBox(width: KineticTokens.spaceXXS),
                           Text(
-                            isVi ? 'Mục tiêu: $percent%' : 'Goal: $percent%',
-                            style: KineticTypography.unitLabel.copyWith(
+                            isVi ? 'Điều chỉnh' : 'Adjust',
+                            style: KineticTypography.label.copyWith(
                               color: colors.primary,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
                             ),
                           ),
-                          const SizedBox(width: KineticTokens.spaceXXS),
-                          BladeIcon(
-                            BladeIconName.chevR,
-                            size: 14,
+                          const SizedBox(width: 2),
+                          Icon(
+                            LucideIcons.chevron_right,
+                            size: 15,
                             color: colors.primary,
                           ),
                         ],
@@ -118,247 +124,123 @@ class KineticYourWeekBento extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: KineticTokens.spaceMD),
+            const SizedBox(height: 6),
 
-            // 2. Week Stats — V4: flat divided row (no boxes-in-boxes)
+            // 2. Hero Distance / Target Figure
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Distance
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isVi ? 'Tổng quãng đường' : 'Total Distance',
-                        style: KineticTypography.caption.copyWith(
-                          color: colors.textMuted,
-                        ),
-                      ),
-                      const SizedBox(height: KineticTokens.spaceXXS),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
-                        children: [
-                          Text(
-                            weeklyDistanceKm.toStringAsFixed(1),
-                            style: KineticTypography.metricHero.copyWith(
-                              color: colors.textPrimary,
-                            ),
-                          ),
-                          const SizedBox(width: KineticTokens.spaceXXS),
-                          Text(
-                            unit.toUpperCase(),
-                            style: KineticTypography.unitLabel.copyWith(
-                              color: colors.primary,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: KineticTokens.spaceXXS),
-                      Row(
-                        children: [
-                          BladeIcon(
-                            BladeIconName.chart,
-                            size: 14,
-                            color: colors.secondary,
-                          ),
-                          const SizedBox(width: KineticTokens.spaceXXS),
-                          Expanded(
-                            child: Text(
-                              isVi
-                                  ? '+12% so với tuần trước'
-                                  : '+12% vs last week',
-                              style: KineticTypography.unitLabel.copyWith(
-                                color: colors.secondary,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Hairline divider
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: KineticTokens.spaceMD,
-                  ),
-                  child: Container(
-                    width: 1,
-                    height: 76,
-                    color: colors.borderSubtle,
-                  ),
-                ),
-
-                // Workouts Count
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isVi ? 'Số buổi tập' : 'Workouts',
-                        style: KineticTypography.caption.copyWith(
-                          color: colors.textMuted,
-                        ),
-                      ),
-                      const SizedBox(height: KineticTokens.spaceXXS),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
-                        children: [
-                          Text(
-                            '$workoutCount',
-                            style: KineticTypography.metricHero.copyWith(
-                              color: colors.textPrimary,
-                            ),
-                          ),
-                          const SizedBox(width: KineticTokens.spaceXXS),
-                          Text(
-                            isVi ? 'BUỔI' : 'SESSIONS',
-                            style: KineticTypography.unitLabel.copyWith(
-                              color: colors.primary,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: KineticTokens.spaceXXS),
-                      Row(
-                        children: [
-                          BladeIcon(
-                            BladeIconName.check,
-                            size: 14,
-                            color: colors.primary,
-                          ),
-                          const SizedBox(width: KineticTokens.spaceXXS),
-                          Expanded(
-                            child: Text(
-                              isVi
-                                  ? 'Mục tiêu: $targetWorkoutCount buổi/tuần'
-                                  : 'Target: $targetWorkoutCount sessions/wk',
-                              style: KineticTypography.unitLabel.copyWith(
-                                color: colors.textMuted,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: KineticTokens.spaceMD),
-
-            // 3. Progress Bar (flat)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
               children: [
                 Text(
-                  isVi
-                      ? 'Tiến độ tích lũy (${weeklyDistanceKm.toStringAsFixed(1)} / ${targetDistanceKm.toStringAsFixed(0)} $unit)'
-                      : 'Accumulated Progress (${weeklyDistanceKm.toStringAsFixed(1)} / ${targetDistanceKm.toStringAsFixed(0)} $unit)',
-                  style: KineticTypography.bodySmall.copyWith(
+                  currentStr,
+                  style: KineticTypography.displayLarge.copyWith(
+                    color: colors.textPrimary,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 34,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '/ $targetStr $unit',
+                  style: KineticTypography.headlineMedium.copyWith(
                     color: colors.textMuted,
-                  ),
-                ),
-                Text(
-                  '$percent%',
-                  style: KineticTypography.label.copyWith(
-                    color: colors.primary,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
+                    fontFeatures: KineticTypography.tabularFigures,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: KineticTokens.spaceXXS),
+            const SizedBox(height: KineticTokens.spaceSM),
+
+            // 3. Linear Progress Bar
             ClipRRect(
               borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
               child: Container(
                 height: 8,
-                color: colors.surface3,
-                child: Stack(
-                  children: [
-                    FractionallySizedBox(
-                      widthFactor: progress,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: colors.primary,
-                          borderRadius:
-                              BorderRadius.circular(KineticTokens.radiusPill),
-                        ),
+                color: colors.surface2,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: FractionallySizedBox(
+                    widthFactor: progress,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: colors.accentFill,
+                        borderRadius:
+                            BorderRadius.circular(KineticTokens.radiusPill),
                       ),
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
-            const SizedBox(height: KineticTokens.spaceSM),
+            const SizedBox(height: KineticTokens.spaceMD),
 
-            // 4. Dedicated Adjust Goal Action Button
-            Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: onSetGoalTap,
-                borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: KineticTokens.spaceXXS,
+            // 4. 7-Day Activity Strip (T2 - CN)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                for (int i = 0; i < 7; i++)
+                  _DayCheckItem(
+                    label: dayLabels[i],
+                    isActive: activeWeekdays.contains(i + 1),
+                    isToday: todayWeekday == (i + 1),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          BladeIcon(
-                            BladeIconName.sliders,
-                            size: 14,
-                            color: colors.textSecondary,
-                          ),
-                          const SizedBox(width: KineticTokens.spaceXXS),
-                          Text(
-                            isVi
-                                ? 'Điều chỉnh mục tiêu rèn luyện'
-                                : 'Adjust your fitness goals',
-                            style: KineticTypography.bodySmall.copyWith(
-                              color: colors.textSecondary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            isVi ? 'Cài đặt' : 'Settings',
-                            style: KineticTypography.unitLabel.copyWith(
-                              color: colors.primary,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(width: KineticTokens.spaceXXS),
-                          BladeIcon(
-                            BladeIconName.chevR,
-                            size: 10,
-                            color: colors.primary,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              ],
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _DayCheckItem extends StatelessWidget {
+  final String label;
+  final bool isActive;
+  final bool isToday;
+
+  const _DayCheckItem({
+    required this.label,
+    required this.isActive,
+    required this.isToday,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.kinetic;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 30,
+          height: 30,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: isActive ? colors.accentFill : colors.surface2,
+            border: !isActive && isToday
+                ? Border.all(color: colors.primary, width: 1.5)
+                : null,
+          ),
+          alignment: Alignment.center,
+          child: isActive
+              ? const Icon(
+                  LucideIcons.check,
+                  size: 15,
+                  color: Colors.white,
+                )
+              : null,
+        ),
+        const SizedBox(height: 6),
+        Text(
+          label,
+          style: KineticTypography.caption.copyWith(
+            color: isToday ? colors.textPrimary : colors.textMuted,
+            fontWeight: isToday ? FontWeight.w700 : FontWeight.w500,
+            fontSize: 11.5,
+          ),
+        ),
+      ],
     );
   }
 }

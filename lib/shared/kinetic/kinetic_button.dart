@@ -103,26 +103,20 @@ class _KineticButtonState extends State<KineticButton>
 
     switch (widget.variant) {
       case KineticButtonVariant.primary:
-        // V5: flat filled pill — no gradient, no border, no shadow.
-        // Fill follows the approved V5 boards per theme: dark fills with
-        // accentFill (brand cyan) under a fixed dark-teal ink; light
-        // ("Morning") fills with primary (deep teal) under onPrimary.
+        // Flat athletic pill button in Aetron Brand Blue (#006EE6) with crisp white ink.
         gradient = null;
-        bgColor = isDisabled
-            ? colors.surface3
-            : (isDark ? colors.accentFill : colors.primary);
-        fgColor = isDisabled
-            ? colors.textMuted
-            : (isDark ? const Color(0xFF06222B) : colors.onPrimary);
+        bgColor = isDisabled ? colors.surface3 : colors.accentFill;
+        fgColor = isDisabled ? colors.textMuted : Colors.white;
         border = null;
         shadows = null;
         break;
       case KineticButtonVariant.secondary:
-        // Board v3 secondary: surface fill + strong 1.5px edge.
         gradient = null;
-        bgColor = isDisabled ? colors.surface1 : colors.surface2;
+        bgColor = isDisabled
+            ? colors.surface1
+            : (isDark ? colors.surface2 : colors.surface1);
         fgColor = isDisabled ? colors.textMuted : colors.textPrimary;
-        border = BorderSide(color: colors.borderStrong, width: 1.5);
+        border = BorderSide(color: colors.borderStrong, width: 1.0);
         shadows = null;
         break;
       case KineticButtonVariant.ghost:

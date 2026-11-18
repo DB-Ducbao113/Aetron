@@ -32,104 +32,92 @@ class KineticAnalyticsHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.kinetic;
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
-      child: Stack(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: KineticTokens.spaceXS),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Positioned.fill(child: TopographicBackdrop()),
-          Padding(
-            padding: const EdgeInsets.all(KineticTokens.spaceMD),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Title + Sync Status Row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
+          // Title + Sync Status Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Text(
+                  isVi ? 'Phân tích' : 'Analytics',
+                  style: KineticTypography.pageTitle.copyWith(
+                    color: colors.textPrimary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: KineticTokens.spaceSM),
+
+              // Sync / Offline Status Badge Pill
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: KineticTokens.spaceSM,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: colors.surface1,
+                  borderRadius: BorderRadius.circular(
+                    KineticTokens.radiusPill,
+                  ),
+                  boxShadow:
+                      colors.isDark ? null : KineticTokens.shadowCardLight(),
+                  border: colors.isDark
+                      ? Border.all(color: colors.borderSubtle)
+                      : null,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Left: Main Title (Clear & Prominent)
-                    Expanded(
-                      child: Text(
-                        isVi ? 'Phân tích' : 'Analytics',
-                        style: KineticTypography.pageTitle.copyWith(
-                          color: colors.textPrimary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: isOffline ? colors.tertiary : colors.success,
+                        shape: BoxShape.circle,
                       ),
                     ),
-                    const SizedBox(width: KineticTokens.spaceSM),
-
-                    // Right: Sync / Offline Status Badge Pill
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: KineticTokens.spaceSM,
-                        vertical: KineticTokens.spaceXXS,
-                      ),
-                      decoration: BoxDecoration(
-                        color: colors.surface2,
-                        borderRadius: BorderRadius.circular(
-                          KineticTokens.radiusPill,
-                        ),
-                        border: Border.all(
-                          color: colors.borderSubtle,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: BoxDecoration(
-                              color: isOffline
-                                  ? colors.tertiary
-                                  : colors.primary,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            isOffline
-                                ? (isVi ? 'Ngoại tuyến' : 'Offline')
-                                : (isVi ? 'Đã đồng bộ' : 'Synced'),
-                            style: KineticTypography.unitLabel.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: colors.textSecondary,
-                            ),
-                          ),
-                        ],
+                    const SizedBox(width: 6),
+                    Text(
+                      isOffline
+                          ? (isVi ? 'Ngoại tuyến' : 'Offline')
+                          : (isVi ? 'Đã đồng bộ' : 'Synced'),
+                      style: KineticTypography.unitLabel.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: colors.textSecondary,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: KineticTokens.spaceMD),
+              ),
+            ],
+          ),
+          const SizedBox(height: KineticTokens.spaceMD),
 
-                // Period Filter — pill segmented control
-                Container(
-                  padding: const EdgeInsets.all(KineticTokens.spaceXXS),
-                  decoration: BoxDecoration(
-                    color: colors.surface1,
-                    borderRadius: BorderRadius.circular(
-                      KineticTokens.radiusPill,
+          // Period Filter — pill segmented control (Concept A)
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: colors.surface2,
+              borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
+            ),
+            child: Row(
+              children: [
+                for (int i = 0; i < TimePeriod.values.length; i++) ...[
+                  if (i > 0) const SizedBox(width: KineticTokens.spaceXXS),
+                  Expanded(
+                    child: _buildPeriodTab(
+                      context,
+                      colors,
+                      TimePeriod.values[i],
                     ),
-                    border: Border.all(color: colors.borderSubtle),
                   ),
-                  child: Row(
-                    children: [
-                      for (int i = 0; i < TimePeriod.values.length; i++) ...[
-                        if (i > 0) const SizedBox(width: KineticTokens.spaceXXS),
-                        Expanded(
-                          child: _buildPeriodTab(
-                            context,
-                            colors,
-                            TimePeriod.values[i],
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
+                ],
               ],
             ),
           ),
@@ -144,8 +132,8 @@ class KineticAnalyticsHeader extends StatelessWidget {
     TimePeriod period,
   ) {
     final isSelected = selectedPeriod == period;
-    final bg = isSelected ? colors.primary : Colors.transparent;
-    final textColor = isSelected ? colors.onPrimary : colors.textMuted;
+    final bg = isSelected ? const Color(0xFF006EE6) : Colors.transparent;
+    final textColor = isSelected ? Colors.white : colors.textSecondary;
     final label = _periodLabel(period);
 
     return Material(

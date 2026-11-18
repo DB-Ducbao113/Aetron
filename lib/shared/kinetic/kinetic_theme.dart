@@ -50,18 +50,20 @@ class KineticTheme {
         color: colors.surface1,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
-          side: BorderSide(color: colors.borderSubtle, width: 1),
+          borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
+          side: isDark
+              ? BorderSide(color: colors.borderSubtle.withValues(alpha: 0.5), width: 0.5)
+              : BorderSide.none,
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: colors.primary,
-          foregroundColor: colors.onPrimary,
+          backgroundColor: colors.accentFill,
+          foregroundColor: Colors.white,
           minimumSize: const Size(48, 48),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
+            borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
           ),
           textStyle: KineticTypography.label.copyWith(
             fontWeight: FontWeight.w700,
@@ -72,12 +74,12 @@ class KineticTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: colors.textPrimary,
-          backgroundColor: colors.surface2,
+          backgroundColor: colors.surface1,
           minimumSize: const Size(48, 48),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          side: BorderSide(color: colors.borderAccent, width: 1),
+          side: BorderSide(color: colors.borderStrong, width: 1),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
+            borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
           ),
           textStyle: KineticTypography.label.copyWith(
             fontWeight: FontWeight.w600,
@@ -98,36 +100,36 @@ class KineticTheme {
         hintStyle: KineticTypography.bodyMedium.copyWith(color: colors.textMuted),
         labelStyle: KineticTypography.bodyMedium.copyWith(color: colors.textSecondary),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
+          borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
           borderSide: BorderSide(color: colors.borderSubtle, width: 1),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
+          borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
           borderSide: BorderSide(color: colors.borderSubtle, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
+          borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
           borderSide: BorderSide(color: colors.primary, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
+          borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
           borderSide: BorderSide(color: colors.error, width: 1),
         ),
       ),
       bottomSheetTheme: BottomSheetThemeData(
-        backgroundColor: colors.surface2,
-        modalBackgroundColor: colors.surface2,
-        elevation: 16,
+        backgroundColor: colors.surface1,
+        modalBackgroundColor: colors.surface1,
+        elevation: 12,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: colors.surface2,
+        backgroundColor: colors.surface1,
         elevation: 16,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: colors.borderSubtle, width: 1),
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: colors.borderSubtle, width: 0.5),
         ),
         titleTextStyle: KineticTypography.headlineMedium.copyWith(
           color: colors.textPrimary,
@@ -138,7 +140,7 @@ class KineticTheme {
       ),
       dividerTheme: DividerThemeData(
         color: colors.borderSubtle,
-        thickness: 1,
+        thickness: 0.5,
         space: 1,
       ),
       pageTransitionsTheme: const PageTransitionsTheme(

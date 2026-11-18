@@ -222,10 +222,12 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(KineticTokens.radiusXXL),
                 ),
-                border: Border(
-                  top: BorderSide(color: kinetic.borderStrong, width: 1.5),
-                ),
-                boxShadow: KineticTokens.shadowPanel(Colors.black),
+                boxShadow: kinetic.isDark
+                    ? null
+                    : KineticTokens.shadowCardLight(),
+                border: kinetic.isDark
+                    ? Border(top: BorderSide(color: kinetic.borderSubtle))
+                    : null,
               ),
               child: ClipRRect(
                 borderRadius: const BorderRadius.vertical(
@@ -802,7 +804,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                       Text(
                         isVi
                             ? 'Tạo mật khẩu mạnh để bảo vệ hồ sơ và dữ liệu luyện tập của bạn.'
-                            : 'Create a strong password to secure your athlete profile & telemetry.',
+                            : 'Create a strong password to secure your profile & workouts.',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w400,
@@ -825,10 +827,12 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(KineticTokens.radiusXXL),
                 ),
-                border: Border(
-                  top: BorderSide(color: kinetic.borderStrong, width: 1.5),
-                ),
-                boxShadow: KineticTokens.shadowPanel(Colors.black),
+                boxShadow: kinetic.isDark
+                    ? null
+                    : KineticTokens.shadowCardLight(),
+                border: kinetic.isDark
+                    ? Border(top: BorderSide(color: kinetic.borderSubtle))
+                    : null,
               ),
               child: ClipRRect(
                 borderRadius: const BorderRadius.vertical(

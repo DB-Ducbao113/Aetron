@@ -237,11 +237,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           borderRadius: BorderRadius.circular(
                             KineticTokens.radiusXXL,
                           ),
-                          border: Border.all(
-                            color: colors.borderStrong,
-                            width: 1.5,
-                          ),
-                          boxShadow: KineticTokens.shadowPanel(Colors.black),
+                          boxShadow: colors.isDark
+                              ? null
+                              : KineticTokens.shadowCardLight(),
+                          border: colors.isDark
+                              ? Border.all(color: colors.borderSubtle)
+                              : null,
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -372,8 +373,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           const SizedBox(height: 28),
 
                           // ── Sign up link ────────────────────────────────────────
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                          Wrap(
+                            alignment: WrapAlignment.center,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            runSpacing: 4,
                             children: [
                               Text(
                                 isVi
@@ -568,29 +571,46 @@ class _GoogleButton extends StatelessWidget {
                   ),
                 ),
               )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Image.asset(
-                    'assets/GoogleLogo.jpg',
-                    width: 20,
-                    height: 20,
-                    errorBuilder: (context, error, stackTrace) => Icon(
-                      Icons.g_mobiledata,
-                      color: colors.primary,
-                      size: 24,
+            : Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 24,
+                      height: 24,
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      padding: const EdgeInsets.all(2),
+                      child: ClipOval(
+                        child: Image.asset(
+                          'assets/GoogleLogo.jpg',
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Icon(
+                            Icons.g_mobiledata,
+                            color: colors.primary,
+                            size: 20,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: colors.textPrimary,
+                    const SizedBox(width: 12),
+                    Flexible(
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: colors.textPrimary,
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
       ),
     );

@@ -23,6 +23,7 @@ import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.d
 
 import 'dart:io';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter/material.dart';
@@ -98,43 +99,51 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     final colors = context.kinetic;
     final selected = await showModalBottomSheet<AppLanguage>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => SafeArea(
-        child: Container(
-          margin: const EdgeInsets.all(KineticTokens.spaceMD),
-          padding: const EdgeInsets.all(KineticTokens.spaceLG),
-          decoration: BoxDecoration(
-            color: colors.surface2,
-            borderRadius: BorderRadius.circular(KineticTokens.radiusXL),
-            border: Border.all(color: colors.borderAccent, width: 1.2),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                AppTranslations.get('select_language', currentLang),
-                style: KineticTypography.headlineMedium.copyWith(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: colors.textPrimary,
-                ),
+          child: Container(
+            margin: const EdgeInsets.all(KineticTokens.spaceMD),
+            padding: const EdgeInsets.all(KineticTokens.spaceLG),
+            decoration: BoxDecoration(
+              color: colors.surface2,
+              borderRadius: BorderRadius.circular(KineticTokens.radiusXL),
+              border: Border.all(color: colors.borderAccent, width: 1.2),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    AppTranslations.get('select_language', currentLang),
+                    style: KineticTypography.headlineMedium.copyWith(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _LanguageOptionTile(
+                    flag: '🇻🇳',
+                    name: 'Tiếng Việt',
+                    isSelected: currentLang == AppLanguage.vi,
+                    onTap: () => Navigator.of(context).pop(AppLanguage.vi),
+                  ),
+                  const SizedBox(height: 10),
+                  _LanguageOptionTile(
+                    flag: '🇬🇧',
+                    name: 'English',
+                    isSelected: currentLang == AppLanguage.en,
+                    onTap: () => Navigator.of(context).pop(AppLanguage.en),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              _LanguageOptionTile(
-                flag: '🇻🇳',
-                name: 'Tiếng Việt',
-                isSelected: currentLang == AppLanguage.vi,
-                onTap: () => Navigator.of(context).pop(AppLanguage.vi),
-              ),
-              const SizedBox(height: 10),
-              _LanguageOptionTile(
-                flag: '🇬🇧',
-                name: 'English',
-                isSelected: currentLang == AppLanguage.en,
-                onTap: () => Navigator.of(context).pop(AppLanguage.en),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -160,49 +169,57 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     final isVi = currentLang == AppLanguage.vi;
     final selected = await showModalBottomSheet<bool>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => SafeArea(
-        child: Container(
-          margin: const EdgeInsets.all(KineticTokens.spaceMD),
-          padding: const EdgeInsets.all(KineticTokens.spaceLG),
-          decoration: BoxDecoration(
-            color: colors.surface2,
-            borderRadius: BorderRadius.circular(KineticTokens.radiusXL),
-            border: Border.all(color: colors.borderAccent, width: 1.2),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                isVi ? 'Chọn hệ đơn vị đo lường' : 'Select Measurement Unit',
-                style: KineticTypography.headlineMedium.copyWith(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: colors.textPrimary,
-                ),
+          child: Container(
+            margin: const EdgeInsets.all(KineticTokens.spaceMD),
+            padding: const EdgeInsets.all(KineticTokens.spaceLG),
+            decoration: BoxDecoration(
+              color: colors.surface2,
+              borderRadius: BorderRadius.circular(KineticTokens.radiusXL),
+              border: Border.all(color: colors.borderAccent, width: 1.2),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isVi ? 'Chọn hệ đơn vị đo lường' : 'Select Measurement Unit',
+                    style: KineticTypography.headlineMedium.copyWith(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _UnitOptionTile(
+                    icon: Icons.straighten_rounded,
+                    title: isVi ? 'Hệ mét (Metric)' : 'Metric System',
+                    subtitle: isVi
+                        ? 'Kilômét (km), Mét (m), Vận tốc (km/h), Pace (min/km)'
+                        : 'Kilometers (km), Meters (m), Speed (km/h), Pace (min/km)',
+                    isSelected: _useMetricUnits,
+                    onTap: () => Navigator.of(context).pop(true),
+                  ),
+                  const SizedBox(height: 10),
+                  _UnitOptionTile(
+                    icon: Icons.speed_rounded,
+                    title: isVi ? 'Hệ Anh (Imperial)' : 'Imperial System',
+                    subtitle: isVi
+                        ? 'Dặm (mi), Feet (ft), Vận tốc (mph), Pace (min/mi)'
+                        : 'Miles (mi), Feet (ft), Speed (mph), Pace (min/mi)',
+                    isSelected: !_useMetricUnits,
+                    onTap: () => Navigator.of(context).pop(false),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              _UnitOptionTile(
-                icon: Icons.straighten_rounded,
-                title: isVi ? 'Hệ mét (Metric)' : 'Metric System',
-                subtitle: isVi
-                    ? 'Kilômét (km), Mét (m), Vận tốc (km/h), Pace (min/km)'
-                    : 'Kilometers (km), Meters (m), Speed (km/h), Pace (min/km)',
-                isSelected: _useMetricUnits,
-                onTap: () => Navigator.of(context).pop(true),
-              ),
-              const SizedBox(height: 10),
-              _UnitOptionTile(
-                icon: Icons.speed_rounded,
-                title: isVi ? 'Hệ Anh (Imperial)' : 'Imperial System',
-                subtitle: isVi
-                    ? 'Dặm (mi), Feet (ft), Vận tốc (mph), Pace (min/mi)'
-                    : 'Miles (mi), Feet (ft), Speed (mph), Pace (min/mi)',
-                isSelected: !_useMetricUnits,
-                onTap: () => Navigator.of(context).pop(false),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -231,62 +248,70 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
 
     final selected = await showModalBottomSheet<ThemeMode>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => SafeArea(
-        child: Container(
-          margin: const EdgeInsets.all(KineticTokens.spaceMD),
-          padding: const EdgeInsets.all(KineticTokens.spaceLG),
-          decoration: BoxDecoration(
-            color: colors.surface2,
-            borderRadius: BorderRadius.circular(KineticTokens.radiusXL),
-            border: Border.all(
-              color: colors.borderAccent,
-              width: 1.2,
-            ),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                isVi ? 'Chọn giao diện hiển thị' : 'Select Appearance Theme',
-                style: KineticTypography.headlineMedium.copyWith(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: colors.textPrimary,
-                ),
+          child: Container(
+            margin: const EdgeInsets.all(KineticTokens.spaceMD),
+            padding: const EdgeInsets.all(KineticTokens.spaceLG),
+            decoration: BoxDecoration(
+              color: colors.surface2,
+              borderRadius: BorderRadius.circular(KineticTokens.radiusXL),
+              border: Border.all(
+                color: colors.borderAccent,
+                width: 1.2,
               ),
-              const SizedBox(height: 16),
-              _UnitOptionTile(
-                icon: Icons.dark_mode_rounded,
-                title: isVi ? 'Tối • Kinetic Telemetry' : 'Dark • Kinetic Telemetry',
-                subtitle: isVi
-                    ? 'Nền tối sẫm, độ tương phản cao, tối ưu pin & mắt'
-                    : 'Dark precision with aqua-mint accents',
-                isSelected: currentMode == ThemeMode.dark,
-                onTap: () => Navigator.of(context).pop(ThemeMode.dark),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isVi ? 'Chọn giao diện hiển thị' : 'Select Appearance Theme',
+                    style: KineticTypography.headlineMedium.copyWith(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _UnitOptionTile(
+                    icon: Icons.dark_mode_rounded,
+                    title: isVi ? 'Tối (Nền tối)' : 'Dark Mode',
+                    subtitle: isVi
+                        ? 'Nền tối sẫm, độ tương phản cao, dịu mắt ban đêm'
+                        : 'Deep obsidian canvas with azure accents',
+                    isSelected: currentMode == ThemeMode.dark,
+                    onTap: () => Navigator.of(context).pop(ThemeMode.dark),
+                  ),
+                  const SizedBox(height: 10),
+                  _UnitOptionTile(
+                    icon: Icons.light_mode_rounded,
+                    title: isVi ? 'Sáng (Trắng xanh)' : 'Light Mode',
+                    subtitle: isVi
+                        ? 'Nền sáng trắng xanh rõ nét ngoài trời'
+                        : 'Crisp white & athletic blue daylight interface',
+                    isSelected: currentMode == ThemeMode.light,
+                    onTap: () => Navigator.of(context).pop(ThemeMode.light),
+                  ),
+                  const SizedBox(height: 10),
+                  _UnitOptionTile(
+                    icon: Icons.brightness_auto_rounded,
+                    title: isVi ? 'Tự động theo hệ thống' : 'System Default',
+                    subtitle: isVi
+                        ? 'Tự động đổi theo chế độ sáng/tối của thiết bị'
+                        : 'Follow device OS light/dark schedule',
+                    isSelected: currentMode == ThemeMode.system,
+                    onTap: () => Navigator.of(context).pop(ThemeMode.system),
+                  ),
+                ],
               ),
-              const SizedBox(height: 10),
-              _UnitOptionTile(
-                icon: Icons.light_mode_rounded,
-                title: isVi ? 'Sáng • Kinetic Editorial' : 'Light • Kinetic Editorial',
-                subtitle: isVi
-                    ? 'Nền sáng thanh lịch, phong cách tạp chí thể thao'
-                    : 'Clean editorial styling with deep emerald accents',
-                isSelected: currentMode == ThemeMode.light,
-                onTap: () => Navigator.of(context).pop(ThemeMode.light),
-              ),
-              const SizedBox(height: 10),
-              _UnitOptionTile(
-                icon: Icons.brightness_auto_rounded,
-                title: isVi ? 'Tự động theo hệ thống' : 'System Default',
-                subtitle: isVi
-                    ? 'Tự động đổi theo chế độ sáng/tối của thiết bị'
-                    : 'Follow device OS light/dark schedule',
-                isSelected: currentMode == ThemeMode.system,
-                onTap: () => Navigator.of(context).pop(ThemeMode.system),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -612,7 +637,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
 
   Future<void> _toggleCameraPermission(bool value, AppLanguage lang) async {
     if (value) {
-      final status = await Permission.camera.request();
+      PermissionStatus status;
+      if (Platform.environment.containsKey('FLUTTER_TEST')) {
+        status = PermissionStatus.denied;
+      } else {
+        try {
+          status = await Permission.camera.request();
+        } catch (_) {
+          status = PermissionStatus.denied;
+        }
+      }
       await _refreshPermissions();
       if (!status.isGranted && !status.isLimited && mounted) {
         await _showRevokePermissionDialog(
@@ -632,11 +666,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
 
   Future<void> _togglePhotoPermission(bool value, AppLanguage lang) async {
     if (value) {
-      final status = await PhotoManager.requestPermissionExtend(
-        requestOption: const PermissionRequestOption(
-          iosAccessLevel: IosAccessLevel.readWrite,
-        ),
-      );
+      PermissionState status;
+      if (Platform.environment.containsKey('FLUTTER_TEST')) {
+        status = PermissionState.denied;
+      } else {
+        try {
+          status = await PhotoManager.requestPermissionExtend(
+            requestOption: const PermissionRequestOption(
+              iosAccessLevel: IosAccessLevel.readWrite,
+            ),
+          );
+        } catch (_) {
+          status = PermissionState.denied;
+        }
+      }
       await _refreshPermissions();
       if (!status.isAuth && mounted) {
         await _showRevokePermissionDialog(
@@ -657,13 +700,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   Future<void> _toggleLocationPermission(bool value, AppLanguage lang) async {
     if (value) {
       LocationPermission geoPerm;
-      try {
-        geoPerm = await Geolocator.requestPermission();
-      } catch (_) {
-        final status = await Permission.locationWhenInUse.request();
-        geoPerm = (status.isGranted || status.isLimited)
-            ? LocationPermission.whileInUse
-            : LocationPermission.denied;
+      if (Platform.environment.containsKey('FLUTTER_TEST')) {
+        geoPerm = LocationPermission.denied;
+      } else {
+        try {
+          geoPerm = await Geolocator.requestPermission();
+        } catch (_) {
+          try {
+            final status = await Permission.locationWhenInUse.request();
+            geoPerm = (status.isGranted || status.isLimited)
+                ? LocationPermission.whileInUse
+                : LocationPermission.denied;
+          } catch (_) {
+            geoPerm = LocationPermission.denied;
+          }
+        }
       }
       await _refreshPermissions();
       if (geoPerm != LocationPermission.always &&
@@ -993,11 +1044,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                           title: currentLang == AppLanguage.vi ? 'Giao diện' : 'Appearance',
                           subtitle: switch (ref.watch(themeModeProvider)) {
                             ThemeMode.dark => currentLang == AppLanguage.vi
-                                ? 'Tối • Kinetic Telemetry'
-                                : 'Dark • Kinetic Telemetry',
+                                ? 'Tối (Nền tối)'
+                                : 'Dark',
                             ThemeMode.light => currentLang == AppLanguage.vi
-                                ? 'Sáng • Kinetic Editorial'
-                                : 'Light • Kinetic Editorial',
+                                ? 'Sáng (Trắng xanh)'
+                                : 'Light',
                             ThemeMode.system => currentLang == AppLanguage.vi
                                 ? 'Theo hệ thống'
                                 : 'System default',
@@ -1028,11 +1079,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                                       ? 'Chưa cho phép • Bật để nhận thông báo từ iPhone'
                                       : 'Denied • Tap to allow alerts'),
                           accentColor: colors.secondary,
-                          trailing: Switch.adaptive(
+                          trailing: CupertinoSwitch(
                             value: _isNotificationGranted,
                             onChanged: (val) => _toggleNotificationPermission(val, currentLang),
-                            activeTrackColor: colors.secondary.withValues(alpha: 0.5),
-                            activeThumbColor: colors.secondary,
+                            activeTrackColor: const Color(0xFF34C759),
+                            inactiveTrackColor: colors.surface3,
+                            thumbColor: Colors.white,
                           ),
                           onTap: () => _toggleNotificationPermission(!_isNotificationGranted, currentLang),
                         ),
@@ -1049,11 +1101,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                                   lang: currentLang,
                                 ),
                           accentColor: colors.primary,
-                          trailing: Switch.adaptive(
+                          trailing: CupertinoSwitch(
                             value: _isCameraGranted,
                             onChanged: (val) => _toggleCameraPermission(val, currentLang),
-                            activeTrackColor: colors.primary.withValues(alpha: 0.5),
-                            activeThumbColor: colors.primary,
+                            activeTrackColor: const Color(0xFF34C759),
+                            inactiveTrackColor: colors.surface3,
+                            thumbColor: Colors.white,
                           ),
                           onTap: () => _toggleCameraPermission(!_isCameraGranted, currentLang),
                         ),
@@ -1070,11 +1123,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                                   lang: currentLang,
                                 ),
                           accentColor: colors.secondary,
-                          trailing: Switch.adaptive(
+                          trailing: CupertinoSwitch(
                             value: _isPhotosGranted,
                             onChanged: (val) => _togglePhotoPermission(val, currentLang),
-                            activeTrackColor: colors.secondary.withValues(alpha: 0.5),
-                            activeThumbColor: colors.secondary,
+                            activeTrackColor: const Color(0xFF34C759),
+                            inactiveTrackColor: colors.surface3,
+                            thumbColor: Colors.white,
                           ),
                           onTap: () => _togglePhotoPermission(!_isPhotosGranted, currentLang),
                         ),
@@ -1091,11 +1145,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                                   lang: currentLang,
                                 ),
                           accentColor: colors.tertiary,
-                          trailing: Switch.adaptive(
+                          trailing: CupertinoSwitch(
                             value: _isLocationGranted,
                             onChanged: (val) => _toggleLocationPermission(val, currentLang),
-                            activeTrackColor: colors.tertiary.withValues(alpha: 0.5),
-                            activeThumbColor: colors.tertiary,
+                            activeTrackColor: const Color(0xFF34C759),
+                            inactiveTrackColor: colors.surface3,
+                            thumbColor: Colors.white,
                           ),
                           onTap: () => _toggleLocationPermission(!_isLocationGranted, currentLang),
                         ),

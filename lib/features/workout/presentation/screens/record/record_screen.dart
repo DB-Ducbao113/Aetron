@@ -983,9 +983,14 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
                     borderRadius: const BorderRadius.vertical(
                       top: Radius.circular(KineticTokens.radiusHero),
                     ),
-                    border: Border(
-                      top: BorderSide(color: context.kinetic.borderSubtle),
-                    ),
+                    boxShadow: context.kinetic.isDark
+                        ? null
+                        : KineticTokens.shadowPanel(const Color(0xFF0F172A)),
+                    border: context.kinetic.isDark
+                        ? Border(
+                            top: BorderSide(color: context.kinetic.borderSubtle),
+                          )
+                        : null,
                   ),
                   child: ClipRRect(
                     borderRadius: const BorderRadius.vertical(

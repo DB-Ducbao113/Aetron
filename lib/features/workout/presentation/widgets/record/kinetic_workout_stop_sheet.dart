@@ -81,11 +81,10 @@ class KineticWorkoutStopSheet extends StatelessWidget {
       decoration: BoxDecoration(
         color: colors.surface1,
         borderRadius: BorderRadius.circular(KineticTokens.radiusXXL),
-        border: Border.all(
-          color: colors.tertiary.withValues(alpha: 0.5),
-          width: 1.4,
-        ),
-        boxShadow: KineticTokens.shadowPanel(Colors.black),
+        border: colors.isDark
+            ? Border.all(color: colors.borderSubtle, width: 1.0)
+            : null,
+        boxShadow: KineticTokens.shadowPanel(const Color(0xFF0F172A)),
       ),
       child: SafeArea(
         top: false,
@@ -115,16 +114,12 @@ class KineticWorkoutStopSheet extends StatelessWidget {
                 height: 64,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: colors.tertiary.withValues(alpha: 0.14),
-                  border: Border.all(
-                    color: colors.tertiary.withValues(alpha: 0.55),
-                    width: 2,
-                  ),
+                  color: colors.primaryTint,
                 ),
                 child: BladeIcon(
                   BladeIconName.flag,
-                  size: 34,
-                  color: colors.tertiary,
+                  size: 32,
+                  color: colors.primary,
                 ),
               ),
             ),
@@ -210,37 +205,35 @@ class KineticWorkoutStopSheet extends StatelessWidget {
             ),
             const SizedBox(height: 22),
 
-            // Primary Action: STOP & SAVE WORKOUT (Prominent, High-Contrast)
-            Container(
+            // Primary Action: STOP & SAVE WORKOUT
+            SizedBox(
               height: 52,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
-                color: colors.tertiary,
-              ),
               child: ElevatedButton.icon(
                 onPressed: () {
                   HapticFeedback.heavyImpact();
                   Navigator.of(context).pop(true);
                 },
-                icon: BladeIcon(
+                icon: const BladeIcon(
                   BladeIconName.flag,
                   color: Colors.white,
-                  size: 24,
+                  size: 22,
                 ),
                 label: Text(
                   isVi ? 'KẾT THÚC & LƯU BÀI TẬP' : 'FINISH & SAVE SESSION',
                   style: KineticTypography.unitLabel.copyWith(
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w800,
                     color: Colors.white,
-                    letterSpacing: 0.8,
+                    letterSpacing: 0.6,
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.transparent,
+                  backgroundColor: const Color(0xFF006EE6),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
                   shadowColor: Colors.transparent,
                   shape: RoundedRectangleBorder(
                     borderRadius:
-                        BorderRadius.circular(KineticTokens.radiusLG),
+                        BorderRadius.circular(KineticTokens.radiusPill),
                   ),
                 ),
               ),
@@ -258,26 +251,25 @@ class KineticWorkoutStopSheet extends StatelessWidget {
                 icon: BladeIcon(
                   BladeIconName.play,
                   color: colors.primary,
-                  size: 22,
+                  size: 20,
                 ),
                 label: Text(
                   isVi ? 'TIẾP TỤC TẬP LUYỆN' : 'CONTINUE WORKOUT',
                   style: KineticTypography.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     color: colors.primary,
-                    letterSpacing: 0.5,
                   ),
                 ),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: colors.primary,
                   backgroundColor: colors.surface2,
                   side: BorderSide(
-                    color: colors.primary.withValues(alpha: 0.55),
-                    width: 1.4,
+                    color: colors.borderSubtle,
+                    width: 1.0,
                   ),
                   shape: RoundedRectangleBorder(
                     borderRadius:
-                        BorderRadius.circular(KineticTokens.radiusLG),
+                        BorderRadius.circular(KineticTokens.radiusPill),
                   ),
                 ),
               ),

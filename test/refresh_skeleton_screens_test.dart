@@ -2,6 +2,7 @@ import 'package:fitness_exercise_application/core/providers/connectivity_provide
 import 'package:fitness_exercise_application/features/activity/presentation/screens/activity_screen.dart';
 import 'package:fitness_exercise_application/features/analytics/presentation/screens/analytics_screen.dart';
 import 'package:fitness_exercise_application/features/history/presentation/screens/calendar_screen.dart';
+import 'package:fitness_exercise_application/features/workout/presentation/widgets/record/tracking_map_widget.dart';
 import 'package:fitness_exercise_application/shared/aetron/aetron_skeleton.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
@@ -131,20 +132,25 @@ void main() {
       expect(find.byType(RefreshIndicator), findsOneWidget);
     });
 
-    testWidgets('ActivityScreen integrates RefreshIndicator', (tester) async {
+    testWidgets('ActivityScreen renders map-first start experience cleanly', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
             appConnectionProvider.overrideWith((ref) => Stream.value(true)),
           ],
           child: MaterialApp(
-            theme: KineticTheme.darkTheme,
-            home: const ActivityScreen(),
+            theme: KineticTheme.lightTheme,
+            home: const ActivityScreen(showMapTiles: false),
           ),
         ),
       );
 
-      expect(find.byType(RefreshIndicator), findsOneWidget);
+      expect(find.byType(TrackingMapWidget), findsOneWidget);
+      expect(find.byKey(const Key('activity-top-sport-pill')), findsOneWidget);
+      expect(find.byKey(const Key('activity-gps-pill')), findsOneWidget);
+      expect(find.byKey(const Key('sport-pill-cycling')), findsOneWidget);
     });
   });
 }

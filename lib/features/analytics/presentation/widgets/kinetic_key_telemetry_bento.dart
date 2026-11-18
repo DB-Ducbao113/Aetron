@@ -139,13 +139,18 @@ class _TelemetryCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                label,
-                style: KineticTypography.unitLabel.copyWith(
-                  color: colors.textSecondary,
-                  letterSpacing: 0.6,
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: KineticTypography.unitLabel.copyWith(
+                    color: colors.textSecondary,
+                    letterSpacing: 0.6,
+                  ),
                 ),
               ),
+              const SizedBox(width: KineticTokens.spaceXXS),
               Container(
                 width: 28,
                 height: 28,
@@ -158,27 +163,31 @@ class _TelemetryCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: KineticTokens.spaceXS),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(
-                value,
-                style: KineticTypography.metricCompact.copyWith(
-                  color: colors.textPrimary,
-                ),
-              ),
-              if (unit.isNotEmpty) ...[
-                const SizedBox(width: KineticTokens.spaceXXS),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
                 Text(
-                  unit,
-                  style: KineticTypography.unitLabel.copyWith(
-                    color: accentColor,
-                    letterSpacing: 0.5,
+                  value,
+                  style: KineticTypography.metricCompact.copyWith(
+                    color: colors.textPrimary,
                   ),
                 ),
+                if (unit.isNotEmpty) ...[
+                  const SizedBox(width: KineticTokens.spaceXXS),
+                  Text(
+                    unit,
+                    style: KineticTypography.unitLabel.copyWith(
+                      color: accentColor,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ],
       ),

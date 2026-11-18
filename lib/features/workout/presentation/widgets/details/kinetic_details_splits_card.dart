@@ -145,7 +145,9 @@ class _SplitRow extends StatelessWidget {
     }
     barRatio = math.max(0.2, math.min(1.0, barRatio));
 
-    final barColor = isFastest ? colors.primary : colors.secondary;
+    final barColor = isFastest
+        ? colors.primary
+        : colors.primary.withValues(alpha: 0.45);
 
     return Row(
       children: [
@@ -155,7 +157,7 @@ class _SplitRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
           decoration: BoxDecoration(
             color: isFastest
-                ? colors.primary.withValues(alpha: 0.15)
+                ? colors.primaryTint
                 : colors.surface2,
             borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
           ),
@@ -177,19 +179,19 @@ class _SplitRow extends StatelessWidget {
               return Stack(
                 children: [
                   Container(
-                    height: 5,
+                    height: 6,
                     width: constraints.maxWidth,
                     decoration: BoxDecoration(
-                      color: colors.surface2,
-                      borderRadius: BorderRadius.circular(2.5),
+                      color: colors.primaryTint,
+                      borderRadius: BorderRadius.circular(3),
                     ),
                   ),
                   Container(
-                    height: 5,
+                    height: 6,
                     width: constraints.maxWidth * barRatio,
                     decoration: BoxDecoration(
                       color: barColor,
-                      borderRadius: BorderRadius.circular(2.5),
+                      borderRadius: BorderRadius.circular(3),
                     ),
                   ),
                 ],

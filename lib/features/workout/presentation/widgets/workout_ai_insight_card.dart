@@ -122,12 +122,10 @@ class _CompactAiInsightCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: colors.surface1,
         borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
-        border: Border(
-          left: BorderSide(color: colors.primary, width: 3),
-          top: BorderSide(color: colors.borderSubtle),
-          right: BorderSide(color: colors.borderSubtle),
-          bottom: BorderSide(color: colors.borderSubtle),
-        ),
+        boxShadow: colors.isDark ? null : KineticTokens.shadowCardLight(),
+        border: colors.isDark
+            ? Border.all(color: colors.borderSubtle)
+            : null,
       ),
       child: Material(
         color: Colors.transparent,
@@ -339,12 +337,10 @@ class _AiInsightLoadingCardState extends State<_AiInsightLoadingCard>
           decoration: BoxDecoration(
             color: colors.surface1,
             borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
-            border: Border(
-              left: BorderSide(color: colors.primary, width: 3),
-              top: BorderSide(color: colors.borderSubtle),
-              right: BorderSide(color: colors.borderSubtle),
-              bottom: BorderSide(color: colors.borderSubtle),
-            ),
+            boxShadow: colors.isDark ? null : KineticTokens.shadowCardLight(),
+            border: colors.isDark
+                ? Border.all(color: colors.borderSubtle)
+                : null,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

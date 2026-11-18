@@ -136,15 +136,17 @@ class _KineticLiveTopBarState extends State<KineticLiveTopBar>
               height: 42,
               padding: const EdgeInsets.symmetric(horizontal: 14),
               decoration: BoxDecoration(
-                gradient: KineticGradients.hudSurface(colors),
+                color: colors.surface1,
                 borderRadius: BorderRadius.circular(21),
                 border: Border.all(
                   color: isAlertState
                       ? colors.tertiary.withValues(alpha: 0.85)
-                      : colors.borderSubtle.withValues(alpha: 0.7),
-                  width: isAlertState ? 1.4 : 1.1,
+                      : (colors.isDark
+                            ? colors.borderSubtle.withValues(alpha: 0.8)
+                            : Colors.transparent),
+                  width: isAlertState ? 1.4 : 1.0,
                 ),
-                boxShadow: KineticTokens.shadowPanel(Colors.black),
+                boxShadow: colors.isDark ? null : KineticTokens.shadowCardLight(),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -218,15 +220,19 @@ class _KineticLiveTopBarState extends State<KineticLiveTopBar>
                 height: 42,
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 decoration: BoxDecoration(
-                  gradient: KineticGradients.hudSurface(colors),
+                  color: colors.surface1,
                   borderRadius: BorderRadius.circular(21),
                   border: Border.all(
                     color: widget.isLargeMetricsMode
                         ? colors.primary.withValues(alpha: 0.85)
-                        : colors.borderSubtle.withValues(alpha: 0.7),
-                    width: widget.isLargeMetricsMode ? 1.4 : 1.1,
+                        : (colors.isDark
+                              ? colors.borderSubtle.withValues(alpha: 0.8)
+                              : Colors.transparent),
+                    width: widget.isLargeMetricsMode ? 1.4 : 1.0,
                   ),
-                  boxShadow: KineticTokens.shadowPanel(Colors.black),
+                  boxShadow: colors.isDark
+                      ? null
+                      : KineticTokens.shadowCardLight(),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,

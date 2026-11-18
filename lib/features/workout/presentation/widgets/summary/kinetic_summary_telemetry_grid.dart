@@ -62,7 +62,7 @@ class KineticSummaryTelemetryGrid extends StatelessWidget {
               useMetric: useMetricUnits,
             );
       primaryPaceSpeedValue = formattedPace;
-      primaryPaceSpeedUnit = useMetricUnits ? '/km' : '/mi';
+      primaryPaceSpeedUnit = '';
     }
 
     // Fourth Tile: Steps (for Run/Walk) or Cadence/Speed max
@@ -211,15 +211,20 @@ class _TelemetryCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Flexible(
-                child: Text(
-                  label,
-                  style: KineticTypography.unitLabel.copyWith(
-                    color: colors.textMuted,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    style: KineticTypography.unitLabel.copyWith(
+                      color: colors.textMuted,
+                      letterSpacing: 0.6,
+                    ),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
+              const SizedBox(width: 6),
               BladeIcon(icon, size: 14, color: colors.textSecondary),
             ],
           ),

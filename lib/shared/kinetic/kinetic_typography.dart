@@ -29,14 +29,14 @@ class KineticTypography {
     fontFeatures: [FontFeature.tabularFigures()],
   );
 
-  /// Mega Metric — V4: the single biggest number on screen (live distance,
-  /// summary headline). Be Vietnam Pro ExtraBold.
+  /// Mega Metric — single biggest telemetry value on screen (live distance,
+  /// summary headline). Crisp tabular figures.
   static const TextStyle metricMega = TextStyle(
     fontFamily: displayFontFamily,
-    fontSize: 76,
+    fontSize: 56,
     fontWeight: FontWeight.w800,
-    letterSpacing: -0.5,
-    height: 0.95,
+    letterSpacing: -1.1,
+    height: 1.0,
     fontFeatures: [FontFeature.tabularFigures()],
   );
 
@@ -148,13 +148,22 @@ class KineticTypography {
     height: 1.2,
   );
 
-  /// Tiêu đề page của 5 tab chính (Activity, Analytics, History, Profile, Settings).
+  /// Tiêu đề page của các tab chính (Hôm nay, Lịch sử, Phân tích, Hồ sơ, Cài đặt).
   static const TextStyle pageTitle = TextStyle(
     fontFamily: displayFontFamily,
-    fontSize: 22,
+    fontSize: 28,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -0.56,
+    height: 1.15,
+  );
+
+  /// Tiêu đề section sạch dạng sentence-case (Mục tiêu tuần, Hoạt động gần đây).
+  static const TextStyle sectionTitle = TextStyle(
+    fontFamily: displayFontFamily,
+    fontSize: 18,
     fontWeight: FontWeight.w700,
-    letterSpacing: -0.44, // -0.02em × 22
-    height: 1.2,
+    letterSpacing: -0.25,
+    height: 1.25,
   );
 
   /// Tiêu đề page con (Details, Summary, Achievements).

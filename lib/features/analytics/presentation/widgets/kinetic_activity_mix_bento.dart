@@ -92,27 +92,34 @@ class KineticActivityMixBento extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isVi ? 'CƠ CẤU MÔN TẬP' : 'DISCIPLINE BREAKDOWN',
-                    style: KineticTypography.headlineSmall.copyWith(
-                      color: colors.textPrimary,
-                      fontWeight: FontWeight.w800,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isVi ? 'CƠ CẤU MÔN TẬP' : 'DISCIPLINE BREAKDOWN',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: KineticTypography.headlineSmall.copyWith(
+                        color: colors.textPrimary,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    isVi
-                        ? 'Phân bổ thể thao sức bền đa môn'
-                        : 'Endurance multi-sport volume share',
-                    style: KineticTypography.bodySmall.copyWith(
-                      color: colors.textSecondary,
+                    const SizedBox(height: 2),
+                    Text(
+                      isVi
+                          ? 'Phân bổ thể thao sức bền đa môn'
+                          : 'Endurance multi-sport volume share',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: KineticTypography.bodySmall.copyWith(
+                        color: colors.textSecondary,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: KineticTokens.spaceXS),
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -261,47 +268,63 @@ class _SportTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 7,
-                    height: 7,
-                    decoration: BoxDecoration(
-                      color: dotColor,
-                      shape: BoxShape.circle,
+              Expanded(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: BoxDecoration(
+                        color: dotColor,
+                        shape: BoxShape.circle,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: KineticTokens.spaceXXS),
-                  Text(
-                    name,
-                    style: KineticTypography.caption.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: colors.textPrimary,
+                    const SizedBox(width: KineticTokens.spaceXXS),
+                    Flexible(
+                      child: Text(
+                        name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: KineticTypography.caption.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: colors.textPrimary,
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: 4),
               Icon(icon, size: 14, color: dotColor),
             ],
           ),
           const SizedBox(height: KineticTokens.spaceXS),
-          Text(
-            pct,
-            style: KineticTypography.pageTitleCompact.copyWith(
-              color: dotColor,
-              fontFeatures: KineticTypography.tabularFigures,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              pct,
+              maxLines: 1,
+              style: KineticTypography.pageTitleCompact.copyWith(
+                color: dotColor,
+                fontFeatures: KineticTypography.tabularFigures,
+              ),
             ),
           ),
           const SizedBox(height: 2),
-          Text(
-            distance,
-            style: KineticTypography.caption.copyWith(
-              fontWeight: FontWeight.w600,
-              color: colors.textSecondary,
-              fontFeatures: KineticTypography.tabularFigures,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              distance,
+              maxLines: 1,
+              style: KineticTypography.caption.copyWith(
+                fontWeight: FontWeight.w600,
+                color: colors.textSecondary,
+                fontFeatures: KineticTypography.tabularFigures,
+              ),
             ),
           ),
         ],

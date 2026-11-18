@@ -235,11 +235,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 borderRadius: BorderRadius.circular(
                                   KineticTokens.radiusXXL,
                                 ),
-                                border: Border.all(
-                                  color: colors.borderStrong,
-                                  width: 1.5,
-                                ),
-                                boxShadow: KineticTokens.shadowPanel(Colors.black),
+                                boxShadow: colors.isDark
+                                    ? null
+                                    : KineticTokens.shadowCardLight(),
+                                border: colors.isDark
+                                    ? Border.all(color: colors.borderSubtle)
+                                    : null,
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,

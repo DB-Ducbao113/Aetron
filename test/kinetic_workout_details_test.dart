@@ -19,8 +19,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+class _TestViLanguageNotifier extends AppLanguageNotifier {
+  _TestViLanguageNotifier() : super() {
+    state = AppLanguage.vi;
+  }
+}
 
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({kAppLanguagePrefKey: 'vi'});
+  });
   Widget buildTestable(Widget child) {
     return MaterialApp(
       theme: KineticTheme.darkTheme,
@@ -434,6 +444,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            appLanguageProvider.overrideWith((_) => _TestViLanguageNotifier()),
             workoutProvider('ws-details-1').overrideWith(
               (ref) async => mockWorkoutSession,
             ),
@@ -448,7 +459,10 @@ void main() {
             metricUnitsPreferenceProvider.overrideWith((ref) async => true),
           ],
           child: const MaterialApp(
-            home: WorkoutDetailsScreen(workoutId: 'ws-details-1'),
+            home: WorkoutDetailsScreen(
+              workoutId: 'ws-details-1',
+              showMapTiles: false,
+            ),
           ),
         ),
       );

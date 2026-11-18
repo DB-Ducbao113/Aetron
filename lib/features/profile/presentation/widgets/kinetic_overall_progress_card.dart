@@ -42,12 +42,17 @@ class KineticOverallProgressCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                currentLang == AppLanguage.vi ? 'TIẾN TRÌNH DANH HIỆU' : 'ACHIEVEMENT PROGRESS',
-                style: KineticTypography.pageEyebrow.copyWith(
-                  color: colors.primary,
+              Expanded(
+                child: Text(
+                  currentLang == AppLanguage.vi ? 'TIẾN TRÌNH DANH HIỆU' : 'ACHIEVEMENT PROGRESS',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: KineticTypography.pageEyebrow.copyWith(
+                    color: colors.primary,
+                  ),
                 ),
               ),
+              const SizedBox(width: KineticTokens.spaceXS),
               Text(
                 '$progressPercent%',
                 style: KineticTypography.headlineSmall.copyWith(

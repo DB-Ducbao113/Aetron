@@ -130,14 +130,19 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        _selectedCategory == BadgeCategory.all
-                            ? (currentLang == AppLanguage.vi ? 'TẤT CẢ HUY HIỆU' : 'ALL BADGES')
-                            : _selectedCategory.label(currentLang).toUpperCase(),
-                        style: KineticTypography.pageEyebrow.copyWith(
-                          color: colors.primary,
+                      Expanded(
+                        child: Text(
+                          _selectedCategory == BadgeCategory.all
+                              ? (currentLang == AppLanguage.vi ? 'TẤT CẢ HUY HIỆU' : 'ALL BADGES')
+                              : _selectedCategory.label(currentLang).toUpperCase(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: KineticTypography.pageEyebrow.copyWith(
+                            color: colors.primary,
+                          ),
                         ),
                       ),
+                      const SizedBox(width: KineticTokens.spaceXS),
                       Text(
                         '${filteredBadges.where((b) => b.isUnlocked).length} / ${filteredBadges.length}',
                         style: KineticTypography.caption.copyWith(
@@ -159,7 +164,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                       crossAxisCount: 2,
                       crossAxisSpacing: KineticTokens.spaceSM,
                       mainAxisSpacing: KineticTokens.spaceSM,
-                      childAspectRatio: 1.08,
+                      childAspectRatio: 1.20,
                     ),
                     itemBuilder: (context, index) {
                       final badge = filteredBadges[index];

@@ -1,6 +1,6 @@
-import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 
 class KineticHomeTopBar extends StatelessWidget {
   final ImageProvider? avatarImage;
@@ -29,82 +29,62 @@ class KineticHomeTopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.kinetic;
+    final safeInitials = (initials != null && initials!.trim().isNotEmpty)
+        ? initials!.trim()
+        : (displayName.isNotEmpty ? displayName[0].toUpperCase() : 'A');
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         KineticTokens.page,
         KineticTokens.spaceSM,
         KineticTokens.page,
-        KineticTokens.spaceXS,
+        KineticTokens.spaceSM,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // 1. Streamlined Greeting & Full User Name
           Expanded(
-            child: InkWell(
-              onTap: onAvatarTap,
-              borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    greeting.endsWith(',') ? greeting : '$greeting,',
-                    style: KineticTypography.greeting.copyWith(
-                      color: colors.textMuted,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: KineticTokens.spaceXXS),
-                  Text(
-                    displayName,
-                    style: KineticTypography.displayName.copyWith(
-                      color: colors.textPrimary,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+            child: Text(
+              isVi ? 'Hôm nay' : 'Today',
+              style: KineticTypography.pageTitle.copyWith(
+                color: colors.textPrimary,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           const SizedBox(width: KineticTokens.spaceXS),
 
-          // 3. Streak Indicator Pill
+          // Streak Pill
           Material(
             color: Colors.transparent,
             child: InkWell(
               onTap: onStreakTap,
               borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: KineticTokens.spaceSM,
-                  vertical: KineticTokens.spaceXS,
-                ),
+                height: 36,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  color: colors.surface1,
+                  color: colors.primaryTint,
                   borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
-                  border: Border.all(color: colors.borderSubtle, width: 1),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    BladeIcon(
-                      BladeIconName.flame,
-                      color: colors.tertiary,
+                    Icon(
+                      LucideIcons.flame,
+                      color: colors.primary,
                       size: 16,
                     ),
-                    const SizedBox(width: KineticTokens.spaceXXS),
+                    const SizedBox(width: 5),
                     Text(
                       isVi
                           ? '$streakCount ngày'
                           : '$streakCount ${streakCount == 1 ? "day" : "days"}',
-                      style: KineticTypography.unitLabel.copyWith(
+                      style: KineticTypography.label.copyWith(
                         color: colors.primary,
                         fontWeight: FontWeight.w700,
-                        fontSize: 11,
+                        fontSize: 13,
                       ),
                     ),
                   ],
@@ -114,42 +94,68 @@ class KineticHomeTopBar extends StatelessWidget {
           ),
           const SizedBox(width: KineticTokens.spaceXS),
 
-          // 4. Notification Icon Button
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: onNotificationTap,
-              borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
+          // Notification icon
+          Semantics(
+            button: true,
+            label: isVi ? 'Thông báo' : 'Notifications',
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onNotificationTap,
+                customBorder: const CircleBorder(),
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: colors.surface1,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: colors.borderSubtle, width: 0.8),
+                  ),
+                  child: Icon(
+                    LucideIcons.bell,
+                    size: 18,
+                    color: colors.textSecondary,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: KineticTokens.spaceXS),
+
+          // User Avatar
+          Semantics(
+            button: true,
+            label: displayName,
+            child: GestureDetector(
+              onTap: onAvatarTap,
               child: Container(
-                width: 40,
-                height: 40,
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
-                  color: colors.surface1,
+                  color: colors.primaryTint,
                   shape: BoxShape.circle,
-                  border: Border.all(color: colors.borderSubtle, width: 1),
+                  border: Border.all(
+                    color: colors.primary.withValues(alpha: 0.25),
+                    width: 1,
+                  ),
+                  image: avatarImage != null
+                      ? DecorationImage(
+                          image: avatarImage!,
+                          fit: BoxFit.cover,
+                        )
+                      : null,
                 ),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    BladeIcon(
-                      BladeIconName.bell,
-                      size: 20,
-                      color: colors.textSecondary,
-                    ),
-                    Positioned(
-                      top: 10,
-                      right: 10,
-                      child: Container(
-                        width: 6,
-                        height: 6,
-                        decoration: BoxDecoration(
+                alignment: Alignment.center,
+                child: avatarImage == null
+                    ? Text(
+                        safeInitials,
+                        style: KineticTypography.label.copyWith(
                           color: colors.primary,
-                          shape: BoxShape.circle,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13,
                         ),
-                      ),
-                    ),
-                  ],
-                ),
+                      )
+                    : null,
               ),
             ),
           ),

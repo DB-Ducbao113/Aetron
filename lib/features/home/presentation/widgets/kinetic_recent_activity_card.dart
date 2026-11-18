@@ -1,8 +1,11 @@
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
+import 'package:fitness_exercise_application/features/workout/presentation/providers/workout_providers.dart';
+import 'package:fitness_exercise_application/features/workout/presentation/widgets/workout_route_recap_components.dart';
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
-import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class KineticRecentActivityCard extends StatelessWidget {
   final List<WorkoutSession> workouts;
@@ -11,6 +14,7 @@ class KineticRecentActivityCard extends StatelessWidget {
   final VoidCallback onSeeAllTap;
   final ValueChanged<String> onWorkoutTap;
   final VoidCallback onStartFirstWorkoutTap;
+  final bool showMapTiles;
 
   const KineticRecentActivityCard({
     super.key,
@@ -20,6 +24,7 @@ class KineticRecentActivityCard extends StatelessWidget {
     required this.onSeeAllTap,
     required this.onWorkoutTap,
     required this.onStartFirstWorkoutTap,
+    this.showMapTiles = true,
   });
 
   @override
@@ -34,127 +39,173 @@ class KineticRecentActivityCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Section Title Row
+          // Section Header (Sentence case)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                isVi ? 'HOẠT ĐỘNG GẦN NHẤT' : 'RECENT ACTIVITY',
-                style: KineticTypography.sectionEyebrow.copyWith(
-                  color: colors.textMuted,
-                ),
-              ),
-              if (workouts.isNotEmpty)
-                GestureDetector(
-                  onTap: onSeeAllTap,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        isVi ? 'Xem tất cả' : 'See all',
-                        style: KineticTypography.bodySmall.copyWith(
-                          color: colors.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(width: KineticTokens.spaceXXS),
-                      BladeIcon(
-                        BladeIconName.chevR,
-                        size: 16,
-                        color: colors.primary,
-                      ),
-                    ],
+              Expanded(
+                child: Text(
+                  isVi ? 'Hoạt động gần đây' : 'Recent activity',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: KineticTypography.sectionTitle.copyWith(
+                    color: colors.textPrimary,
                   ),
                 ),
+              ),
+              if (workouts.isNotEmpty) ...[
+                const SizedBox(width: 8),
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: onSeeAllTap,
+                    borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 4,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            isVi ? 'Xem tất cả' : 'See all',
+                            style: KineticTypography.label.copyWith(
+                              color: colors.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(width: 2),
+                          Icon(
+                            LucideIcons.chevron_right,
+                            size: 16,
+                            color: colors.primary,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: KineticTokens.spaceXS),
 
-          // Content
           if (workouts.isEmpty)
-            // Empty State for New Athletes (Fixing M10)
             KineticCard(
               padding: const EdgeInsets.all(KineticTokens.spaceXL),
               child: Column(
                 children: [
                   Container(
-                    width: 52,
-                    height: 52,
+                    width: 48,
+                    height: 48,
                     decoration: BoxDecoration(
-                      color: colors.primary.withValues(alpha: 0.12),
+                      color: colors.primaryTint,
                       shape: BoxShape.circle,
-                      border: Border.all(
-                        color: colors.primary.withValues(alpha: 0.3),
-                      ),
                     ),
-                    child: BladeIcon(
-                      BladeIconName.run,
+                    child: Icon(
+                      Icons.directions_run_rounded,
                       color: colors.primary,
-                      size: 26,
+                      size: 24,
                     ),
                   ),
                   const SizedBox(height: KineticTokens.spaceSM),
                   Text(
-                    isVi ? 'CHƯA CÓ HOẠT ĐỘNG NÀO' : 'NO RECENT ACTIVITIES',
-                    style: KineticTypography.label.copyWith(
+                    isVi ? 'Chưa có buổi tập nào' : 'No recent activities',
+                    style: KineticTypography.headlineSmall.copyWith(
                       color: colors.textPrimary,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.1,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: KineticTokens.spaceXXS),
                   Text(
                     isVi
-                        ? 'Bắt đầu ghi lại buổi tập đầu tiên để theo dõi phong độ thời gian thực!'
-                        : 'Record your first workout to track your performance!',
+                        ? 'Bắt đầu buổi tập đầu tiên để lưu lộ trình và theo dõi tiến độ mỗi tuần.'
+                        : 'Record your first workout to view routes and track your weekly progress.',
                     textAlign: TextAlign.center,
                     style: KineticTypography.bodySmall.copyWith(
                       color: colors.textMuted,
-                      height: 1.4,
+                      height: 1.45,
                     ),
                   ),
-                  const SizedBox(height: KineticTokens.spaceLG),
+                  const SizedBox(height: KineticTokens.spaceMD),
                   KineticButton(
-                    label: isVi
-                        ? 'Bắt đầu buổi tập đầu tiên'
-                        : 'Start first workout',
-                    icon: Icons.play_arrow_rounded,
+                    label: isVi ? 'Bắt đầu tập ngay' : 'Start first workout',
+                    icon: LucideIcons.play,
                     isFullWidth: false,
                     onPressed: onStartFirstWorkoutTap,
                   ),
                 ],
               ),
             )
-          else ...[
-            // Populated Recent Activity Card
-            _buildWorkoutItem(context, workouts.first),
-          ],
+          else
+            _RecentWorkoutItem(
+              workout: workouts.first,
+              useMetricUnits: useMetricUnits,
+              isVi: isVi,
+              showMapTiles: showMapTiles,
+              onTap: () => onWorkoutTap(workouts.first.id),
+            ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildWorkoutItem(BuildContext context, WorkoutSession workout) {
+class _RecentWorkoutItem extends ConsumerWidget {
+  final WorkoutSession workout;
+  final bool useMetricUnits;
+  final bool isVi;
+  final bool showMapTiles;
+  final VoidCallback onTap;
+
+  const _RecentWorkoutItem({
+    required this.workout,
+    required this.useMetricUnits,
+    required this.isVi,
+    required this.showMapTiles,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.kinetic;
+    final isCycling = workout.activityType.toLowerCase() == 'cycling';
 
     final effectiveDistanceKm = workout.gpsAnalysis.validDistanceKm > 0
         ? workout.gpsAnalysis.validDistanceKm
         : workout.distanceKm;
-    final distanceStr = WorkoutFormatters.formatDistance(
-      effectiveDistanceKm,
-      useMetric: useMetricUnits,
-    );
+    final distanceNumber = (useMetricUnits
+            ? effectiveDistanceKm
+            : WorkoutFormatters.kmToMi(effectiveDistanceKm))
+        .toStringAsFixed(2);
+    final distanceUnit = useMetricUnits ? 'km' : 'mi';
+
     final durationStr =
         WorkoutFormatters.formatDurationFromSeconds(workout.durationSec);
-    final speedStr = workout.avgSpeedKmh > 0
-        ? '${workout.avgSpeedKmh.toStringAsFixed(1)} ${useMetricUnits ? "km/h" : "mph"}'
-        : '--';
 
-    final BladeIconName activityIcon = switch (workout.activityType.toLowerCase()) {
-      'cycling' || 'bike' => BladeIconName.bike,
-      'running' || 'run' => BladeIconName.run,
-      'walking' || 'walk' => BladeIconName.walk,
-      _ => BladeIconName.pulse,
+    final String secondaryValue;
+    final String secondaryLabel;
+    if (isCycling) {
+      final spd = useMetricUnits
+          ? workout.avgSpeedKmh
+          : workout.avgSpeedKmh * 0.621371;
+      secondaryValue = spd > 0 ? '${spd.toStringAsFixed(1)} ' : '--';
+      secondaryLabel = useMetricUnits ? 'km/h' : 'mph';
+    } else {
+      secondaryValue = workout.avgSpeedKmh > 0
+          ? WorkoutFormatters.formatPaceFromSpeedKmh(
+              workout.avgSpeedKmh,
+              useMetric: useMetricUnits,
+            )
+          : '--';
+      secondaryLabel = '/$distanceUnit';
+    }
+
+    final IconData activityIcon = switch (workout.activityType.toLowerCase()) {
+      'cycling' || 'bike' => Icons.directions_bike_rounded,
+      'walking' || 'walk' => Icons.directions_walk_rounded,
+      _ => Icons.directions_run_rounded,
     };
 
     final String title = isVi
@@ -164,163 +215,200 @@ class KineticRecentActivityCard extends StatelessWidget {
             'walking' || 'walk' => 'Buổi đi bộ',
             _ => 'Buổi tập',
           }
-        : '${workout.activityType[0].toUpperCase()}${workout.activityType.substring(1)} Session';
+        : '${workout.activityType[0].toUpperCase()}${workout.activityType.substring(1)}';
 
-    final dateStr = isVi
-        ? '${workout.startedAt.day.toString().padLeft(2, '0')}/${workout.startedAt.month.toString().padLeft(2, '0')} lúc ${workout.startedAt.hour.toString().padLeft(2, '0')}:${workout.startedAt.minute.toString().padLeft(2, '0')}'
-        : '${workout.startedAt.day.toString().padLeft(2, '0')}/${workout.startedAt.month.toString().padLeft(2, '0')} at ${workout.startedAt.hour.toString().padLeft(2, '0')}:${workout.startedAt.minute.toString().padLeft(2, '0')}';
+    final localTime = workout.startedAt.toLocal();
+    final now = DateTime.now();
+    final isToday = localTime.year == now.year &&
+        localTime.month == now.month &&
+        localTime.day == now.day;
+    final timeFormatted =
+        '${localTime.hour.toString().padLeft(2, '0')}:${localTime.minute.toString().padLeft(2, '0')}';
+    final subtitle = isToday
+        ? (isVi ? 'Hôm nay · $timeFormatted' : 'Today · $timeFormatted')
+        : '${localTime.day.toString().padLeft(2, '0')}/${localTime.month.toString().padLeft(2, '0')} · $timeFormatted';
+
+    final routeAsync = ref.watch(workoutRoutePresentationProvider(workout.id));
+    final routePresentation = routeAsync.valueOrNull;
+    final routePoints = routePresentation?.routePoints ?? const [];
+    final routeSegments = routePresentation?.routeSegments ?? const [];
 
     return KineticCard(
-      padding: EdgeInsets.zero,
-      onTap: () => onWorkoutTap(workout.id),
+      padding: const EdgeInsets.all(KineticTokens.spaceMD),
+      borderRadius: KineticTokens.radiusLG,
+      onTap: onTap,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Activity Header Row
-          Padding(
-            padding: const EdgeInsets.all(KineticTokens.spaceMD),
+          // 1. Header Row
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: colors.primaryTint,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(activityIcon, color: colors.primary, size: 19),
+              ),
+              const SizedBox(width: KineticTokens.spaceSM),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '$title · $subtitle',
+                      style: KineticTypography.headlineSmall.copyWith(
+                        color: colors.textPrimary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15.5,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                LucideIcons.chevron_right,
+                color: colors.textMuted,
+                size: 18,
+              ),
+            ],
+          ),
+
+          // 2. Route Map Preview (when GPS points exist)
+          if (routePoints.length >= 2) ...[
+            const SizedBox(height: KineticTokens.spaceSM),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
+              child: SizedBox(
+                height: 150,
+                width: double.infinity,
+                child: WorkoutRoutePreviewMap(
+                  routePoints: routePoints,
+                  routeSegments: routeSegments,
+                  activityType: workout.activityType,
+                  icon: activityIcon,
+                  accentColor: colors.accentFill,
+                  glowColor: colors.accentFill.withValues(alpha: 0.25),
+                  highlightColor: colors.primaryTint,
+                  startColor: colors.success,
+                  endColor: colors.accentFill,
+                  interactive: false,
+                  showMapTiles: showMapTiles,
+                  mapPadding: const EdgeInsets.all(18),
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: KineticTokens.spaceMD),
+
+          // 3. Strava-style 3-Column Metrics Strip
+          Row(
+            children: [
+              Expanded(
+                child: _RecentMetricCell(
+                  value: distanceNumber,
+                  unit: distanceUnit,
+                  label: isVi ? 'Quãng đường' : 'Distance',
+                ),
+              ),
+              Container(
+                width: 1,
+                height: 30,
+                color: colors.borderSubtle,
+              ),
+              Expanded(
+                child: _RecentMetricCell(
+                  value: secondaryValue.trim(),
+                  unit: isCycling
+                      ? (secondaryValue == '--' ? '' : secondaryLabel)
+                      : '',
+                  label: isCycling
+                      ? (isVi ? 'Tốc độ TB' : 'Avg speed')
+                      : (isVi ? 'Pace TB' : 'Avg pace'),
+                ),
+              ),
+              Container(
+                width: 1,
+                height: 30,
+                color: colors.borderSubtle,
+              ),
+              Expanded(
+                child: _RecentMetricCell(
+                  value: durationStr,
+                  unit: '',
+                  label: isVi ? 'Thời gian' : 'Duration',
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RecentMetricCell extends StatelessWidget {
+  final String value;
+  final String unit;
+  final String label;
+
+  const _RecentMetricCell({
+    required this.value,
+    required this.unit,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.kinetic;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
             child: Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
               children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: colors.surface2,
-                    borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
-                    border: Border.all(color: colors.borderSubtle),
-                  ),
-                  child: BladeIcon(activityIcon, color: colors.primary, size: 20),
-                ),
-                const SizedBox(width: KineticTokens.spaceSM),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: KineticTypography.headlineSmall.copyWith(
-                          color: colors.textPrimary,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: KineticTokens.spaceXXS),
-                      Text(
-                        dateStr,
-                        style: KineticTypography.caption.copyWith(
-                          color: colors.textMuted,
-                        ),
-                      ),
-                    ],
+                Text(
+                  value,
+                  style: KineticTypography.metricSmall.copyWith(
+                    color: colors.textPrimary,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 19,
                   ),
                 ),
-                BladeIcon(
-                  BladeIconName.chevR,
-                  color: colors.textMuted,
-                  size: 20,
-                ),
+                if (unit.isNotEmpty) ...[
+                  const SizedBox(width: 2),
+                  Text(
+                    unit,
+                    style: KineticTypography.bodySmall.copyWith(
+                      color: colors.textMuted,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
-
-          // 2. Metrics Strip (3 Columns)
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: KineticTokens.spaceMD,
-              vertical: KineticTokens.spaceSM,
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: KineticTypography.caption.copyWith(
+              color: colors.textMuted,
+              fontSize: 11,
             ),
-            decoration: BoxDecoration(
-              color: colors.surface2,
-              borderRadius: const BorderRadius.vertical(
-                bottom: Radius.circular(KineticTokens.radiusSM),
-              ),
-              border: Border(
-                top: BorderSide(color: colors.borderSubtle, width: 1),
-              ),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isVi ? 'QUÃNG ĐƯỜNG' : 'DISTANCE',
-                        style: KineticTypography.unitLabel.copyWith(
-                          color: colors.textMuted,
-                          fontSize: 11,
-                        ),
-                      ),
-                      const SizedBox(height: KineticTokens.spaceXXS),
-                      Text(
-                        distanceStr,
-                        style: KineticTypography.metricSmall.copyWith(
-                          color: colors.textPrimary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  height: 28,
-                  width: 1,
-                  color: colors.borderSubtle,
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: KineticTokens.spaceSM),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          isVi ? 'THỜI GIAN' : 'DURATION',
-                          style: KineticTypography.unitLabel.copyWith(
-                            color: colors.textMuted,
-                          ),
-                        ),
-                        const SizedBox(height: KineticTokens.spaceXXS),
-                        Text(
-                          durationStr,
-                          style: KineticTypography.metricSmall.copyWith(
-                            color: colors.textPrimary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Container(
-                  height: 28,
-                  width: 1,
-                  color: colors.borderSubtle,
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: KineticTokens.spaceSM),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          isVi ? 'TỐC ĐỘ TB' : 'AVG SPEED',
-                          style: KineticTypography.unitLabel.copyWith(
-                            color: colors.textMuted,
-                            fontSize: 11,
-                          ),
-                        ),
-                        const SizedBox(height: KineticTokens.spaceXXS),
-                        Text(
-                          speedStr,
-                          style: KineticTypography.metricSmall.copyWith(
-                            color: colors.textPrimary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

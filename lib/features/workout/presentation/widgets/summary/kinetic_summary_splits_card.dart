@@ -136,7 +136,7 @@ class KineticSummarySplitsCard extends StatelessWidget {
                           Container(
                             height: 6,
                             decoration: BoxDecoration(
-                              color: colors.surface2,
+                              color: colors.primaryTint,
                               borderRadius: BorderRadius.circular(3),
                             ),
                           ),
@@ -145,7 +145,9 @@ class KineticSummarySplitsCard extends StatelessWidget {
                             child: Container(
                               height: 6,
                               decoration: BoxDecoration(
-                                color: isFastest ? colors.primary : colors.textMuted,
+                                color: isFastest
+                                    ? colors.primary
+                                    : colors.primary.withValues(alpha: 0.45),
                                 borderRadius: BorderRadius.circular(3),
                               ),
                             ),

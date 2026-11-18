@@ -37,9 +37,9 @@ class AppTranslations {
   static const Map<String, Map<AppLanguage, String>> _keys = {
     // Navigation Shell
     'nav_home': {AppLanguage.vi: 'Trang chủ', AppLanguage.en: 'Home'},
-    'nav_activity': {AppLanguage.vi: 'Hoạt động', AppLanguage.en: 'Activity'},
+    'nav_activity': {AppLanguage.vi: 'Ghi lại', AppLanguage.en: 'Record'},
     'nav_history': {AppLanguage.vi: 'Lịch sử', AppLanguage.en: 'History'},
-    'nav_analytics': {AppLanguage.vi: 'Thống kê', AppLanguage.en: 'Analytics'},
+    'nav_analytics': {AppLanguage.vi: 'Phân tích', AppLanguage.en: 'Analytics'},
     'nav_profile': {AppLanguage.vi: 'Hồ sơ', AppLanguage.en: 'Profile'},
 
     // Greetings & Subtitles
@@ -339,7 +339,7 @@ class AppTranslations {
     'days_left': {AppLanguage.vi: 'NGÀY NỮA', AppLanguage.en: 'DAYS LEFT'},
     'this_week': {AppLanguage.vi: 'TUẦN NÀY', AppLanguage.en: 'THIS WEEK'},
     'continue_workout': {AppLanguage.vi: 'TIẾP TỤC TẬP LUYỆN →', AppLanguage.en: 'CONTINUE WORKOUT →'},
-    'runner_programs': {AppLanguage.vi: 'GIÁO ÁN CHẠY BỘ', AppLanguage.en: 'RUNNER TRAINING PROGRAMS'},
+    'runner_programs': {AppLanguage.vi: 'Giáo án chạy bộ', AppLanguage.en: 'Running Plans'},
     'coaching_guide': {AppLanguage.vi: 'HƯỚNG DẪN CÁCH CHẠY', AppLanguage.en: 'RUNNING & COACHING GUIDE'},
     'start_program': {AppLanguage.vi: 'BẮT ĐẦU CHẠY NGAY →', AppLanguage.en: 'START PROGRAM NOW →'},
     'how_to_execute': {AppLanguage.vi: 'Phương pháp thực hiện bài chạy', AppLanguage.en: 'How to execute this workout'},

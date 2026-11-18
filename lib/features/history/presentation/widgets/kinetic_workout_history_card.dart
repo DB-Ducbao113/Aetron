@@ -193,39 +193,61 @@ class KineticWorkoutHistoryCard extends StatelessWidget {
                 ),
               ),
 
-              const Spacer(),
+              const SizedBox(width: KineticTokens.spaceSM),
 
-              // Duration
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.timer_rounded, size: 12, color: colors.textMuted),
-                  const SizedBox(width: 4),
-                  Text(
-                    durationStr,
-                    style: KineticTypography.bodySmall.copyWith(
-                      color: colors.textPrimary,
-                      fontWeight: FontWeight.w600,
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Duration
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.timer_rounded,
+                              size: 12,
+                              color: colors.textMuted,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              durationStr,
+                              style: KineticTypography.bodySmall.copyWith(
+                                color: colors.textPrimary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(width: KineticTokens.spaceSM),
+
+                        // Pace or Speed
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.speed_rounded,
+                              size: 12,
+                              color: colors.textMuted,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              paceSpeedStr,
+                              style: KineticTypography.bodySmall.copyWith(
+                                color: colors.textPrimary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(width: KineticTokens.spaceMD),
-
-              // Pace or Speed
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.speed_rounded, size: 12, color: colors.textMuted),
-                  const SizedBox(width: 4),
-                  Text(
-                    paceSpeedStr,
-                    style: KineticTypography.bodySmall.copyWith(
-                      color: colors.textPrimary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
+                ),
               ),
             ],
           ),

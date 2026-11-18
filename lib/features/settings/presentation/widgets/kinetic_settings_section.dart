@@ -33,27 +33,29 @@ class KineticSettingsSectionGroup extends StatelessWidget {
             ),
           ),
         ),
-        Material(
-          color: colors.surface1,
-          borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
-          clipBehavior: Clip.antiAlias,
-          child: Container(
-            decoration: BoxDecoration(
+        DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
+            boxShadow: Theme.of(context).brightness == Brightness.light
+                ? [
+                    // Morning identity: grouped cards lift off the paper
+                    // background with a soft ambient shadow behind Material.
+                    BoxShadow(
+                      color: const Color(0xFF172B33).withValues(alpha: 0.10),
+                      blurRadius: 24,
+                      offset: const Offset(0, 10),
+                      spreadRadius: -8,
+                    ),
+                  ]
+                : null,
+          ),
+          child: Material(
+            color: colors.surface1,
+            shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
-              border: Border.all(color: colors.borderSubtle),
-              boxShadow: Theme.of(context).brightness == Brightness.light
-                  ? [
-                      // Morning identity: grouped cards lift off the paper
-                      // background with a soft ambient shadow.
-                      BoxShadow(
-                        color: const Color(0xFF172B33).withValues(alpha: 0.10),
-                        blurRadius: 24,
-                        offset: const Offset(0, 10),
-                        spreadRadius: -8,
-                      ),
-                    ]
-                  : null,
+              side: BorderSide(color: colors.borderSubtle),
             ),
+            clipBehavior: Clip.antiAlias,
             child: Column(
               children: [
                 for (var i = 0; i < children.length; i++) ...[

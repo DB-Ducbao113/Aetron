@@ -54,7 +54,9 @@ class KineticLiveControlDock extends StatelessWidget {
             _buildLockButton(colors),
             const SizedBox(width: 10),
 
-            if (!isPaused) ...[
+            if (isSaving) ...[
+              Expanded(child: _buildFinishButton(colors)),
+            ] else if (!isPaused) ...[
               // 2. One wide flat primary Pause button
               Expanded(child: _buildPauseButton(colors)),
               const SizedBox(width: 10),

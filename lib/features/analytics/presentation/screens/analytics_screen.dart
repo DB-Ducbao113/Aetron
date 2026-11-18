@@ -304,43 +304,54 @@ class _GoalProgressCard extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    AppTranslations.get(
-                      'goal_progress',
-                      currentLang,
-                    ).toUpperCase(),
-                    style: KineticTypography.unitLabel.copyWith(
-                      color: colors.primary,
-                      letterSpacing: 1.2,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const GoalScreen()),
-                        );
-                      },
-                      borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
-                      child: Padding(
-                        padding: const EdgeInsets.all(4),
-                        child: Icon(
-                          Icons.tune_rounded,
-                          size: 16,
+              Expanded(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        AppTranslations.get(
+                          'goal_progress',
+                          currentLang,
+                        ).toUpperCase(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: KineticTypography.unitLabel.copyWith(
                           color: colors.primary,
+                          letterSpacing: 1.2,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const GoalScreen(),
+                            ),
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(
+                          KineticTokens.radiusLG,
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: Icon(
+                            Icons.tune_rounded,
+                            size: 16,
+                            color: colors.primary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               Material(
                 color: Colors.transparent,
                 child: InkWell(

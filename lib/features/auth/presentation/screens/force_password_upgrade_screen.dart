@@ -229,11 +229,12 @@ class _ForcePasswordUpgradeScreenState
                     borderRadius: BorderRadius.circular(
                       KineticTokens.radiusXXL,
                     ),
-                    border: Border.all(
-                      color: kinetic.borderStrong,
-                      width: 1.5,
-                    ),
-                    boxShadow: KineticTokens.shadowPanel(Colors.black),
+                    boxShadow: kinetic.isDark
+                        ? null
+                        : KineticTokens.shadowCardLight(),
+                    border: kinetic.isDark
+                        ? Border.all(color: kinetic.borderSubtle)
+                        : null,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,

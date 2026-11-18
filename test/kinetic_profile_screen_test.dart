@@ -7,6 +7,7 @@ import 'package:fitness_exercise_application/features/profile/presentation/widge
 import 'package:fitness_exercise_application/features/profile/presentation/widgets/kinetic_biometrics_bento.dart';
 import 'package:fitness_exercise_application/features/profile/presentation/widgets/kinetic_profile_action_tile.dart';
 import 'package:fitness_exercise_application/features/profile/presentation/widgets/kinetic_profile_top_bar.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -61,7 +62,10 @@ void main() {
 
       expect(find.text('AETRON'), findsNothing);
       expect(find.text('Hồ sơ cá nhân'), findsOneWidget);
-      expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
+      expect(
+        find.byIcon(BladeIcon.iconDataFor(BladeIconName.gear)),
+        findsOneWidget,
+      );
     });
 
     testWidgets('renders English localization correctly', (tester) async {
@@ -108,7 +112,8 @@ void main() {
       );
 
       expect(find.text('Duc Bao Runner'), findsOneWidget);
-      expect(find.text('12 NGÀY LIÊN TIẾP'), findsOneWidget);
+      expect(find.text('12'), findsOneWidget);
+      expect(find.text('NGÀY LIÊN TIẾP'), findsOneWidget);
       // Verify VẬN ĐỘNG VIÊN badge is removed
       expect(find.text('VẬN ĐỘNG VIÊN'), findsNothing);
       expect(find.textContaining('05/2023'), findsOneWidget);

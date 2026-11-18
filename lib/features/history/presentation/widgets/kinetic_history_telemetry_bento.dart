@@ -64,13 +64,18 @@ class KineticHistoryTelemetryBento extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                isVi ? 'TỔNG QUAN GIAI ĐOẠN' : 'PERIOD TELEMETRY MATRIX',
-                style: KineticTypography.unitLabel.copyWith(
-                  color: colors.primary,
-                  letterSpacing: 1.1,
+              Expanded(
+                child: Text(
+                  isVi ? 'TỔNG QUAN GIAI ĐOẠN' : 'PERIOD TELEMETRY MATRIX',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: KineticTypography.unitLabel.copyWith(
+                    color: colors.primary,
+                    letterSpacing: 1.1,
+                  ),
                 ),
               ),
+              const SizedBox(width: KineticTokens.spaceXS),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: KineticTokens.spaceXS, vertical: KineticTokens.spaceXXS),
                 decoration: BoxDecoration(
@@ -111,11 +116,15 @@ class KineticHistoryTelemetryBento extends StatelessWidget {
                         children: [
                           Icon(Icons.route_rounded, size: 14, color: colors.primary),
                           const SizedBox(width: 5),
-                          Text(
-                            (isVi ? 'QUÃNG ĐƯỜNG' : 'DISTANCE').toUpperCase(),
-                            style: KineticTypography.unitLabel.copyWith(
-                              color: colors.textMuted,
-                              fontSize: 11,
+                          Expanded(
+                            child: Text(
+                              (isVi ? 'QUÃNG ĐƯỜNG' : 'DISTANCE').toUpperCase(),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: KineticTypography.unitLabel.copyWith(
+                                color: colors.textMuted,
+                                fontSize: 11,
+                              ),
                             ),
                           ),
                         ],
@@ -229,19 +238,26 @@ class KineticHistoryTelemetryBento extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Icon(Icons.speed_rounded, size: 13, color: colors.primary),
-                    const SizedBox(width: 6),
-                    Text(
-                      isVi ? 'Pace trung bình:' : 'Average Pace:',
-                      style: KineticTypography.bodySmall.copyWith(
-                        color: colors.textSecondary,
-                        fontSize: 11,
+                Expanded(
+                  child: Row(
+                    children: [
+                      Icon(Icons.speed_rounded, size: 13, color: colors.primary),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          isVi ? 'Pace trung bình:' : 'Average Pace:',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: KineticTypography.bodySmall.copyWith(
+                            color: colors.textSecondary,
+                            fontSize: 11,
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+                const SizedBox(width: KineticTokens.spaceXS),
                 Text(
                   avgPaceStr,
                   style: KineticTypography.label.copyWith(
