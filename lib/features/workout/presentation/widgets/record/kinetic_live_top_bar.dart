@@ -1,4 +1,5 @@
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -135,27 +136,17 @@ class _KineticLiveTopBarState extends State<KineticLiveTopBar>
               height: 42,
               padding: const EdgeInsets.symmetric(horizontal: 14),
               decoration: BoxDecoration(
-                color: colors.surface1.withValues(alpha: 0.94),
+                color: colors.surface1,
                 borderRadius: BorderRadius.circular(21),
                 border: Border.all(
                   color: isAlertState
                       ? colors.tertiary.withValues(alpha: 0.85)
-                      : colors.borderSubtle.withValues(alpha: 0.7),
-                  width: isAlertState ? 1.4 : 1.1,
+                      : (colors.isDark
+                            ? colors.borderSubtle.withValues(alpha: 0.8)
+                            : Colors.transparent),
+                  width: isAlertState ? 1.4 : 1.0,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.32),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
-                  ),
-                  if (isAlertState)
-                    BoxShadow(
-                      color: colors.tertiary.withValues(alpha: 0.22),
-                      blurRadius: 12,
-                      spreadRadius: 1,
-                    ),
-                ],
+                boxShadow: colors.isDark ? null : KineticTokens.shadowCardLight(),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -171,13 +162,6 @@ class _KineticLiveTopBarState extends State<KineticLiveTopBar>
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: pulseColor,
-                        boxShadow: [
-                          BoxShadow(
-                            color: pulseColor.withValues(alpha: 0.65),
-                            blurRadius: 6,
-                            spreadRadius: 1,
-                          ),
-                        ],
                       ),
                     ),
                   ),
@@ -205,11 +189,17 @@ class _KineticLiveTopBarState extends State<KineticLiveTopBar>
                   ),
                   Semantics(
                     label: gpsLabel,
-                    child: Icon(
-                      widget.isOutdoor ? Icons.satellite_alt_rounded : Icons.sensors_rounded,
-                      size: 13,
-                      color: gpsColor,
-                    ),
+                    child: widget.isOutdoor
+                        ? BladeIcon(
+                            BladeIconName.gps,
+                            size: 13,
+                            color: gpsColor,
+                          )
+                        : Icon(
+                            Icons.sensors_rounded,
+                            size: 13,
+                            color: gpsColor,
+                          ),
                   ),
                 ],
               ),
@@ -230,35 +220,27 @@ class _KineticLiveTopBarState extends State<KineticLiveTopBar>
                 height: 42,
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 decoration: BoxDecoration(
-                  color: colors.surface1.withValues(alpha: 0.94),
+                  color: colors.surface1,
                   borderRadius: BorderRadius.circular(21),
                   border: Border.all(
                     color: widget.isLargeMetricsMode
                         ? colors.primary.withValues(alpha: 0.85)
-                        : colors.borderSubtle.withValues(alpha: 0.7),
-                    width: widget.isLargeMetricsMode ? 1.4 : 1.1,
+                        : (colors.isDark
+                              ? colors.borderSubtle.withValues(alpha: 0.8)
+                              : Colors.transparent),
+                    width: widget.isLargeMetricsMode ? 1.4 : 1.0,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.32),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
-                    ),
-                    if (widget.isLargeMetricsMode)
-                      BoxShadow(
-                        color: colors.primary.withValues(alpha: 0.22),
-                        blurRadius: 12,
-                        spreadRadius: 1,
-                      ),
-                  ],
+                  boxShadow: colors.isDark
+                      ? null
+                      : KineticTokens.shadowCardLight(),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
+                    BladeIcon(
                       widget.isLargeMetricsMode
-                          ? Icons.map_outlined
-                          : Icons.fullscreen_rounded,
+                          ? BladeIconName.map
+                          : BladeIconName.chart,
                       size: 16,
                       color: colors.primary,
                     ),

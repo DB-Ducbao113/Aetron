@@ -34,7 +34,7 @@ class KineticHistorySportFilter extends StatelessWidget {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: filters.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => const SizedBox(width: KineticTokens.spaceXS),
         itemBuilder: (context, index) {
           final f = filters[index];
           final id = f['id'] as String;
@@ -47,13 +47,16 @@ class KineticHistorySportFilter extends StatelessWidget {
               HapticFeedback.selectionClick();
               onSelected(id);
             },
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
             child: AnimatedContainer(
               duration: KineticTokens.motionTab,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              padding: const EdgeInsets.symmetric(
+                horizontal: KineticTokens.spaceSM,
+                vertical: KineticTokens.spaceXS,
+              ),
               decoration: BoxDecoration(
-                color: isSelected ? colors.primary.withValues(alpha: 0.15) : colors.surface1,
-                borderRadius: BorderRadius.circular(6),
+                color: isSelected ? colors.primary : colors.surface1,
+                borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
                 border: Border.all(
                   color: isSelected ? colors.primary : colors.borderSubtle,
                   width: 1,
@@ -65,13 +68,15 @@ class KineticHistorySportFilter extends StatelessWidget {
                   Icon(
                     icon,
                     size: 14,
-                    color: isSelected ? colors.primary : colors.textMuted,
+                    color: isSelected ? colors.onPrimary : colors.textMuted,
                   ),
                   const SizedBox(width: 6),
                   Text(
                     label,
                     style: KineticTypography.label.copyWith(
-                      color: isSelected ? colors.primary : colors.textSecondary,
+                      color: isSelected
+                          ? colors.onPrimary
+                          : colors.textSecondary,
                       fontSize: 12,
                       fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                     ),

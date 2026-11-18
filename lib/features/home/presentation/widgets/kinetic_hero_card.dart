@@ -1,3 +1,4 @@
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 
@@ -7,7 +8,6 @@ class KineticHeroCard extends StatelessWidget {
   final String weeklyProgressText;
   final String targetGoalText;
   final String ctaLabel;
-  final String imageAsset;
   final VoidCallback onStartTap;
   final VoidCallback? onGoalTap;
 
@@ -18,7 +18,6 @@ class KineticHeroCard extends StatelessWidget {
     required this.weeklyProgressText,
     required this.targetGoalText,
     required this.ctaLabel,
-    this.imageAsset = 'assets/home_hero_runner.jpg',
     required this.onStartTap,
     this.onGoalTap,
   });
@@ -32,56 +31,69 @@ class KineticHeroCard extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.symmetric(
           horizontal: KineticTokens.page,
-          vertical: 8,
+          vertical: KineticTokens.spaceXS,
         ),
         height: 320,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
+          color: colors.surface1,
+          borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
           border: Border.all(color: colors.borderSubtle, width: 1),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.35),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
+          boxShadow: colors.isDark
+              ? KineticTokens.shadowPanel(colors.background)
+              : KineticTokens.shadowCardLight(),
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // 1. Background Photo
-              Image.asset(
-                imageAsset,
-                fit: BoxFit.cover,
-                alignment: Alignment.centerRight,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  color: colors.surface2,
+              // 1. Duotone scene base (V4)
+              SceneBackdrop(tint: colors.secondary),
+
+              // 2. Upper-right athletic emblem
+              Positioned(
+                top: KineticTokens.spaceLG,
+                right: KineticTokens.spaceLG,
+                child: Container(
+                  width: 84,
+                  height: 84,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: colors.primary.withValues(
+                      alpha: colors.isDark ? 0.14 : 0.10,
+                    ),
+                    border: Border.all(
+                      color: colors.primary.withValues(alpha: 0.22),
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.directions_run_rounded,
+                    size: 42,
+                    color: colors.primary,
+                  ),
                 ),
               ),
 
-              // 2. High-contrast Scrim Gradient
+              // 3. Theme-adaptive surface bottom fade (Option A Light & Dark)
               DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Colors.black.withValues(alpha: 0.25),
-                      colors.background.withValues(alpha: 0.65),
-                      colors.background.withValues(alpha: 0.95),
+                      colors.surface1.withValues(alpha: 0.0),
+                      colors.surface1.withValues(alpha: 0.94),
                     ],
-                    stops: const [0.0, 0.45, 0.9],
+                    stops: const [0.32, 0.86],
                   ),
                 ),
               ),
 
-              // 3. Bottom Content Overlay
+              // 4. Bottom Content Overlay
               Positioned(
-                bottom: 16,
-                left: 16,
-                right: 16,
+                bottom: KineticTokens.spaceMD,
+                left: KineticTokens.spaceMD,
+                right: KineticTokens.spaceMD,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -89,97 +101,116 @@ class KineticHeroCard extends StatelessWidget {
                     Text(
                       title,
                       style: KineticTypography.headlineLarge.copyWith(
-                        color: Colors.white,
+                        color: colors.textPrimary,
                         fontWeight: FontWeight.w800,
                         height: 1.2,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: KineticTokens.spaceXS),
                     Row(
                       children: [
-                        Icon(
-                          Icons.route_rounded,
+                        BladeIcon(
+                          BladeIconName.route,
                           size: 14,
                           color: colors.primary,
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          weeklyProgressText,
-                          style: KineticTypography.bodySmall.copyWith(
-                            color: colors.textSecondary,
-                            fontWeight: FontWeight.w500,
+                        const SizedBox(width: KineticTokens.spaceXXS),
+                        Flexible(
+                          child: Text(
+                            weeklyProgressText,
+                            style: KineticTypography.bodySmall.copyWith(
+                              color: colors.textSecondary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: KineticTokens.spaceXS),
                         Text(
                           '•',
                           style: TextStyle(color: colors.textMuted),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: KineticTokens.spaceXS),
                         if (onGoalTap != null)
-                          Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: onGoalTap,
-                              borderRadius: BorderRadius.circular(6),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 4,
-                                  vertical: 2,
+                          Flexible(
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: onGoalTap,
+                                borderRadius: BorderRadius.circular(
+                                  KineticTokens.radiusSM,
                                 ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.flag_rounded,
-                                      size: 14,
-                                      color: colors.primary,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      targetGoalText,
-                                      style: KineticTypography.bodySmall.copyWith(
-                                        color: colors.textPrimary,
-                                        fontWeight: FontWeight.w600,
-                                        decoration: TextDecoration.underline,
-                                        decorationColor: colors.primary.withValues(alpha: 0.6),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: KineticTokens.spaceXXS,
+                                    vertical: 2,
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      BladeIcon(
+                                        BladeIconName.flag,
+                                        size: 14,
+                                        color: colors.primary,
                                       ),
-                                    ),
-                                    const SizedBox(width: 2),
-                                    Icon(
-                                      Icons.chevron_right_rounded,
-                                      size: 13,
-                                      color: colors.primary,
-                                    ),
-                                  ],
+                                      const SizedBox(width: KineticTokens.spaceXXS),
+                                      Flexible(
+                                        child: Text(
+                                          targetGoalText,
+                                          style: KineticTypography.bodySmall.copyWith(
+                                            color: colors.textPrimary,
+                                            fontWeight: FontWeight.w600,
+                                            decoration: TextDecoration.underline,
+                                            decorationColor: colors.primary
+                                                .withValues(alpha: 0.6),
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      const SizedBox(width: KineticTokens.spaceXXS),
+                                      BladeIcon(
+                                        BladeIconName.chevR,
+                                        size: 13,
+                                        color: colors.primary,
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
                           )
                         else
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.flag_rounded,
-                                size: 14,
-                                color: colors.primary,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                targetGoalText,
-                                style: KineticTypography.bodySmall.copyWith(
-                                  color: colors.textSecondary,
-                                  fontWeight: FontWeight.w500,
+                          Flexible(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                BladeIcon(
+                                  BladeIconName.flag,
+                                  size: 14,
+                                  color: colors.primary,
                                 ),
-                              ),
-                            ],
+                                const SizedBox(width: KineticTokens.spaceXXS),
+                                Flexible(
+                                  child: Text(
+                                    targetGoalText,
+                                    style: KineticTypography.bodySmall.copyWith(
+                                      color: colors.textSecondary,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: KineticTokens.spaceMD),
 
                     // Primary Action CTA
                     KineticButton(

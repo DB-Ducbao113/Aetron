@@ -1,4 +1,5 @@
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -74,7 +75,7 @@ class KineticLiveMetricsHud extends StatelessWidget {
         avgSpeedKmh,
         useMetric: useMetricUnits,
       );
-      comparisonNote = '${isVi ? 'Pace trung bình' : 'Avg'}: $avgPaceStr';
+      comparisonNote = '${isVi ? 'Pace TB' : 'Avg'}: $avgPaceStr';
     }
 
     return Column(
@@ -86,45 +87,39 @@ class KineticLiveMetricsHud extends StatelessWidget {
           child: Semantics(
             container: true,
             label: isVi ? 'Quãng đường' : 'Distance',
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Text(
-                  displayDistance.toStringAsFixed(2),
-                  style: KineticTypography.metricHero.copyWith(
-                    fontSize: isLargeMetricsMode ? 56 : 52,
-                    fontWeight: FontWeight.w900,
-                    color: colors.textPrimary,
-                    shadows: [
-                      Shadow(
-                        color: colors.primary.withValues(alpha: 0.3),
-                        blurRadius: 16,
-                      ),
-                    ],
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    displayDistance.toStringAsFixed(2),
+                    style: KineticTypography.metricMega.copyWith(
+                      color: colors.textPrimary,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  distanceUnit,
-                  style: KineticTypography.metricUnit.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: colors.primary,
-                    letterSpacing: 0.8,
-                    fontSize: isLargeMetricsMode ? 20 : 16,
+                  const SizedBox(width: 6),
+                  Text(
+                    distanceUnit,
+                    style: KineticTypography.metricUnit.copyWith(
+                      color: colors.primary,
+                      letterSpacing: 0.8,
+                      fontSize: isLargeMetricsMode ? 20 : 17,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
         const SizedBox(height: 12),
 
-        // Divider
+        // Hairline Divider
         Container(
-          height: 1,
-          color: colors.borderSubtle.withValues(alpha: 0.4),
+          height: 0.5,
+          color: colors.borderSubtle,
           margin: const EdgeInsets.symmetric(horizontal: 4),
         ),
         const SizedBox(height: 12),
@@ -137,26 +132,27 @@ class KineticLiveMetricsHud extends StatelessWidget {
               child: _MetricTile(
                 label: primarySecondaryLabel,
                 icon: isCycling
-                    ? Icons.speed_rounded
-                    : Icons.directions_run_rounded,
+                    ? BladeIconName.bolt
+                    : BladeIconName.run,
                 value: primarySecondaryValue,
                 unit: primarySecondaryUnit,
                 note: comparisonNote,
                 isNotePositive: isSpeedFaster,
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 2),
 
             // Right Metric: Elapsed Time
             Expanded(
               child: _MetricTile(
                 label: isVi ? 'Thời gian' : 'Time',
-                icon: Icons.timer_rounded,
+                icon: BladeIconName.clock,
                 value: WorkoutFormatters.formatElapsedClock(durationSeconds),
                 unit: '',
                 note:
                     '${isVi ? 'Di chuyển' : 'Moving'}: ${WorkoutFormatters.formatElapsedClock(movingTimeSeconds)}',
                 isNotePositive: null,
+                showLeftDivider: true,
               ),
             ),
           ],
@@ -170,21 +166,21 @@ class KineticLiveMetricsHud extends StatelessWidget {
             Expanded(
               child: _MetricTile(
                 label: isVi ? 'Calo' : 'Calories',
-                icon: Icons.local_fire_department_rounded,
+                icon: BladeIconName.flame,
                 value: '$calories',
                 unit: 'kcal',
                 note: null,
                 isNotePositive: null,
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 2),
 
             // Right: Steps or Avg Speed (when Cycling)
             Expanded(
               child: isCycling
                   ? _MetricTile(
                       label: isVi ? 'Tốc độ TB' : 'Avg Speed',
-                      icon: Icons.trending_up_rounded,
+                      icon: BladeIconName.chart,
                       value: (useMetricUnits
                               ? avgSpeedKmh
                               : avgSpeedKmh * 0.621371)
@@ -192,16 +188,18 @@ class KineticLiveMetricsHud extends StatelessWidget {
                       unit: useMetricUnits ? 'km/h' : 'mph',
                       note: null,
                       isNotePositive: null,
+                      showLeftDivider: true,
                     )
                   : _MetricTile(
                       label: isVi ? 'Bước chân' : 'Steps',
-                      icon: Icons.directions_walk_rounded,
+                      icon: BladeIconName.walk,
                       value: '$stepCount',
                       unit: isVi ? 'bước' : 'steps',
                       note: cadenceSpm > 0
                           ? '$cadenceSpm spm'
                           : (isVi ? 'Tổng số bước' : 'Total steps'),
                       isNotePositive: cadenceSpm > 0 ? true : null,
+                      showLeftDivider: true,
                     ),
             ),
           ],
@@ -213,11 +211,15 @@ class KineticLiveMetricsHud extends StatelessWidget {
 
 class _MetricTile extends StatelessWidget {
   final String label;
-  final IconData icon;
+  final BladeIconName icon;
   final String value;
   final String unit;
   final String? note;
   final bool? isNotePositive;
+
+  /// V4: when true, the tile carries a hairline divider on its left edge
+  /// instead of living in its own box.
+  final bool showLeftDivider;
 
   const _MetricTile({
     required this.label,
@@ -226,6 +228,7 @@ class _MetricTile extends StatelessWidget {
     required this.unit,
     this.note,
     this.isNotePositive,
+    this.showLeftDivider = false,
   });
 
   @override
@@ -233,13 +236,16 @@ class _MetricTile extends StatelessWidget {
     final colors = context.kinetic;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: EdgeInsets.fromLTRB(showLeftDivider ? 14 : 2, 6, 2, 6),
       decoration: BoxDecoration(
-        color: colors.surface2,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: colors.borderSubtle.withValues(alpha: 0.6),
-        ),
+        border: showLeftDivider
+            ? Border(
+                left: BorderSide(
+                  color: colors.borderSubtle.withValues(alpha: 0.7),
+                  width: 1,
+                ),
+              )
+            : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -256,7 +262,7 @@ class _MetricTile extends StatelessWidget {
                   letterSpacing: 0.6,
                 ),
               ),
-              Icon(
+              BladeIcon(
                 icon,
                 size: 14,
                 color: colors.primary,
@@ -327,8 +333,11 @@ class _MetricTile extends StatelessWidget {
   }
 }
 
-/// Compact glassmorphic live telemetry card floating above the control dock in Map Mode.
-/// Displays instant distance, elapsed time, current speed/pace, and calories in real time.
+/// V5: metrics section of the record screen's single flat bottom panel
+/// (the panel surface/radius/border live in RecordScreen). Layout follows
+/// the V5 board grammar: label row (activity name + GPS chip), HERO
+/// distance, then a 3-stat row (time / pace-or-speed / calories).
+/// Tapping still expands to the large metrics view via [onExpand].
 class KineticMiniMetricsCard extends StatelessWidget {
   final double distanceMeters;
   final int durationSeconds;
@@ -340,6 +349,12 @@ class KineticMiniMetricsCard extends StatelessWidget {
   final bool isVi;
   final VoidCallback? onExpand;
 
+  /// Panel label row content, derived by RecordScreen from session state
+  /// (same wording as the live top bar).
+  final String statusText;
+  final String gpsLabel;
+  final Color gpsColor;
+
   const KineticMiniMetricsCard({
     super.key,
     required this.distanceMeters,
@@ -350,6 +365,9 @@ class KineticMiniMetricsCard extends StatelessWidget {
     required this.activityType,
     required this.useMetricUnits,
     required this.isVi,
+    required this.statusText,
+    required this.gpsLabel,
+    required this.gpsColor,
     this.onExpand,
   });
 
@@ -388,9 +406,6 @@ class KineticMiniMetricsCard extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isNarrow = constraints.maxWidth < 360;
-        final distanceLabel = isNarrow
-            ? (isVi ? 'CỰ LY' : 'DIST')
-            : (isVi ? 'QUÃNG ĐƯỜNG' : 'DISTANCE');
         final timeLabel = isNarrow
             ? (isVi ? 'GIỜ' : 'TIME')
             : (isVi ? 'THỜI GIAN' : 'TIME');
@@ -409,74 +424,134 @@ class KineticMiniMetricsCard extends StatelessWidget {
                 HapticFeedback.selectionClick();
                 onExpand?.call();
               },
-              borderRadius: BorderRadius.circular(20),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(
-                  color: colors.surface1.withValues(alpha: 0.94),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: colors.borderSubtle.withValues(alpha: 0.75),
-                    width: 1.2,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.45),
-                      blurRadius: 18,
-                      offset: const Offset(0, 4),
-                    ),
-                    BoxShadow(
-                      color: colors.primary.withValues(alpha: 0.08),
-                      blurRadius: 16,
-                      spreadRadius: -2,
-                    ),
-                  ],
-                ),
-                child: Row(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(KineticTokens.radiusHero),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 2),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // 1. Quãng đường (Distance Hero)
-                    Expanded(
-                      flex: 12,
-                      child: _MiniMetricColumn(
-                        label: distanceLabel,
-                        value: displayDistance.toStringAsFixed(2),
-                        unit: distanceUnit,
-                        valueColor: colors.textPrimary,
-                        highlightUnit: true,
+                    // Label row: activity name + GPS chip
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            statusText,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: KineticTypography.unitLabel.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: colors.textSecondary,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 9,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colors.surface2,
+                            borderRadius: BorderRadius.circular(
+                              KineticTokens.radiusPill,
+                            ),
+                            border: Border.all(color: colors.borderSubtle),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              BladeIcon(
+                                BladeIconName.gps,
+                                size: 11,
+                                color: gpsColor,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                gpsLabel,
+                                style: KineticTypography.caption.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: gpsColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+
+                    // HERO distance (Concept A: crisp 56pt tabular hero)
+                    Semantics(
+                      container: true,
+                      label: isVi ? 'Quãng đường' : 'Distance',
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
+                          children: [
+                            Text(
+                              displayDistance.toStringAsFixed(2),
+                              style: KineticTypography.metricMega.copyWith(
+                                color: colors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              distanceUnit,
+                              style: KineticTypography.metricUnit.copyWith(
+                                color: colors.primary,
+                                letterSpacing: 0.8,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    _buildDivider(colors),
-                    // 2. Thời gian (Time Clock)
-                    Expanded(
-                      flex: 11,
-                      child: _MiniMetricColumn(
-                        label: timeLabel,
-                        value: durationFormatted,
-                        unit: '',
-                        valueColor: colors.textPrimary,
-                      ),
+                    const SizedBox(height: 12),
+                    Container(
+                      height: 0.5,
+                      color: colors.borderSubtle,
                     ),
-                    _buildDivider(colors),
-                    // 3. Pace / Tốc độ
-                    Expanded(
-                      flex: 10,
-                      child: _MiniMetricColumn(
-                        label: paceOrSpeedLabel.toUpperCase(),
-                        value: paceOrSpeedValue,
-                        unit: paceOrSpeedUnit,
-                        valueColor: colors.textPrimary,
-                      ),
-                    ),
-                    _buildDivider(colors),
-                    // 4. Calo
-                    Expanded(
-                      flex: 9,
-                      child: _MiniMetricColumn(
-                        label: caloriesLabel,
-                        value: '$calories',
-                        unit: 'kcal',
-                        valueColor: colors.textPrimary,
-                      ),
+                    const SizedBox(height: 12),
+
+                    // 3-stat row: time / pace-or-speed / calories
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _MiniMetricColumn(
+                            label: timeLabel,
+                            value: durationFormatted,
+                            unit: '',
+                            valueColor: colors.textPrimary,
+                          ),
+                        ),
+                        _buildDivider(colors),
+                        Expanded(
+                          child: _MiniMetricColumn(
+                            label: paceOrSpeedLabel.toUpperCase(),
+                            value: paceOrSpeedValue,
+                            unit: paceOrSpeedUnit,
+                            valueColor: colors.textPrimary,
+                          ),
+                        ),
+                        _buildDivider(colors),
+                        Expanded(
+                          child: _MiniMetricColumn(
+                            label: caloriesLabel,
+                            value: '$calories',
+                            unit: 'kcal',
+                            valueColor: colors.textPrimary,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -503,14 +578,12 @@ class _MiniMetricColumn extends StatelessWidget {
   final String value;
   final String unit;
   final Color valueColor;
-  final bool highlightUnit;
 
   const _MiniMetricColumn({
     required this.label,
     required this.value,
     required this.unit,
     required this.valueColor,
-    this.highlightUnit = false,
   });
 
   @override
@@ -555,7 +628,7 @@ class _MiniMetricColumn extends StatelessWidget {
                 unit,
                 style: KineticTypography.unitLabel.copyWith(
                   fontWeight: FontWeight.w800,
-                  color: highlightUnit ? colors.primary : colors.textSecondary,
+                  color: colors.textSecondary,
                 ),
               ),
             ],

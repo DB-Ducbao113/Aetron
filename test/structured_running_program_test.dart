@@ -17,17 +17,17 @@ void main() {
         expect(prog.titleKey.isNotEmpty, true);
         expect(prog.badgeVi.isNotEmpty, true);
         expect(prog.badgeEn.isNotEmpty, true);
-        expect(prog.imageAsset.isNotEmpty, true, reason: '${prog.id} missing imageAsset');
-        expect(prog.imageAsset.startsWith('assets/'), true);
+        expect(prog.instructionsEn.isNotEmpty, true, reason: '${prog.id} missing EN instructions');
+        expect(prog.instructionsVi.isNotEmpty, true, reason: '${prog.id} missing VI instructions');
       }
 
-      // Ensure all programs have distinct, dedicated realistic plan images
-      final imageAssets = programs.map((p) => p.imageAsset).toSet();
-      expect(imageAssets.length, programs.length, reason: 'Program images must not be duplicated');
-      expect(programs.firstWhere((p) => p.id == 'couch_to_5k').imageAsset, 'assets/plan_couch_to_5k.jpg');
-      expect(programs.firstWhere((p) => p.id == 'easy_base_run').imageAsset, 'assets/plan_easy_base_run.jpg');
-      expect(programs.firstWhere((p) => p.id == 'pace_builder_10k').imageAsset, 'assets/plan_pace_builder_10k.jpg');
-      expect(programs.firstWhere((p) => p.id == 'speed_intervals').imageAsset, 'assets/plan_speed_intervals.jpg');
+      // Ensure all programs have distinct IDs covering the 4 structured plans
+      final programIds = programs.map((p) => p.id).toSet();
+      expect(programIds.length, programs.length, reason: 'Program IDs must not be duplicated');
+      expect(
+        programIds,
+        containsAll(['couch_to_5k', 'easy_base_run', 'pace_builder_10k', 'speed_intervals']),
+      );
     });
 
     test('Couch to 5K contains Warmup, 8 Run/Walk intervals, and Cooldown', () {

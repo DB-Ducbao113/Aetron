@@ -1,6 +1,7 @@
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/profile/presentation/providers/avatar_providers.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,10 +25,17 @@ class KineticAvatarSourceSheet extends ConsumerWidget {
       child: Container(
         decoration: BoxDecoration(
           color: colors.surface1,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          border: Border.all(color: colors.borderSubtle),
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(KineticTokens.radiusHero),
+          ),
+          border: Border(top: BorderSide(color: colors.borderSubtle)),
         ),
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+        padding: const EdgeInsets.fromLTRB(
+          KineticTokens.spaceMD,
+          KineticTokens.spaceSM,
+          KineticTokens.spaceMD,
+          KineticTokens.spaceLG,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -43,7 +51,7 @@ class KineticAvatarSourceSheet extends ConsumerWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: KineticTokens.spaceSM),
 
             // Title
             Text(
@@ -56,7 +64,7 @@ class KineticAvatarSourceSheet extends ConsumerWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: KineticTokens.spaceSM),
 
             // Pick from Gallery
             _SheetActionTile(
@@ -68,7 +76,7 @@ class KineticAvatarSourceSheet extends ConsumerWidget {
                 ref.read(avatarUploadProvider.notifier).pickAndUpload(ImageSource.gallery);
               },
             ),
-            const SizedBox(height: 8),
+            Divider(height: 1, thickness: 1, color: colors.borderSubtle),
 
             // Take a Photo
             _SheetActionTile(
@@ -83,7 +91,7 @@ class KineticAvatarSourceSheet extends ConsumerWidget {
 
             // Remove photo if hasAvatar
             if (hasAvatar) ...[
-              const SizedBox(height: 8),
+              Divider(height: 1, thickness: 1, color: colors.borderSubtle),
               _SheetActionTile(
                 icon: Icons.delete_outline_rounded,
                 label: AppTranslations.get('remove_current_photo', currentLang),
@@ -116,22 +124,18 @@ class _SheetActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.kinetic;
-
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: colors.surface2,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: colors.borderSubtle),
+      borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: KineticTokens.spaceSM,
+          vertical: KineticTokens.spaceSM,
         ),
         child: Row(
           children: [
             Icon(icon, size: 18, color: color),
-            const SizedBox(width: 12),
+            const SizedBox(width: KineticTokens.spaceSM),
             Text(
               label,
               style: KineticTypography.label.copyWith(

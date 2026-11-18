@@ -8,8 +8,18 @@ import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+class _TestViLanguageNotifier extends AppLanguageNotifier {
+  _TestViLanguageNotifier() : super() {
+    state = AppLanguage.vi;
+  }
+}
 
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({kAppLanguagePrefKey: 'vi'});
+  });
   Widget wrapInPhoneSE(Widget child) {
     return MaterialApp(
       theme: KineticTheme.darkTheme,
@@ -102,8 +112,11 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
 
     await tester.pumpWidget(
-      const ProviderScope(
-        child: MaterialApp(
+      ProviderScope(
+        overrides: [
+          appLanguageProvider.overrideWith((_) => _TestViLanguageNotifier()),
+        ],
+        child: const MaterialApp(
           home: RunningProgramsScreen(),
         ),
       ),
@@ -111,8 +124,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
 
-    // Verify all 4 programs are loaded and have images
-    expect(find.byType(Image), findsWidgets);
+    // Verify all 4 programs are loaded and have SceneBackdrop banners
+    expect(find.byType(SceneBackdrop), findsWidgets);
     expect(find.text('Hướng dẫn'), findsWidgets);
     expect(find.text('Bắt đầu'), findsWidgets);
 
@@ -129,8 +142,11 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
 
     await tester.pumpWidget(
-      const ProviderScope(
-        child: MaterialApp(
+      ProviderScope(
+        overrides: [
+          appLanguageProvider.overrideWith((_) => _TestViLanguageNotifier()),
+        ],
+        child: const MaterialApp(
           home: RunningProgramsScreen(),
         ),
       ),

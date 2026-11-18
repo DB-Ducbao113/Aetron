@@ -5,8 +5,6 @@ import 'package:fitness_exercise_application/shared/formatters/workout_formatter
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-const Color _trophyGold = Color(0xFFFFD54F);
-
 class PersonalRecordsTrophyWall extends StatelessWidget {
   final DetailedPersonalRecords records;
   final bool useMetricUnits;
@@ -27,103 +25,92 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(KineticTokens.spaceSM),
       decoration: BoxDecoration(
         color: colors.surface1,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: _trophyGold.withValues(alpha: 0.4),
-          width: 1.2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.5),
-            blurRadius: 20,
-            offset: const Offset(0, 6),
-          ),
-          BoxShadow(
-            color: _trophyGold.withValues(alpha: 0.12),
-            blurRadius: 18,
-            spreadRadius: -2,
-          ),
-        ],
+        borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
+        boxShadow: colors.isDark ? null : KineticTokens.shadowCardLight(),
+        border: colors.isDark
+            ? Border.all(color: colors.borderSubtle, width: 1)
+            : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header Bar
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 34,
-                    height: 34,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: _trophyGold.withValues(alpha: 0.18),
-                      border: Border.all(color: _trophyGold.withValues(alpha: 0.5)),
-                    ),
-                    child: const Icon(
-                      Icons.emoji_events_rounded,
-                      color: _trophyGold,
-                      size: 18,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(2, 2, 2, 0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Row(
                     children: [
-                      Text(
-                        currentLang == AppLanguage.vi ? 'ĐỀN THỜ KỶ LỤC' : 'PR HALL OF FAME',
-                        style: KineticTypography.unitLabel.copyWith(
-                          color: _trophyGold.withValues(alpha: 0.9),
-                          letterSpacing: 1.2,
+                      Container(
+                        width: 30,
+                        height: 30,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: colors.primaryTint,
+                        ),
+                        child: Icon(
+                          Icons.emoji_events_rounded,
+                          color: colors.primary,
+                          size: 16,
                         ),
                       ),
-                      Text(
-                        currentLang == AppLanguage.vi ? 'Kỷ Lục Cá Nhân (PRs)' : 'Personal Bests',
-                        style: KineticTypography.headlineSmall.copyWith(
-                          color: colors.textPrimary,
+                      const SizedBox(width: KineticTokens.spaceXS),
+                      Flexible(
+                        child: Text(
+                          currentLang == AppLanguage.vi
+                              ? 'Kỷ lục cá nhân'
+                              : 'Personal Bests',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: KineticTypography.headlineSmall.copyWith(
+                            color: colors.textPrimary,
+                          ),
                         ),
                       ),
                     ],
                   ),
-                ],
-              ),
-
-              // Unlocked Counter Chip
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _trophyGold.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: _trophyGold.withValues(alpha: 0.4)),
                 ),
-                child: Text(
-                  '$unlockedCount / ${all.length} ${currentLang == AppLanguage.vi ? 'KỶ LỤC' : 'RECORDS'}',
-                  style: KineticTypography.unitLabel.copyWith(
-                    fontWeight: FontWeight.w900,
-                    color: _trophyGold,
-                    letterSpacing: 0.8,
+                const SizedBox(width: KineticTokens.spaceXS),
+
+                // Unlocked Counter Chip
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: KineticTokens.spaceXS,
+                    vertical: KineticTokens.spaceXXS,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colors.primaryTint,
+                    borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
+                  ),
+                  child: Text(
+                    '$unlockedCount / ${all.length}',
+                    style: KineticTypography.unitLabel.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: colors.primary,
+                      letterSpacing: 0.4,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: KineticTokens.spaceSM),
 
-          // 2-Column Bento Grid
+          // 2-Column Compact Bento Grid
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: all.length,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-              childAspectRatio: 1.15,
+              crossAxisSpacing: KineticTokens.spaceXS,
+              mainAxisSpacing: KineticTokens.spaceXS,
+              childAspectRatio: 1.62,
             ),
             itemBuilder: (context, index) {
               final record = all[index];
@@ -151,27 +138,21 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
       backgroundColor: Colors.transparent,
       builder: (_) => SafeArea(
         child: Container(
-          margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-          padding: const EdgeInsets.all(24),
+          margin: const EdgeInsets.fromLTRB(
+            KineticTokens.spaceSM,
+            0,
+            KineticTokens.spaceSM,
+            KineticTokens.spaceSM,
+          ),
+          padding: const EdgeInsets.all(KineticTokens.spaceXL),
           decoration: BoxDecoration(
             color: colors.surface1.withValues(alpha: 0.96),
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(KineticTokens.radiusXXL),
             border: Border.all(
-              color: isUnlocked ? _trophyGold : colors.borderSubtle,
-              width: 1.5,
+              color: isUnlocked ? colors.tertiary : colors.borderSubtle,
+              width: 1,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.7),
-                blurRadius: 28,
-              ),
-              if (isUnlocked)
-                BoxShadow(
-                  color: _trophyGold.withValues(alpha: 0.25),
-                  blurRadius: 24,
-                  spreadRadius: -2,
-                ),
-            ],
+            boxShadow: KineticTokens.shadowPanel(colors.background),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -181,10 +162,10 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
                 height: 4,
                 decoration: BoxDecoration(
                   color: colors.borderSubtle,
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.circular(KineticTokens.radiusXS),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: KineticTokens.spaceLG),
 
               // Emblem
               Container(
@@ -193,20 +174,20 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: isUnlocked
-                      ? _trophyGold.withValues(alpha: 0.2)
+                      ? colors.tertiary.withValues(alpha: 0.2)
                       : colors.surface2,
                   border: Border.all(
-                    color: isUnlocked ? _trophyGold : colors.borderSubtle,
+                    color: isUnlocked ? colors.tertiary : colors.borderSubtle,
                     width: 2,
                   ),
                 ),
                 child: Icon(
                   isUnlocked ? Icons.emoji_events_rounded : Icons.lock_outline_rounded,
                   size: 32,
-                  color: isUnlocked ? _trophyGold : colors.textSecondary,
+                  color: isUnlocked ? colors.tertiary : colors.textSecondary,
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: KineticTokens.spaceSM),
 
               Text(
                 isVi ? record.titleVi : record.titleEn,
@@ -222,19 +203,19 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
                     : (isVi ? 'CHƯA MỞ KHÓA' : 'NOT YET UNLOCKED'),
                 style: KineticTypography.unitLabel.copyWith(
                   fontWeight: FontWeight.w900,
-                  color: isUnlocked ? _trophyGold : colors.textMuted,
+                  color: isUnlocked ? colors.tertiary : colors.textMuted,
                   letterSpacing: 1.2,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: KineticTokens.spaceMD),
 
               // Detail box
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(KineticTokens.spaceMD),
                 decoration: BoxDecoration(
                   color: colors.surface2,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
                   border: Border.all(color: colors.borderSubtle),
                 ),
                 child: Column(
@@ -253,13 +234,13 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
                             _formatRecordValue(record, useMetricUnits),
                             style: KineticTypography.headlineSmall.copyWith(
                               fontWeight: FontWeight.w900,
-                              color: _trophyGold,
+                              color: colors.tertiary,
                             ),
                           ),
                         ],
                       ),
                       if (record.achievedAt != null) ...[
-                        const SizedBox(height: 10),
+                        const SizedBox(height: KineticTokens.spaceXS),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -291,36 +272,13 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: KineticTokens.spaceLG),
 
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: colors.surface2,
-                    foregroundColor: colors.textPrimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      side: BorderSide(color: colors.borderSubtle),
-                    ),
-                    elevation: 0,
-                  ),
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.check_circle_outline_rounded, size: 18),
-                      const SizedBox(width: 8),
-                      Text(
-                        isVi ? 'ĐÓNG' : 'CLOSE',
-                        style: KineticTypography.label.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              KineticButton(
+                label: isVi ? 'ĐÓNG' : 'CLOSE',
+                icon: Icons.check_circle_outline_rounded,
+                variant: KineticButtonVariant.secondary,
+                onPressed: () => Navigator.of(context).pop(),
               ),
             ],
           ),
@@ -368,9 +326,9 @@ class _TrophyCardItem extends StatelessWidget {
 
     final accentColor = switch (record.category) {
       'speed' => colors.primary,
-      'distance' => _trophyGold,
-      'energy' => const Color(0xFF2AF598),
-      _ => const Color(0xFFA55EEA),
+      'distance' => colors.tertiary,
+      'energy' => colors.secondary,
+      _ => colors.textMuted,
     };
 
     final icon = switch (record.id) {
@@ -388,76 +346,90 @@ class _TrophyCardItem extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
         child: Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           decoration: BoxDecoration(
-            color: isUnlocked ? colors.surface1 : colors.background.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(16),
+            color: isUnlocked
+                ? colors.surface1
+                : colors.surface2.withValues(alpha: 0.55),
+            borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
             border: Border.all(
-              color: isUnlocked ? accentColor.withValues(alpha: 0.45) : colors.borderSubtle,
-              width: 1.2,
+              color: isUnlocked
+                  ? accentColor.withValues(alpha: 0.38)
+                  : colors.borderSubtle,
+              width: 1,
             ),
-            boxShadow: isUnlocked
-                ? [
-                    BoxShadow(
-                      color: accentColor.withValues(alpha: 0.12),
-                      blurRadius: 10,
-                      spreadRadius: -2,
-                    ),
-                  ]
-                : null,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Top Row: Icon & Category Tag
+              // Top Row: Icon & Date Tag
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Icon(
                     isUnlocked ? icon : Icons.lock_outline_rounded,
-                    size: 18,
+                    size: 16,
                     color: isUnlocked ? accentColor : colors.textMuted,
                   ),
                   if (isUnlocked && record.achievedAt != null)
                     Text(
                       '${record.achievedAt!.toLocal().day.toString().padLeft(2, '0')}/${record.achievedAt!.toLocal().month.toString().padLeft(2, '0')}',
                       style: KineticTypography.caption.copyWith(
-                        fontWeight: FontWeight.w700,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w600,
                         color: colors.textSecondary.withValues(alpha: 0.8),
+                        fontFeatures: KineticTypography.tabularFigures,
                       ),
                     ),
                 ],
               ),
 
-              // Middle: Title
-              Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: KineticTypography.caption.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: isUnlocked ? colors.textPrimary : colors.textSecondary,
-                ),
-              ),
-
-              // Bottom: Value or Locked hint
-              Text(
-                isUnlocked
-                    ? PersonalRecordsTrophyWall._formatRecordValue(record, useMetricUnits)
-                    : (isVi ? 'Chưa mở khóa' : 'Locked'),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: isUnlocked
-                    ? KineticTypography.label.copyWith(
-                        fontWeight: FontWeight.w900,
-                        color: accentColor,
-                      )
-                    : KineticTypography.caption.copyWith(
-                        color: colors.textMuted,
-                      ),
+              // Bottom Block: Title & Value grouped tightly
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: KineticTypography.caption.copyWith(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: isUnlocked
+                          ? colors.textPrimary
+                          : colors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      isUnlocked
+                          ? PersonalRecordsTrophyWall._formatRecordValue(
+                              record,
+                              useMetricUnits,
+                            )
+                          : (isVi ? 'Chưa mở khóa' : 'Locked'),
+                      maxLines: 1,
+                      style: isUnlocked
+                          ? KineticTypography.bodyMedium.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: accentColor,
+                              fontFeatures: KineticTypography.tabularFigures,
+                              height: 1.15,
+                            )
+                          : KineticTypography.caption.copyWith(
+                              fontSize: 11,
+                              color: colors.textMuted,
+                            ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

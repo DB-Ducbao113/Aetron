@@ -2,6 +2,7 @@ import 'package:fitness_exercise_application/core/localization/app_translations.
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/workout_route_recap_components.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_card.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
@@ -90,6 +91,7 @@ class KineticDetailsRouteCard extends StatelessWidget {
 
     return KineticCard(
       padding: EdgeInsets.zero,
+      borderRadius: KineticTokens.radiusLG,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -140,7 +142,9 @@ class KineticDetailsRouteCard extends StatelessWidget {
             ),
           ),
           ClipRRect(
-            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(8)),
+            borderRadius: const BorderRadius.vertical(
+              bottom: Radius.circular(KineticTokens.radiusLG),
+            ),
             child: SizedBox(
               height: 260,
               width: double.infinity,

@@ -129,4 +129,31 @@ class KineticTokens {
     Duration duration,
   ) =>
       reduceMotionOf(context) ? Duration.zero : duration;
+
+  // ── V4/V5 Elevation & Spacing ───────────────────────────────────────────
+  /// 48px — hero band / major page rhythm spacing
+  static const double spaceXXXL = 48;
+
+  /// 24px — hero panels, feature cards, bottom sheets
+  static const double radiusHero = 24;
+
+  /// Whisper shadow for borderless white cards in light mode.
+  static List<BoxShadow> shadowCardLight() => [
+        BoxShadow(
+          color: const Color(0xFF0F172A).withValues(alpha: 0.045),
+          blurRadius: 16,
+          offset: const Offset(0, 4),
+          spreadRadius: -2,
+        ),
+      ];
+
+  /// Soft elevation for raised panels floating over maps/scenes.
+  static List<BoxShadow> shadowPanel(Color tint) => [
+        BoxShadow(
+          color: tint.withValues(alpha: 0.14),
+          blurRadius: 20,
+          offset: const Offset(0, 6),
+          spreadRadius: -4,
+        ),
+      ];
 }

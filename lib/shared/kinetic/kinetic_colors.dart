@@ -16,6 +16,14 @@ class KineticColors extends ThemeExtension<KineticColors> {
   final Color textMuted;
   final Color borderSubtle;
   final Color borderAccent;
+
+  /// Stronger edge tier (board v3): large containers, switches, inputs.
+  final Color borderStrong;
+
+  /// The cyan fill (#A8DCE7) in BOTH themes — fills, washes, the primary
+  /// button gradient. In the light "Morning" identity, [primary] becomes
+  /// deep teal for text, so cyan fills must come from here instead.
+  final Color accentFill;
   final Color glow;
 
   const KineticColors({
@@ -33,46 +41,66 @@ class KineticColors extends ThemeExtension<KineticColors> {
     required this.textMuted,
     required this.borderSubtle,
     required this.borderAccent,
+    required this.borderStrong,
+    required this.accentFill,
     required this.glow,
   });
 
-  /// Kinetic Telemetry (Dark Mode - Default)
+  /// Aetron Dark — OLED Charcoal + Sky-Azure synced with logo.png
   static const dark = KineticColors(
-    background: Color(0xFF0C1113),
-    surface1: Color(0xFF12181B),
-    surface2: Color(0xFF192226),
-    surface3: Color(0xFF232F35),
-    primary: Color(0xFFA8DCE7),
-    onPrimary: Color(0xFF09181C),
-    secondary: Color(0xFF50B4C8),
-    tertiary: Color(0xFFF38D68),
-    error: Color(0xFFFFB4AB),
+    background: Color(0xFF0B0B0E),
+    surface1: Color(0xFF16161A),
+    surface2: Color(0xFF1F2026),
+    surface3: Color(0xFF2A2B33),
+    primary: Color(0xFF38BDF8),
+    onPrimary: Color(0xFF061926),
+    secondary: Color(0xFF0EA5E9),
+    tertiary: Color(0xFFFBBF24),
+    error: Color(0xFFF87171),
     textPrimary: Color(0xFFFFFFFF),
-    textSecondary: Color(0xFFE1E8EB),
-    textMuted: Color(0xFF7D919A),
-    borderSubtle: Color(0xFF1C272C),
-    borderAccent: Color(0x33A8DCE7),
-    glow: Color(0xFFA8DCE7),
+    textSecondary: Color(0xFFD1D5DB),
+    textMuted: Color(0xFF8E8E93),
+    borderSubtle: Color(0xFF26262E),
+    borderAccent: Color(0x4038BDF8),
+    borderStrong: Color(0xFF3A3A44),
+    accentFill: Color(0xFF006EE6),
+    glow: Color(0xFF38BDF8),
   );
 
-  /// Kinetic Editorial (Light Mode)
+  /// Aetron Light (Primary) — Clean Athletic White + Electric Azure Blue (#006EE6)
   static const light = KineticColors(
-    background: Color(0xFFF6FAF6),
-    surface1: Color(0xFFF0F5F1),
-    surface2: Color(0xFFEAEFEB),
-    surface3: Color(0xFFDFE4E0),
-    primary: Color(0xFF022218),
+    background: Color(0xFFF7F7FA),
+    surface1: Color(0xFFFFFFFF),
+    surface2: Color(0xFFEFEFF4),
+    surface3: Color(0xFFE4E4EC),
+    primary: Color(0xFF006EE6),
     onPrimary: Color(0xFFFFFFFF),
-    secondary: Color(0xFF4E6700),
-    tertiary: Color(0xFF003265),
-    error: Color(0xFFBA1A1A),
-    textPrimary: Color(0xFF181D1B),
-    textSecondary: Color(0xFF414844),
-    textMuted: Color(0xFF727974),
-    borderSubtle: Color(0xFFC1C8C3),
-    borderAccent: Color(0x40022218),
-    glow: Color(0xFF4E6700),
+    secondary: Color(0xFF0284C7),
+    tertiary: Color(0xFFF59E0B),
+    error: Color(0xFFDC2626),
+    textPrimary: Color(0xFF16161A),
+    textSecondary: Color(0xFF4B5563),
+    textMuted: Color(0xFF6B7280),
+    borderSubtle: Color(0xFFE8E8EE),
+    borderAccent: Color(0x33006EE6),
+    borderStrong: Color(0xFFD1D5DB),
+    accentFill: Color(0xFF006EE6),
+    glow: Color(0xFF006EE6),
   );
+
+  bool get isDark => background.computeLuminance() < 0.2;
+
+  /// Soft brand tint for subtle pills, streak badges, and active chips.
+  Color get primaryTint =>
+      isDark ? const Color(0xFF12263A) : const Color(0xFFEAF3FF);
+
+  /// Semantic positive status color (GPS lock, growth delta, PR achieved).
+  Color get success =>
+      isDark ? const Color(0xFF22C55E) : const Color(0xFF16A34A);
+
+  /// Soft success pill fill.
+  Color get successTint =>
+      isDark ? const Color(0xFF102A1A) : const Color(0xFFDCFCE7);
 
   @override
   KineticColors copyWith({
@@ -90,6 +118,8 @@ class KineticColors extends ThemeExtension<KineticColors> {
     Color? textMuted,
     Color? borderSubtle,
     Color? borderAccent,
+    Color? borderStrong,
+    Color? accentFill,
     Color? glow,
   }) {
     return KineticColors(
@@ -107,6 +137,8 @@ class KineticColors extends ThemeExtension<KineticColors> {
       textMuted: textMuted ?? this.textMuted,
       borderSubtle: borderSubtle ?? this.borderSubtle,
       borderAccent: borderAccent ?? this.borderAccent,
+      borderStrong: borderStrong ?? this.borderStrong,
+      accentFill: accentFill ?? this.accentFill,
       glow: glow ?? this.glow,
     );
   }
@@ -129,6 +161,8 @@ class KineticColors extends ThemeExtension<KineticColors> {
       textMuted: Color.lerp(textMuted, other.textMuted, t)!,
       borderSubtle: Color.lerp(borderSubtle, other.borderSubtle, t)!,
       borderAccent: Color.lerp(borderAccent, other.borderAccent, t)!,
+      borderStrong: Color.lerp(borderStrong, other.borderStrong, t)!,
+      accentFill: Color.lerp(accentFill, other.accentFill, t)!,
       glow: Color.lerp(glow, other.glow, t)!,
     );
   }

@@ -3,6 +3,7 @@ import 'package:fitness_exercise_application/features/profile/domain/entities/us
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_button.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_card.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
 import 'package:flutter/material.dart';
 
@@ -55,11 +56,12 @@ class KineticBiometricsBento extends StatelessWidget {
 
     if (profile == null) {
       return KineticCard(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(KineticTokens.spaceLG),
+        borderRadius: KineticTokens.radiusLG,
         child: Column(
           children: [
             Icon(Icons.monitor_weight_outlined, size: 36, color: colors.primary),
-            const SizedBox(height: 10),
+            const SizedBox(height: KineticTokens.spaceXS),
             Text(
               currentLang == AppLanguage.vi
                   ? 'Chưa thiết lập chỉ số cơ thể'
@@ -68,7 +70,7 @@ class KineticBiometricsBento extends StatelessWidget {
                 color: colors.textPrimary,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: KineticTokens.spaceXXS),
             Text(
               currentLang == AppLanguage.vi
                   ? 'Thiết lập chiều cao, cân nặng để tính toán chính xác lượng calo tiêu hao.'
@@ -78,7 +80,7 @@ class KineticBiometricsBento extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: KineticTokens.spaceSM),
             KineticButton(
               label: currentLang == AppLanguage.vi
                   ? 'THIẾT LẬP CHỈ SỐ'
@@ -110,7 +112,8 @@ class KineticBiometricsBento extends StatelessWidget {
     }
 
     return KineticCard(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(KineticTokens.spaceMD),
+      borderRadius: KineticTokens.radiusLG,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -157,7 +160,7 @@ class KineticBiometricsBento extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: KineticTokens.spaceSM),
 
           // 2x2 Bento Grid
           Row(
@@ -170,7 +173,7 @@ class KineticBiometricsBento extends StatelessWidget {
                   value: weightStr,
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: KineticTokens.spaceXS),
               // Height
               Expanded(
                 child: _BiometricTile(
@@ -181,7 +184,7 @@ class KineticBiometricsBento extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: KineticTokens.spaceXS),
           Row(
             children: [
               // Age & Gender
@@ -192,7 +195,7 @@ class KineticBiometricsBento extends StatelessWidget {
                   value: '${p.age} • $genderStr',
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: KineticTokens.spaceXS),
               // BMI
               Expanded(
                 child: _BiometricTile(
@@ -225,10 +228,13 @@ class _BiometricTile extends StatelessWidget {
     final colors = context.kinetic;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(
+        horizontal: KineticTokens.spaceSM,
+        vertical: KineticTokens.spaceXS,
+      ),
       decoration: BoxDecoration(
         color: colors.surface2,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
         border: Border.all(color: colors.borderSubtle),
       ),
       child: Column(

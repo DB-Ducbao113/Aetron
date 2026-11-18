@@ -1,3 +1,4 @@
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 
@@ -38,12 +39,6 @@ class LocateButton extends StatelessWidget {
                 width: 1.5,
               ),
               boxShadow: [
-                if (isFollowEnabled)
-                  BoxShadow(
-                    color: activeColor.withValues(alpha: 0.35),
-                    blurRadius: 12,
-                    spreadRadius: 1,
-                  ),
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.45),
                   blurRadius: 10,
@@ -52,10 +47,8 @@ class LocateButton extends StatelessWidget {
               ],
             ),
             child: Center(
-              child: Icon(
-                isFollowEnabled
-                    ? Icons.my_location_rounded
-                    : Icons.location_searching_rounded,
+              child: BladeIcon(
+                BladeIconName.gps,
                 color: isFollowEnabled ? activeColor : colors.textSecondary,
                 size: 22,
               ),

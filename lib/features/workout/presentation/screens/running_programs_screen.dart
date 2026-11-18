@@ -101,7 +101,6 @@ class RunningProgramsScreen extends ConsumerWidget {
           tipVi: 'Đi bộ rất chậm, thả lỏng toàn bộ cơ bắp.',
         ),
       ],
-      imageAsset: 'assets/plan_couch_to_5k.jpg',
     ),
     StructuredRunningProgram(
       id: 'easy_base_run',
@@ -167,7 +166,6 @@ class RunningProgramsScreen extends ConsumerWidget {
           tipVi: 'Hít thở sâu để nhịp tim trở lại bình thường.',
         ),
       ],
-      imageAsset: 'assets/plan_easy_base_run.jpg',
     ),
     StructuredRunningProgram(
       id: 'pace_builder_10k',
@@ -233,7 +231,6 @@ class RunningProgramsScreen extends ConsumerWidget {
           tipVi: 'Thả lỏng vai và bắp chân.',
         ),
       ],
-      imageAsset: 'assets/plan_pace_builder_10k.jpg',
     ),
     StructuredRunningProgram(
       id: 'speed_intervals',
@@ -314,14 +311,39 @@ class RunningProgramsScreen extends ConsumerWidget {
           tipVi: 'Chạy chậm đều để đào thải axit lactic.',
         ),
       ],
-      imageAsset: 'assets/plan_speed_intervals.jpg',
     ),
   ];
+
+  String _shortLevelLabel(StructuredRunningProgram prog, bool isVi) {
+    return switch (prog.id) {
+      'couch_to_5k' => isVi ? 'Người mới' : 'Beginner',
+      'easy_base_run' => isVi ? 'Phục hồi' : 'Recovery',
+      'pace_builder_10k' => isVi ? 'Trung cấp' : 'Intermediate',
+      'speed_intervals' => isVi ? 'Tốc độ' : 'Speedwork',
+      _ => isVi ? 'Chạy bộ' : 'Running',
+    };
+  }
+
+  String _shortDistanceLabel(StructuredRunningProgram prog) =>
+      prog.targetDistance.replaceAll(' Total', '');
+
+  String _shortPaceLabel(StructuredRunningProgram prog) =>
+      prog.targetPace.replaceAll(' min/km', ' /km').replaceAll(' - ', '–');
+
+  String _shortZoneLabel(StructuredRunningProgram prog) {
+    return switch (prog.id) {
+      'couch_to_5k' || 'easy_base_run' => 'Zone 2',
+      'pace_builder_10k' => 'Zone 3',
+      'speed_intervals' => 'Zone 4–5',
+      _ => prog.targetZone,
+    };
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.kinetic;
     final currentLang = ref.watch(appLanguageProvider);
+    final isVi = currentLang == AppLanguage.vi;
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -330,22 +352,46 @@ class RunningProgramsScreen extends ConsumerWidget {
           children: [
             // Top Navigation Bar
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.fromLTRB(
+                KineticTokens.page,
+                10,
+                KineticTokens.page,
+                8,
+              ),
               child: Row(
                 children: [
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.textPrimary),
-                    iconSize: 20,
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => Navigator.of(context).pop(),
+                      borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: colors.surface1,
+                          borderRadius:
+                              BorderRadius.circular(KineticTokens.radiusMD),
+                          border: Border.all(color: colors.borderSubtle),
+                        ),
+                        child: Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: colors.textPrimary,
+                          size: 16,
+                        ),
+                      ),
+                    ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       AppTranslations.get('runner_programs', currentLang),
-                      style: KineticTypography.headlineSmall.copyWith(
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: KineticTypography.pageTitleCompact.copyWith(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
                         color: colors.textPrimary,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1.0,
                       ),
                     ),
                   ),
@@ -356,230 +402,251 @@ class RunningProgramsScreen extends ConsumerWidget {
             // Content List
             Expanded(
               child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                padding: const EdgeInsets.fromLTRB(
+                  KineticTokens.page,
+                  6,
+                  KineticTokens.page,
+                  24,
+                ),
                 itemCount: programs.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 16),
+                separatorBuilder: (_, _) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   final prog = programs[index];
-                  final isVi = currentLang == AppLanguage.vi;
                   final title = AppTranslations.get(prog.titleKey, currentLang);
-                  final badge = isVi ? prog.badgeVi : prog.badgeEn;
-                  final desc = isVi ? prog.descriptionVi : prog.descriptionEn;
+                  final level = _shortLevelLabel(prog, isVi);
+                  final durationMin = (prog.totalDurationSeconds / 60).round();
+                  final (bannerIcon, bannerTint, bannerIconColor) =
+                      switch (prog.id) {
+                    'couch_to_5k' => (
+                      Icons.directions_run_rounded,
+                      colors.primary,
+                      colors.primary,
+                    ),
+                    'easy_base_run' => (
+                      Icons.favorite_rounded,
+                      colors.secondary,
+                      colors.isDark
+                          ? colors.secondary
+                          : const Color(0xFF0369A1),
+                    ),
+                    'pace_builder_10k' => (
+                      Icons.speed_rounded,
+                      colors.primary,
+                      colors.primary,
+                    ),
+                    'speed_intervals' => (
+                      Icons.bolt_rounded,
+                      colors.tertiary,
+                      colors.isDark
+                          ? colors.tertiary
+                          : const Color(0xFFB45309),
+                    ),
+                    _ => (
+                      Icons.directions_run_rounded,
+                      colors.primary,
+                      colors.primary,
+                    ),
+                  };
 
                   return Container(
                     clipBehavior: Clip.antiAlias,
                     decoration: BoxDecoration(
                       color: colors.surface1,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(KineticTokens.radiusXL),
                       border: Border.all(
                         color: colors.borderSubtle,
-                        width: 1.2,
+                        width: 1,
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.15),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                      boxShadow:
+                          colors.isDark ? null : KineticTokens.shadowCardLight(),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Hero Image Banner (Unified across all programs)
-                        SizedBox(
-                          height: 124,
-                          width: double.infinity,
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              Image.asset(
-                                prog.imageAsset,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Container(
-                                  color: colors.surface2,
-                                  child: Center(
-                                    child: Icon(Icons.directions_run_rounded, color: colors.primary, size: 36),
-                                  ),
-                                ),
-                              ),
-                              // Smooth Gradient Overlay
-                              Container(
+                        // Compact Tinted Header Strip (No heavy banner/essay)
+                        Stack(
+                          children: [
+                            Positioned.fill(
+                              child: SceneBackdrop(tint: bannerTint),
+                            ),
+                            Positioned.fill(
+                              child: DecoratedBox(
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     begin: Alignment.topCenter,
                                     end: Alignment.bottomCenter,
                                     colors: [
-                                      Colors.black.withValues(alpha: 0.25),
-                                      Colors.transparent,
-                                      colors.surface1.withValues(alpha: 0.95),
+                                      bannerTint.withValues(alpha: 0.05),
+                                      colors.surface1.withValues(alpha: 0.94),
                                     ],
-                                    stops: const [0.0, 0.45, 1.0],
                                   ),
                                 ),
                               ),
-                              // Top-Left: Level Badge Pill
-                              Positioned(
-                                top: 10,
-                                left: 10,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: colors.background.withValues(alpha: 0.85),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: colors.primary.withValues(alpha: 0.35)),
-                                  ),
-                                  child: Text(
-                                    badge,
-                                    style: KineticTypography.unitLabel.copyWith(
-                                      fontSize: 10.5,
-                                      fontWeight: FontWeight.w800,
-                                      color: colors.primary,
-                                      letterSpacing: 0.8,
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 40,
+                                    height: 40,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: colors.surface1.withValues(
+                                        alpha: colors.isDark ? 0.90 : 0.96,
+                                      ),
+                                      border: Border.all(
+                                        color: bannerTint.withValues(alpha: 0.28),
+                                      ),
+                                    ),
+                                    child: Icon(
+                                      bannerIcon,
+                                      color: bannerIconColor,
+                                      size: 20,
                                     ),
                                   ),
-                                ),
-                              ),
-                              // Top-Right: Duration Badge Pill
-                              Positioned(
-                                top: 10,
-                                right: 10,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: colors.background.withValues(alpha: 0.85),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: colors.borderSubtle),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.schedule_rounded, size: 12, color: colors.textSecondary),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        '${(prog.totalDurationSeconds / 60).round()} ${isVi ? "phút" : "min"}',
-                                        style: KineticTypography.unitLabel.copyWith(
-                                          fontSize: 10.5,
-                                          fontWeight: FontWeight.w700,
-                                          color: colors.textSecondary,
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '$level · $durationMin ${isVi ? "phút" : "min"}',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: KineticTypography.caption.copyWith(
+                                            fontSize: 11.5,
+                                            fontWeight: FontWeight.w700,
+                                            color: bannerIconColor,
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          title,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: KineticTypography.headlineSmall.copyWith(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w800,
+                                            color: colors.textPrimary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
 
-                        // Card Body
+                        // Compact Card Body
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                          padding: const EdgeInsets.fromLTRB(14, 4, 14, 14),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Title
-                              Text(
-                                title,
-                                style: KineticTypography.headlineMedium.copyWith(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w900,
-                                  color: colors.textPrimary,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-
-                              // Description
-                              Text(
-                                desc,
-                                style: KineticTypography.bodyMedium.copyWith(
-                                  fontSize: 13,
-                                  color: colors.textSecondary,
-                                  height: 1.4,
-                                ),
-                              ),
-                              const SizedBox(height: 14),
-
-                              // Targets metrics preview bar
+                              // Concise Single-Line Metrics Strip
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 7,
+                                ),
                                 decoration: BoxDecoration(
                                   color: colors.surface2,
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(color: colors.borderSubtle),
+                                  borderRadius: BorderRadius.circular(
+                                    KineticTokens.radiusMD,
+                                  ),
                                 ),
                                 child: Row(
                                   children: [
                                     Expanded(
-                                      child: _MetricTile(
-                                        label: isVi ? 'KHOẢNG CÁCH' : 'DISTANCE',
-                                        value: prog.targetDistance,
+                                      child: _CompactProgramStat(
                                         icon: Icons.route_rounded,
+                                        value: _shortDistanceLabel(prog),
                                       ),
                                     ),
-                                    Container(width: 1, height: 26, color: colors.borderSubtle),
-                                    Expanded(
-                                      child: _MetricTile(
-                                        label: isVi ? 'NHỊP TIM' : 'HR ZONE',
-                                        value: prog.targetZone,
-                                        icon: Icons.favorite_border_rounded,
-                                      ),
+                                    Container(
+                                      width: 1,
+                                      height: 14,
+                                      color: colors.borderSubtle,
                                     ),
-                                    Container(width: 1, height: 26, color: colors.borderSubtle),
                                     Expanded(
-                                      child: _MetricTile(
-                                        label: isVi ? 'PACE' : 'PACE',
-                                        value: prog.targetPace,
+                                      child: _CompactProgramStat(
                                         icon: Icons.speed_rounded,
+                                        value: _shortPaceLabel(prog),
+                                      ),
+                                    ),
+                                    Container(
+                                      width: 1,
+                                      height: 14,
+                                      color: colors.borderSubtle,
+                                    ),
+                                    Expanded(
+                                      child: _CompactProgramStat(
+                                        icon: Icons.favorite_border_rounded,
+                                        value: _shortZoneLabel(prog),
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-                              const SizedBox(height: 12),
+                              const SizedBox(height: 8),
 
-                              // Interval Sequence Strip
+                              // Slim Interval Sequence Strip
                               ClipRRect(
-                                borderRadius: BorderRadius.circular(6),
+                                borderRadius: BorderRadius.circular(4),
                                 child: SizedBox(
-                                  height: 6,
+                                  height: 4,
                                   child: Row(
                                     children: prog.steps.map((st) {
                                       return Expanded(
                                         flex: st.durationSeconds,
                                         child: Container(
                                           color: st.phaseColor,
-                                          margin: const EdgeInsets.symmetric(horizontal: 0.5),
+                                          margin: const EdgeInsets.symmetric(
+                                            horizontal: 0.5,
+                                          ),
                                         ),
                                       );
                                     }).toList(),
                                   ),
                                 ),
                               ),
-                              const SizedBox(height: 14),
+                              const SizedBox(height: 10),
 
-                              // Action Buttons: Guide Details + Quick Start
+                              // Action Buttons: Guide + Start
                               Row(
                                 children: [
                                   Expanded(
-                                    flex: 5,
+                                    flex: 4,
                                     child: OutlinedButton(
                                       onPressed: () => showProgramGuide(context, prog),
                                       style: OutlinedButton.styleFrom(
                                         foregroundColor: colors.textPrimary,
+                                        minimumSize: const Size(0, 40),
                                         side: BorderSide(
                                           color: colors.borderSubtle,
                                         ),
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 8,
+                                        ),
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            KineticTokens.radiusPill,
+                                          ),
                                         ),
                                       ),
                                       child: Row(
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
-                                          Icon(Icons.menu_book_rounded, size: 15, color: colors.textPrimary),
-                                          const SizedBox(width: 6),
+                                          Icon(
+                                            Icons.menu_book_rounded,
+                                            size: 14,
+                                            color: colors.textPrimary,
+                                          ),
+                                          const SizedBox(width: 5),
                                           Flexible(
                                             child: FittedBox(
                                               fit: BoxFit.scaleDown,
@@ -600,10 +667,11 @@ class RunningProgramsScreen extends ConsumerWidget {
                                   ),
                                   const SizedBox(width: 10),
                                   Expanded(
-                                    flex: 6,
+                                    flex: 5,
                                     child: KineticButton(
                                       label: isVi ? 'Bắt đầu' : 'Start',
                                       icon: Icons.play_arrow_rounded,
+                                      height: 40,
                                       onPressed: () {
                                         Navigator.of(context).push(
                                           MaterialPageRoute(
@@ -635,60 +703,41 @@ class RunningProgramsScreen extends ConsumerWidget {
   }
 }
 
-class _MetricTile extends StatelessWidget {
-  const _MetricTile({
-    required this.label,
-    required this.value,
+class _CompactProgramStat extends StatelessWidget {
+  const _CompactProgramStat({
     required this.icon,
+    required this.value,
   });
 
-  final String label;
-  final String value;
   final IconData icon;
+  final String value;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.kinetic;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 3),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 12, color: colors.primary),
-              const SizedBox(width: 3),
-              Flexible(
-                child: Text(
-                  label,
-                  style: KineticTypography.unitLabel.copyWith(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    color: colors.textSecondary,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 3),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 13, color: colors.primary),
+            const SizedBox(width: 4),
+            Text(
               value,
-              style: KineticTypography.headlineSmall.copyWith(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w900,
-                color: colors.primary,
-              ),
               maxLines: 1,
+              style: KineticTypography.caption.copyWith(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+                color: colors.textPrimary,
+                fontFeatures: KineticTypography.tabularFigures,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -714,8 +763,10 @@ class _ProgramGuideSheet extends ConsumerWidget {
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
       decoration: BoxDecoration(
         color: colors.surface1,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        border: Border(top: BorderSide(color: colors.borderSubtle, width: 1.5)),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(KineticTokens.radiusHero),
+        ),
+        border: Border(top: BorderSide(color: colors.borderSubtle, width: 1)),
       ),
       child: SafeArea(
         top: false,
@@ -785,13 +836,14 @@ class _ProgramGuideSheet extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
 
-            // Target Parameters Summary Card
+            // Target Parameters Summary — V4: flat, hairline frame
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
               decoration: BoxDecoration(
-                color: colors.surface2,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: colors.borderSubtle),
+                border: Border(
+                  top: BorderSide(color: colors.borderSubtle),
+                  bottom: BorderSide(color: colors.borderSubtle),
+                ),
               ),
               child: Row(
                 children: [

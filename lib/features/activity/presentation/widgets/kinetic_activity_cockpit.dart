@@ -1,4 +1,5 @@
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_target.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 
@@ -42,22 +43,15 @@ class KineticActivityCockpit extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(
         horizontal: KineticTokens.page,
-        vertical: 8,
+        vertical: KineticTokens.spaceXS,
       ),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(KineticTokens.spaceMD),
       decoration: BoxDecoration(
         color: colors.surface1,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
         border: Border.all(
-          color: colors.borderSubtle.withValues(alpha: 0.6),
+          color: colors.borderSubtle,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
-            blurRadius: 20,
-            offset: const Offset(0, 6),
-          ),
-        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -81,10 +75,17 @@ class KineticActivityCockpit extends StatelessWidget {
                           color: colors.borderSubtle.withValues(alpha: 0.5),
                         ),
                       ),
-                      child: Icon(
-                        Icons.satellite_alt_rounded,
+                      child: BladeIcon(
+                        BladeIconName.gps,
                         size: 17,
-                        color: isGpsReady ? colors.primary : colors.tertiary,
+                        // "OK" green is not a DS token; use the established
+                        // success hex (dark #2AF598 / Morning #1E9E5A), the
+                        // same values the record HUDs hardcode.
+                        color: isGpsReady
+                            ? (Theme.of(context).brightness == Brightness.dark
+                                  ? const Color(0xFF2AF598)
+                                  : const Color(0xFF1E9E5A))
+                            : colors.tertiary,
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -120,8 +121,8 @@ class KineticActivityCockpit extends StatelessWidget {
                   if (onMapPreviewTap != null) ...[
                     IconButton(
                       tooltip: isVi ? 'Xem bản đồ' : 'Map Preview',
-                      icon: Icon(
-                        Icons.map_outlined,
+                      icon: BladeIcon(
+                        BladeIconName.map,
                         size: 19,
                         color: colors.textSecondary,
                       ),

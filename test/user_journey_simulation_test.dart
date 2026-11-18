@@ -1,7 +1,6 @@
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/core/providers/connectivity_providers.dart';
 import 'package:fitness_exercise_application/features/activity/presentation/screens/activity_screen.dart';
-import 'package:fitness_exercise_application/features/activity/presentation/widgets/kinetic_activity_card.dart';
 import 'package:fitness_exercise_application/features/analytics/presentation/screens/analytics_screen.dart';
 import 'package:fitness_exercise_application/features/analytics/presentation/widgets/kinetic_analytics_header.dart';
 import 'package:fitness_exercise_application/features/auth/presentation/screens/login_screen.dart';
@@ -48,6 +47,7 @@ void main() {
 
   setUp(() {
     SharedPreferences.setMockInitialValues({
+      'settings.language.code': 'vi',
       'settings.notifications.enabled': true,
       'settings.notifications.workout_reminders': true,
       'settings.notifications.morning_time': '08:00',
@@ -168,14 +168,14 @@ void main() {
       expect(find.textContaining('Điều khoản'), findsWidgets);
     });
 
-    testWidgets('Journey 2: ActivityScreen sports selection and cockpit interactions', (tester) async {
+    testWidgets('Journey 2: ActivityScreen map-first start and sport switcher', (tester) async {
       tester.view.physicalSize = const Size(800, 1400);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
 
       await tester.pumpWidget(
         createTestApp(
-          const ActivityScreen(),
+          const ActivityScreen(showMapTiles: false),
           overrides: [
             workoutListProvider.overrideWith(() => _MockWorkoutList(const [])),
           ],
@@ -184,24 +184,24 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
 
-      // Verify all 3 sports cards are rendered
-      expect(find.byType(KineticActivityCard), findsNWidgets(3));
-      expect(find.text('Chạy bộ'), findsWidgets);
-      expect(find.text('Đạp xe'), findsOneWidget);
-      expect(find.text('Đi bộ'), findsOneWidget);
+      // Verify 3 sport pills are rendered
+      expect(find.byKey(const Key('sport-pill-running')), findsOneWidget);
+      expect(find.byKey(const Key('sport-pill-cycling')), findsOneWidget);
+      expect(find.byKey(const Key('sport-pill-walking')), findsOneWidget);
 
       // User selects Cycling
-      await tester.tap(find.text('Đạp xe'));
+      await tester.tap(find.byKey(const Key('sport-pill-cycling')));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
+      expect(find.text('Bắt đầu đạp xe'), findsOneWidget);
 
       // User selects Walking
-      await tester.tap(find.text('Đi bộ'));
+      await tester.tap(find.byKey(const Key('sport-pill-walking')));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
 
-      // Verify Start button in Cockpit Tray
-      expect(find.text('BẮT ĐẦU ĐI BỘ'), findsOneWidget);
+      // Verify Start button reflects Walking
+      expect(find.text('Bắt đầu đi bộ'), findsOneWidget);
     });
 
     testWidgets('Journey 3: Calendar History filtering and range switching', (tester) async {
@@ -383,7 +383,7 @@ void main() {
       // Top bar & section headers
       expect(find.text('Cài đặt'), findsOneWidget);
       expect(find.text('AETRON SYSTEM'), findsNothing);
-      expect(find.text('TÀI KHOẢN & DANH TÍNH'), findsOneWidget);
+      expect(find.text('QUYỀN RIÊNG TƯ & TRUY CẬP'), findsOneWidget);
       expect(find.text('CẤU HÌNH ỨNG DỤNG'), findsOneWidget);
 
       // Check notification settings screen directly
@@ -393,21 +393,22 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      expect(find.text('THÔNG BÁO'), findsOneWidget);
-      expect(find.text('NHẮC NHỞ LUYỆN TẬP'), findsOneWidget);
+      expect(find.text('Thông báo'), findsOneWidget);
+      expect(find.text('Nhắc nhở luyện tập'), findsOneWidget);
       expect(find.text('Luyện tập & Chuỗi ngày'), findsOneWidget);
       expect(find.text('Mục tiêu & Thành tích'), findsOneWidget);
-      expect(find.text('Khung giờ yên tĩnh'), findsOneWidget);
+      expect(find.text('KHUNG GIỜ YÊN TĨNH'), findsOneWidget);
+      expect(find.text('Chế độ yên tĩnh'), findsOneWidget);
     });
 
-    testWidgets('Journey 9: HomeScreen dashboard with telemetry and quick switch', (tester) async {
+    testWidgets('Journey 9: HomeScreen clean Strava-Runna dashboard without map tiles', (tester) async {
       tester.view.physicalSize = const Size(800, 1400);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
 
       await tester.pumpWidget(
         createTestApp(
-          const HomeScreen(),
+          const HomeScreen(showMapTiles: false),
           overrides: [
             workoutListProvider.overrideWith(() => _MockWorkoutList([mockWorkout])),
           ],
@@ -416,16 +417,11 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      // Top bar greeting & user name
-      expect(find.text('Athlete'), findsOneWidget);
-
-      // Quick switch sports
-      expect(find.text('Chạy bộ'), findsWidgets);
-      expect(find.text('Đạp xe'), findsOneWidget);
-      expect(find.text('Đi bộ'), findsOneWidget);
-
-      // Weekly bento
-      expect(find.text('Tuần này của bạn'), findsOneWidget);
+      // Top bar heading & clean section structure
+      expect(find.text('Hôm nay'), findsWidgets);
+      expect(find.text('Mục tiêu tuần'), findsOneWidget);
+      expect(find.text('Hoạt động gần đây'), findsOneWidget);
+      expect(find.text('Giáo án luyện tập'), findsOneWidget);
     });
   });
 }

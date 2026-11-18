@@ -6,6 +6,7 @@ import 'package:fitness_exercise_application/features/workout/presentation/widge
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class _MockEnLanguageNotifier extends AppLanguageNotifier {
   _MockEnLanguageNotifier() {
@@ -13,7 +14,16 @@ class _MockEnLanguageNotifier extends AppLanguageNotifier {
   }
 }
 
+class _MockViLanguageNotifier extends AppLanguageNotifier {
+  _MockViLanguageNotifier() {
+    state = AppLanguage.vi;
+  }
+}
+
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({kAppLanguagePrefKey: 'vi'});
+  });
   final testViInsight = WorkoutAiInsight(
     id: 'test-insight-1',
     workoutId: 'w-123',
@@ -61,7 +71,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          appLanguageProvider.overrideWith((ref) => AppLanguageNotifier()),
+          appLanguageProvider.overrideWith((ref) => _MockViLanguageNotifier()),
           workoutAiInsightProvider('w-123')
               .overrideWith((ref) => Future.value(testViInsight)),
         ],
@@ -95,6 +105,7 @@ void main() {
 
   testWidgets('WorkoutAiInsightCard renders English compact preview and navigates to Detail Screen',
       (tester) async {
+    SharedPreferences.setMockInitialValues({kAppLanguagePrefKey: 'en'});
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -156,7 +167,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          appLanguageProvider.overrideWith((ref) => AppLanguageNotifier()),
+          appLanguageProvider.overrideWith((ref) => _MockViLanguageNotifier()),
           workoutAiInsightProvider('w-123')
               .overrideWith((ref) => Future.value(fallbackInsight)),
         ],

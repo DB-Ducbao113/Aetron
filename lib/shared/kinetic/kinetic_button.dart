@@ -19,7 +19,7 @@ enum KineticButtonVariant {
 /// - Loading state with spinner
 /// - Built-in semantics for accessibility
 /// - Material ink ripple feedback
-/// - Primary variant has glow shadow
+/// - Primary variant: flat filled pill, no gradient/border/shadow (V5)
 /// - 120ms press-scale micro-interaction (scale 0.97, easeOut)
 ///   with light haptic — instant under OS Reduce Motion
 class KineticButton extends StatefulWidget {
@@ -93,40 +93,41 @@ class _KineticButtonState extends State<KineticButton>
   Widget build(BuildContext context) {
     final colors = context.kinetic;
     final isDisabled = widget.onPressed == null || widget.isLoading;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final Color bgColor;
     final Color fgColor;
     final BorderSide? border;
     final List<BoxShadow>? shadows;
+    final Gradient? gradient;
 
     switch (widget.variant) {
       case KineticButtonVariant.primary:
-        bgColor = isDisabled ? colors.surface3 : colors.primary;
-        fgColor = isDisabled ? colors.textMuted : colors.onPrimary;
+        // Flat athletic pill button in Aetron Brand Blue (#006EE6) with crisp white ink.
+        gradient = null;
+        bgColor = isDisabled ? colors.surface3 : colors.accentFill;
+        fgColor = isDisabled ? colors.textMuted : Colors.white;
         border = null;
-        shadows = isDisabled
-            ? null
-            : [
-                BoxShadow(
-                  color: colors.primary.withValues(alpha: 0.25),
-                  blurRadius: 16,
-                  offset: const Offset(0, 2),
-                ),
-              ];
+        shadows = null;
         break;
       case KineticButtonVariant.secondary:
-        bgColor = isDisabled ? colors.surface1 : colors.surface2;
+        gradient = null;
+        bgColor = isDisabled
+            ? colors.surface1
+            : (isDark ? colors.surface2 : colors.surface1);
         fgColor = isDisabled ? colors.textMuted : colors.textPrimary;
-        border = BorderSide(color: colors.borderAccent, width: 1);
+        border = BorderSide(color: colors.borderStrong, width: 1.0);
         shadows = null;
         break;
       case KineticButtonVariant.ghost:
+        gradient = null;
         bgColor = Colors.transparent;
         fgColor = isDisabled ? colors.textMuted : colors.textSecondary;
         border = null;
         shadows = null;
         break;
       case KineticButtonVariant.danger:
+        gradient = null;
         bgColor = isDisabled ? colors.surface1 : colors.error.withValues(alpha: 0.15);
         fgColor = isDisabled ? colors.textMuted : colors.error;
         border = BorderSide(color: colors.error.withValues(alpha: 0.4), width: 1);
@@ -182,8 +183,9 @@ class _KineticButtonState extends State<KineticButton>
           child: Container(
             height: widget.height,
             decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
+              color: gradient == null ? bgColor : null,
+              gradient: gradient,
+              borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
               border: border != null ? Border.fromBorderSide(border) : null,
               boxShadow: shadows,
             ),
@@ -192,7 +194,7 @@ class _KineticButtonState extends State<KineticButton>
               child: InkWell(
                 onTap: isDisabled ? null : _handleTap,
                 onHighlightChanged: isDisabled ? null : _handleHighlightChanged,
-                borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
+                borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
                 splashColor: fgColor.withValues(alpha: 0.12),
                 highlightColor: fgColor.withValues(alpha: 0.06),
                 child: Padding(

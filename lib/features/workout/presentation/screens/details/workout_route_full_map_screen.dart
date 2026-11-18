@@ -1,10 +1,12 @@
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
+import 'package:fitness_exercise_application/features/workout/presentation/widgets/record/tracking_map_widget.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/workout_route_recap_components.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 
-class WorkoutRouteFullMapScreen extends StatelessWidget {
+class WorkoutRouteFullMapScreen extends StatefulWidget {
   const WorkoutRouteFullMapScreen({
     super.key,
     required this.routePoints,
@@ -20,7 +22,15 @@ class WorkoutRouteFullMapScreen extends StatelessWidget {
   final AppLanguage currentLang;
   final bool showMapTiles;
 
-  IconData get _activityIcon => switch (activityType.toLowerCase()) {
+  @override
+  State<WorkoutRouteFullMapScreen> createState() =>
+      _WorkoutRouteFullMapScreenState();
+}
+
+class _WorkoutRouteFullMapScreenState extends State<WorkoutRouteFullMapScreen> {
+  AppMapType _fallbackMapType = AppMapType.satellite;
+
+  IconData get _activityIcon => switch (widget.activityType.toLowerCase()) {
     'running' => Icons.directions_run_rounded,
     'cycling' => Icons.directions_bike_rounded,
     'walking' => Icons.directions_walk_rounded,
@@ -30,7 +40,7 @@ class WorkoutRouteFullMapScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.kinetic;
-    final isVietnamese = currentLang == AppLanguage.vi;
+    final isVietnamese = widget.currentLang == AppLanguage.vi;
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -38,9 +48,9 @@ class WorkoutRouteFullMapScreen extends StatelessWidget {
         children: [
           Positioned.fill(
             child: WorkoutRoutePreviewMap(
-              routePoints: routePoints,
-              routeSegments: routeSegments,
-              activityType: activityType,
+              routePoints: widget.routePoints,
+              routeSegments: widget.routeSegments,
+              activityType: widget.activityType,
               icon: _activityIcon,
               accentColor: colors.primary,
               glowColor: colors.primary.withValues(alpha: 0.24),
@@ -49,7 +59,22 @@ class WorkoutRouteFullMapScreen extends StatelessWidget {
               endColor: colors.error,
               interactive: true,
               mapPadding: const EdgeInsets.fromLTRB(28, 112, 28, 120),
-              showMapTiles: showMapTiles,
+              showMapTiles: widget.showMapTiles,
+              fallbackMapType: _fallbackMapType,
+            ),
+          ),
+          // V4: top scrim for legibility over the full-bleed map.
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 130,
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: KineticGradients.scrimTop(colors),
+                ),
+              ),
             ),
           ),
           SafeArea(
@@ -69,8 +94,8 @@ class WorkoutRouteFullMapScreen extends StatelessWidget {
                       alignment: Alignment.centerLeft,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
-                        color: colors.surface1.withValues(alpha: 0.94),
-                        borderRadius: BorderRadius.circular(16),
+                        gradient: KineticGradients.hudSurface(colors),
+                        borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
                         border: Border.all(
                           color: colors.borderSubtle.withValues(alpha: 0.8),
                         ),
@@ -85,6 +110,36 @@ class WorkoutRouteFullMapScreen extends StatelessWidget {
                         ),
                       ),
                     ),
+                  ),
+                  const SizedBox(width: 12),
+                  AetronMapTypeBuilder(
+                    fallbackType: _fallbackMapType,
+                    builder: (context, mapType) {
+                      final isSatellite = mapType == AppMapType.satellite;
+                      return _MapOverlayButton(
+                        buttonKey: const Key('full-map-layer-btn'),
+                        tooltip: isVietnamese
+                            ? 'Chọn kiểu bản đồ'
+                            : 'Select map style',
+                        icon: Icons.layers_rounded,
+                        iconWidget: BladeIcon(
+                          BladeIconName.layers,
+                          size: 20,
+                          color: isSatellite ? colors.primary : colors.textPrimary,
+                        ),
+                        isHighlighted: isSatellite,
+                        onPressed: () => showAetronMapStylePicker(
+                          context: context,
+                          currentType: mapType,
+                          currentLang: widget.currentLang,
+                          onFallbackSelect: (selected) {
+                            if (mounted) {
+                              setState(() => _fallbackMapType = selected);
+                            }
+                          },
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -102,8 +157,8 @@ class WorkoutRouteFullMapScreen extends StatelessWidget {
                       vertical: 12,
                     ),
                     decoration: BoxDecoration(
-                      color: colors.surface1.withValues(alpha: 0.94),
-                      borderRadius: BorderRadius.circular(16),
+                      gradient: KineticGradients.hudSurface(colors),
+                      borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
                       border: Border.all(
                         color: colors.borderSubtle.withValues(alpha: 0.8),
                       ),
@@ -144,28 +199,46 @@ class WorkoutRouteFullMapScreen extends StatelessWidget {
 
 class _MapOverlayButton extends StatelessWidget {
   const _MapOverlayButton({
+    this.buttonKey,
     required this.tooltip,
     required this.icon,
+    this.iconWidget,
+    this.isHighlighted = false,
     required this.onPressed,
   });
 
+  final Key? buttonKey;
   final String tooltip;
   final IconData icon;
+  final Widget? iconWidget;
+  final bool isHighlighted;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.kinetic;
     return Material(
-      color: colors.surface1.withValues(alpha: 0.94),
-      borderRadius: BorderRadius.circular(16),
-      child: IconButton(
-        tooltip: tooltip,
-        onPressed: onPressed,
-        icon: Icon(icon),
-        color: colors.textPrimary,
-        iconSize: 22,
-        constraints: const BoxConstraints.tightFor(width: 48, height: 48),
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
+      child: Ink(
+        decoration: BoxDecoration(
+          gradient: KineticGradients.hudSurface(colors),
+          borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
+          border: Border.all(
+            color: isHighlighted
+                ? colors.primary.withValues(alpha: 0.7)
+                : colors.borderSubtle.withValues(alpha: 0.8),
+          ),
+        ),
+        child: IconButton(
+          key: buttonKey,
+          tooltip: tooltip,
+          onPressed: onPressed,
+          icon: iconWidget ?? Icon(icon),
+          color: colors.textPrimary,
+          iconSize: 22,
+          constraints: const BoxConstraints.tightFor(width: 48, height: 48),
+        ),
       ),
     );
   }

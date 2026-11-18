@@ -2,6 +2,7 @@ import 'package:fitness_exercise_application/features/workout/presentation/widge
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/record/kinetic_live_metrics_hud.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/record/kinetic_live_top_bar.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/record/kinetic_workout_stop_sheet.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -155,11 +156,15 @@ void main() {
       await tester.pump();
       expect(pauseResumed, isTrue);
 
-      await tester.tap(find.byIcon(Icons.stop_rounded));
+      await tester.tap(
+        find.byIcon(BladeIcon.iconDataFor(BladeIconName.flag)),
+      );
       await tester.pump();
       expect(stopped, isTrue);
 
-      await tester.tap(find.byIcon(Icons.lock_open_rounded));
+      await tester.tap(
+        find.byIcon(BladeIcon.iconDataFor(BladeIconName.lock)),
+      );
       await tester.pump();
       expect(lockToggled, isTrue);
     });
@@ -182,7 +187,10 @@ void main() {
 
       // In paused state, hero button label is TIẾP TỤC
       expect(find.text('TIẾP TỤC'), findsOneWidget);
-      expect(find.byIcon(Icons.lock_rounded), findsOneWidget);
+      expect(
+        find.byIcon(BladeIcon.iconDataFor(BladeIconName.lock)),
+        findsOneWidget,
+      );
       expect(find.bySemanticsLabel('Tiếp tục bài tập'), findsOneWidget);
       expect(find.bySemanticsLabel('Mở khóa màn hình'), findsOneWidget);
       expect(find.bySemanticsLabel('Kết thúc bài tập'), findsOneWidget);
@@ -204,6 +212,9 @@ void main() {
             activityType: 'running',
             useMetricUnits: true,
             isVi: true,
+            statusText: 'ĐANG CHẠY BỘ',
+            gpsLabel: 'GPS Tốt',
+            gpsColor: const Color(0xFF16A34A),
             onExpand: () => expanded = true,
           ),
         ),
@@ -212,7 +223,7 @@ void main() {
       // Distance (2.54 KM)
       expect(find.text('2.54'), findsOneWidget);
       expect(find.text('KM'), findsOneWidget);
-      expect(find.text('QUÃNG ĐƯỜNG'), findsOneWidget);
+      expect(find.bySemanticsLabel(RegExp(r'Qu.*')), findsOneWidget);
 
       // Time (12:34)
       expect(find.text('12:34'), findsOneWidget);

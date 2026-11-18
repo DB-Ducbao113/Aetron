@@ -144,7 +144,7 @@ class WorkoutSummaryScreen extends ConsumerWidget {
         body: SafeArea(
           child: Column(
             children: [
-              // Top Sticky Header
+              // Header — flat (V5 keeps decoration on Home header + Welcome only).
               Padding(
                 padding: const EdgeInsets.fromLTRB(
                   KineticTokens.page,
@@ -166,16 +166,30 @@ class WorkoutSummaryScreen extends ConsumerWidget {
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(
                     KineticTokens.page,
-                    8,
+                    16,
                     KineticTokens.page,
                     32,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // 1. Hero Distance & Celebration Bento
+                      // 1. Route Map Recap (Outdoor GPS routes) — board order: map first
+                      if (effectiveRoutePoints.length >= 2) ...[
+                        KineticEntrance(
+                          index: 0,
+                          child: KineticSummaryRouteRecap(
+                            routePoints: effectiveRoutePoints,
+                            routeSegments: effectiveRouteSegments,
+                            activityType: activityType,
+                            currentLang: currentLang,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+
+                      // 2. Hero distance
                       KineticEntrance(
-                        index: 0,
+                        index: 1,
                         child: KineticSummaryHeroDistance(
                           distanceKm: effectiveDistanceKm,
                           activityType: activityType,
@@ -184,11 +198,11 @@ class WorkoutSummaryScreen extends ConsumerWidget {
                           currentLang: currentLang,
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 16),
 
-                      // 2. Telemetry Grid (4 Bento Cards)
+                      // 3. Telemetry Grid (flat 2x2, hairline dividers)
                       KineticEntrance(
-                        index: 1,
+                        index: 2,
                         child: KineticSummaryTelemetryGrid(
                           activityType: activityType,
                           durationSeconds: durationSeconds,
@@ -203,20 +217,6 @@ class WorkoutSummaryScreen extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(height: 12),
-
-                      // 3. Route Map Recap (Outdoor GPS routes)
-                      if (effectiveRoutePoints.length >= 2) ...[
-                        KineticEntrance(
-                          index: 2,
-                          child: KineticSummaryRouteRecap(
-                            routePoints: effectiveRoutePoints,
-                            routeSegments: effectiveRouteSegments,
-                            activityType: activityType,
-                            currentLang: currentLang,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                      ],
 
                       // 4. Lap Splits Breakdown (If available)
                       if (lapSplits.isNotEmpty) ...[

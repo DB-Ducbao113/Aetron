@@ -1,5 +1,6 @@
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:flutter/material.dart';
 
 class PasswordSecurityResult {
@@ -100,10 +101,10 @@ class PasswordSecurityMeter extends StatelessWidget {
       strengthColor = colors.error;
       strengthLabel = lang == AppLanguage.vi ? 'YẾU' : 'WEAK';
     } else if (score <= 4) {
-      strengthColor = const Color(0xFFFFD54F);
+      strengthColor = colors.tertiary;
       strengthLabel = lang == AppLanguage.vi ? 'TRUNG BÌNH' : 'MEDIUM';
     } else {
-      strengthColor = const Color(0xFF2AF598);
+      strengthColor = colors.secondary;
       strengthLabel = lang == AppLanguage.vi ? 'BẢO MẬT TỐI ƯU' : 'STRONG SECURITY';
     }
 
@@ -191,21 +192,21 @@ class _RuleChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.kinetic;
-    final color = isMet ? const Color(0xFF2AF598) : colors.textSecondary.withValues(alpha: 0.5);
+    final color = isMet ? colors.secondary : colors.textSecondary.withValues(alpha: 0.5);
 
     return AnimatedContainer(
       duration: KineticTokens.motionTab,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: isMet ? const Color(0xFF2AF598).withValues(alpha: 0.12) : Colors.transparent,
+        color: isMet ? colors.secondary.withValues(alpha: 0.12) : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: color.withValues(alpha: isMet ? 0.4 : 0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            isMet ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+          BladeIcon(
+            BladeIconName.check,
             size: 12,
             color: color,
           ),

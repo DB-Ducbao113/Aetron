@@ -1,5 +1,6 @@
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_button.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:flutter/material.dart';
 
 class KineticSummaryActionDock extends StatelessWidget {
@@ -27,7 +28,7 @@ class KineticSummaryActionDock extends StatelessWidget {
           variant: KineticButtonVariant.secondary,
           onPressed: onShare,
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: KineticTokens.spaceSM),
 
         // Done / Complete Button
         KineticButton(
@@ -36,7 +37,7 @@ class KineticSummaryActionDock extends StatelessWidget {
           variant: KineticButtonVariant.primary,
           onPressed: onDone,
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: KineticTokens.spaceXS),
 
         // Deep Dive Details
         KineticButton(

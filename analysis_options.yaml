@@ -20,6 +20,7 @@ analyzer:
     - windows/**
     - macos/**
     - linux/**
+    - tooling/**
   errors:
     invalid_annotation_target: ignore
 

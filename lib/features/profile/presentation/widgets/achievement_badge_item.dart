@@ -1,6 +1,7 @@
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/profile/domain/entities/achievement_badge.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
 import 'package:flutter/material.dart';
 
@@ -28,15 +29,17 @@ class AchievementBadgeItem extends StatelessWidget {
       label: '${badge.title(currentLang)} - ${isUnlocked ? 'Unlocked' : badge.remainingText(currentLang)}',
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
         child: Container(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.symmetric(
+            horizontal: KineticTokens.spaceSM,
+            vertical: 10,
+          ),
           decoration: BoxDecoration(
-            color: isUnlocked ? colors.surface1 : colors.surface2,
-            borderRadius: BorderRadius.circular(16),
+            color: isUnlocked ? colors.surface1 : colors.background,
+            borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
             border: Border.all(
               color: isUnlocked ? colors.borderAccent : colors.borderSubtle,
-              width: 1.2,
             ),
           ),
           child: Column(
@@ -51,8 +54,8 @@ class AchievementBadgeItem extends StatelessWidget {
                     alignment: Alignment.center,
                     children: [
                       Container(
-                        width: 44,
-                        height: 44,
+                        width: 38,
+                        height: 38,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: isUnlocked ? colors.surface2 : colors.surface3,
@@ -63,8 +66,10 @@ class AchievementBadgeItem extends StatelessWidget {
                         ),
                         child: Icon(
                           badge.icon,
-                          size: 20,
-                          color: isUnlocked ? colors.primary : colors.textMuted,
+                          size: 18,
+                          color: isUnlocked
+                              ? colors.primary
+                              : colors.textMuted.withValues(alpha: 0.6),
                         ),
                       ),
                       if (!isUnlocked)
@@ -90,10 +95,14 @@ class AchievementBadgeItem extends StatelessWidget {
 
                   // Tier Tag
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: KineticTokens.spaceXS,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: colors.surface2,
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius:
+                          BorderRadius.circular(KineticTokens.radiusSM),
                       border: Border.all(color: colors.borderSubtle),
                     ),
                     child: Text(
@@ -107,16 +116,20 @@ class AchievementBadgeItem extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 6),
 
               // Title
               Text(
                 badge.title(currentLang),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: KineticTypography.bodyMedium.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: isUnlocked ? colors.textPrimary : colors.textSecondary,
+                style: KineticTypography.label.copyWith(
+                  fontSize: 12.5,
+                  letterSpacing: 0,
+                  fontWeight: FontWeight.w700,
+                  color: isUnlocked
+                      ? colors.textPrimary
+                      : colors.textMuted.withValues(alpha: 0.75),
                 ),
               ),
               const SizedBox(height: 2),
@@ -130,21 +143,23 @@ class AchievementBadgeItem extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: KineticTypography.unitLabel.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: isUnlocked ? colors.secondary : colors.textMuted,
+                  color: isUnlocked ? colors.primary : colors.textMuted,
                   letterSpacing: isUnlocked ? 0.6 : 0.0,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
 
               // Bottom Progress Bar
               ClipRRect(
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(KineticTokens.radiusXS),
                 child: LinearProgressIndicator(
                   value: badge.progress.clamp(0.0, 1.0),
                   minHeight: 4,
                   backgroundColor: colors.surface3,
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    isUnlocked ? colors.secondary : colors.primary,
+                    isUnlocked
+                        ? colors.primary
+                        : colors.textMuted.withValues(alpha: 0.35),
                   ),
                 ),
               ),

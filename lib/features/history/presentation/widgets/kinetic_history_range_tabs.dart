@@ -23,10 +23,10 @@ class KineticHistoryRangeTabs extends StatelessWidget {
     final colors = context.kinetic;
 
     return Container(
-      padding: const EdgeInsets.all(3),
+      padding: const EdgeInsets.all(KineticTokens.spaceXXS),
       decoration: BoxDecoration(
         color: colors.surface1,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
         border: Border.all(color: colors.borderSubtle),
       ),
       child: Row(
@@ -40,22 +40,25 @@ class KineticHistoryRangeTabs extends StatelessWidget {
                 HapticFeedback.selectionClick();
                 onChanged(range);
               },
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
               child: AnimatedContainer(
                 duration: KineticTokens.motionTab,
-                padding: const EdgeInsets.symmetric(vertical: 7),
+                padding: const EdgeInsets.symmetric(
+                  vertical: KineticTokens.spaceXS,
+                ),
                 decoration: BoxDecoration(
-                  color: isSelected ? colors.surface3 : Colors.transparent,
-                  borderRadius: BorderRadius.circular(4),
-                  border: isSelected
-                      ? Border.all(color: colors.borderAccent, width: 1)
-                      : null,
+                  color: isSelected ? colors.primary : Colors.transparent,
+                  borderRadius: BorderRadius.circular(
+                    KineticTokens.radiusPill,
+                  ),
                 ),
                 child: Center(
                   child: Text(
                     label,
                     style: KineticTypography.label.copyWith(
-                      color: isSelected ? colors.textPrimary : colors.textMuted,
+                      color: isSelected
+                          ? colors.onPrimary
+                          : colors.textMuted,
                       fontSize: 12,
                       fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                     ),

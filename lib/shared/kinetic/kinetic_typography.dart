@@ -4,9 +4,11 @@ class KineticTypography {
   const KineticTypography._();
 
   /// Display face for headings, controls, and performance telemetry.
-  static const String displayFontFamily = 'SpaceGrotesk';
+  /// V4 (2026-11-08): single typeface for the whole app — Be Vietnam Pro
+  /// (weight + width axes). Owner direction: modern, clean, one stable font.
+  static const String displayFontFamily = 'BeVietnamPro';
 
-  /// Reading face with first-class Vietnamese diacritic support.
+  /// Reading face — same family as display in V4 (single-font system).
   static const String bodyFontFamily = 'BeVietnamPro';
 
   /// Compatibility alias for custom telemetry styles outside this token file.
@@ -21,9 +23,30 @@ class KineticTypography {
   static const TextStyle metricHero = TextStyle(
     fontFamily: displayFontFamily,
     fontSize: 52,
-    fontWeight: FontWeight.w700,
-    letterSpacing: -1.5,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -1.0,
     height: 1.0,
+    fontFeatures: [FontFeature.tabularFigures()],
+  );
+
+  /// Mega Metric — single biggest telemetry value on screen (live distance,
+  /// summary headline). Crisp tabular figures.
+  static const TextStyle metricMega = TextStyle(
+    fontFamily: displayFontFamily,
+    fontSize: 56,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -1.1,
+    height: 1.0,
+    fontFeatures: [FontFeature.tabularFigures()],
+  );
+
+  /// Display XL — V4: page-level statement headlines.
+  static const TextStyle displayXL = TextStyle(
+    fontFamily: displayFontFamily,
+    fontSize: 38,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -0.4,
+    height: 1.1,
     fontFeatures: [FontFeature.tabularFigures()],
   );
 
@@ -31,8 +54,8 @@ class KineticTypography {
   static const TextStyle metricMedium = TextStyle(
     fontFamily: displayFontFamily,
     fontSize: 26,
-    fontWeight: FontWeight.w700,
-    letterSpacing: -0.26,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -0.2,
     height: 1.15,
     fontFeatures: [FontFeature.tabularFigures()],
   );
@@ -41,8 +64,8 @@ class KineticTypography {
   static const TextStyle metricSmall = TextStyle(
     fontFamily: displayFontFamily,
     fontSize: 20,
-    fontWeight: FontWeight.w700,
-    letterSpacing: -0.2,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -0.15,
     height: 1.2,
     fontFeatures: [FontFeature.tabularFigures()],
   );
@@ -54,6 +77,7 @@ class KineticTypography {
     fontWeight: FontWeight.w700,
     letterSpacing: -0.64,
     height: 1.2,
+    fontFeatures: [FontFeature.tabularFigures()],
   );
 
   /// Headline Large
@@ -124,13 +148,22 @@ class KineticTypography {
     height: 1.2,
   );
 
-  /// Tiêu đề page của 5 tab chính (Activity, Analytics, History, Profile, Settings).
+  /// Tiêu đề page của các tab chính (Hôm nay, Lịch sử, Phân tích, Hồ sơ, Cài đặt).
   static const TextStyle pageTitle = TextStyle(
     fontFamily: displayFontFamily,
-    fontSize: 22,
+    fontSize: 28,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -0.56,
+    height: 1.15,
+  );
+
+  /// Tiêu đề section sạch dạng sentence-case (Mục tiêu tuần, Hoạt động gần đây).
+  static const TextStyle sectionTitle = TextStyle(
+    fontFamily: displayFontFamily,
+    fontSize: 18,
     fontWeight: FontWeight.w700,
-    letterSpacing: -0.44, // -0.02em × 22
-    height: 1.2,
+    letterSpacing: -0.25,
+    height: 1.25,
   );
 
   /// Tiêu đề page con (Details, Summary, Achievements).
@@ -199,8 +232,8 @@ class KineticTypography {
   static const TextStyle metricCompact = TextStyle(
     fontFamily: displayFontFamily,
     fontSize: 24,
-    fontWeight: FontWeight.w700,
-    letterSpacing: -0.5,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -0.3,
     height: 1.1,
     fontFeatures: [FontFeature.tabularFigures()],
   );
@@ -209,8 +242,8 @@ class KineticTypography {
   static const TextStyle metricCard = TextStyle(
     fontFamily: displayFontFamily,
     fontSize: 22,
-    fontWeight: FontWeight.w700,
-    letterSpacing: -0.44,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -0.3,
     height: 1.15,
     fontFeatures: [FontFeature.tabularFigures()],
   );
@@ -222,5 +255,6 @@ class KineticTypography {
     fontWeight: FontWeight.w700,
     letterSpacing: 1.0,
     height: 1.2,
+    fontFeatures: [FontFeature.tabularFigures()],
   );
 }

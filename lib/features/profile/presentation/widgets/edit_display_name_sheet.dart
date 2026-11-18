@@ -108,11 +108,19 @@ class _EditDisplayNameSheetState extends ConsumerState<EditDisplayNameSheet> {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-      padding: EdgeInsets.fromLTRB(20, 16, 20, 24 + bottomInset),
+      margin: const EdgeInsets.symmetric(
+        horizontal: KineticTokens.spaceXS,
+        vertical: KineticTokens.spaceSM,
+      ),
+      padding: EdgeInsets.fromLTRB(
+        KineticTokens.spaceLG,
+        KineticTokens.spaceMD,
+        KineticTokens.spaceLG,
+        KineticTokens.spaceXL + bottomInset,
+      ),
       decoration: BoxDecoration(
         color: colors.surface1,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
         border: Border.all(
           color: colors.borderSubtle,
           width: 1.2,
@@ -122,10 +130,6 @@ class _EditDisplayNameSheetState extends ConsumerState<EditDisplayNameSheet> {
             color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 28,
             offset: const Offset(0, 10),
-          ),
-          BoxShadow(
-            color: colors.primary.withValues(alpha: 0.12),
-            blurRadius: 24,
           ),
         ],
       ),
@@ -147,7 +151,7 @@ class _EditDisplayNameSheetState extends ConsumerState<EditDisplayNameSheet> {
                 ),
               ),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: KineticTokens.spaceLG),
 
             // Header Row
             Row(
@@ -168,7 +172,7 @@ class _EditDisplayNameSheetState extends ConsumerState<EditDisplayNameSheet> {
                     size: 22,
                   ),
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: KineticTokens.spaceSM),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -195,7 +199,7 @@ class _EditDisplayNameSheetState extends ConsumerState<EditDisplayNameSheet> {
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: KineticTokens.spaceLG),
 
             // Input Field
             TextFormField(
@@ -238,31 +242,31 @@ class _EditDisplayNameSheetState extends ConsumerState<EditDisplayNameSheet> {
                   color: colors.textSecondary,
                 ),
                 contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
+                  horizontal: KineticTokens.spaceMD,
+                  vertical: KineticTokens.spaceSM,
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
                   borderSide: BorderSide(
                     color: colors.borderSubtle,
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
                   borderSide: BorderSide(
                     color: colors.primary,
                     width: 1.5,
                   ),
                 ),
                 errorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
                   borderSide: BorderSide(
                     color: colors.error,
                     width: 1.2,
                   ),
                 ),
                 focusedErrorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
                   borderSide: BorderSide(
                     color: colors.error,
                     width: 1.5,
@@ -288,12 +292,12 @@ class _EditDisplayNameSheetState extends ConsumerState<EditDisplayNameSheet> {
             ),
 
             if (_errorMessage != null) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: KineticTokens.spaceXS),
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(KineticTokens.spaceXS),
                 decoration: BoxDecoration(
                   color: colors.error.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
                   border: Border.all(
                     color: colors.error.withValues(alpha: 0.4),
                   ),
@@ -319,90 +323,29 @@ class _EditDisplayNameSheetState extends ConsumerState<EditDisplayNameSheet> {
                 ),
               ),
             ],
-            const SizedBox(height: 18),
+            const SizedBox(height: KineticTokens.spaceLG),
 
             // Action Buttons
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton(
+                  child: KineticButton(
+                    label: AppTranslations.get('cancel', currentLang),
+                    variant: KineticButtonVariant.secondary,
                     onPressed: _isSaving
                         ? null
                         : () => Navigator.of(context).pop(false),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: colors.textSecondary,
-                      side: BorderSide(
-                        color: colors.borderSubtle,
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    child: Text(
-                      AppTranslations.get('cancel', currentLang),
-                      style: KineticTypography.bodyMedium.copyWith(
-                        color: colors.textSecondary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: KineticTokens.spaceSM),
                 Expanded(
                   flex: 2,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
-                      gradient: LinearGradient(
-                        colors: [colors.primary, colors.secondary],
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: colors.primary.withValues(alpha: 0.35),
-                          blurRadius: 14,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: ElevatedButton(
-                      onPressed: _isSaving ? null : _saveName,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        foregroundColor: colors.onPrimary,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      child: _isSaving
-                          ? SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.2,
-                                color: colors.onPrimary,
-                              ),
-                            )
-                          : Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.check_rounded, size: 18, color: colors.onPrimary),
-                                const SizedBox(width: 6),
-                                Text(
-                                  AppTranslations.get(
-                                    'save_changes',
-                                    currentLang,
-                                  ),
-                                  style: KineticTypography.bodyMedium.copyWith(
-                                    color: colors.onPrimary,
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
-                              ],
-                            ),
-                    ),
+                  child: KineticButton(
+                    label: AppTranslations.get('save_changes', currentLang),
+                    icon: Icons.check_rounded,
+                    variant: KineticButtonVariant.primary,
+                    isLoading: _isSaving,
+                    onPressed: _isSaving ? null : _saveName,
                   ),
                 ),
               ],

@@ -75,21 +75,14 @@ class KineticRecoveryGuidanceCard extends ConsumerWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(KineticTokens.spaceLG),
       decoration: BoxDecoration(
         color: colors.surface1,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
         border: Border.all(
-          color: colors.borderSubtle.withValues(alpha: 0.8),
-          width: 1.2,
+          color: colors.borderSubtle,
+          width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.35),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -109,7 +102,7 @@ class KineticRecoveryGuidanceCard extends ConsumerWidget {
                 ),
                 child: Icon(Icons.spa_rounded, color: colors.primary, size: 20),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: KineticTokens.spaceSM),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -117,14 +110,19 @@ class KineticRecoveryGuidanceCard extends ConsumerWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          isVi ? 'CHỈ DẪN HỒI PHỤC' : 'RECOVERY GUIDANCE',
-                          style: KineticTypography.unitLabel.copyWith(
-                            color: colors.primary,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1.2,
+                        Expanded(
+                          child: Text(
+                            isVi ? 'CHỈ DẪN HỒI PHỤC' : 'RECOVERY GUIDANCE',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: KineticTypography.unitLabel.copyWith(
+                              color: colors.primary,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1.2,
+                            ),
                           ),
                         ),
+                        const SizedBox(width: KineticTokens.spaceXS),
                         Text(
                           isVi
                               ? 'Tải vận động: $strainPercent'
@@ -153,15 +151,17 @@ class KineticRecoveryGuidanceCard extends ConsumerWidget {
           const SizedBox(height: 14),
           Row(
             children: [
-              KineticButton(
-                label: isVi ? 'Lên lịch đi bộ nhẹ' : 'Schedule light walk',
-                icon: Icons.directions_walk_rounded,
-                variant: KineticButtonVariant.secondary,
-                isFullWidth: false,
-                onPressed: () {
-                  ref.read(mainTabControllerProvider.notifier).state =
-                      activityTabIndex;
-                },
+              Flexible(
+                child: KineticButton(
+                  label: isVi ? 'Lên lịch đi bộ nhẹ' : 'Schedule light walk',
+                  icon: Icons.directions_walk_rounded,
+                  variant: KineticButtonVariant.secondary,
+                  isFullWidth: false,
+                  onPressed: () {
+                    ref.read(mainTabControllerProvider.notifier).state =
+                        activityTabIndex;
+                  },
+                ),
               ),
             ],
           ),

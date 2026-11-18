@@ -1,4 +1,5 @@
 import 'package:fitness_exercise_application/features/activity/presentation/widgets/kinetic_activity_top_bar.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -27,7 +28,10 @@ void main() {
       expect(find.text('KHỞI ĐỘNG LUYỆN TẬP'), findsNothing);
       expect(find.text('Chọn bộ môn'), findsOneWidget);
       expect(find.text('GPS SẴN SÀNG'), findsOneWidget);
-      expect(find.byIcon(Icons.satellite_alt_rounded), findsOneWidget);
+      expect(
+        find.byIcon(BladeIcon.iconDataFor(BladeIconName.gps)),
+        findsOneWidget,
+      );
 
       await tester.tap(find.text('GPS SẴN SÀNG'));
       await tester.pump();

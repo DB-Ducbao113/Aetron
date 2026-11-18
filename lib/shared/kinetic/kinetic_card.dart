@@ -2,14 +2,9 @@ import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart'
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:flutter/material.dart';
 
-/// Unified Kinetic Card — the single card component for the app.
-///
-/// Features:
-/// - Consistent border radius from KineticTokens
-/// - Optional top accent bar
-/// - Optional glow shadow
-/// - Built-in semantics for accessibility
-/// - Material ink ripple feedback
+/// Clean modern surface card:
+/// - Light mode: pure white (#FFFFFF) with subtle whisper elevation (borderless unless specified)
+/// - Dark mode: elevated charcoal (#16161A) separated by tonal contrast
 class KineticCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
@@ -22,6 +17,7 @@ class KineticCard extends StatelessWidget {
   final bool hasGlow;
   final double borderRadius;
   final String? semanticLabel;
+  final Gradient? gradient;
 
   const KineticCard({
     super.key,
@@ -34,31 +30,40 @@ class KineticCard extends StatelessWidget {
     this.topAccentColor,
     this.glowColor,
     this.hasGlow = false,
-    this.borderRadius = KineticTokens.radiusSM,
+    this.borderRadius = KineticTokens.radiusLG,
     this.semanticLabel,
+    this.gradient,
   });
 
   @override
   Widget build(BuildContext context) {
     final colors = context.kinetic;
+    final isLight = Theme.of(context).brightness == Brightness.light;
     final bg = backgroundColor ?? colors.surface1;
-    final border = borderColor ?? colors.borderSubtle;
 
     Widget content = Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: bg,
+        color: gradient == null ? bg : null,
+        gradient: gradient,
         borderRadius: BorderRadius.circular(borderRadius),
-        border: Border.all(color: border, width: 1),
+        border: borderColor != null
+            ? Border.all(color: borderColor!, width: 1)
+            : (isLight
+                ? null
+                : Border.all(
+                    color: colors.borderSubtle.withValues(alpha: 0.5),
+                    width: 0.5,
+                  )),
         boxShadow: hasGlow
             ? [
                 BoxShadow(
-                  color: (glowColor ?? colors.primary).withValues(alpha: 0.12),
-                  blurRadius: 20,
+                  color: (glowColor ?? colors.primary).withValues(alpha: 0.14),
+                  blurRadius: 18,
                   spreadRadius: -2,
                 ),
               ]
-            : null,
+            : (isLight ? KineticTokens.shadowCardLight() : null),
       ),
       child: child,
     );
@@ -71,7 +76,7 @@ class KineticCard extends StatelessWidget {
             top: 0,
             left: 0,
             right: 0,
-            height: 2,
+            height: 3,
             child: ClipRRect(
               borderRadius: BorderRadius.vertical(
                 top: Radius.circular(borderRadius),
@@ -89,8 +94,8 @@ class KineticCard extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(borderRadius),
-          splashColor: colors.primary.withValues(alpha: 0.12),
-          highlightColor: colors.primary.withValues(alpha: 0.06),
+          splashColor: colors.primary.withValues(alpha: 0.08),
+          highlightColor: colors.primary.withValues(alpha: 0.04),
           child: content,
         ),
       );

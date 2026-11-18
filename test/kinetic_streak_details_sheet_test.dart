@@ -1,12 +1,20 @@
+import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/home/presentation/providers/streak_providers.dart';
 import 'package:fitness_exercise_application/features/home/presentation/widgets/kinetic_streak_details_sheet.dart';
 import 'package:fitness_exercise_application/features/shell/presentation/providers/main_tab_controller_provider.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_button.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_card.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_theme.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+class _TestViLanguageNotifier extends AppLanguageNotifier {
+  _TestViLanguageNotifier() : super() {
+    state = AppLanguage.vi;
+  }
+}
 
 void main() {
   group('KineticStreakDetailsSheet Tests', () {
@@ -21,6 +29,9 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
+          overrides: [
+            appLanguageProvider.overrideWith((_) => _TestViLanguageNotifier()),
+          ],
           child: MaterialApp(
             theme: KineticTheme.darkTheme,
             home: Scaffold(
@@ -86,6 +97,9 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
+          overrides: [
+            appLanguageProvider.overrideWith((_) => _TestViLanguageNotifier()),
+          ],
           child: MaterialApp(
             theme: KineticTheme.lightTheme,
             home: Scaffold(
@@ -111,16 +125,13 @@ void main() {
       await tester.tap(find.text('Open Sheet'));
       await tester.pumpAndSettle();
 
-      // Verify 15 days streak. `find.text('15')` alone is ambiguous: the week
-      // strip renders a cell for each calendar day, and its number collides
-      // with the streak count depending on the date the test runs on. Match
-      // the hero counter's own typography (fontSize 48) instead.
+      // Verify 15 days streak counter via hero fontSize (metricMega)
       expect(
         find.byWidgetPredicate(
           (widget) =>
               widget is Text &&
               widget.data == '15' &&
-              widget.style?.fontSize == 48,
+              widget.style?.fontSize == KineticTypography.metricMega.fontSize,
         ),
         findsOneWidget,
       );

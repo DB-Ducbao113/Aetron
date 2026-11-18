@@ -4,7 +4,7 @@ import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
 import 'package:flutter/material.dart';
 
-/// 3D Interactive Timeline Roadmap for Structured Running Programs.
+/// Interactive Timeline Roadmap for Structured Running Programs (V4: flat).
 class ProgramInteractiveTimeline extends StatelessWidget {
   final StructuredRunningProgram program;
   final AppLanguage currentLang;
@@ -66,10 +66,10 @@ class _TimelineStepNode extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Left Column: Node Icon + Vertical Glowing Circuit Line
+          // Left Column: Node Icon + Flat Hairline Track
           Column(
             children: [
-              // Glowing Node Orb
+              // Node Orb (V4: flat — no glow)
               Container(
                 width: 32,
                 height: 32,
@@ -77,12 +77,6 @@ class _TimelineStepNode extends StatelessWidget {
                   shape: BoxShape.circle,
                   color: color.withValues(alpha: 0.18),
                   border: Border.all(color: color, width: 2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: color.withValues(alpha: 0.35),
-                      blurRadius: 10,
-                    ),
-                  ],
                 ),
                 child: Center(
                   child: Icon(
@@ -92,22 +86,13 @@ class _TimelineStepNode extends StatelessWidget {
                   ),
                 ),
               ),
-              // Connecting Line
+              // Connecting Line — flat hairline track
               if (!isLast)
                 Expanded(
                   child: Container(
-                    width: 2,
+                    width: 1,
                     margin: const EdgeInsets.symmetric(vertical: 4),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          color.withValues(alpha: 0.6),
-                          colors.borderSubtle,
-                        ],
-                      ),
-                    ),
+                    color: colors.borderSubtle,
                   ),
                 ),
             ],
@@ -121,18 +106,11 @@ class _TimelineStepNode extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: colors.surface1,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
                 border: Border.all(
-                  color: color.withValues(alpha: 0.35),
+                  color: colors.borderSubtle,
                   width: 1.0,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.25),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -145,7 +123,7 @@ class _TimelineStepNode extends StatelessWidget {
                         child: Text(
                           title,
                           style: KineticTypography.label.copyWith(
-                            color: Colors.white,
+                            color: colors.textPrimary,
                             fontWeight: FontWeight.w900,
                           ),
                           maxLines: 1,
@@ -200,7 +178,7 @@ class _TimelineStepNode extends StatelessWidget {
                         Icon(
                           Icons.lightbulb_outline_rounded,
                           size: 13,
-                          color: const Color(0xFFFFD54F).withValues(alpha: 0.85),
+                          color: colors.tertiary.withValues(alpha: 0.85),
                         ),
                         const SizedBox(width: 5),
                         Expanded(

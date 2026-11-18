@@ -22,16 +22,22 @@ class KineticSensorStatusBar extends StatelessWidget {
     final defaultEnv = isVi ? 'Thời tiết lý tưởng · 24°C' : 'Optimal weather · 24°C';
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: KineticTokens.page,
+        vertical: KineticTokens.spaceXXS,
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           // GPS / Sensor Pill
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            padding: const EdgeInsets.symmetric(
+              horizontal: KineticTokens.spaceSM,
+              vertical: KineticTokens.spaceXXS,
+            ),
             decoration: BoxDecoration(
               color: colors.surface1.withValues(alpha: 0.8),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
               border: Border.all(color: colors.borderSubtle, width: 1),
             ),
             child: Row(
@@ -43,16 +49,9 @@ class KineticSensorStatusBar extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: isGpsReady ? colors.primary : colors.tertiary,
                     shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: (isGpsReady ? colors.primary : colors.tertiary)
-                            .withValues(alpha: 0.6),
-                        blurRadius: 4,
-                      ),
-                    ],
                   ),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: KineticTokens.spaceXXS),
                 Text(
                   statusText ?? defaultStatus,
                   style: KineticTypography.unitLabel.copyWith(
@@ -66,10 +65,13 @@ class KineticSensorStatusBar extends StatelessWidget {
 
           // Environment Pill
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            padding: const EdgeInsets.symmetric(
+              horizontal: KineticTokens.spaceSM,
+              vertical: KineticTokens.spaceXXS,
+            ),
             decoration: BoxDecoration(
               color: colors.surface1.withValues(alpha: 0.6),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
               border: Border.all(color: colors.borderSubtle, width: 1),
             ),
             child: Row(
@@ -80,7 +82,7 @@ class KineticSensorStatusBar extends StatelessWidget {
                   size: 13,
                   color: colors.secondary,
                 ),
-                const SizedBox(width: 5),
+                const SizedBox(width: KineticTokens.spaceXXS),
                 Text(
                   environmentText ?? defaultEnv,
                   style: KineticTypography.unitLabel.copyWith(

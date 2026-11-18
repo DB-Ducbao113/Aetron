@@ -1,7 +1,9 @@
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/profile/domain/entities/achievement_badge.dart';
 import 'package:fitness_exercise_application/features/profile/presentation/widgets/achievement_detail_sheet.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_backdrop.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
 import 'package:flutter/material.dart';
 
@@ -28,18 +30,22 @@ class KineticNextMilestoneSpotlight extends StatelessWidget {
           badge: badge,
           currentLang: currentLang,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
         child: Container(
-          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: colors.surface1,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: colors.borderAccent,
-              width: 1.2,
-            ),
+            borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
+            border: Border.all(color: colors.borderSubtle),
           ),
-          child: Row(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: SceneBackdrop(tint: colors.primary),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(KineticTokens.spaceMD),
+                  child: Row(
             children: [
               // Icon Emblem
               Container(
@@ -52,7 +58,7 @@ class KineticNextMilestoneSpotlight extends StatelessWidget {
                 ),
                 child: Icon(badge.icon, size: 22, color: colors.primary),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: KineticTokens.spaceSM),
 
               // Info
               Expanded(
@@ -92,7 +98,11 @@ class KineticNextMilestoneSpotlight extends StatelessWidget {
                   color: colors.primary,
                 ),
               ),
-            ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

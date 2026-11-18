@@ -2,6 +2,7 @@ import 'package:fitness_exercise_application/core/legal/legal_documents.dart';
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/legal/presentation/widgets/legal_info_panel.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:flutter/material.dart';
 
 /// Clean, document-oriented layout component for long-form legal reading.
@@ -33,7 +34,10 @@ class LegalDocumentLayout extends StatelessWidget {
           children: [
             // Standard Document Header with Back Button
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(
+                horizontal: KineticTokens.spaceMD,
+                vertical: KineticTokens.spaceSM,
+              ),
               decoration: BoxDecoration(
                 border: Border(bottom: BorderSide(color: colors.borderSubtle)),
               ),
@@ -41,9 +45,10 @@ class LegalDocumentLayout extends StatelessWidget {
                 children: [
                   IconButton(
                     onPressed: () => Navigator.of(context).maybePop(),
-                    icon: Icon(
-                      Icons.arrow_back_rounded,
+                    icon: BladeIcon(
+                      BladeIconName.chevL,
                       color: colors.textPrimary,
+                      size: 22,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -55,9 +60,8 @@ class LegalDocumentLayout extends StatelessWidget {
                           lang == AppLanguage.vi
                               ? 'VĂN BẢN PHÁP LÝ'
                               : 'LEGAL DOCUMENT',
-                          style: KineticTypography.unitLabel.copyWith(
+                          style: KineticTypography.pageEyebrow.copyWith(
                             color: colors.primary,
-                            letterSpacing: 1.5,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -80,7 +84,10 @@ class LegalDocumentLayout extends StatelessWidget {
             // Main Document Scroll View
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                horizontal: KineticTokens.page,
+                vertical: KineticTokens.spaceMD,
+              ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -118,23 +125,23 @@ class LegalDocumentLayout extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: KineticTokens.spaceMD),
 
                     // Restrained Fitness & Health Disclaimer Info Panel
                     if (showDisclaimer) ...[
                       LegalInfoPanel(lang: lang),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: KineticTokens.spaceLG),
                     ],
 
                     // Compact "ON THIS PAGE" Table of Contents List
                     _TableOfContents(sections: sections, lang: lang),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: KineticTokens.spaceXL),
 
                     Divider(
                       color: colors.borderSubtle,
                       height: 1,
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: KineticTokens.spaceXL),
 
                     // Document Sections List (High-readability typography)
                     for (var i = 0; i < sections.length; i++) ...[
@@ -143,10 +150,10 @@ class LegalDocumentLayout extends StatelessWidget {
                         section: sections[i],
                       ),
                       if (i != sections.length - 1)
-                        const SizedBox(height: 24),
+                        const SizedBox(height: KineticTokens.spaceXL),
                     ],
 
-                    const SizedBox(height: 32),
+                    const SizedBox(height: KineticTokens.spaceXXL),
                     Center(
                       child: Text(
                         '— ${lang == AppLanguage.vi ? 'Hết tài liệu' : 'End of Document'} —',
@@ -155,7 +162,7 @@ class LegalDocumentLayout extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: KineticTokens.spaceXXXL),
                   ],
                 ),
               ),
@@ -181,11 +188,11 @@ class _TableOfContents extends StatelessWidget {
     final colors = context.kinetic;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(KineticTokens.spaceMD),
       decoration: BoxDecoration(
         color: colors.surface1,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colors.borderSubtle),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
+        border: Border.all(color: colors.borderStrong, width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -212,29 +219,33 @@ class _TableOfContents extends StatelessWidget {
           const SizedBox(height: 10),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: sections.map((sec) {
+            children: sections.asMap().entries.map((entry) {
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 child: Row(
                   children: [
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: BoxDecoration(
+                    Text(
+                      (entry.key + 1).toString().padLeft(2, '0'),
+                      style: KineticTypography.label.copyWith(
                         color: colors.primary,
-                        shape: BoxShape.circle,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        sec.title,
+                        entry.value.title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: KineticTypography.bodySmall.copyWith(
                           color: colors.textSecondary,
                         ),
                       ),
+                    ),
+                    BladeIcon(
+                      BladeIconName.chevR,
+                      color: colors.textMuted,
+                      size: 18,
                     ),
                   ],
                 ),
@@ -260,30 +271,51 @@ class _LegalSectionBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.kinetic;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Section Title
-        Text(
-          section.title,
-          style: KineticTypography.headlineSmall.copyWith(
-            color: colors.textPrimary,
-            fontWeight: FontWeight.w800,
-            height: 1.3,
+    return KineticCard(
+      padding: const EdgeInsets.all(KineticTokens.spaceMD),
+      borderRadius: KineticTokens.radiusLG,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section Title — numbered heading (primary numeral + title)
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                index.toString().padLeft(2, '0'),
+                style: KineticTypography.headlineSmall.copyWith(
+                  color: colors.primary,
+                  fontWeight: FontWeight.w800,
+                  height: 1.3,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  section.title,
+                  style: KineticTypography.headlineSmall.copyWith(
+                    color: colors.textPrimary,
+                    fontWeight: FontWeight.w800,
+                    height: 1.3,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ),
-        const SizedBox(height: 10),
+          const SizedBox(height: 10),
 
-        // Section Body Content
-        SelectableText(
-          section.content,
-          style: KineticTypography.bodyMedium.copyWith(
-            color: colors.textPrimary.withValues(alpha: 0.9),
-            height: 1.65,
-            letterSpacing: 0.15,
+          // Section Body Content
+          SelectableText(
+            section.content,
+            style: KineticTypography.bodyMedium.copyWith(
+              color: colors.textPrimary.withValues(alpha: 0.9),
+              height: 1.65,
+              letterSpacing: 0.15,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

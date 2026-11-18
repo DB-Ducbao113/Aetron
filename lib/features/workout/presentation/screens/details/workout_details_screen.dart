@@ -14,8 +14,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class WorkoutDetailsScreen extends ConsumerWidget {
   final String workoutId;
+  final bool showMapTiles;
 
-  const WorkoutDetailsScreen({super.key, required this.workoutId});
+  const WorkoutDetailsScreen({
+    super.key,
+    required this.workoutId,
+    this.showMapTiles = true,
+  });
 
   void _showDeleteDialog(BuildContext context, WidgetRef ref) {
     final lang = ref.read(appLanguageProvider);
@@ -117,19 +122,20 @@ class WorkoutDetailsScreen extends ConsumerWidget {
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.fromLTRB(KineticTokens.page, 8, KineticTokens.page, 40),
                     children: [
-                      // 1. Activity Header (Chỉ hiển thị Đi bộ / Chạy bộ / Đạp xe, không có thứ ở dưới)
+                      // 1. Activity Header
                       KineticDetailsHeader(
                         workout: workout,
                         currentLang: currentLang,
                       ),
                       const SizedBox(height: 14),
 
-                      // 2. Route Map Card (Màn hình route)
+                      // 2. Route Map Card
                       KineticDetailsRouteCard(
                         routePoints: routePoints,
                         routeSegments: routeSegments,
                         activityType: workout.activityType,
                         currentLang: currentLang,
+                        showMapTiles: showMapTiles,
                         onViewFullMap: routePoints.length < 2
                             ? null
                             : () {

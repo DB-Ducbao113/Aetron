@@ -9,6 +9,10 @@ class KineticMetricTile extends StatelessWidget {
   final IconData? icon;
   final Color? accentColor;
   final bool compact;
+
+  /// V4: render the value at metricMega — the single biggest number on
+  /// screen (live record distance, summary headline).
+  final bool hero;
   final String? semanticLabel;
 
   const KineticMetricTile({
@@ -19,6 +23,7 @@ class KineticMetricTile extends StatelessWidget {
     this.icon,
     this.accentColor,
     this.compact = false,
+    this.hero = false,
     this.semanticLabel,
   });
 
@@ -60,13 +65,17 @@ class KineticMetricTile extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     value,
-                    style: compact
-                        ? KineticTypography.metricMedium.copyWith(
+                    style: hero
+                        ? KineticTypography.metricMega.copyWith(
                             color: colors.textPrimary,
                           )
-                        : KineticTypography.metricHero.copyWith(
-                            color: colors.textPrimary,
-                          ),
+                        : compact
+                            ? KineticTypography.metricMedium.copyWith(
+                                color: colors.textPrimary,
+                              )
+                            : KineticTypography.metricHero.copyWith(
+                                color: colors.textPrimary,
+                              ),
                   ),
                 ),
               ),

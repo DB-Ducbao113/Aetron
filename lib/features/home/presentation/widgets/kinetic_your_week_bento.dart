@@ -1,5 +1,7 @@
+import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 
 class KineticYourWeekBento extends StatelessWidget {
   final double weeklyDistanceKm;
@@ -11,6 +13,15 @@ class KineticYourWeekBento extends StatelessWidget {
   final bool isVi;
   final bool useMetricUnits;
 
+  /// Active ISO weekdays (`DateTime.monday == 1` .. `DateTime.sunday == 7`)
+  /// completed during the current week.
+  final Set<int> activeWeekdays;
+
+  /// Optional goal-aligned display override (when goal is workouts or calories).
+  final double? goalCurrent;
+  final double? goalTarget;
+  final String? goalUnit;
+
   const KineticYourWeekBento({
     super.key,
     required this.weeklyDistanceKm,
@@ -21,347 +32,215 @@ class KineticYourWeekBento extends StatelessWidget {
     this.onSetGoalTap,
     this.isVi = true,
     this.useMetricUnits = true,
+    this.activeWeekdays = const <int>{},
+    this.goalCurrent,
+    this.goalTarget,
+    this.goalUnit,
   });
 
   @override
   Widget build(BuildContext context) {
     final colors = context.kinetic;
 
-    final progress = targetDistanceKm > 0
-        ? (weeklyDistanceKm / targetDistanceKm).clamp(0.0, 1.0)
+    final displayCurrent = goalCurrent ??
+        (useMetricUnits
+            ? weeklyDistanceKm
+            : WorkoutFormatters.kmToMi(weeklyDistanceKm));
+    final displayTarget = goalTarget ??
+        (useMetricUnits
+            ? targetDistanceKm
+            : WorkoutFormatters.kmToMi(targetDistanceKm));
+    final unit = goalUnit ?? (useMetricUnits ? 'km' : 'mi');
+
+    final progress = displayTarget > 0
+        ? (displayCurrent / displayTarget).clamp(0.0, 1.0)
         : 0.0;
-    final percent = (progress * 100).round();
-    final unit = useMetricUnits ? 'km' : 'mi';
+
+    final currentStr = (unit == 'km' || unit == 'mi')
+        ? displayCurrent.toStringAsFixed(1)
+        : displayCurrent.round().toString();
+    final targetStr = (unit == 'km' || unit == 'mi')
+        ? displayTarget.toStringAsFixed(0)
+        : displayTarget.round().toString();
+
+    final todayWeekday = DateTime.now().weekday;
+    final dayLabels = isVi
+        ? const ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']
+        : const ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: KineticTokens.page,
-        vertical: 8,
+        vertical: KineticTokens.spaceXS,
       ),
       child: KineticCard(
         padding: const EdgeInsets.all(KineticTokens.spaceMD),
+        borderRadius: KineticTokens.radiusLG,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Header
+            // 1. Header Row
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      isVi ? 'Tuần này của bạn' : 'Your Week',
-                      style: KineticTypography.headlineSmall.copyWith(
-                        color: colors.textPrimary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      dateRangeText,
-                      style: KineticTypography.bodySmall.copyWith(
-                        color: colors.textMuted,
-                      ),
-                    ),
-                  ],
+                Text(
+                  isVi ? 'Mục tiêu tuần' : 'Weekly goal',
+                  style: KineticTypography.bodyMedium.copyWith(
+                    color: colors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 Material(
                   color: Colors.transparent,
                   child: InkWell(
                     onTap: onSetGoalTap,
-                    borderRadius: BorderRadius.circular(20),
-                    child: Container(
+                    borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
+                    child: Padding(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: colors.primary.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: colors.primary.withValues(alpha: 0.4),
-                          width: 1,
-                        ),
+                        horizontal: 6,
+                        vertical: 4,
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            Icons.track_changes_rounded,
-                            size: 13,
-                            color: colors.primary,
-                          ),
-                          const SizedBox(width: 5),
                           Text(
-                            isVi ? 'Mục tiêu: $percent%' : 'Goal: $percent%',
-                            style: KineticTypography.unitLabel.copyWith(
+                            isVi ? 'Điều chỉnh' : 'Adjust',
+                            style: KineticTypography.label.copyWith(
                               color: colors.primary,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
                             ),
                           ),
-                          const SizedBox(width: 3),
+                          const SizedBox(width: 2),
                           Icon(
-                            Icons.chevron_right_rounded,
-                            size: 14,
+                            LucideIcons.chevron_right,
+                            size: 15,
                             color: colors.primary,
                           ),
                         ],
                       ),
                     ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // 2. Bento Stats Grid
-            Row(
-              children: [
-                // Box 1: Distance
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: colors.surface2,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: colors.borderSubtle, width: 1),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          isVi ? 'Tổng quãng đường' : 'Total Distance',
-                          style: KineticTypography.caption.copyWith(
-                            color: colors.textMuted,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
-                          children: [
-                            Text(
-                              weeklyDistanceKm.toStringAsFixed(1),
-                              style: KineticTypography.metricHero.copyWith(
-                                color: colors.textPrimary,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              unit.toUpperCase(),
-                              style: KineticTypography.unitLabel.copyWith(
-                                color: colors.primary,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.trending_up_rounded,
-                              size: 14,
-                              color: colors.secondary,
-                            ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                isVi
-                                    ? '+12% so với tuần trước'
-                                    : '+12% vs last week',
-                                style: KineticTypography.unitLabel.copyWith(
-                                  color: colors.secondary,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-
-                // Box 2: Workouts Count
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: colors.surface2,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: colors.borderSubtle, width: 1),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          isVi ? 'Số buổi tập' : 'Workouts',
-                          style: KineticTypography.caption.copyWith(
-                            color: colors.textMuted,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
-                          children: [
-                            Text(
-                              '$workoutCount',
-                              style: KineticTypography.metricHero.copyWith(
-                                color: colors.textPrimary,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              isVi ? 'BUỔI' : 'SESSIONS',
-                              style: KineticTypography.unitLabel.copyWith(
-                                color: colors.primary,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.check_circle_outline_rounded,
-                              size: 14,
-                              color: colors.primary,
-                            ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                isVi
-                                    ? 'Mục tiêu: $targetWorkoutCount buổi/tuần'
-                                    : 'Target: $targetWorkoutCount sessions/wk',
-                                style: KineticTypography.unitLabel.copyWith(
-                                  color: colors.textMuted,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // 3. Progress Bar with Glow
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  isVi
-                      ? 'Tiến độ tích lũy (${weeklyDistanceKm.toStringAsFixed(1)} / ${targetDistanceKm.toStringAsFixed(0)} $unit)'
-                      : 'Accumulated Progress (${weeklyDistanceKm.toStringAsFixed(1)} / ${targetDistanceKm.toStringAsFixed(0)} $unit)',
-                  style: KineticTypography.bodySmall.copyWith(
-                    color: colors.textMuted,
-                  ),
-                ),
-                Text(
-                  '$percent%',
-                  style: KineticTypography.label.copyWith(
-                    color: colors.primary,
-                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 6),
+
+            // 2. Hero Distance / Target Figure
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(
+                  currentStr,
+                  style: KineticTypography.displayLarge.copyWith(
+                    color: colors.textPrimary,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 34,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '/ $targetStr $unit',
+                  style: KineticTypography.headlineMedium.copyWith(
+                    color: colors.textMuted,
+                    fontWeight: FontWeight.w600,
+                    fontFeatures: KineticTypography.tabularFigures,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: KineticTokens.spaceSM),
+
+            // 3. Linear Progress Bar
             ClipRRect(
               borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
               child: Container(
                 height: 8,
-                color: colors.surface3,
-                child: Stack(
-                  children: [
-                    FractionallySizedBox(
-                      widthFactor: progress,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: colors.primary,
-                          borderRadius:
-                              BorderRadius.circular(KineticTokens.radiusPill),
-                          boxShadow: [
-                            BoxShadow(
-                              color: colors.primary.withValues(alpha: 0.6),
-                              blurRadius: 8,
-                            ),
-                          ],
-                        ),
+                color: colors.surface2,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: FractionallySizedBox(
+                    widthFactor: progress,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: colors.accentFill,
+                        borderRadius:
+                            BorderRadius.circular(KineticTokens.radiusPill),
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // 4. Dedicated Adjust Goal Action Button
-            Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: onSetGoalTap,
-                borderRadius: BorderRadius.circular(8),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.tune_rounded,
-                            size: 14,
-                            color: colors.textSecondary,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            isVi
-                                ? 'Điều chỉnh mục tiêu rèn luyện'
-                                : 'Adjust your fitness goals',
-                            style: KineticTypography.bodySmall.copyWith(
-                              color: colors.textSecondary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            isVi ? 'Cài đặt' : 'Settings',
-                            style: KineticTypography.unitLabel.copyWith(
-                              color: colors.primary,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(width: 2),
-                          Icon(
-                            Icons.arrow_forward_ios_rounded,
-                            size: 10,
-                            color: colors.primary,
-                          ),
-                        ],
-                      ),
-                    ],
                   ),
                 ),
               ),
             ),
+            const SizedBox(height: KineticTokens.spaceMD),
+
+            // 4. 7-Day Activity Strip (T2 - CN)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                for (int i = 0; i < 7; i++)
+                  _DayCheckItem(
+                    label: dayLabels[i],
+                    isActive: activeWeekdays.contains(i + 1),
+                    isToday: todayWeekday == (i + 1),
+                  ),
+              ],
+            ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _DayCheckItem extends StatelessWidget {
+  final String label;
+  final bool isActive;
+  final bool isToday;
+
+  const _DayCheckItem({
+    required this.label,
+    required this.isActive,
+    required this.isToday,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.kinetic;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 30,
+          height: 30,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: isActive ? colors.accentFill : colors.surface2,
+            border: !isActive && isToday
+                ? Border.all(color: colors.primary, width: 1.5)
+                : null,
+          ),
+          alignment: Alignment.center,
+          child: isActive
+              ? const Icon(
+                  LucideIcons.check,
+                  size: 15,
+                  color: Colors.white,
+                )
+              : null,
+        ),
+        const SizedBox(height: 6),
+        Text(
+          label,
+          style: KineticTypography.caption.copyWith(
+            color: isToday ? colors.textPrimary : colors.textMuted,
+            fontWeight: isToday ? FontWeight.w700 : FontWeight.w500,
+            fontSize: 11.5,
+          ),
+        ),
+      ],
     );
   }
 }

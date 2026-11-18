@@ -1,5 +1,6 @@
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
 import 'package:flutter/material.dart';
 
@@ -27,12 +28,12 @@ class KineticAchievementsTopBar extends StatelessWidget {
           label: currentLang == AppLanguage.vi ? 'Quay lại' : 'Back',
           child: InkWell(
             onTap: () => Navigator.of(context).pop(),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
             child: Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(KineticTokens.spaceXS),
               decoration: BoxDecoration(
                 color: colors.surface1,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
                 border: Border.all(color: colors.borderSubtle),
               ),
               child: Icon(
@@ -43,7 +44,7 @@ class KineticAchievementsTopBar extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 14),
+        const SizedBox(width: KineticTokens.spaceSM),
 
         // Eyebrow & Title
         Expanded(
@@ -73,10 +74,13 @@ class KineticAchievementsTopBar extends StatelessWidget {
 
         // Counter Chip
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          padding: const EdgeInsets.symmetric(
+            horizontal: KineticTokens.spaceSM,
+            vertical: KineticTokens.spaceXXS + 2,
+          ),
           decoration: BoxDecoration(
             color: colors.surface2,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
             border: Border.all(color: colors.borderAccent),
           ),
           child: Row(

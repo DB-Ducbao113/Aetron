@@ -76,21 +76,14 @@ class KineticActivityMixBento extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(KineticTokens.spaceLG),
       decoration: BoxDecoration(
         color: colors.surface1,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
         border: Border.all(
-          color: colors.borderSubtle.withValues(alpha: 0.8),
-          width: 1.2,
+          color: colors.borderSubtle,
+          width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.35),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -99,33 +92,40 @@ class KineticActivityMixBento extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isVi ? 'CƠ CẤU MÔN TẬP' : 'DISCIPLINE BREAKDOWN',
-                    style: KineticTypography.headlineSmall.copyWith(
-                      color: colors.textPrimary,
-                      fontWeight: FontWeight.w800,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isVi ? 'CƠ CẤU MÔN TẬP' : 'DISCIPLINE BREAKDOWN',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: KineticTypography.headlineSmall.copyWith(
+                        color: colors.textPrimary,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    isVi
-                        ? 'Phân bổ thể thao sức bền đa môn'
-                        : 'Endurance multi-sport volume share',
-                    style: KineticTypography.bodySmall.copyWith(
-                      color: colors.textSecondary,
+                    const SizedBox(height: 2),
+                    Text(
+                      isVi
+                          ? 'Phân bổ thể thao sức bền đa môn'
+                          : 'Endurance multi-sport volume share',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: KineticTypography.bodySmall.copyWith(
+                        color: colors.textSecondary,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: KineticTokens.spaceXS),
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: colors.surface2,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
                   border: Border.all(color: colors.borderSubtle),
                 ),
                 child: Text(
@@ -139,11 +139,11 @@ class KineticActivityMixBento extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: KineticTokens.spaceMD),
 
           // Continuous Segmented Bar
           ClipRRect(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
             child: Container(
               height: 10,
               width: double.infinity,
@@ -179,7 +179,7 @@ class KineticActivityMixBento extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: KineticTokens.spaceMD),
 
           // 3 Sport Cards Grid
           Row(
@@ -196,7 +196,7 @@ class KineticActivityMixBento extends StatelessWidget {
                   isVi: isVi,
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: KineticTokens.spaceXS),
 
               // Running
               Expanded(
@@ -210,7 +210,7 @@ class KineticActivityMixBento extends StatelessWidget {
                   isVi: isVi,
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: KineticTokens.spaceXS),
 
               // Walking
               Expanded(
@@ -256,59 +256,75 @@ class _SportTile extends StatelessWidget {
     final colors = context.kinetic;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+      padding: const EdgeInsets.all(KineticTokens.spaceSM),
       decoration: BoxDecoration(
         color: colors.surface2,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
         border: Border.all(
-          color: colors.borderSubtle.withValues(alpha: 0.8),
+          color: colors.borderSubtle,
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 7,
-                    height: 7,
-                    decoration: BoxDecoration(
-                      color: dotColor,
-                      shape: BoxShape.circle,
+              Expanded(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: BoxDecoration(
+                        color: dotColor,
+                        shape: BoxShape.circle,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 5),
-                  Text(
-                    name,
-                    style: KineticTypography.caption.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: colors.textPrimary,
+                    const SizedBox(width: KineticTokens.spaceXXS),
+                    Flexible(
+                      child: Text(
+                        name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: KineticTypography.caption.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: colors.textPrimary,
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: 4),
               Icon(icon, size: 14, color: dotColor),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            pct,
-            style: KineticTypography.pageTitleCompact.copyWith(
-              color: dotColor,
-              fontFeatures: KineticTypography.tabularFigures,
+          const SizedBox(height: KineticTokens.spaceXS),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              pct,
+              maxLines: 1,
+              style: KineticTypography.pageTitleCompact.copyWith(
+                color: dotColor,
+                fontFeatures: KineticTypography.tabularFigures,
+              ),
             ),
           ),
           const SizedBox(height: 2),
-          Text(
-            distance,
-            style: KineticTypography.caption.copyWith(
-              fontWeight: FontWeight.w600,
-              color: colors.textSecondary,
-              fontFeatures: KineticTypography.tabularFigures,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              distance,
+              maxLines: 1,
+              style: KineticTypography.caption.copyWith(
+                fontWeight: FontWeight.w600,
+                color: colors.textSecondary,
+                fontFeatures: KineticTypography.tabularFigures,
+              ),
             ),
           ),
         ],

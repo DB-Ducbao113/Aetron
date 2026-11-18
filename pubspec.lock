@@ -414,6 +414,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.1"
+  flutter_lucide:
+    dependency: "direct main"
+    description:
+      name: flutter_lucide
+      sha256: "797315bdd38cf04e47628a522bd355633e3e43666901308fed67b2aa51c6e925"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.72.0"
   flutter_map:
     dependency: "direct main"
     description:

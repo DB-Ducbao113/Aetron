@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
 import 'package:flutter/material.dart';
@@ -142,24 +143,13 @@ class _LiveLapHudToastState extends State<LiveLapHudToast>
             margin: const EdgeInsets.symmetric(horizontal: 16),
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
             decoration: BoxDecoration(
-              color: const Color(0xFF091222).withValues(alpha: 0.95),
-              borderRadius: BorderRadius.circular(20),
+              gradient: KineticGradients.hudSurface(colors),
+              borderRadius: BorderRadius.circular(KineticTokens.radiusXL),
               border: Border.all(
                 color: deltaColor.withValues(alpha: 0.6),
                 width: 1.5,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.7),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-                BoxShadow(
-                  color: deltaColor.withValues(alpha: 0.25),
-                  blurRadius: 18,
-                  spreadRadius: -2,
-                ),
-              ],
+              boxShadow: KineticTokens.shadowPanel(Colors.black),
             ),
             child: Row(
               children: [
@@ -243,8 +233,8 @@ class _LiveLapHudToastState extends State<LiveLapHudToast>
                 ),
 
                 // Dismiss Icon
-                Icon(
-                  Icons.close_rounded,
+                BladeIcon(
+                  BladeIconName.x,
                   color: colors.textSecondary,
                   size: 18,
                 ),
@@ -313,12 +303,6 @@ class LiveDeltaPaceGauge extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: statusColor,
-              boxShadow: [
-                BoxShadow(
-                  color: statusColor.withValues(alpha: 0.6),
-                  blurRadius: 6,
-                ),
-              ],
             ),
           ),
           const SizedBox(width: 6),

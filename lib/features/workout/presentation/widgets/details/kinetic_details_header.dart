@@ -2,6 +2,7 @@ import 'package:fitness_exercise_application/core/localization/app_translations.
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
 import 'package:flutter/material.dart';
 
@@ -79,10 +80,10 @@ class KineticDetailsHeader extends StatelessWidget {
               height: 48,
               decoration: BoxDecoration(
                 color: sportColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
                 border: Border.all(
                   color: sportColor.withValues(alpha: 0.35),
-                  width: 1.2,
+                  width: 1,
                 ),
               ),
               child: Icon(
@@ -126,11 +127,7 @@ class KineticDetailsHeader extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                 color: badgeColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(
-                  color: badgeColor.withValues(alpha: 0.35),
-                  width: 1,
-                ),
+                borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -163,7 +160,7 @@ class KineticDetailsHeader extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: badgeColor.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
               border: Border.all(
                 color: badgeColor.withValues(alpha: 0.25),
               ),

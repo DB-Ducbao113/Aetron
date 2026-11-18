@@ -21,6 +21,7 @@ import 'package:fitness_exercise_application/features/workout/presentation/widge
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/record/tracking_map_widget.dart';
 import 'package:fitness_exercise_application/core/services/location_tracking_service.dart';
 import 'package:fitness_exercise_application/shared/aetron/aetron_permission_sheet.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/record/kinetic_live_top_bar.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/record/kinetic_live_metrics_hud.dart';
@@ -54,6 +55,11 @@ class RecordScreen extends ConsumerStatefulWidget {
 class _RecordScreenState extends ConsumerState<RecordScreen> {
   String? _navigatedSessionId;
   static const int _kStartupCountdownSeconds = 3;
+
+  /// Approximate height of the V5 bottom panel's metrics section
+  /// (label row + hero distance + 3-stat row). Used only to float the
+  /// locate button above the merged panel in map mode.
+  static const double _kPanelMetricsHeight = 176;
   bool _isLargeMetricsMode = false;
   bool _isScreenLocked = false;
   Timer? _startupCountdownTimer;
@@ -355,17 +361,21 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: colors.surface1,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(KineticTokens.radiusXL),
           side: BorderSide(color: colors.borderSubtle),
         ),
         title: Text(
           title,
-          style: TextStyle(
+          style: KineticTypography.headlineSmall.copyWith(
             color: colors.textPrimary,
-            fontWeight: FontWeight.bold,
           ),
         ),
-        content: Text(message, style: TextStyle(color: colors.textSecondary)),
+        content: Text(
+          message,
+          style: KineticTypography.bodyMedium.copyWith(
+            color: colors.textSecondary,
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () {
@@ -388,7 +398,7 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
               backgroundColor: colors.primary,
               foregroundColor: colors.onPrimary,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
               ),
             ),
             child: Text(
@@ -464,6 +474,7 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
     BuildContext context,
     AppLanguage currentLang,
   ) {
+    final colors = context.kinetic;
     final isVi = currentLang == AppLanguage.vi;
     final programTitle = widget.guidedProgram != null
         ? AppTranslations.get(widget.guidedProgram!.titleKey, currentLang)
@@ -477,19 +488,15 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
       builder: (modalContext) {
         return Container(
           padding: const EdgeInsets.fromLTRB(24, 20, 24, 36),
-          decoration: const BoxDecoration(
-            color: Color(0xFF0D1624),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-            border: Border(
-              top: BorderSide(color: Color(0xFFA8DCE7), width: 2.0),
+          decoration: BoxDecoration(
+            color: colors.surface1,
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(KineticTokens.radiusXXL),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black87,
-                blurRadius: 30,
-                offset: Offset(0, -10),
-              ),
-            ],
+            border: Border(
+              top: BorderSide(color: colors.primary, width: 2.0),
+            ),
+            boxShadow: KineticTokens.shadowPanel(Colors.black),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -497,32 +504,22 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
               Container(
                 width: 68,
                 height: 68,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF2AF598), Color(0xFF00B86B)],
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF2AF598).withValues(alpha: 0.45),
-                      blurRadius: 20,
-                    ),
-                  ],
+                  color: Color(0xFF2AF598),
                 ),
-                child: const Icon(
-                  Icons.emoji_events_rounded,
+                child: BladeIcon(
+                  BladeIconName.trophy,
                   color: Colors.white,
-                  size: 38,
+                  size: 36,
                 ),
               ),
               const SizedBox(height: 18),
               Text(
                 isVi ? "HOÀN THÀNH GIÁO ÁN! 🎉" : "PROGRAM COMPLETED! 🎉",
-                style: TextStyle(
-                  fontFamily: KineticTypography.fontFamily,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
+                style: KineticTypography.pageTitle.copyWith(
+                  color: colors.textPrimary,
+                  fontWeight: FontWeight.w800,
                   letterSpacing: 0.5,
                 ),
               ),
@@ -532,10 +529,8 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
                     ? "Bạn đã xuất sắc hoàn thành tất cả các hiệp của giáo án \"$programTitle\". Bạn muốn làm gì tiếp theo?"
                     : "You have successfully completed all steps of \"$programTitle\". What would you like to do next?",
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: KineticTypography.fontFamily,
-                  fontSize: 14,
-                  color: Colors.white70,
+                style: KineticTypography.bodyMedium.copyWith(
+                  color: colors.textSecondary,
                   height: 1.4,
                 ),
               ),
@@ -718,6 +713,26 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
     final isSaving = state.status == RecordingState.stopping;
     final bottomDockHeight = 74.0 + MediaQuery.of(context).padding.bottom;
 
+    // V5 bottom-panel label row content (same wording as the live top bar).
+    final panelIsVi = currentLang == AppLanguage.vi;
+    final panelStatusText = switch (widget.activityType.toLowerCase()) {
+      'cycling' => panelIsVi ? 'ĐẠP XE' : 'CYCLING',
+      'running' => panelIsVi ? 'CHẠY BỘ' : 'RUNNING',
+      'walking' => panelIsVi ? 'ĐI BỘ' : 'WALKING',
+      _ => panelIsVi ? 'TẬP LUYỆN' : 'WORKOUT',
+    };
+    final panelIsOutdoor = state.trackingMode != kIndoorMode;
+    final panelGpsLabel = !panelIsOutdoor
+        ? (panelIsVi ? 'Trong nhà' : 'Indoor')
+        : state.isGpsSignalWeak
+        ? (panelIsVi ? 'GPS Yếu' : 'Weak GPS')
+        : (panelIsVi ? 'GPS Mạnh' : 'GPS Good');
+    final panelGpsColor = !panelIsOutdoor
+        ? context.kinetic.textSecondary
+        : state.isGpsSignalWeak
+        ? context.kinetic.tertiary
+        : context.kinetic.primary;
+
     return PopScope(
       canPop: !isRecording,
       onPopInvokedWithResult: (didPop, _) {
@@ -755,6 +770,27 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
                 onUserGesturePan: () {
                   ref.read(workoutSessionProvider.notifier).onUserDraggedMap();
                 },
+              ),
+            ),
+
+            // 1b. Map legibility scrims — decoration only, never hit-tested.
+            // HUD content (top bar, mini card, dock) sits on these.
+            Positioned.fill(
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: KineticGradients.scrimTop(context.kinetic),
+                  ),
+                ),
+              ),
+            ),
+            Positioned.fill(
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: KineticGradients.scrimBottom(context.kinetic),
+                  ),
+                ),
               ),
             ),
 
@@ -923,11 +959,11 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
                 ),
               ),
 
-            // 5. Locate Button (Map Mode only)
+            // 5. Locate Button (Map Mode only) — floats above the merged panel
             if (!_isPreparingWorkout && !_isLargeMetricsMode)
               Positioned(
                 right: 16,
-                bottom: bottomDockHeight + 82,
+                bottom: bottomDockHeight + _kPanelMetricsHeight + 12,
                 child: LocateButton(
                   isFollowEnabled: state.followUser,
                   onPressed: _onLocatePressed,
@@ -939,58 +975,83 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
             if (!_isPreparingWorkout && !_isLargeMetricsMode)
               Positioned(
                 left: 16,
-                bottom: bottomDockHeight + 82,
+                bottom: bottomDockHeight + _kPanelMetricsHeight + 12,
                 child: IodDebugPill(
                   isVi: currentLang == AppLanguage.vi,
                 ),
               ),
 
-            // 6. Floating Mini Telemetry Card (Map Mode only - Shows live distance, clock, pace, calories!)
-            if (!_isPreparingWorkout && !_isLargeMetricsMode)
-              Positioned(
-                left: 14,
-                right: 14,
-                bottom: bottomDockHeight + 8,
-                child: KineticMiniMetricsCard(
-                  distanceMeters: state.distanceMeters,
-                  durationSeconds: state.durationSeconds,
-                  speedKmh: state.speedKmh,
-                  avgSpeedKmh: state.avgSpeedKmh,
-                  calories: state.caloriesBurned,
-                  activityType: widget.activityType,
-                  useMetricUnits: useMetricUnits,
-                  isVi: currentLang == AppLanguage.vi,
-                  onExpand: () {
-                    HapticFeedback.selectionClick();
-                    setState(() {
-                      _isLargeMetricsMode = true;
-                    });
-                  },
-                ),
-              ),
-
-            // 7. FIXED FLOATING CONTROL DOCK (Always visible at bottom!)
+            // 6. V5 BOTTOM PANEL — one flat panel (top radius 24) holding the
+            // map-mode metrics section above the control dock. In large
+            // metrics mode only the controls remain. All callbacks unchanged.
             if (!_isPreparingWorkout)
               Positioned(
                 left: 0,
                 right: 0,
                 bottom: 0,
-                child: KineticLiveControlDock(
-                  isPaused: isPaused,
-                  isLocked: _isScreenLocked,
-                  isSaving: isSaving,
-                  canToggle: canToggle,
-                  isVi: currentLang == AppLanguage.vi,
-                  onPauseResume: () => _handlePauseResume(state.status),
-                  onStop: _confirmStop,
-                  onToggleLock: () =>
-                      setState(() => _isScreenLocked = !_isScreenLocked),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: context.kinetic.surface1,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(KineticTokens.radiusHero),
+                    ),
+                    boxShadow: context.kinetic.isDark
+                        ? null
+                        : KineticTokens.shadowPanel(const Color(0xFF0F172A)),
+                    border: context.kinetic.isDark
+                        ? Border(
+                            top: BorderSide(color: context.kinetic.borderSubtle),
+                          )
+                        : null,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(KineticTokens.radiusHero),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (!_isLargeMetricsMode)
+                          KineticMiniMetricsCard(
+                            distanceMeters: state.distanceMeters,
+                            durationSeconds: state.durationSeconds,
+                            speedKmh: state.speedKmh,
+                            avgSpeedKmh: state.avgSpeedKmh,
+                            calories: state.caloriesBurned,
+                            activityType: widget.activityType,
+                            useMetricUnits: useMetricUnits,
+                            isVi: currentLang == AppLanguage.vi,
+                            statusText: panelStatusText,
+                            gpsLabel: panelGpsLabel,
+                            gpsColor: panelGpsColor,
+                            onExpand: () {
+                              HapticFeedback.selectionClick();
+                              setState(() {
+                                _isLargeMetricsMode = true;
+                              });
+                            },
+                          ),
+                        KineticLiveControlDock(
+                          isPaused: isPaused,
+                          isLocked: _isScreenLocked,
+                          isSaving: isSaving,
+                          canToggle: canToggle,
+                          isVi: currentLang == AppLanguage.vi,
+                          onPauseResume: () => _handlePauseResume(state.status),
+                          onStop: _confirmStop,
+                          onToggleLock: () => setState(
+                            () => _isScreenLocked = !_isScreenLocked,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             if (_isScreenLocked)
               Positioned.fill(
                 child: Container(
-                  color: Colors.black.withValues(alpha: 0.88),
+                  color: context.kinetic.background.withValues(alpha: 0.92),
                   child: SafeArea(
                     child: Center(
                       child: Padding(
@@ -1007,18 +1068,9 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
                                   color: context.kinetic.tertiary,
                                   width: 2,
                                 ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: context.kinetic.tertiary.withValues(
-                                      alpha: 0.35,
-                                    ),
-                                    blurRadius: 24,
-                                    spreadRadius: 2,
-                                  ),
-                                ],
                               ),
-                              child: Icon(
-                                Icons.lock_rounded,
+                              child: BladeIcon(
+                                BladeIconName.lock,
                                 size: 48,
                                 color: context.kinetic.tertiary,
                               ),
@@ -1029,7 +1081,7 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
                                   ? 'MÀN HÌNH ĐÃ KHÓA'
                                   : 'SCREEN LOCKED',
                               style: KineticTypography.headlineSmall.copyWith(
-                                color: Colors.white,
+                                color: context.kinetic.textPrimary,
                                 letterSpacing: 2,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -1080,13 +1132,12 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
   }
 
   Color _activityAccent(String type) {
+    final colors = context.kinetic;
     switch (type.toLowerCase()) {
-      case 'cycling':
-        return const Color(0xFF39B5F2);
-      case 'walking':
-        return const Color(0xFF4EBE9E);
+      case 'running':
+        return colors.secondary;
       default:
-        return const Color(0xFFA8DCE7);
+        return colors.tertiary;
     }
   }
 }
@@ -1196,7 +1247,7 @@ class _IntegratedProgramPill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
         color: step.phaseColor.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
         border: Border.all(color: step.phaseColor.withValues(alpha: 0.4)),
       ),
       child: Row(
@@ -1206,9 +1257,7 @@ class _IntegratedProgramPill extends StatelessWidget {
           Expanded(
             child: Text(
               '${isVi ? "Hiệp" : "Step"} ${stepIndex + 1}/$totalSteps: ${isVi ? step.titleVi : step.titleEn}',
-              style: TextStyle(
-                fontFamily: KineticTypography.fontFamily,
-                fontSize: 12,
+              style: KineticTypography.unitLabel.copyWith(
                 fontWeight: FontWeight.w800,
                 color: step.phaseColor,
               ),
@@ -1220,14 +1269,12 @@ class _IntegratedProgramPill extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
               color: Colors.black.withValues(alpha: 0.35),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
             ),
             child: Text(
               '$minutes:$seconds',
-              style: TextStyle(
-                fontFamily: KineticTypography.fontFamily,
-                fontSize: 13,
-                fontWeight: FontWeight.w900,
+              style: KineticTypography.label.copyWith(
+                fontWeight: FontWeight.w800,
                 color: Colors.white,
                 fontFeatures: KineticTypography.tabularFigures,
               ),
@@ -1306,19 +1353,17 @@ class _IntegratedTargetPill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
         color: colors.primary.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
         border: Border.all(color: colors.primary.withValues(alpha: 0.35)),
       ),
       child: Row(
         children: [
-          Icon(Icons.track_changes_rounded, size: 16, color: colors.primary),
+          BladeIcon(BladeIconName.target, size: 16, color: colors.primary),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               targetLabel,
-              style: TextStyle(
-                fontFamily: KineticTypography.fontFamily,
-                fontSize: 12,
+              style: KineticTypography.label.copyWith(
                 fontWeight: FontWeight.w700,
                 color: colors.textPrimary,
               ),
@@ -1326,9 +1371,7 @@ class _IntegratedTargetPill extends StatelessWidget {
           ),
           Text(
             remainingLabel,
-            style: TextStyle(
-              fontFamily: KineticTypography.fontFamily,
-              fontSize: 12,
+            style: KineticTypography.label.copyWith(
               fontWeight: FontWeight.w800,
               color: colors.primary,
             ),

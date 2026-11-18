@@ -14,6 +14,8 @@ class AetronGlobeOrbitScreen extends ConsumerStatefulWidget {
   final bool showCloseButton;
   final String? statusPillText;
   final bool forceDarkPalette;
+  final bool showTelemetryChips;
+  final bool showSubtitle;
 
   const AetronGlobeOrbitScreen({
     super.key,
@@ -24,6 +26,8 @@ class AetronGlobeOrbitScreen extends ConsumerStatefulWidget {
     this.showCloseButton = false,
     this.statusPillText,
     this.forceDarkPalette = false,
+    this.showTelemetryChips = false,
+    this.showSubtitle = false,
   });
 
   @override
@@ -267,62 +271,47 @@ class _AetronGlobeOrbitScreenState extends ConsumerState<AetronGlobeOrbitScreen>
                               ],
                             ),
                           ),
-                          SizedBox(height: compactHeight ? 4 : 8),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
-                            child: Text(
-                              widget.customSubtitle ??
-                                  (isVi
-                                      ? 'Đang đồng bộ dữ liệu...'
-                                      : 'Synchronizing system data...'),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                              style: KineticTypography.bodyMedium.copyWith(
-                                color: colors.textSecondary,
-                                fontWeight: FontWeight.w500,
+                          if (widget.showTelemetryChips) ...[
+                            SizedBox(height: compactHeight ? 12 : 20),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: _telemetryChip(
+                                      icon: Icons.satellite_alt_rounded,
+                                      label: compactWidth
+                                          ? '12 GPS'
+                                          : (isVi
+                                                ? '12 VỆ TINH GPS'
+                                                : '12 GPS SATS'),
+                                      semanticLabel: isVi
+                                          ? 'Đã kết nối 12 vệ tinh GPS'
+                                          : 'Connected to 12 GPS satellites',
+                                      color: colors.primary,
+                                      colors: colors,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: _telemetryChip(
+                                      icon: Icons.wifi_tethering_rounded,
+                                      label: compactWidth
+                                          ? '20,200 KM'
+                                          : (isVi
+                                                ? 'ĐỘ CAO 20,200 KM'
+                                                : 'ALT 20,200 KM'),
+                                      semanticLabel: isVi
+                                          ? 'Độ cao vệ tinh 20.200 ki-lô-mét'
+                                          : 'Satellite altitude 20,200 kilometers',
+                                      color: colors.secondary,
+                                      colors: colors,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ),
-                          SizedBox(height: compactHeight ? 12 : 20),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: _telemetryChip(
-                                    icon: Icons.satellite_alt_rounded,
-                                    label: compactWidth
-                                        ? '12 GPS'
-                                        : (isVi
-                                              ? '12 VỆ TINH GPS'
-                                              : '12 GPS SATS'),
-                                    semanticLabel: isVi
-                                        ? 'Đã kết nối 12 vệ tinh GPS'
-                                        : 'Connected to 12 GPS satellites',
-                                    color: colors.primary,
-                                    colors: colors,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: _telemetryChip(
-                                    icon: Icons.wifi_tethering_rounded,
-                                    label: compactWidth
-                                        ? '20,200 KM'
-                                        : (isVi
-                                              ? 'ĐỘ CAO 20,200 KM'
-                                              : 'ALT 20,200 KM'),
-                                    semanticLabel: isVi
-                                        ? 'Độ cao vệ tinh 20.200 ki-lô-mét'
-                                        : 'Satellite altitude 20,200 kilometers',
-                                    color: colors.secondary,
-                                    colors: colors,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                          ],
                         ],
                       ),
                     ),
@@ -333,6 +322,7 @@ class _AetronGlobeOrbitScreenState extends ConsumerState<AetronGlobeOrbitScreen>
                         builder: (context, _) => _buildProgress(
                           progress: _controller.value,
                           colors: colors,
+                          isVi: isVi,
                         ),
                       ),
                     ),
@@ -389,15 +379,19 @@ class _AetronGlobeOrbitScreenState extends ConsumerState<AetronGlobeOrbitScreen>
   Widget _buildProgress({
     required double progress,
     required KineticColors colors,
+    required bool isVi,
   }) {
+    final percentInt = (progress.clamp(0.0, 1.0) * 100).toInt();
     final track = BoxDecoration(
       color: colors.surface2,
       borderRadius: BorderRadius.circular(3),
     );
 
+    const barWidth = 190.0;
+    final Widget bar;
     if (widget.onComplete != null) {
-      return Container(
-        width: 160,
+      bar = Container(
+        width: barWidth,
         height: 4.5,
         decoration: track,
         child: FractionallySizedBox(
@@ -406,30 +400,73 @@ class _AetronGlobeOrbitScreenState extends ConsumerState<AetronGlobeOrbitScreen>
           child: DecoratedBox(decoration: _progressFill(colors)),
         ),
       );
+    } else {
+      bar = Container(
+        width: barWidth,
+        height: 4.5,
+        decoration: track,
+        clipBehavior: Clip.antiAlias,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final pillWidth = constraints.maxWidth * 0.45;
+            final offset =
+                (constraints.maxWidth + pillWidth) * progress - pillWidth;
+            return Stack(
+              children: [
+                Positioned(
+                  left: offset,
+                  top: 0,
+                  bottom: 0,
+                  width: pillWidth,
+                  child: DecoratedBox(decoration: _progressFill(colors)),
+                ),
+              ],
+            );
+          },
+        ),
+      );
     }
 
-    return Container(
-      width: 160,
-      height: 4.5,
-      decoration: track,
-      clipBehavior: Clip.antiAlias,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final pillWidth = constraints.maxWidth * 0.45;
-          final offset =
-              (constraints.maxWidth + pillWidth) * progress - pillWidth;
-          return Stack(
+    final label = widget.customSubtitle ?? (isVi ? 'Đang tải...' : 'Loading...');
+
+    return SizedBox(
+      width: barWidth,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
             children: [
-              Positioned(
-                left: offset,
-                top: 0,
-                bottom: 0,
-                width: pillWidth,
-                child: DecoratedBox(decoration: _progressFill(colors)),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: KineticTypography.caption.copyWith(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: colors.textSecondary,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '$percentInt%',
+                style: KineticTypography.caption.copyWith(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w800,
+                  color: colors.primary,
+                  letterSpacing: 0.5,
+                  fontFeatures: KineticTypography.tabularFigures,
+                ),
               ),
             ],
-          );
-        },
+          ),
+          const SizedBox(height: 7),
+          bar,
+        ],
       ),
     );
   }
@@ -476,18 +513,25 @@ class _CyberGlobePainter extends CustomPainter {
     _drawStarfield(canvas, center, size, progress);
 
     // ── 1. Atmospheric Nebula Glow (Behind Globe) ───────────────────────────
+    final glowAtmospherePrimary = colors.isDark
+        ? colors.primary
+        : const Color(0xFF0EA5E9);
+    final glowAtmosphereSecondary = colors.isDark
+        ? colors.secondary
+        : const Color(0xFF38BDF8);
+
     canvas.drawCircle(
       center,
       globeRadius + 32,
       Paint()
-        ..color = colors.primary.withValues(alpha: 0.16)
+        ..color = glowAtmospherePrimary.withValues(alpha: colors.isDark ? 0.16 : 0.22)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 28),
     );
     canvas.drawCircle(
       center,
       globeRadius + 14,
       Paint()
-        ..color = colors.secondary.withValues(alpha: 0.18)
+        ..color = glowAtmosphereSecondary.withValues(alpha: colors.isDark ? 0.18 : 0.24)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 16),
     );
 
@@ -501,15 +545,19 @@ class _CyberGlobePainter extends CustomPainter {
       isFrontHalf: false,
     );
 
-    // ── 3. Cyber Earth Sphere Base (Obsidian Ocean with 3D Spherical Shader) ─
+    // ── 3. Cyber Earth Sphere Base (Blue Ocean with 3D Spherical Shader) ────
     final globeRect = Rect.fromCircle(center: center, radius: globeRadius);
 
     // Outer Globe Rim Glow (Pre-clip)
+    final outerRimColor = colors.isDark
+        ? colors.primary
+        : const Color(0xFF0284C7);
+
     canvas.drawCircle(
       center,
       globeRadius + 1.5,
       Paint()
-        ..color = colors.primary.withValues(alpha: 0.35)
+        ..color = outerRimColor.withValues(alpha: 0.45)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.5,
     );
@@ -518,24 +566,44 @@ class _CyberGlobePainter extends CustomPainter {
     canvas.save();
     canvas.clipPath(Path()..addOval(globeRect));
 
-    // 3a. Deep Ocean 3D Gradient matching Kinetic Dark tones
+    // 3a. Deep Ocean 3D Gradient (True Blue Planet Earth)
+    final oceanColors = colors.isDark
+        ? const [
+            Color(0xFF1E3A8A), // Deep oceanic sapphire highlight
+            Color(0xFF0F172A), // Midnight oceanic navy
+            Color(0xFF020617), // Cosmic abyss
+          ]
+        : const [
+            Color(0xFF2563EB), // Rich vibrant royal sapphire blue
+            Color(0xFF1D4ED8), // Deep cobalt oceanic blue
+            Color(0xFF0F172A), // Deep oceanic navy depth
+          ];
+
     final oceanPaint = Paint()
       ..shader = RadialGradient(
         center: const Alignment(-0.35, -0.35),
         radius: 0.95,
-        colors: [colors.surface2, colors.surface1, colors.background],
+        colors: oceanColors,
         stops: const [0.0, 0.55, 1.0],
       ).createShader(globeRect);
     canvas.drawRect(globeRect, oceanPaint);
 
     // 3b. Latitude Grid Lines (Parallels)
+    final gridColor = colors.isDark
+        ? colors.primary.withValues(alpha: 0.22)
+        : const Color(0xFF93C5FD).withValues(alpha: 0.45);
+
     final gridPaint = Paint()
-      ..color = colors.primary.withValues(alpha: 0.18)
+      ..color = gridColor
       ..strokeWidth = 0.9
       ..style = PaintingStyle.stroke;
 
+    final equatorColor = colors.isDark
+        ? colors.secondary.withValues(alpha: 0.38)
+        : const Color(0xFFFBBF24).withValues(alpha: 0.65);
+
     final equatorPaint = Paint()
-      ..color = colors.secondary.withValues(alpha: 0.35)
+      ..color = equatorColor
       ..strokeWidth = 1.2
       ..style = PaintingStyle.stroke;
 
@@ -552,6 +620,10 @@ class _CyberGlobePainter extends CustomPainter {
     }
 
     // 3c. Longitude Meridians (Rotating seamlessly with Earth)
+    final meridianBaseColor = colors.isDark
+        ? colors.primary
+        : const Color(0xFF93C5FD);
+
     const meridianCount = 12;
     for (var i = 0; i < meridianCount; i++) {
       final angle = earthRotation + (i * math.pi / (meridianCount / 2));
@@ -559,8 +631,8 @@ class _CyberGlobePainter extends CustomPainter {
       final isFacingFront = cosA > 0;
 
       final meridianPaint = Paint()
-        ..color = colors.primary.withValues(
-          alpha: isFacingFront ? (0.08 + 0.14 * cosA) : 0.04,
+        ..color = meridianBaseColor.withValues(
+          alpha: isFacingFront ? (0.10 + 0.18 * cosA) : 0.05,
         )
         ..strokeWidth = isFacingFront ? 1.0 : 0.6
         ..style = PaintingStyle.stroke;
@@ -577,27 +649,32 @@ class _CyberGlobePainter extends CustomPainter {
     _drawContinents(canvas, center, globeRadius, earthRotation);
 
     // 3e. Atmospheric Rim Light & Specular 3D Lighting Overlay
+    final specularColor = colors.isDark
+        ? colors.primary
+        : const Color(0xFF60A5FA);
+
     final specularPaint = Paint()
       ..shader = RadialGradient(
         center: const Alignment(-0.55, -0.55),
         radius: 0.75,
         colors: [
-          Colors.white.withValues(alpha: 0.22),
-          colors.primary.withValues(alpha: 0.12),
+          Colors.white.withValues(alpha: 0.30),
+          specularColor.withValues(alpha: 0.16),
           Colors.transparent,
         ],
         stops: const [0.0, 0.45, 1.0],
       ).createShader(globeRect);
     canvas.drawRect(globeRect, specularPaint);
 
-    // Dark Terminator Shadow on Night Side (Bottom-Right)
+    // Dark Terminator Shadow on Night Side (Bottom-Right) - Deep Space Shadow
+    const shadowColor = Color(0xFF020617);
     final shadowPaint = Paint()
       ..shader = RadialGradient(
         center: const Alignment(0.65, 0.65),
         radius: 0.85,
         colors: [
-          colors.background.withValues(alpha: 0.75),
-          colors.background.withValues(alpha: 0.35),
+          shadowColor.withValues(alpha: 0.72),
+          shadowColor.withValues(alpha: 0.35),
           Colors.transparent,
         ],
         stops: const [0.0, 0.55, 1.0],
@@ -607,13 +684,17 @@ class _CyberGlobePainter extends CustomPainter {
     canvas.restore(); // End Globe Clip
 
     // ── 4. Front Atmospheric Crescent Rim (Gives Crisp Optical Depth) ────────
+    final crescentColor = colors.isDark
+        ? colors.primary
+        : const Color(0xFF0EA5E9);
+
     canvas.drawArc(
       globeRect,
       math.pi * 0.95,
       math.pi * 0.85,
       false,
       Paint()
-        ..color = colors.primary.withValues(alpha: 0.65)
+        ..color = crescentColor.withValues(alpha: 0.75)
         ..strokeWidth = 2.0
         ..style = PaintingStyle.stroke
         ..maskFilter = const MaskFilter.blur(BlurStyle.solid, 2),
@@ -793,16 +874,22 @@ class _CyberGlobePainter extends CustomPainter {
       if (hasVisiblePoint && !isFirst) {
         path.close();
 
-        // 1. Glowing Landmass Base Fill (Secondary kinetic mint)
+        // 1. Glowing Landmass Base Fill (Emerald Mint)
+        final landFillColor = colors.isDark
+            ? const Color(0xFF10B981)
+            : const Color(0xFF059669);
         final landFillPaint = Paint()
-          ..color = colors.secondary.withValues(alpha: 0.28)
+          ..color = landFillColor.withValues(alpha: colors.isDark ? 0.35 : 0.44)
           ..style = PaintingStyle.fill;
         canvas.drawPath(path, landFillPaint);
 
         // 2. High-Tech Kinetic Primary Coastline Contour
+        final coastColor = colors.isDark
+            ? colors.primary
+            : const Color(0xFF38BDF8);
         final coastPaint = Paint()
-          ..color = colors.primary.withValues(alpha: 0.85)
-          ..strokeWidth = 1.15
+          ..color = coastColor.withValues(alpha: 0.95)
+          ..strokeWidth = 1.25
           ..style = PaintingStyle.stroke;
         canvas.drawPath(path, coastPaint);
       }

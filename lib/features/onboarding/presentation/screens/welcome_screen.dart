@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/auth/presentation/screens/auth_wrapper.dart';
-import 'package:fitness_exercise_application/shared/aetron/aetron_globe_orbit_screen.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,7 +20,6 @@ class WelcomeGate extends StatefulWidget {
 
 class _WelcomeGateState extends State<WelcomeGate> {
   late final Future<bool> _shouldShowWelcome = _loadShouldShowWelcome();
-  bool _showResourceLoading = false;
 
   Future<bool> _loadShouldShowWelcome() async {
     if (Supabase.instance.client.auth.currentSession != null) {
@@ -31,14 +30,14 @@ class _WelcomeGateState extends State<WelcomeGate> {
   }
 
   Future<void> _completeWelcome() async {
-    if (!mounted) return;
-    setState(() => _showResourceLoading = true);
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(kWelcomeSeenPrefKey, true);
     } catch (error) {
       debugPrint('[WelcomeGate] Could not persist welcome state: $error');
     }
+    if (!mounted) return;
+    _openAuth();
   }
 
   void _openAuth() {
@@ -49,33 +48,53 @@ class _WelcomeGateState extends State<WelcomeGate> {
 
   @override
   Widget build(BuildContext context) {
-    if (_showResourceLoading) {
-      return ResourceLoadingScreen(onComplete: _openAuth);
-    }
-
+    final colors = context.kinetic;
     return FutureBuilder<bool>(
       future: _shouldShowWelcome,
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
-          return const AetronGlobeOrbitScreen(
-            customTitle: 'Aetron',
+          return Scaffold(
+            backgroundColor: colors.background,
+            body: Center(
+              child: CircularProgressIndicator(color: colors.primary),
+            ),
           );
         }
-        return snapshot.data!
-            ? WelcomeScreen(onNext: _completeWelcome)
-            : ResourceLoadingScreen(onComplete: _openAuth);
+        if (snapshot.data!) {
+          return WelcomeScreen(onNext: _completeWelcome);
+        }
+        return ResourceLoadingScreen(onComplete: _openAuth);
       },
     );
   }
 }
 
-class ResourceLoadingScreen extends StatelessWidget {
+class ResourceLoadingScreen extends StatefulWidget {
   final VoidCallback onComplete;
   const ResourceLoadingScreen({super.key, required this.onComplete});
 
   @override
+  State<ResourceLoadingScreen> createState() => _ResourceLoadingScreenState();
+}
+
+class _ResourceLoadingScreenState extends State<ResourceLoadingScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) widget.onComplete();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return AetronGlobeOrbitScreen(onComplete: onComplete);
+    final colors = context.kinetic;
+    return Scaffold(
+      backgroundColor: colors.background,
+      body: Center(
+        child: CircularProgressIndicator(color: colors.primary),
+      ),
+    );
   }
 }
 
@@ -150,6 +169,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
   Widget build(BuildContext context) {
     final currentLang = ref.watch(appLanguageProvider);
     final isVi = currentLang == AppLanguage.vi;
+    final colors = context.kinetic;
     final size = MediaQuery.sizeOf(context);
     final isShort = size.height < 720;
     final isLastPage = _currentPage == 3;
@@ -157,11 +177,10 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
     final pages = _getPages(isVi);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF09181C),
+      backgroundColor: colors.background,
       body: Stack(
         children: [
-          // ── Background Ambient Grid & Glow ──
-          const Positioned.fill(child: _WelcomeGrid()),
+          // ── Soft Ambient Azure Wash ──
           Positioned(
             top: -60,
             right: -60,
@@ -172,7 +191,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    const Color(0xFFA8DCE7).withValues(alpha: 0.12),
+                    colors.primary.withValues(alpha: 0.12),
                     Colors.transparent,
                   ],
                 ),
@@ -189,7 +208,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    const Color(0xFF00B0FF).withValues(alpha: 0.08),
+                    colors.secondary.withValues(alpha: 0.08),
                     Colors.transparent,
                   ],
                 ),
@@ -233,6 +252,12 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      // Final-page stat strip (board v2/v3 capability stats)
+                      if (isLastPage) ...[
+                        const _WelcomeStatStrip(),
+                        const SizedBox(height: 18),
+                      ],
+
                       // Next / Get Started Action Button
                       _ModernActionButton(
                         label: isLastPage
@@ -262,56 +287,56 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
       return const [
         _OnboardingPageData(
           step: '01 / 04',
-          eyebrow: '⚡ KINETIC PERFORMANCE OS',
-          titlePrefix: 'CHÀO MỪNG ĐẾN\nKỶ NGUYÊN ',
-          titleAccent: 'THỂ THAO SỐ',
+          eyebrow: 'AETRON FITNESS',
+          titlePrefix: 'NÂNG TẦM\nHIỆU SUẤT ',
+          titleAccent: 'MỖI NGÀY',
           titleSuffix: '',
           description:
-              'Đột phá giới hạn bản thân với công nghệ theo dõi vận động thông minh, tối ưu hóa từng sải bước và chuẩn xác từng nhịp thở.',
-          primaryPill: 'ĐỒNG BỘ: SẴN SÀNG',
-          secondaryPill: 'HIỆU SUẤT: 100%',
+              'Theo dõi từng buổi chạy bộ, đạp xe và đi bộ với giao diện trực quan, nhịp độ rõ ràng và dữ liệu chính xác.',
+          primaryPill: 'GPS TRỰC TIẾP',
+          secondaryPill: 'SẴN SÀNG',
           primaryIcon: Icons.sensors_rounded,
           secondaryIcon: Icons.bolt_rounded,
           heroType: _OnboardingHeroType.runner,
         ),
         _OnboardingPageData(
           step: '02 / 04',
-          eyebrow: '🛰️ GPS SATELLITE TELEMETRY',
+          eyebrow: 'BẢN ĐỒ & GPS',
           titlePrefix: 'THEO DÕI LỘ TRÌNH\nCHÍNH XÁC ',
-          titleAccent: 'REALTIME',
+          titleAccent: 'THỜI GIAN THỰC',
           titleSuffix: '',
           description:
-              'Ghi lại toàn bộ hành trình chạy bộ, đạp xe ngoài trời với bản đồ vệ tinh trực tiếp, tốc độ từng km, khoảng cách và calo tiêu hao.',
-          primaryPill: 'LỘ TRÌNH: TRỰC TIẾP',
-          secondaryPill: 'TÍN HIỆU GPS: MẠNH',
+              'Ghi lại trọn vẹn hành trình ngoài trời với bản đồ đường chạy, pace từng km, quãng đường và calo tiêu hao.',
+          primaryPill: 'LỘ TRÌNH TRỰC TIẾP',
+          secondaryPill: 'GPS CHÍNH XÁC',
           primaryIcon: Icons.route_rounded,
           secondaryIcon: Icons.speed_rounded,
           heroType: _OnboardingHeroType.tracking,
         ),
         _OnboardingPageData(
           step: '03 / 04',
-          eyebrow: '📊 DEEP ANALYTICS CORE',
-          titlePrefix: 'PHÂN TÍCH TIẾN ĐỘ\n',
+          eyebrow: 'PHÂN TÍCH TIẾN ĐỘ',
+          titlePrefix: 'BIỂU ĐỒ\n',
           titleAccent: 'CHUYÊN SÂU',
           titleSuffix: ' & RÕ RÀNG',
           description:
-              'Chuyển hóa mọi dữ liệu vận động thành biểu đồ xu hướng tuần, tỷ lệ tăng trưởng thể lực và kỷ lục cá nhân đáng tự hào.',
-          primaryPill: 'XU HƯỚNG: ĐỒNG BỘ',
-          secondaryPill: 'DỮ LIỆU: THỜI GIAN THỰC',
+              'Tổng hợp khối lượng vận động theo tuần, tháng, năm cùng kỷ lục cá nhân giúp bạn kiểm soát mục tiêu dễ dàng.',
+          primaryPill: 'XU HƯỚNG TUẦN',
+          secondaryPill: 'KỶ LỤC CÁ NHÂN',
           primaryIcon: Icons.query_stats_rounded,
           secondaryIcon: Icons.trending_up_rounded,
           heroType: _OnboardingHeroType.analysis,
         ),
         _OnboardingPageData(
           step: '04 / 04',
-          eyebrow: '🏆 MILESTONES & STREAKS',
-          titlePrefix: 'CHINH PHỤC THỬ THÁCH\n& ',
+          eyebrow: 'MỤC TIÊU & CHUỖI NGÀY',
+          titlePrefix: 'CHINH PHỤC MỤC TIÊU\n& ',
           titleAccent: 'HUY HIỆU',
-          titleSuffix: ' DANH GIÁ',
+          titleSuffix: ' MỖI TUẦN',
           description:
-              'Duy trì chuỗi ngày tập luyện liên tục, mở khóa các thành tích danh giá và biến sự kiên trì thành lối sống đỉnh cao.',
-          primaryPill: 'CHUỖI TẬP: SẴN SÀNG',
-          secondaryPill: 'HUY HIỆU: ĐÃ MỞ',
+              'Duy trì thói quen luyện tập đều đặn, hoàn thành mục tiêu tuần và mở khóa các cột mốc thành tích mới.',
+          primaryPill: 'CHUỖI TẬP LUYỆN',
+          secondaryPill: 'THÀNH TÍCH CÁ NHÂN',
           primaryIcon: Icons.local_fire_department_rounded,
           secondaryIcon: Icons.emoji_events_rounded,
           heroType: _OnboardingHeroType.achievements,
@@ -322,56 +347,56 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
     return const [
       _OnboardingPageData(
         step: '01 / 04',
-        eyebrow: '⚡ KINETIC PERFORMANCE OS',
-        titlePrefix: 'WELCOME TO THE\nFUTURE OF ',
-        titleAccent: 'FITNESS',
+        eyebrow: 'AETRON FITNESS',
+        titlePrefix: 'TRAIN SMARTER\nEVERY ',
+        titleAccent: 'MILE',
         titleSuffix: '',
         description:
-            'Precision tracking meets kinetic intelligence. Your journey to elite athletic performance starts right here.',
-        primaryPill: 'BIO-SYNC: ACTIVE',
-        secondaryPill: 'KINETIC: 100% READY',
+            'Track your runs, rides, and walks with crisp live metrics, intuitive pacing splits, and clean progress views.',
+        primaryPill: 'LIVE TRACKING',
+        secondaryPill: 'READY TO MOVE',
         primaryIcon: Icons.sensors_rounded,
         secondaryIcon: Icons.bolt_rounded,
         heroType: _OnboardingHeroType.runner,
       ),
       _OnboardingPageData(
         step: '02 / 04',
-        eyebrow: '🛰️ GPS SATELLITE TELEMETRY',
+        eyebrow: 'GPS ROUTE MAPPING',
         titlePrefix: 'TRACK EVERY ROUTE\nWITH ',
         titleAccent: 'PRECISION',
         titleSuffix: '',
         description:
-            'Record outdoor runs and rides with live satellite mapping, real-time pace splits, elevation, distance, and burned calories.',
+            'Record outdoor runs and rides with live mapping, real-time pace splits, distance, and calories burned.',
         primaryPill: 'LIVE ROUTE TRACE',
-        secondaryPill: 'GPS SIGNAL: STRONG',
+        secondaryPill: 'ACCURATE GPS',
         primaryIcon: Icons.route_rounded,
         secondaryIcon: Icons.speed_rounded,
         heroType: _OnboardingHeroType.tracking,
       ),
       _OnboardingPageData(
         step: '03 / 04',
-        eyebrow: '📊 DEEP ANALYTICS CORE',
-        titlePrefix: 'ADVANCED TELEMETRY\nFOR ',
+        eyebrow: 'WEEKLY ANALYTICS',
+        titlePrefix: 'CLEAR INSIGHTS\nFOR ',
         titleAccent: 'PROGRESS',
         titleSuffix: '',
         description:
-            'Transform every workout into actionable weekly insights, personal records, consistency scores, and telemetry charts.',
-        primaryPill: 'TREND ENGINE: ACTIVE',
-        secondaryPill: 'METRICS: REAL-TIME',
+            'Turn every workout into weekly distance trends, personal best records, and consistent training insights.',
+        primaryPill: 'WEEKLY TRENDS',
+        secondaryPill: 'PERSONAL BESTS',
         primaryIcon: Icons.query_stats_rounded,
         secondaryIcon: Icons.trending_up_rounded,
         heroType: _OnboardingHeroType.analysis,
       ),
       _OnboardingPageData(
         step: '04 / 04',
-        eyebrow: '🏆 MILESTONES & STREAKS',
-        titlePrefix: 'UNLOCK ACHIEVEMENTS\nAND ',
-        titleAccent: 'STREAKS',
+        eyebrow: 'GOALS & STREAKS',
+        titlePrefix: 'STAY CONSISTENT\nBUILD ',
+        titleAccent: 'MOMENTUM',
         titleSuffix: '',
         description:
-            'Stay relentlessly motivated with daily workout streaks, milestone badges, personal records, and habit-forming goals.',
-        primaryPill: 'STREAK SHIELD: ARMED',
-        secondaryPill: 'BADGES: READY',
+            'Build lasting habits with daily workout streaks, weekly distance targets, and milestone badges.',
+        primaryPill: 'DAILY STREAKS',
+        secondaryPill: 'MILESTONE BADGES',
         primaryIcon: Icons.local_fire_department_rounded,
         secondaryIcon: Icons.emoji_events_rounded,
         heroType: _OnboardingHeroType.achievements,
@@ -472,6 +497,7 @@ class _WelcomeTopBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.kinetic;
     final currentLang = ref.watch(appLanguageProvider);
 
     return SizedBox(
@@ -490,15 +516,15 @@ class _WelcomeTopBar extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: const Color(0xFF101B2B),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: const Color(0x3300E5FF),
+                          color: colors.surface1,
+                          borderRadius: BorderRadius.circular(
+                            KineticTokens.radiusMD,
                           ),
+                          border: Border.all(color: colors.borderAccent),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.arrow_back_ios_new_rounded,
-                          color: Color(0xFFA8DCE7),
+                          color: colors.primary,
                           size: 16,
                         ),
                       ),
@@ -507,16 +533,9 @@ class _WelcomeTopBar extends ConsumerWidget {
                       child: Container(
                         width: 8,
                         height: 8,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFA8DCE7),
+                        decoration: BoxDecoration(
+                          color: colors.primary,
                           shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Color(0xFFA8DCE7),
-                              blurRadius: 8,
-                              spreadRadius: 1,
-                            ),
-                          ],
                         ),
                       ),
                     ),
@@ -525,8 +544,8 @@ class _WelcomeTopBar extends ConsumerWidget {
 
             // Center Brand Badge
             ShaderMask(
-              shaderCallback: (bounds) => const LinearGradient(
-                colors: [Color(0xFFA8DCE7), Color(0xFF39F2B8)],
+              shaderCallback: (bounds) => LinearGradient(
+                colors: [colors.primary, colors.secondary],
               ).createShader(bounds),
               child: const Text(
                 'AETRON',
@@ -556,18 +575,16 @@ class _WelcomeTopBar extends ConsumerWidget {
                   vertical: 5,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF101B2B),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: const Color(0x3300E5FF),
-                  ),
+                  color: colors.surface1,
+                  borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
+                  border: Border.all(color: colors.borderAccent),
                 ),
                 child: Text(
-                  currentLang == AppLanguage.vi ? '🇻🇳 VI' : '🇬🇧 EN',
-                  style: const TextStyle(
+                  currentLang == AppLanguage.vi ? 'VI' : 'EN',
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFFA8DCE7),
+                    color: colors.primary,
                   ),
                 ),
               ),
@@ -578,7 +595,7 @@ class _WelcomeTopBar extends ConsumerWidget {
             TextButton(
               onPressed: isProcessing ? null : onSkip,
               style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF7D8DA6),
+                foregroundColor: colors.textMuted,
                 padding: const EdgeInsets.symmetric(horizontal: 10),
               ),
               child: Text(
@@ -610,56 +627,35 @@ class _OnboardingHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.kinetic;
+    final tint = switch (data.heroType) {
+      _OnboardingHeroType.runner => colors.secondary,
+      _OnboardingHeroType.tracking => colors.primary,
+      _OnboardingHeroType.analysis => colors.tertiary,
+      _OnboardingHeroType.achievements => colors.primary,
+    };
+
     return SizedBox(
       height: height,
       child: Stack(
         fit: StackFit.expand,
         children: [
-          if (data.heroType == _OnboardingHeroType.runner)
-            Image.asset(
-              'assets/welcome_runner.png',
-              fit: BoxFit.cover,
-              alignment: Alignment.topCenter,
-            )
-          else
-            AnimatedBuilder(
-              animation: animation,
-              builder: (context, _) {
-                return CustomPaint(
-                  painter: _FeatureHeroPainter(
-                    progress: animation.value,
-                    heroType: data.heroType,
-                    icon: data.primaryIcon,
-                  ),
-                );
-              },
-            ),
-
-          // Cyber Gradient Fades (Top and Bottom)
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    const Color(0xFF09181C).withValues(alpha: 0.6),
-                    Colors.transparent,
-                    const Color(0xFF09181C).withValues(alpha: 0.85),
-                    const Color(0xFF09181C),
-                  ],
-                  stops: const [0, 0.4, 0.85, 1.0],
-                ),
-              ),
-            ),
-          ),
-
-          // Cyber Laser Scanline Effect
+          // V4 scene backdrop (duotone wash + contours) tinted per page
+          Positioned.fill(child: SceneBackdrop(tint: tint)),
           AnimatedBuilder(
             animation: animation,
             builder: (context, _) {
               return CustomPaint(
-                painter: _HeroScanPainter(progress: animation.value),
+                painter: _FeatureHeroPainter(
+                  progress: animation.value,
+                  heroType: data.heroType,
+                  icon: data.heroType == _OnboardingHeroType.runner
+                      ? Icons.directions_run_rounded
+                      : data.primaryIcon,
+                  primaryColor: colors.primary,
+                  secondaryColor: colors.secondary,
+                  tertiaryColor: colors.tertiary,
+                ),
               );
             },
           ),
@@ -676,27 +672,17 @@ class _WelcomeCopyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.kinetic;
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(KineticTokens.spaceLG),
       decoration: BoxDecoration(
-        color: const Color(0xFF0A111E).withValues(alpha: 0.92),
-        borderRadius: BorderRadius.circular(22),
+        color: colors.surface1.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
         border: Border.all(
-          color: const Color(0x3300E5FF),
+          color: colors.borderAccent,
           width: 1.2,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFA8DCE7).withValues(alpha: 0.08),
-            blurRadius: 28,
-            offset: const Offset(0, 4),
-          ),
-          const BoxShadow(
-            color: Colors.black,
-            blurRadius: 36,
-            offset: Offset(0, 8),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -711,29 +697,21 @@ class _WelcomeCopyCard extends StatelessWidget {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFA8DCE7).withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: const Color(0x4400E5FF),
-                  ),
+                  color: colors.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
+                  border: Border.all(color: colors.borderAccent),
                 ),
                 child: Text(
                   data.eyebrow,
-                  style: const TextStyle(
-                    color: Color(0xFFA8DCE7),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1.8,
+                  style: KineticTypography.sectionEyebrow.copyWith(
+                    color: colors.primary,
                   ),
                 ),
               ),
               Text(
                 data.step,
-                style: const TextStyle(
-                  color: Color(0xFF7D8DA6),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.0,
+                style: KineticTypography.caption.copyWith(
+                  color: colors.textMuted,
                 ),
               ),
             ],
@@ -744,26 +722,16 @@ class _WelcomeCopyCard extends StatelessWidget {
           RichText(
             textScaler: MediaQuery.textScalerOf(context),
             text: TextSpan(
-              style: const TextStyle(
-                color: Colors.white,
+              style: KineticTypography.displayXL.copyWith(
+                color: colors.textPrimary,
                 fontSize: 26,
                 height: 1.15,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 0.3,
               ),
               children: [
                 TextSpan(text: data.titlePrefix),
                 TextSpan(
                   text: data.titleAccent,
-                  style: const TextStyle(
-                    color: Color(0xFFA8DCE7),
-                    shadows: [
-                      Shadow(
-                        color: Color(0x8800E5FF),
-                        blurRadius: 16,
-                      ),
-                    ],
-                  ),
+                  style: TextStyle(color: colors.primary),
                 ),
                 TextSpan(text: data.titleSuffix),
               ],
@@ -774,12 +742,9 @@ class _WelcomeCopyCard extends StatelessWidget {
           // Description
           Text(
             data.description,
-            style: const TextStyle(
-              color: Color(0xFF94A3B8),
-              fontSize: 14,
-              height: 1.45,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.2,
+            style: KineticTypography.bodyMedium.copyWith(
+              color: colors.textSecondary,
+              height: 1.6,
             ),
           ),
         ],
@@ -823,30 +788,28 @@ class _TelemetryPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.kinetic;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFF101B2B),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: const Color(0x3300E5FF),
-        ),
+        color: colors.surface1,
+        borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
+        border: Border.all(color: colors.borderSubtle),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: const Color(0xFFA8DCE7), size: 16),
+          Icon(icon, color: colors.primary, size: 16),
           const SizedBox(width: 8),
           Flexible(
             child: Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Color(0xFFC3F5FF),
+              style: KineticTypography.label.copyWith(
+                color: colors.textPrimary,
                 fontSize: 11,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.8,
               ),
             ),
           ),
@@ -871,62 +834,65 @@ class _ModernActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 56,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: LinearGradient(
-          colors: isLastPage
-              ? const [Color(0xFFA8DCE7), Color(0xFF39F2B8)]
-              : const [Color(0xFFA8DCE7), Color(0xFF00B0FF)],
+    // V4: DS KineticButton — flat pill at buttonHeightLarge.
+    return KineticButton(
+      label: label,
+      icon: isLastPage
+          ? Icons.check_circle_rounded
+          : Icons.arrow_forward_rounded,
+      isLoading: isProcessing,
+      height: KineticTokens.buttonHeightLarge,
+      onPressed: isProcessing ? null : onPressed,
+    );
+  }
+}
+
+/// Divided mini stat strip shown above the CTA on the final onboarding
+/// page (GPS accuracy / pace unit / route export — capability stats).
+class _WelcomeStatStrip extends StatelessWidget {
+  const _WelcomeStatStrip();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.kinetic;
+
+    Widget item(String value, String label) {
+      return Expanded(
+        child: Column(
+          children: [
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: colors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              style: KineticTypography.unitLabel.copyWith(
+                color: colors.textMuted,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFA8DCE7).withValues(alpha: 0.36),
-            blurRadius: 18,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: isProcessing ? null : onPressed,
-          borderRadius: BorderRadius.circular(16),
-          child: Center(
-            child: isProcessing
-                ? const SizedBox.square(
-                    dimension: 22,
-                    child: CircularProgressIndicator(
-                      color: Color(0xFF00272D),
-                      strokeWidth: 2.4,
-                    ),
-                  )
-                : Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        label,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 1.8,
-                          color: Color(0xFF00272D),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Icon(
-                        isLastPage
-                            ? Icons.check_circle_rounded
-                            : Icons.arrow_forward_rounded,
-                        color: const Color(0xFF00272D),
-                        size: 20,
-                      ),
-                    ],
-                  ),
-          ),
-        ),
-      ),
+      );
+    }
+
+    Widget divider() {
+      return Container(width: 1, height: 30, color: colors.borderSubtle);
+    }
+
+    return Row(
+      children: [
+        item('±8 m', 'GPS'),
+        divider(),
+        item('min/km', 'Live pace'),
+        divider(),
+        item('GPX', 'Routes'),
+      ],
     );
   }
 }
@@ -939,6 +905,8 @@ class _PageDots extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.kinetic;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(count, (index) {
@@ -950,89 +918,12 @@ class _PageDots extends StatelessWidget {
           width: selected ? 32 : 8,
           height: 6,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(99),
-            gradient: selected
-                ? const LinearGradient(
-                    colors: [Color(0xFFA8DCE7), Color(0xFF39F2B8)],
-                  )
-                : null,
-            color: selected ? null : const Color(0xFF1E293B),
-            boxShadow: selected
-                ? [
-                    BoxShadow(
-                      color: const Color(0xFFA8DCE7).withValues(alpha: 0.5),
-                      blurRadius: 8,
-                      spreadRadius: 1,
-                    ),
-                  ]
-                : null,
+            borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
+            color: selected ? colors.primary : colors.surface3,
           ),
         );
       }),
     );
-  }
-}
-
-class _WelcomeGrid extends StatelessWidget {
-  const _WelcomeGrid();
-
-  @override
-  Widget build(BuildContext context) {
-    return IgnorePointer(child: CustomPaint(painter: _WelcomeGridPainter()));
-  }
-}
-
-class _WelcomeGridPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFFA8DCE7).withValues(alpha: 0.035)
-      ..strokeWidth = 1;
-    const step = 36.0;
-    for (var x = 0.0; x <= size.width; x += step) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-    for (var y = 0.0; y <= size.height; y += step) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _HeroScanPainter extends CustomPainter {
-  const _HeroScanPainter({required this.progress});
-
-  final double progress;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final y = size.height * progress;
-    final linePaint = Paint()
-      ..shader = LinearGradient(
-        colors: [
-          Colors.transparent,
-          const Color(0xFFA8DCE7).withValues(alpha: 0.72),
-          Colors.transparent,
-        ],
-      ).createShader(Rect.fromLTWH(0, y - 12, size.width, 24))
-      ..strokeWidth = 2;
-    canvas.drawLine(Offset(0, y), Offset(size.width, y), linePaint);
-
-    final particlePaint = Paint()
-      ..color = const Color(0xFFA8DCE7).withValues(alpha: 0.36);
-    for (var i = 0; i < 16; i++) {
-      final seed = i * 38.0;
-      final x = (math.sin(progress * math.pi * 2 + i) * 0.5 + 0.5) * size.width;
-      final py = (y + seed) % size.height;
-      canvas.drawCircle(Offset(x, py), i.isEven ? 1.5 : 1, particlePaint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _HeroScanPainter oldDelegate) {
-    return oldDelegate.progress != progress;
   }
 }
 
@@ -1041,11 +932,17 @@ class _FeatureHeroPainter extends CustomPainter {
     required this.progress,
     required this.heroType,
     required this.icon,
+    required this.primaryColor,
+    required this.secondaryColor,
+    required this.tertiaryColor,
   });
 
   final double progress;
   final _OnboardingHeroType heroType;
   final IconData icon;
+  final Color primaryColor;
+  final Color secondaryColor;
+  final Color tertiaryColor;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1053,14 +950,14 @@ class _FeatureHeroPainter extends CustomPainter {
     final radius = math.min(size.width, size.height) * 0.26;
 
     final glowPaint = Paint()
-      ..color = const Color(0xFFA8DCE7).withValues(alpha: 0.18)
+      ..color = primaryColor.withValues(alpha: 0.18)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 42);
     canvas.drawCircle(center, radius * 1.5, glowPaint);
 
     final ringPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.4
-      ..color = const Color(0xFFA8DCE7).withValues(alpha: 0.36);
+      ..color = primaryColor.withValues(alpha: 0.36);
     for (final scale in [0.72, 1.0, 1.28]) {
       canvas.drawCircle(center, radius * scale, ringPaint);
     }
@@ -1071,10 +968,10 @@ class _FeatureHeroPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round
       ..shader = SweepGradient(
         colors: [
-          const Color(0xFFA8DCE7).withValues(alpha: 0),
-          const Color(0xFFA8DCE7),
-          const Color(0xFF39F2B8),
-          const Color(0xFFA8DCE7).withValues(alpha: 0),
+          primaryColor.withValues(alpha: 0),
+          primaryColor,
+          secondaryColor,
+          primaryColor.withValues(alpha: 0),
         ],
         transform: GradientRotation(progress * math.pi * 2),
       ).createShader(Rect.fromCircle(center: center, radius: radius * 1.16));
@@ -1088,10 +985,52 @@ class _FeatureHeroPainter extends CustomPainter {
       case _OnboardingHeroType.achievements:
         _drawAchievement(canvas, center, radius, progress);
       case _OnboardingHeroType.runner:
-        break;
+        _drawStrideArc(canvas, center, radius, progress);
     }
 
     _drawIcon(canvas, center, icon, radius);
+  }
+
+  void _drawStrideArc(
+    Canvas canvas,
+    Offset center,
+    double radius,
+    double progress,
+  ) {
+    final arcPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.2
+      ..strokeCap = StrokeCap.round
+      ..color = secondaryColor.withValues(alpha: 0.48);
+
+    final pulseShift = math.sin(progress * math.pi * 2) * 0.14;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius * 0.86),
+      -math.pi * 0.78 + pulseShift,
+      math.pi * 0.56,
+      false,
+      arcPaint,
+    );
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius * 0.86),
+      math.pi * 0.22 + pulseShift,
+      math.pi * 0.56,
+      false,
+      arcPaint..color = primaryColor.withValues(alpha: 0.45),
+    );
+
+    final dotPaint = Paint()..color = primaryColor.withValues(alpha: 0.72);
+    for (final offsetAngle in [-math.pi * 0.5, math.pi * 0.5]) {
+      final angle = offsetAngle + progress * math.pi * 2;
+      canvas.drawCircle(
+        Offset(
+          center.dx + math.cos(angle) * radius * 1.28,
+          center.dy + math.sin(angle) * radius * 1.28,
+        ),
+        3.5,
+        dotPaint,
+      );
+    }
   }
 
   void _drawRoute(
@@ -1115,16 +1054,16 @@ class _FeatureHeroPainter extends CustomPainter {
       ..strokeWidth = 12
       ..strokeCap = StrokeCap.round
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12)
-      ..color = const Color(0xFFA8DCE7).withValues(alpha: 0.32);
+      ..color = primaryColor.withValues(alpha: 0.32);
     final routePaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 4
       ..strokeCap = StrokeCap.round
-      ..color = const Color(0xFFA8DCE7);
+      ..color = primaryColor;
     canvas.drawPath(path, routeGlow);
     canvas.drawPath(path, routePaint);
 
-    final markerPaint = Paint()..color = const Color(0xFFC3F5FF);
+    final markerPaint = Paint()..color = primaryColor;
     for (final t in [0.0, 0.42, 0.78]) {
       final angle = (t + progress) * math.pi * 2;
       canvas.drawCircle(
@@ -1146,7 +1085,7 @@ class _FeatureHeroPainter extends CustomPainter {
   ) {
     final baseY = center.dy + radius * 0.55;
     final barPaint = Paint()
-      ..color = const Color(0xFFA8DCE7).withValues(alpha: 0.76)
+      ..color = primaryColor.withValues(alpha: 0.76)
       ..strokeCap = StrokeCap.round
       ..strokeWidth = 10;
     for (var i = 0; i < 6; i++) {
@@ -1170,7 +1109,7 @@ class _FeatureHeroPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = 3
         ..strokeCap = StrokeCap.round
-        ..color = const Color(0xFFFFBA20),
+        ..color = tertiaryColor,
     );
   }
 
@@ -1185,7 +1124,7 @@ class _FeatureHeroPainter extends CustomPainter {
       ..strokeWidth = 4
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
-      ..color = const Color(0xFFFFBA20);
+      ..color = tertiaryColor;
     final star = Path();
     for (var i = 0; i < 10; i++) {
       final r = i.isEven ? radius * 0.52 : radius * 0.24;
@@ -1208,7 +1147,7 @@ class _FeatureHeroPainter extends CustomPainter {
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2
-        ..color = const Color(0xFFA8DCE7).withValues(alpha: 0.8),
+        ..color = primaryColor.withValues(alpha: 0.8),
     );
   }
 
@@ -1220,7 +1159,7 @@ class _FeatureHeroPainter extends CustomPainter {
           fontFamily: icon.fontFamily,
           package: icon.fontPackage,
           fontSize: radius * 0.44,
-          color: const Color(0xFFC3F5FF),
+          color: primaryColor,
         ),
       ),
       textDirection: TextDirection.ltr,
@@ -1235,6 +1174,9 @@ class _FeatureHeroPainter extends CustomPainter {
   bool shouldRepaint(covariant _FeatureHeroPainter oldDelegate) {
     return oldDelegate.progress != progress ||
         oldDelegate.heroType != heroType ||
-        oldDelegate.icon != icon;
+        oldDelegate.icon != icon ||
+        oldDelegate.primaryColor != primaryColor ||
+        oldDelegate.secondaryColor != secondaryColor ||
+        oldDelegate.tertiaryColor != tertiaryColor;
   }
 }

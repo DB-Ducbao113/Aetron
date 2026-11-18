@@ -258,7 +258,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: KineticTokens.page, vertical: KineticTokens.spaceSM),
               child: Row(
                 children: [
                   if (isEditing) ...[
@@ -320,7 +320,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
             ),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+                padding: const EdgeInsets.fromLTRB(KineticTokens.page, KineticTokens.spaceSM, KineticTokens.page, KineticTokens.spaceXXL),
                 child: Form(
                   key: _formKey,
                   child: Column(
@@ -331,7 +331,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                         onChanged: _setUseMetricUnits,
                         currentLang: currentLang,
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: KineticTokens.spaceMD),
                       _GlassCard(
                         child: Column(
                           children: [
@@ -345,12 +345,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                                   color: colors.primary.withValues(alpha: 0.4),
                                   width: 1.4,
                                 ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: colors.primary.withValues(alpha: 0.25),
-                                    blurRadius: 16,
-                                  ),
-                                ],
                               ),
                               child: Icon(
                                 Icons.person_outline_rounded,
@@ -358,7 +352,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                                 size: 30,
                               ),
                             ),
-                            const SizedBox(height: 20),
+                            const SizedBox(height: KineticTokens.spaceLG),
                             _InputField(
                               controller: _displayNameController,
                               label: AppTranslations.get('display_name', currentLang),
@@ -378,7 +372,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                                 return null;
                               },
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: KineticTokens.spaceSM),
                             _InputField(
                               controller: _weightController,
                               label: AppTranslations.get('weight', currentLang),
@@ -406,7 +400,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                                 return null;
                               },
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: KineticTokens.spaceSM),
                             if (useMetricUnits)
                               _InputField(
                                 controller: _heightController,
@@ -479,7 +473,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                                   ),
                                 ],
                               ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: KineticTokens.spaceSM),
                             _InputField(
                               controller: _ageController,
                               label: AppTranslations.get('age', currentLang),
@@ -497,7 +491,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                                 return null;
                               },
                             ),
-                            const SizedBox(height: 18),
+                            const SizedBox(height: KineticTokens.spaceLG),
                             Align(
                               alignment: Alignment.centerLeft,
                               child: Text(
@@ -508,7 +502,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: KineticTokens.spaceXS),
                             Row(
                               children: [
                                 Expanded(
@@ -537,14 +531,14 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: KineticTokens.spaceXL),
                       KineticButton(
                         label: currentLang == AppLanguage.vi
                             ? (isEditing ? 'CẬP NHẬT HỒ SƠ' : 'LƯU HỒ SƠ')
                             : (isEditing ? 'UPDATE PROFILE' : 'SAVE PROFILE'),
                         icon: Icons.arrow_forward_rounded,
                         variant: KineticButtonVariant.primary,
-                        height: 52,
+                        height: KineticTokens.buttonHeightPrimary,
                         isLoading: _isLoading,
                         onPressed: _isLoading ? null : _saveProfile,
                       ),
@@ -595,10 +589,10 @@ class _UnitSelector extends StatelessWidget {
         ),
         Container(
           height: 48,
-          padding: const EdgeInsets.all(4),
+          padding: const EdgeInsets.all(KineticTokens.spaceXXS),
           decoration: BoxDecoration(
             color: colors.surface1,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
             border: Border.all(
               color: colors.borderSubtle,
               width: 1.0,
@@ -656,7 +650,7 @@ class _UnitOption extends StatelessWidget {
           color: selected
               ? colors.primary.withValues(alpha: 0.15)
               : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
           border: Border.all(
             color: selected ? colors.primary : Colors.transparent,
             width: selected ? 1.4 : 1.0,
@@ -726,21 +720,21 @@ class _InputField extends StatelessWidget {
         ),
         prefixIcon: Icon(icon, color: colors.primary, size: 20),
         filled: true,
-        fillColor: colors.surface2,
+        fillColor: colors.surface1,
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
           borderSide: BorderSide(color: colors.borderSubtle),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
           borderSide: BorderSide(color: colors.primary, width: 1.4),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
           borderSide: BorderSide(color: colors.error),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
           borderSide: BorderSide(color: colors.error, width: 1.4),
         ),
       ),
@@ -772,23 +766,19 @@ class _GenderOption extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: KineticTokens.motionTab,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        padding: const EdgeInsets.symmetric(
+          horizontal: KineticTokens.spaceSM,
+          vertical: KineticTokens.spaceSM,
+        ),
         decoration: BoxDecoration(
           color: selected
               ? activeColor.withValues(alpha: 0.15)
               : colors.surface2,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
           border: Border.all(
             color: selected ? activeColor : colors.borderSubtle,
             width: selected ? 1.4 : 1.0,
           ),
-          boxShadow: [
-            if (selected)
-              BoxShadow(
-                color: activeColor.withValues(alpha: 0.15),
-                blurRadius: 8,
-              ),
-          ],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -823,21 +813,14 @@ class _GlassCard extends StatelessWidget {
     final colors = context.kinetic;
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(KineticTokens.spaceLG),
       decoration: BoxDecoration(
         color: colors.surface1,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
         border: Border.all(
           color: colors.borderSubtle,
           width: 1.0,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: child,
     );

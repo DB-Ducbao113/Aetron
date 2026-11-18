@@ -1,11 +1,23 @@
+import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/profile/domain/entities/user_profile.dart';
 import 'package:fitness_exercise_application/features/profile/presentation/screens/profile_setup_screen.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+class _TestViLanguageNotifier extends AppLanguageNotifier {
+  _TestViLanguageNotifier() : super() {
+    state = AppLanguage.vi;
+  }
+}
 
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({kAppLanguagePrefKey: 'vi'});
+  });
+
   group('ProfileSetupScreen Streamline Tests', () {
     testWidgets('Edit Profile renders single clean title + subtitle without duplicate headings', (tester) async {
       tester.view.physicalSize = const Size(1080, 2400);
@@ -25,6 +37,9 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
+          overrides: [
+            appLanguageProvider.overrideWith((_) => _TestViLanguageNotifier()),
+          ],
           child: MaterialApp(
             theme: KineticTheme.darkTheme,
             home: ProfileSetupScreen(existingProfile: existingProfile),
@@ -54,8 +69,11 @@ void main() {
       addTearDown(() => tester.view.resetPhysicalSize());
 
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
+        ProviderScope(
+          overrides: [
+            appLanguageProvider.overrideWith((_) => _TestViLanguageNotifier()),
+          ],
+          child: const MaterialApp(
             home: ProfileSetupScreen(),
           ),
         ),

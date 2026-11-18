@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/profile/domain/entities/user_goal.dart';
 import 'package:fitness_exercise_application/features/profile/presentation/providers/goal_providers.dart';
@@ -33,19 +35,46 @@ Widget createGoalScreenTestHarness({
   FakeUserGoalNotifier? goalNotifier,
   AppLanguage language = AppLanguage.vi,
   bool useMetric = true,
+  Future<bool>? metricUnitsFuture,
+  ThemeData? theme,
+  TextScaler? textScaler,
 }) {
   final notifier = goalNotifier ?? FakeUserGoalNotifier();
   return ProviderScope(
     overrides: [
       userGoalProvider.overrideWith((ref) => notifier),
       appLanguageProvider.overrideWith((ref) => AppLanguageNotifier()..state = language),
-      metricUnitsPreferenceProvider.overrideWith((ref) => Future.value(useMetric)),
+      metricUnitsPreferenceProvider.overrideWith(
+        (ref) => metricUnitsFuture ?? Future.value(useMetric),
+      ),
     ],
     child: MaterialApp(
-      theme: KineticTheme.darkTheme,
+      theme: theme ?? KineticTheme.darkTheme,
+      builder: textScaler == null
+          ? null
+          : (context, child) => MediaQuery(
+                data: MediaQuery.of(context).copyWith(textScaler: textScaler),
+                child: child!,
+              ),
       home: const GoalScreen(),
     ),
   );
+}
+
+void setLogicalViewport(
+  WidgetTester tester,
+  Size logicalSize, {
+  double dpr = 2.0,
+}) {
+  tester.view.physicalSize = Size(
+    logicalSize.width * dpr,
+    logicalSize.height * dpr,
+  );
+  tester.view.devicePixelRatio = dpr;
+  addTearDown(() {
+    tester.view.resetPhysicalSize();
+    tester.view.resetDevicePixelRatio();
+  });
 }
 
 void main() {
@@ -75,8 +104,10 @@ void main() {
       expect(find.text('Calo'), findsOneWidget);
 
       // Cadence tabs
-      expect(find.text('Sprint Tuần Này'), findsOneWidget);
-      expect(find.text('Chiến Dịch Tháng'), findsOneWidget);
+      expect(find.text('Tuần'), findsOneWidget);
+      expect(find.text('7 ngày'), findsOneWidget);
+      expect(find.text('Tháng'), findsOneWidget);
+      expect(find.text('30 ngày'), findsOneWidget);
 
       // Sections
       expect(find.text('Ý NGHĨA & HIỆU QUẢ THỰC TẾ'), findsOneWidget);
@@ -107,8 +138,10 @@ void main() {
       expect(find.text('Calories'), findsOneWidget);
 
       // Cadence tabs
-      expect(find.text('Weekly Sprint'), findsOneWidget);
-      expect(find.text('Monthly Campaign'), findsOneWidget);
+      expect(find.text('Weekly'), findsOneWidget);
+      expect(find.text('7 days'), findsOneWidget);
+      expect(find.text('Monthly'), findsOneWidget);
+      expect(find.text('30 days'), findsOneWidget);
 
       // Sections & CTA
       expect(find.text('REAL-WORLD PERFORMANCE IMPACT'), findsOneWidget);
@@ -161,13 +194,16 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 150));
 
-      // Tap Monthly campaign
-      await tester.tap(find.text('Chiến Dịch Tháng'));
+      // Tap Monthly pill tab
+      await tester.tap(find.text('Tháng'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 150));
 
       // Check cadence selection state
-      expect(find.text('Chiến Dịch Tháng'), findsOneWidget);
+      expect(find.text('Tháng'), findsOneWidget);
+      expect(find.text('30 ngày'), findsOneWidget);
+      expect(find.text('MỤC TIÊU THÁNG'), findsOneWidget);
+      expect(find.text('150'), findsWidgets);
       expect(find.textContaining('tháng'), findsWidgets);
     });
 
@@ -355,5 +391,614 @@ void main() {
 
       expect(find.text('42'), findsWidgets);
     });
+  });
+
+  group('Kinetic GoalScreen Light & Dark Theme Rendering Tests', () {
+    for (final isDark in [false, true]) {
+      for (final lang in [AppLanguage.vi, AppLanguage.en]) {
+        final themeLabel = isDark ? 'Dark' : 'Light';
+        final langLabel = lang == AppLanguage.vi ? 'VI' : 'EN';
+        testWidgets(
+          'renders cleanly in $themeLabel mode ($langLabel) at 390x844',
+          (tester) async {
+            setLogicalViewport(tester, const Size(390, 844));
+            final theme = isDark ? KineticTheme.darkTheme : KineticTheme.lightTheme;
+            final expectedColors = isDark ? KineticColors.dark : KineticColors.light;
+
+            await tester.pumpWidget(
+              createGoalScreenTestHarness(
+                language: lang,
+                theme: theme,
+              ),
+            );
+            await tester.pump();
+            await tester.pump(const Duration(milliseconds: 150));
+
+            expect(tester.takeException(), isNull);
+
+            final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
+            expect(scaffold.backgroundColor, equals(expectedColors.background));
+
+            if (lang == AppLanguage.vi) {
+              expect(find.text('Mục tiêu rèn luyện'), findsOneWidget);
+              expect(find.text('Cự ly'), findsOneWidget);
+              expect(find.text('Buổi tập'), findsOneWidget);
+              expect(find.text('Calo'), findsOneWidget);
+              expect(find.text('Tuần'), findsOneWidget);
+              expect(find.text('Tháng'), findsOneWidget);
+              expect(find.text('KÍCH HOẠT MỤC TIÊU'), findsOneWidget);
+            } else {
+              expect(find.text('Fitness Goals'), findsOneWidget);
+              expect(find.text('Distance'), findsOneWidget);
+              expect(find.text('Sessions'), findsOneWidget);
+              expect(find.text('Calories'), findsOneWidget);
+              expect(find.text('Weekly'), findsOneWidget);
+              expect(find.text('Monthly'), findsOneWidget);
+              expect(find.text('ACTIVATE GOAL'), findsOneWidget);
+            }
+          },
+        );
+      }
+    }
+  });
+
+  group('Kinetic GoalScreen Responsive 360px & 390px Overflow Matrix Tests', () {
+    final now = DateTime(2026, 11, 18);
+
+    for (final viewport in [const Size(360, 640), const Size(390, 844)]) {
+      for (final isDark in [false, true]) {
+        for (final lang in [AppLanguage.vi, AppLanguage.en]) {
+          for (final goalType in GoalType.values) {
+            for (final period in GoalPeriod.values) {
+              final targetValue = switch ((goalType, period)) {
+                (GoalType.distance, GoalPeriod.weekly) => 35.0,
+                (GoalType.distance, GoalPeriod.monthly) => 150.0,
+                (GoalType.workouts, GoalPeriod.weekly) => 4.0,
+                (GoalType.workouts, GoalPeriod.monthly) => 45.0,
+                (GoalType.calories, GoalPeriod.weekly) => 3500.0,
+                (GoalType.calories, GoalPeriod.monthly) => 60000.0,
+              };
+
+              testWidgets(
+                'no overflow at ${viewport.width.toInt()}x${viewport.height.toInt()} '
+                '${isDark ? "Dark" : "Light"} ${lang.name} ${goalType.name}/${period.name}',
+                (tester) async {
+                  setLogicalViewport(tester, viewport);
+                  final seededGoal = UserGoal(
+                    id: 'matrix-${goalType.name}-${period.name}',
+                    userId: 'test-user',
+                    goalType: goalType,
+                    targetValue: targetValue,
+                    period: period,
+                    createdAt: now,
+                    updatedAt: now,
+                  );
+
+                  await tester.pumpWidget(
+                    createGoalScreenTestHarness(
+                      goalNotifier: FakeUserGoalNotifier(seededGoal),
+                      language: lang,
+                      theme: isDark ? KineticTheme.darkTheme : KineticTheme.lightTheme,
+                    ),
+                  );
+                  await tester.pump();
+                  await tester.pump(const Duration(milliseconds: 150));
+
+                  expect(tester.takeException(), isNull);
+                },
+              );
+            }
+          }
+        }
+      }
+    }
+
+    for (final viewport in [const Size(360, 640), const Size(390, 844)]) {
+      for (final isDark in [false, true]) {
+        for (final lang in [AppLanguage.vi, AppLanguage.en]) {
+          testWidgets(
+            '60,000 KCAL max monthly calories does not overflow at '
+            '${viewport.width.toInt()}x${viewport.height.toInt()} '
+            '${isDark ? "Dark" : "Light"} (${lang.name}) with 1.3x textScaler',
+            (tester) async {
+              setLogicalViewport(tester, viewport);
+              final maxCalGoal = UserGoal(
+                id: 'max-kcal',
+                userId: 'test-user',
+                goalType: GoalType.calories,
+                targetValue: 60000.0,
+                period: GoalPeriod.monthly,
+                createdAt: now,
+                updatedAt: now,
+              );
+
+              await tester.pumpWidget(
+                createGoalScreenTestHarness(
+                  goalNotifier: FakeUserGoalNotifier(maxCalGoal),
+                  language: lang,
+                  theme: isDark ? KineticTheme.darkTheme : KineticTheme.lightTheme,
+                  textScaler: const TextScaler.linear(1.3),
+                ),
+              );
+              await tester.pump();
+              await tester.pump(const Duration(milliseconds: 150));
+
+              expect(find.text('60,000'), findsWidgets);
+              expect(find.text('KCAL'), findsWidgets);
+              expect(tester.takeException(), isNull);
+
+              // Also verify direct editor sheet and delete confirmation dialog fit cleanly
+              await tester.tap(find.text(lang == AppLanguage.vi ? 'Nhập số' : 'Enter value'));
+              await tester.pump();
+              await tester.pump(const Duration(milliseconds: 150));
+              expect(tester.takeException(), isNull);
+
+              await tester.tap(
+                find.text(lang == AppLanguage.vi ? 'ÁP DỤNG MỤC TIÊU' : 'APPLY TARGET'),
+              );
+              await tester.pump();
+              await tester.pump(const Duration(milliseconds: 150));
+              expect(tester.takeException(), isNull);
+
+              await tester.tap(find.byIcon(Icons.delete_outline_rounded));
+              await tester.pump();
+              await tester.pump(const Duration(milliseconds: 150));
+              expect(tester.takeException(), isNull);
+            },
+          );
+        }
+      }
+    }
+  });
+
+  group('Kinetic GoalScreen Segmented Control & Cadence Pill Selection Tests', () {
+    for (final isDark in [false, true]) {
+      final expectedActiveFill =
+          isDark ? KineticColors.dark.surface3 : KineticColors.light.surface1;
+      for (final lang in [AppLanguage.vi, AppLanguage.en]) {
+        final isVi = lang == AppLanguage.vi;
+        testWidgets(
+          'segmented control and cadence pill taps update selection state '
+          '(${isDark ? "Dark" : "Light"}, ${lang.name})',
+          (tester) async {
+            setLogicalViewport(tester, const Size(390, 844));
+            final fakeNotifier = FakeUserGoalNotifier();
+
+            await tester.pumpWidget(
+              createGoalScreenTestHarness(
+                goalNotifier: fakeNotifier,
+                language: lang,
+                theme: isDark ? KineticTheme.darkTheme : KineticTheme.lightTheme,
+              ),
+            );
+            await tester.pump();
+            await tester.pump(const Duration(milliseconds: 150));
+
+            AnimatedContainer segmentContainerFor(String label) {
+              return tester.widget<AnimatedContainer>(
+                find.ancestor(
+                  of: find.text(label),
+                  matching: find.byType(AnimatedContainer),
+                ).first,
+              );
+            }
+
+            final distLabel = isVi ? 'Cự ly' : 'Distance';
+            final sessionsLabel = isVi ? 'Buổi tập' : 'Sessions';
+            final caloriesLabel = isVi ? 'Calo' : 'Calories';
+            final weeklyLabel = isVi ? 'Tuần' : 'Weekly';
+            final monthlyLabel = isVi ? 'Tháng' : 'Monthly';
+
+            // Initial state: Distance + Weekly selected
+            expect(
+              (segmentContainerFor(distLabel).decoration as BoxDecoration).color,
+              equals(expectedActiveFill),
+            );
+            expect(
+              (segmentContainerFor(sessionsLabel).decoration as BoxDecoration).color,
+              equals(Colors.transparent),
+            );
+            expect(
+              (segmentContainerFor(weeklyLabel).decoration as BoxDecoration).color,
+              equals(expectedActiveFill),
+            );
+            expect(
+              (segmentContainerFor(monthlyLabel).decoration as BoxDecoration).color,
+              equals(Colors.transparent),
+            );
+
+            // Tap Sessions segment
+            await tester.tap(find.text(sessionsLabel));
+            await tester.pump();
+            await tester.pump(const Duration(milliseconds: 150));
+
+            expect(
+              (segmentContainerFor(sessionsLabel).decoration as BoxDecoration).color,
+              equals(expectedActiveFill),
+            );
+            expect(
+              (segmentContainerFor(distLabel).decoration as BoxDecoration).color,
+              equals(Colors.transparent),
+            );
+            expect(find.text('4'), findsWidgets);
+            expect(find.text(isVi ? 'BUỔI' : 'SESSIONS'), findsWidgets);
+            expect(
+              find.text(isVi ? 'Buổi tập • tuần' : 'Sessions • wk'),
+              findsOneWidget,
+            );
+
+            // Tap Calories segment
+            await tester.tap(find.text(caloriesLabel));
+            await tester.pump();
+            await tester.pump(const Duration(milliseconds: 150));
+
+            expect(
+              (segmentContainerFor(caloriesLabel).decoration as BoxDecoration).color,
+              equals(expectedActiveFill),
+            );
+            expect(find.text('3,500'), findsWidgets);
+            expect(
+              find.text(isVi ? 'Calo • tuần' : 'Calories • wk'),
+              findsOneWidget,
+            );
+
+            // Tap Monthly cadence pill
+            await tester.tap(find.text(monthlyLabel));
+            await tester.pump();
+            await tester.pump(const Duration(milliseconds: 150));
+
+            expect(
+              (segmentContainerFor(monthlyLabel).decoration as BoxDecoration).color,
+              equals(expectedActiveFill),
+            );
+            expect(
+              (segmentContainerFor(weeklyLabel).decoration as BoxDecoration).color,
+              equals(Colors.transparent),
+            );
+            expect(find.text('15,000'), findsWidgets);
+            expect(
+              find.text(isVi ? 'MỤC TIÊU THÁNG' : 'MONTHLY TARGET'),
+              findsOneWidget,
+            );
+            expect(
+              find.text(isVi ? 'Calo • tháng' : 'Calories • mo'),
+              findsOneWidget,
+            );
+
+            // Persist and verify saved GoalType & GoalPeriod
+            await tester.tap(
+              find.text(isVi ? 'KÍCH HOẠT MỤC TIÊU' : 'ACTIVATE GOAL'),
+            );
+            await tester.pump();
+            await tester.pump(const Duration(milliseconds: 150));
+
+            expect(fakeNotifier.savedGoal, isNotNull);
+            expect(fakeNotifier.savedGoal!.goalType, equals(GoalType.calories));
+            expect(fakeNotifier.savedGoal!.period, equals(GoalPeriod.monthly));
+            expect(tester.takeException(), isNull);
+          },
+        );
+      }
+    }
+  });
+
+  group('Kinetic GoalScreen Remediation & Edge Case Tests', () {
+    final now = DateTime(2026, 11, 18);
+
+    for (final viewport in [const Size(320, 568), const Size(360, 640)]) {
+      for (final scale in [1.5, 2.0]) {
+        for (final isDark in [false, true]) {
+          for (final lang in [AppLanguage.vi, AppLanguage.en]) {
+            final isVi = lang == AppLanguage.vi;
+            testWidgets(
+              'no overflow at ${viewport.width.toInt()}x${viewport.height.toInt()} '
+              'textScaler=${scale}x ${isDark ? "Dark" : "Light"} ${lang.name}',
+              (tester) async {
+                setLogicalViewport(tester, viewport);
+                final seededGoal = UserGoal(
+                  id: 'remediation-${viewport.width.toInt()}-$scale',
+                  userId: 'test-user',
+                  goalType: GoalType.calories,
+                  targetValue: 60000.0,
+                  period: GoalPeriod.monthly,
+                  createdAt: now,
+                  updatedAt: now,
+                );
+
+                await tester.pumpWidget(
+                  createGoalScreenTestHarness(
+                    goalNotifier: FakeUserGoalNotifier(seededGoal),
+                    language: lang,
+                    theme: isDark ? KineticTheme.darkTheme : KineticTheme.lightTheme,
+                    textScaler: TextScaler.linear(scale),
+                  ),
+                );
+                await tester.pump();
+                await tester.pump(const Duration(milliseconds: 150));
+
+                expect(tester.takeException(), isNull);
+
+                final targetHeaderFinder = find.text(
+                  isVi ? 'MỤC TIÊU THÁNG' : 'MONTHLY TARGET',
+                );
+                final enterValueFinder = find.text(
+                  isVi ? 'Nhập số' : 'Enter value',
+                );
+                expect(targetHeaderFinder, findsOneWidget);
+                expect(enterValueFinder, findsOneWidget);
+                expect(tester.getSize(targetHeaderFinder).width, greaterThan(0));
+                expect(tester.getSize(enterValueFinder).width, greaterThan(0));
+              },
+            );
+          }
+        }
+      }
+    }
+
+    testWidgets('renders Imperial (useMetric: false) units and defaults accurately', (tester) async {
+      setLogicalViewport(tester, const Size(390, 844));
+      final fakeNotifier = FakeUserGoalNotifier();
+
+      await tester.pumpWidget(
+        createGoalScreenTestHarness(
+          goalNotifier: fakeNotifier,
+          language: AppLanguage.en,
+          useMetric: false,
+          theme: KineticTheme.lightTheme,
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 150));
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('MI'), findsWidgets);
+      expect(find.text('mi'), findsWidgets);
+      expect(find.text('22'), findsWidgets);
+
+      await tester.tap(find.text('ACTIVATE GOAL'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 150));
+
+      expect(fakeNotifier.savedGoal, isNotNull);
+      expect(fakeNotifier.savedGoal!.goalType, equals(GoalType.distance));
+      // 22 mi / 0.621371 ~= 35.4 km
+      expect(fakeNotifier.savedGoal!.targetValue, closeTo(35.4, 0.2));
+    });
+
+    testWidgets(
+      'async metricUnitsPreferenceProvider resolving to false (MI) converts existing 50 km goal and saves ~50 km',
+      (tester) async {
+        setLogicalViewport(tester, const Size(390, 844));
+        final completer = Completer<bool>();
+        final existingGoal = UserGoal(
+          id: 'goal-async-mi',
+          userId: 'test-user',
+          goalType: GoalType.distance,
+          targetValue: 50.0,
+          period: GoalPeriod.weekly,
+          createdAt: now,
+          updatedAt: now,
+        );
+        final fakeNotifier = FakeUserGoalNotifier(existingGoal);
+
+        await tester.pumpWidget(
+          createGoalScreenTestHarness(
+            goalNotifier: fakeNotifier,
+            language: AppLanguage.en,
+            metricUnitsFuture: completer.future,
+            theme: KineticTheme.darkTheme,
+          ),
+        );
+        await tester.pump();
+
+        // Before preference resolves, displays metric 50 KM
+        expect(find.text('50'), findsWidgets);
+        expect(find.text('KM'), findsWidgets);
+
+        // Resolve preference to Imperial (false -> MI)
+        completer.complete(false);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 150));
+
+        expect(tester.takeException(), isNull);
+        expect(find.text('MI'), findsWidgets);
+        expect(find.text('mi'), findsWidgets);
+        // 50.0 km * 0.6213711922 = 31.068... -> '31.1'
+        expect(find.text('31.1'), findsWidgets);
+
+        await tester.tap(find.text('UPDATE GOAL'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 150));
+
+        expect(fakeNotifier.savedGoal, isNotNull);
+        expect(fakeNotifier.savedGoal!.targetValue, closeTo(50.0, 0.05));
+      },
+    );
+
+    testWidgets(
+      'async metricUnitsPreferenceProvider resolving to false after user edits converts edited km to mi',
+      (tester) async {
+        setLogicalViewport(tester, const Size(390, 844));
+        final completer = Completer<bool>();
+        final existingGoal = UserGoal(
+          id: 'goal-async-edited-mi',
+          userId: 'test-user',
+          goalType: GoalType.distance,
+          targetValue: 50.0,
+          period: GoalPeriod.weekly,
+          createdAt: now,
+          updatedAt: now,
+        );
+        final fakeNotifier = FakeUserGoalNotifier(existingGoal);
+
+        await tester.pumpWidget(
+          createGoalScreenTestHarness(
+            goalNotifier: fakeNotifier,
+            language: AppLanguage.en,
+            metricUnitsFuture: completer.future,
+          ),
+        );
+        await tester.pump();
+
+        // User increments from 50 -> 52.5 while still loading metric
+        await tester.tap(find.byIcon(Icons.add_rounded));
+        await tester.pump();
+        expect(find.text('52.5'), findsWidgets);
+
+        // Preference resolves to Imperial
+        completer.complete(false);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 150));
+
+        // 52.5 km -> 32.6 mi
+        expect(find.text('32.6'), findsWidgets);
+        expect(find.text('MI'), findsWidgets);
+
+        await tester.tap(find.text('UPDATE GOAL'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 150));
+
+        expect(fakeNotifier.savedGoal, isNotNull);
+        expect(fakeNotifier.savedGoal!.targetValue, closeTo(52.5, 0.05));
+      },
+    );
+
+    testWidgets('re-tapping active discipline or cadence preserves adjusted target value', (tester) async {
+      setLogicalViewport(tester, const Size(390, 844));
+      await tester.pumpWidget(
+        createGoalScreenTestHarness(
+          language: AppLanguage.vi,
+          theme: KineticTheme.lightTheme,
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 150));
+
+      // Adjust weekly distance from 35 -> 37.5
+      await tester.tap(find.byIcon(Icons.add_rounded));
+      await tester.pump();
+      expect(find.text('37.5'), findsWidgets);
+
+      // Re-tap active Distance segment and active Weekly cadence pill
+      await tester.tap(find.text('Cự ly'));
+      await tester.pump();
+      expect(find.text('37.5'), findsWidgets);
+
+      await tester.tap(find.text('Tuần'));
+      await tester.pump();
+      expect(find.text('37.5'), findsWidgets);
+
+      // Tapping a different cadence (Monthly) resets to Monthly default (150)
+      await tester.tap(find.text('Tháng'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 150));
+      expect(find.text('150'), findsWidgets);
+
+      // Adjust monthly distance 150 -> 152.5, then re-tap Monthly -> preserved
+      await tester.tap(find.byIcon(Icons.add_rounded));
+      await tester.pump();
+      expect(find.text('152.5'), findsWidgets);
+
+      await tester.tap(find.text('Tháng'));
+      await tester.pump();
+      expect(find.text('152.5'), findsWidgets);
+    });
+
+    testWidgets(
+      'direct editor accepts comma-formatted input, formats calorie presets with commas, and disposes controller cleanly',
+      (tester) async {
+        setLogicalViewport(tester, const Size(390, 844));
+        await tester.pumpWidget(
+          createGoalScreenTestHarness(
+            language: AppLanguage.vi,
+            theme: KineticTheme.lightTheme,
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 150));
+
+        await tester.tap(find.text('Calo'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 150));
+
+        await tester.tap(find.text('Tháng'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 150));
+
+        // Preset cards use comma formatting for calories
+        expect(find.text('48,000 kcal'), findsOneWidget);
+
+        // Open direct editor and enter comma-formatted number
+        await tester.tap(find.text('Nhập số'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 250));
+
+        await tester.enterText(find.byType(TextField), '25,000');
+        await tester.pump();
+
+        await tester.tap(find.text('ÁP DỤNG MỤC TIÊU'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 350));
+
+        expect(find.text('25,000'), findsWidgets);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'cadence pills meet 44px minimum touch target and Light-mode Calories icons use high-contrast amber',
+      (tester) async {
+        setLogicalViewport(tester, const Size(390, 844));
+        await tester.pumpWidget(
+          createGoalScreenTestHarness(
+            language: AppLanguage.en,
+            theme: KineticTheme.lightTheme,
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 150));
+
+        final weeklyInkWell = find
+            .ancestor(
+              of: find.text('Weekly'),
+              matching: find.byType(InkWell),
+            )
+            .first;
+        expect(
+          tester.getSize(weeklyInkWell).height,
+          greaterThanOrEqualTo(KineticTokens.minTouchTarget),
+        );
+
+        await tester.tap(find.text('Calories'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 150));
+
+        final addIcon = tester.widget<Icon>(find.byIcon(Icons.add_rounded));
+        expect(addIcon.color, equals(const Color(0xFFB45309)));
+      },
+    );
+
+    for (final viewport in [const Size(320, 568), const Size(360, 640)]) {
+      testWidgets(
+        'WEEKLY TARGET header and Enter value do not overflow at '
+        '${viewport.width.toInt()}x${viewport.height.toInt()} textScaler=2.0x EN (no existing goal)',
+        (tester) async {
+          setLogicalViewport(tester, viewport);
+          await tester.pumpWidget(
+            createGoalScreenTestHarness(
+              language: AppLanguage.en,
+              theme: KineticTheme.lightTheme,
+              textScaler: const TextScaler.linear(2.0),
+            ),
+          );
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 150));
+
+          expect(tester.takeException(), isNull);
+          expect(tester.getSize(find.text('WEEKLY TARGET')).width, greaterThan(0));
+          expect(tester.getSize(find.text('Enter value')).width, greaterThan(0));
+        },
+      );
+    }
   });
 }

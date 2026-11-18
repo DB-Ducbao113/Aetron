@@ -1,15 +1,16 @@
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/activity/presentation/screens/activity_screen.dart';
+import 'package:fitness_exercise_application/features/analytics/presentation/screens/analytics_screen.dart';
 import 'package:fitness_exercise_application/features/history/presentation/screens/calendar_screen.dart';
 import 'package:fitness_exercise_application/features/home/presentation/screens/home_screen.dart';
 import 'package:fitness_exercise_application/features/profile/presentation/screens/profile_screen.dart';
-import 'package:fitness_exercise_application/features/analytics/presentation/screens/analytics_screen.dart';
 import 'package:fitness_exercise_application/features/shell/presentation/providers/main_tab_controller_provider.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class MainShell extends ConsumerStatefulWidget {
@@ -22,6 +23,8 @@ class MainShell extends ConsumerStatefulWidget {
 }
 
 class _MainShellState extends ConsumerState<MainShell> {
+  // Keep tab indices [0..4] stable for cross-tab callers across the app:
+  // 0 = Home, 1 = Record/Activity (center CTA), 2 = History, 3 = Analytics, 4 = Profile.
   static const _screens = [
     HomeScreen(),
     ActivityScreen(),
@@ -72,7 +75,7 @@ class _MainShellState extends ConsumerState<MainShell> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               duration: const Duration(seconds: 2),
-              backgroundColor: colors.surface2,
+              backgroundColor: colors.surface1,
               content: Text(
                 currentLang == AppLanguage.vi
                     ? 'Nhấn lần nữa để thoát ứng dụng'
@@ -91,7 +94,7 @@ class _MainShellState extends ConsumerState<MainShell> {
       child: Scaffold(
         backgroundColor: colors.background,
         body: IndexedStack(index: currentIndex, children: _screens),
-        bottomNavigationBar: _AetronDock(
+        bottomNavigationBar: _AetronBottomBar(
           currentIndex: currentIndex,
           onChanged: _onTabSelected,
         ),
@@ -100,69 +103,76 @@ class _MainShellState extends ConsumerState<MainShell> {
   }
 }
 
-class _AetronDock extends ConsumerWidget {
-  const _AetronDock({required this.currentIndex, required this.onChanged});
+class _AetronBottomBar extends ConsumerWidget {
+  const _AetronBottomBar({
+    required this.currentIndex,
+    required this.onChanged,
+  });
 
   final int currentIndex;
   final ValueChanged<int> onChanged;
 
-  static const _items = [
-    (Icons.home_outlined, Icons.home_rounded, 'nav_home'),
-    (
-      Icons.directions_run_outlined,
-      Icons.directions_run_rounded,
-      'nav_activity',
-    ),
-    (
-      Icons.calendar_month_outlined,
-      Icons.calendar_month_rounded,
-      'nav_history',
-    ),
-    (Icons.analytics_outlined, Icons.analytics_rounded, 'nav_analytics'),
-    (Icons.person_outline, Icons.person_rounded, 'nav_profile'),
-  ];
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentLang = ref.watch(appLanguageProvider);
-    final bottom = MediaQuery.of(context).padding.bottom;
     final colors = context.kinetic;
 
     return RepaintBoundary(
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(16, 0, 16, bottom > 0 ? bottom : 14),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-          decoration: BoxDecoration(
-            color: colors.surface1.withValues(alpha: 0.94),
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: colors.borderSubtle, width: 1.0),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.50),
-                blurRadius: 24,
-                offset: const Offset(0, 8),
-              ),
-              BoxShadow(
-                color: colors.primary.withValues(alpha: 0.05),
-                blurRadius: 16,
-              ),
-            ],
+      child: Container(
+        decoration: BoxDecoration(
+          color: colors.surface1,
+          border: Border(
+            top: BorderSide(color: colors.borderSubtle, width: 0.6),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              for (var i = 0; i < _items.length; i++)
+        ),
+        child: SafeArea(
+          top: false,
+          child: SizedBox(
+            height: 60,
+            child: Row(
+              children: [
                 Expanded(
-                  child: _DockItem(
-                    icon: _items[i].$1,
-                    selectedIcon: _items[i].$2,
-                    label: AppTranslations.get(_items[i].$3, currentLang),
-                    selected: i == currentIndex,
-                    onTap: () => onChanged(i),
+                  child: _NavTabItem(
+                    icon: LucideIcons.house,
+                    label: AppTranslations.get('nav_home', currentLang),
+                    selected: currentIndex == 0,
+                    onTap: () => onChanged(0),
                   ),
                 ),
-            ],
+                Expanded(
+                  child: _NavTabItem(
+                    icon: LucideIcons.calendar,
+                    label: AppTranslations.get('nav_history', currentLang),
+                    selected: currentIndex == 2,
+                    onTap: () => onChanged(2),
+                  ),
+                ),
+                Expanded(
+                  child: _CenterRecordButton(
+                    selected: currentIndex == 1,
+                    semanticLabel:
+                        AppTranslations.get('nav_activity', currentLang),
+                    onTap: () => onChanged(1),
+                  ),
+                ),
+                Expanded(
+                  child: _NavTabItem(
+                    icon: LucideIcons.chart_column,
+                    label: AppTranslations.get('nav_analytics', currentLang),
+                    selected: currentIndex == 3,
+                    onTap: () => onChanged(3),
+                  ),
+                ),
+                Expanded(
+                  child: _NavTabItem(
+                    icon: LucideIcons.user,
+                    label: AppTranslations.get('nav_profile', currentLang),
+                    selected: currentIndex == 4,
+                    onTap: () => onChanged(4),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -170,16 +180,14 @@ class _AetronDock extends ConsumerWidget {
   }
 }
 
-class _DockItem extends StatelessWidget {
+class _NavTabItem extends StatelessWidget {
   final IconData icon;
-  final IconData selectedIcon;
   final String label;
   final bool selected;
   final VoidCallback onTap;
 
-  const _DockItem({
+  const _NavTabItem({
     required this.icon,
-    required this.selectedIcon,
     required this.label,
     required this.selected,
     required this.onTap,
@@ -188,51 +196,94 @@ class _DockItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.kinetic;
+    final itemColor = selected ? colors.primary : colors.textMuted;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(999),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedContainer(
+    return Semantics(
+      selected: selected,
+      button: true,
+      label: label,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          child: SizedBox(
+            height: 60,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  size: 21,
+                  color: itemColor,
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: KineticTypography.caption.copyWith(
+                    color: itemColor,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    fontSize: 10.5,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CenterRecordButton extends StatelessWidget {
+  final bool selected;
+  final String semanticLabel;
+  final VoidCallback onTap;
+
+  const _CenterRecordButton({
+    required this.selected,
+    required this.semanticLabel,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.kinetic;
+
+    return Semantics(
+      selected: selected,
+      button: true,
+      label: semanticLabel,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          customBorder: const CircleBorder(),
+          child: Center(
+            child: AnimatedContainer(
               duration: KineticTokens.motionTab,
               curve: KineticTokens.animCurve,
-              width: selected ? 48 : 36,
-              height: 32,
-              alignment: Alignment.center,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
-                color: selected
-                    ? colors.primary.withValues(alpha: 0.14)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(999),
+                color: colors.accentFill,
+                shape: BoxShape.circle,
                 border: selected
                     ? Border.all(
-                        color: colors.primary.withValues(alpha: 0.35),
-                        width: 1.0,
+                        color: colors.primaryTint,
+                        width: 3,
                       )
                     : null,
               ),
-              child: Icon(
-                selected ? selectedIcon : icon,
-                color: selected ? colors.primary : colors.textMuted,
-                size: selected ? 20 : 18,
+              child: const Icon(
+                LucideIcons.plus,
+                color: Colors.white,
+                size: 22,
               ),
             ),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: KineticTypography.caption.copyWith(
-                color: selected ? colors.textPrimary : colors.textMuted,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                letterSpacing: 0.1,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

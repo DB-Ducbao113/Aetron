@@ -6,7 +6,7 @@ import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Compact 3D Cyberpunk AI Post-Workout Insight Card for Aetron
+/// Compact AI Post-Workout Insight Card for Aetron (V4: flat, accent bar)
 class WorkoutAiInsightCard extends ConsumerWidget {
   final String workoutId;
   final bool hasMargin;
@@ -114,29 +114,18 @@ class _CompactAiInsightCard extends StatelessWidget {
     final colors = context.kinetic;
     final isVi = currentLang == AppLanguage.vi;
     final isLlm = insight.source == 'llm';
-    final accentColor = isLlm ? colors.primary : const Color(0xFF2AF598);
+    final accentColor = isLlm ? colors.primary : colors.secondary;
 
+    // V4: flat surface1 with a primary accent bar — no cyberpunk glow.
     return Container(
       margin: hasMargin ? const EdgeInsets.symmetric(vertical: 6) : EdgeInsets.zero,
       decoration: BoxDecoration(
         color: colors.surface1,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: accentColor.withValues(alpha: 0.40),
-          width: 1.4,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.35),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-          BoxShadow(
-            color: accentColor.withValues(alpha: 0.12),
-            blurRadius: 16,
-            spreadRadius: -2,
-          ),
-        ],
+        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
+        boxShadow: colors.isDark ? null : KineticTokens.shadowCardLight(),
+        border: colors.isDark
+            ? Border.all(color: colors.borderSubtle)
+            : null,
       ),
       child: Material(
         color: Colors.transparent,
@@ -148,7 +137,7 @@ class _CompactAiInsightCard extends StatelessWidget {
               ),
             );
           },
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -347,17 +336,11 @@ class _AiInsightLoadingCardState extends State<_AiInsightLoadingCard>
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: colors.surface1,
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(
-              color: colors.primary.withValues(alpha: _pulseAnimation.value * 0.5),
-              width: 1.4,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: colors.primary.withValues(alpha: _pulseAnimation.value * 0.15),
-                blurRadius: 16,
-              ),
-            ],
+            borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
+            boxShadow: colors.isDark ? null : KineticTokens.shadowCardLight(),
+            border: colors.isDark
+                ? Border.all(color: colors.borderSubtle)
+                : null,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -440,7 +423,7 @@ class _AiInsightErrorCard extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: colors.surface1,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
         border: Border.all(
           color: colors.error.withValues(alpha: 0.3),
         ),

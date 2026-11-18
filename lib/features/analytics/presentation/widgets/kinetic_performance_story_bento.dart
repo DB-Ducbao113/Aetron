@@ -114,21 +114,14 @@ class KineticPerformanceStoryBento extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(KineticTokens.spaceLG),
       decoration: BoxDecoration(
         color: colors.surface1,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: colors.borderSubtle.withValues(alpha: 0.8),
-          width: 1.2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.35),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
+        boxShadow: colors.isDark ? null : KineticTokens.shadowCardLight(),
+        border: colors.isDark
+            ? Border.all(color: colors.borderSubtle, width: 1)
+            : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -153,7 +146,7 @@ class KineticPerformanceStoryBento extends StatelessWidget {
                         letterSpacing: 1.2,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: KineticTokens.spaceXXS),
                     Text(
                       storyHeadline,
                       style: KineticTypography.headlineSmall.copyWith(
@@ -182,27 +175,34 @@ class KineticPerformanceStoryBento extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: KineticTokens.spaceMD),
 
           // 2. Hero Distance + Comparison Pill
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: KineticTokens.spaceSM,
+            runSpacing: KineticTokens.spaceXXS,
             children: [
-              Text(
-                displayDistance.toStringAsFixed(1),
-                style: KineticTypography.metricHero.copyWith(
-                  color: colors.textPrimary,
-                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    displayDistance.toStringAsFixed(1),
+                    style: KineticTypography.metricHero.copyWith(
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    distanceUnit,
+                    style: KineticTypography.headlineSmall.copyWith(
+                      color: colors.textSecondary,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 6),
-              Text(
-                distanceUnit,
-                style: KineticTypography.headlineSmall.copyWith(
-                  color: colors.textSecondary,
-                ),
-              ),
-              const SizedBox(width: 12),
               if (percentChange != null || isNewBenchmark)
                 Container(
                   padding:
@@ -211,7 +211,7 @@ class KineticPerformanceStoryBento extends StatelessWidget {
                     color: isNewBenchmark || isPositive
                         ? colors.primary.withValues(alpha: 0.15)
                         : colors.tertiary.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
                     border: Border.all(
                       color: isNewBenchmark || isPositive
                           ? colors.primary.withValues(alpha: 0.4)
@@ -258,11 +258,11 @@ class KineticPerformanceStoryBento extends StatelessWidget {
               height: 1.45,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: KineticTokens.spaceLG),
 
           // 4. Slender 7-Day Bar Chart
           Container(
-            padding: const EdgeInsets.only(top: 16),
+            padding: const EdgeInsets.only(top: KineticTokens.spaceMD),
             decoration: BoxDecoration(
               border: Border(
                 top: BorderSide(
@@ -291,62 +291,60 @@ class KineticPerformanceStoryBento extends StatelessWidget {
                             children: [
                               // Floating km tag for peak day
                               if (isPeak)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 2,
-                                  ),
-                                  margin: const EdgeInsets.only(bottom: 6),
-                                  decoration: BoxDecoration(
-                                    color: colors.primary,
-                                    borderRadius: BorderRadius.circular(8),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: colors.primary
-                                            .withValues(alpha: 0.4),
-                                        blurRadius: 8,
+                                SizedBox(
+                                  height: 22,
+                                  child: OverflowBox(
+                                    maxWidth: 76,
+                                    minWidth: 0,
+                                    maxHeight: 22,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
                                       ),
-                                    ],
-                                  ),
-                                  child: Text(
-                                    '${dayDist.toStringAsFixed(1)} $distanceUnit',
-                                    style: KineticTypography.unitLabel.copyWith(
-                                      fontWeight: FontWeight.w900,
-                                      color: colors.onPrimary,
+                                      margin: const EdgeInsets.only(bottom: 4),
+                                      decoration: BoxDecoration(
+                                        color: colors.primary,
+                                        borderRadius: BorderRadius.circular(
+                                          KineticTokens.radiusPill,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        '${dayDist.toStringAsFixed(1)} $distanceUnit',
+                                        maxLines: 1,
+                                        softWrap: false,
+                                        style:
+                                            KineticTypography.unitLabel.copyWith(
+                                          fontWeight: FontWeight.w800,
+                                          color: Colors.white,
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 )
                               else
-                                const SizedBox(height: 19),
+                                const SizedBox(height: 22),
 
                               // Slender bar
                               Flexible(
                                 child: FractionallySizedBox(
                                   heightFactor: ratio,
                                   child: Container(
-                                    width: isPeak ? 12 : 8,
+                                    width: isPeak ? 12 : 9,
                                     decoration: BoxDecoration(
                                       color: isPeak
                                           ? colors.primary
                                           : (dayDist > 0
-                                              ? colors.borderSubtle
-                                                  .withValues(alpha: 0.9)
+                                              ? colors.primary.withValues(
+                                                  alpha: 0.42,
+                                                )
                                               : colors.surface2),
                                       borderRadius: BorderRadius.circular(6),
-                                      boxShadow: isPeak
-                                          ? [
-                                              BoxShadow(
-                                                color: colors.primary
-                                                    .withValues(alpha: 0.45),
-                                                blurRadius: 10,
-                                              ),
-                                            ]
-                                          : null,
                                     ),
                                   ),
                                 ),
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: KineticTokens.spaceXS),
 
                               // Day label
                               Text(
@@ -367,35 +365,42 @@ class KineticPerformanceStoryBento extends StatelessWidget {
                     }),
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: KineticTokens.spaceSM),
 
                 // Footnote
                 if (peakDayIdx >= 0 && peakVal > 0.05)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: colors.primary,
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: colors.primary,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            isVi
-                                ? 'Ngày bùng nổ: ${dayNames[peakDayIdx]} (${((peakVal / currentDistanceKm) * 100).round()}% khối lượng)'
-                                : 'Peak Day: ${dayNames[peakDayIdx]} (${((peakVal / currentDistanceKm) * 100).round()}% volume)',
-                            style: KineticTypography.caption.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: colors.textSecondary,
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                isVi
+                                    ? 'Ngày bùng nổ: ${dayNames[peakDayIdx]} (${((peakVal / currentDistanceKm) * 100).round()}% khối lượng)'
+                                    : 'Peak Day: ${dayNames[peakDayIdx]} (${((peakVal / currentDistanceKm) * 100).round()}% volume)',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: KineticTypography.caption.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: colors.textSecondary,
+                                ),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
+                      const SizedBox(width: KineticTokens.spaceXS),
                       Text(
                         isVi ? 'Tổng 7 ngày' : '7-Day Total',
                         style: KineticTypography.caption.copyWith(

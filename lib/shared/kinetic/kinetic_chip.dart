@@ -23,9 +23,9 @@ class KineticChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.kinetic;
 
-    final bg = isSelected ? colors.surface2 : colors.surface1;
-    final borderColor = isSelected ? colors.primary : colors.borderSubtle;
-    final textColor = isSelected ? colors.primary : colors.textMuted;
+    final bg = isSelected ? colors.accentFill : colors.surface1;
+    final borderColor = isSelected ? colors.accentFill : colors.borderSubtle;
+    final textColor = isSelected ? Colors.white : colors.textSecondary;
 
     return Semantics(
       selected: isSelected,
@@ -38,53 +38,33 @@ class KineticChip extends StatelessWidget {
             color: Colors.transparent,
             child: InkWell(
               onTap: onTap,
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
               child: AnimatedContainer(
                 duration: KineticTokens.motionTab,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                curve: KineticTokens.animCurve,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
                   color: bg,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: borderColor, width: 1),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: colors.primary.withValues(alpha: 0.15),
-                            blurRadius: 10,
-                            spreadRadius: -1,
-                          ),
-                        ]
-                      : null,
+                  borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
+                  border: isSelected
+                      ? null
+                      : Border.all(color: borderColor, width: 1),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (isSelected) ...[
-                      Container(
-                        width: 6,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: colors.primary,
-                          boxShadow: [
-                            BoxShadow(
-                              color: colors.primary.withValues(alpha: 0.6),
-                              blurRadius: 4,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                    ] else if (icon != null) ...[
-                      Icon(icon, size: 14, color: textColor),
+                    if (icon != null) ...[
+                      Icon(icon, size: 15, color: textColor),
                       const SizedBox(width: 6),
                     ],
                     Text(
                       label,
                       style: KineticTypography.label.copyWith(
                         color: textColor,
-                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                        fontSize: 12,
+                        fontWeight:
+                            isSelected ? FontWeight.w700 : FontWeight.w500,
+                        fontSize: 13,
                       ),
                     ),
                   ],

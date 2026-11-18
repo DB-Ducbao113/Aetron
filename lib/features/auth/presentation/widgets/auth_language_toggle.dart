@@ -1,5 +1,5 @@
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,13 +7,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class AuthLanguageToggle extends ConsumerWidget {
   const AuthLanguageToggle({super.key});
 
-  static const _primary = Color(0xFFA8DCE7);
-  static const _surface = Color(0xFF11181C);
-  static const _outline = Color(0xFF2A3A42);
-  static const _muted = Color(0xFF90A2A7);
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.kinetic;
     final current = ref.watch(appLanguageProvider);
 
     return Semantics(
@@ -25,9 +21,9 @@ class AuthLanguageToggle extends ConsumerWidget {
         height: 34,
         padding: const EdgeInsets.all(3),
         decoration: BoxDecoration(
-          color: _surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: _outline),
+          color: colors.surface1,
+          borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
+          border: Border.all(color: colors.borderSubtle),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -68,6 +64,7 @@ class _LanguageOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.kinetic;
     return Semantics(
       button: true,
       selected: selected,
@@ -85,12 +82,12 @@ class _LanguageOption extends StatelessWidget {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: selected
-                  ? AuthLanguageToggle._primary.withValues(alpha: 0.16)
+                  ? colors.primary.withValues(alpha: 0.16)
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(9),
               border: selected
                   ? Border.all(
-                      color: AuthLanguageToggle._primary.withValues(
+                      color: colors.primary.withValues(
                         alpha: 0.55,
                       ),
                     )
@@ -100,8 +97,8 @@ class _LanguageOption extends StatelessWidget {
               label,
               style: TextStyle(
                 color: selected
-                    ? AuthLanguageToggle._primary
-                    : AuthLanguageToggle._muted,
+                    ? colors.primary
+                    : colors.textMuted,
                 fontSize: 11,
                 fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
                 letterSpacing: 0.4,

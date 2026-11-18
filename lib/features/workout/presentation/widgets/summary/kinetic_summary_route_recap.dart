@@ -1,7 +1,9 @@
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/workout_route_recap_components.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_card.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
@@ -34,6 +36,7 @@ class KineticSummaryRouteRecap extends StatelessWidget {
 
     return KineticCard(
       padding: EdgeInsets.zero,
+      borderRadius: KineticTokens.radiusLG,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -45,8 +48,8 @@ class KineticSummaryRouteRecap extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(
-                      Icons.map_rounded,
+                    BladeIcon(
+                      BladeIconName.map,
                       size: 15,
                       color: colors.primary,
                     ),
@@ -64,10 +67,7 @@ class KineticSummaryRouteRecap extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                   decoration: BoxDecoration(
                     color: colors.primary.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(
-                      color: colors.primary.withValues(alpha: 0.3),
-                    ),
+                    borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -96,7 +96,9 @@ class KineticSummaryRouteRecap extends StatelessWidget {
 
           // Map Container
           ClipRRect(
-            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(8)),
+            borderRadius: const BorderRadius.vertical(
+              bottom: Radius.circular(KineticTokens.radiusLG),
+            ),
             child: SizedBox(
               height: 220,
               width: double.infinity,
