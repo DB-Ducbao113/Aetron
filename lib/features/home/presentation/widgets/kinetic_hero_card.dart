@@ -8,7 +8,6 @@ class KineticHeroCard extends StatelessWidget {
   final String weeklyProgressText;
   final String targetGoalText;
   final String ctaLabel;
-  final String imageAsset;
   final VoidCallback onStartTap;
   final VoidCallback? onGoalTap;
 
@@ -19,7 +18,6 @@ class KineticHeroCard extends StatelessWidget {
     required this.weeklyProgressText,
     required this.targetGoalText,
     required this.ctaLabel,
-    this.imageAsset = 'assets/home_hero_runner.jpg',
     required this.onStartTap,
     this.onGoalTap,
   });
@@ -37,31 +35,57 @@ class KineticHeroCard extends StatelessWidget {
         ),
         height: 320,
         decoration: BoxDecoration(
+          color: colors.surface1,
           borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
           border: Border.all(color: colors.borderSubtle, width: 1),
-          boxShadow: KineticTokens.shadowPanel(colors.background),
+          boxShadow: colors.isDark
+              ? KineticTokens.shadowPanel(colors.background)
+              : KineticTokens.shadowCardLight(),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // 1. Duotone scene base (V4) — also the photo error fallback
+              // 1. Duotone scene base (V4)
               SceneBackdrop(tint: colors.secondary),
 
-              // 2. Background Photo
-              Image.asset(
-                imageAsset,
-                fit: BoxFit.cover,
-                alignment: Alignment.centerRight,
-                errorBuilder: (context, error, stackTrace) =>
-                    SceneBackdrop(tint: colors.secondary),
+              // 2. Upper-right athletic emblem
+              Positioned(
+                top: KineticTokens.spaceLG,
+                right: KineticTokens.spaceLG,
+                child: Container(
+                  width: 84,
+                  height: 84,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: colors.primary.withValues(
+                      alpha: colors.isDark ? 0.14 : 0.10,
+                    ),
+                    border: Border.all(
+                      color: colors.primary.withValues(alpha: 0.22),
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.directions_run_rounded,
+                    size: 42,
+                    color: colors.primary,
+                  ),
+                ),
               ),
 
-              // 3. Legibility Scrim Gradient (DS)
+              // 3. Theme-adaptive surface bottom fade (Option A Light & Dark)
               DecoratedBox(
                 decoration: BoxDecoration(
-                  gradient: KineticGradients.scrimBottom(colors),
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      colors.surface1.withValues(alpha: 0.0),
+                      colors.surface1.withValues(alpha: 0.94),
+                    ],
+                    stops: const [0.32, 0.86],
+                  ),
                 ),
               ),
 
@@ -77,7 +101,7 @@ class KineticHeroCard extends StatelessWidget {
                     Text(
                       title,
                       style: KineticTypography.headlineLarge.copyWith(
-                        color: Colors.white,
+                        color: colors.textPrimary,
                         fontWeight: FontWeight.w800,
                         height: 1.2,
                       ),
@@ -93,11 +117,15 @@ class KineticHeroCard extends StatelessWidget {
                           color: colors.primary,
                         ),
                         const SizedBox(width: KineticTokens.spaceXXS),
-                        Text(
-                          weeklyProgressText,
-                          style: KineticTypography.bodySmall.copyWith(
-                            color: colors.textSecondary,
-                            fontWeight: FontWeight.w500,
+                        Flexible(
+                          child: Text(
+                            weeklyProgressText,
+                            style: KineticTypography.bodySmall.copyWith(
+                              color: colors.textSecondary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         const SizedBox(width: KineticTokens.spaceXS),
@@ -107,63 +135,78 @@ class KineticHeroCard extends StatelessWidget {
                         ),
                         const SizedBox(width: KineticTokens.spaceXS),
                         if (onGoalTap != null)
-                          Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: onGoalTap,
-                              borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: KineticTokens.spaceXXS,
-                                  vertical: 2,
+                          Flexible(
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: onGoalTap,
+                                borderRadius: BorderRadius.circular(
+                                  KineticTokens.radiusSM,
                                 ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    BladeIcon(
-                                      BladeIconName.flag,
-                                      size: 14,
-                                      color: colors.primary,
-                                    ),
-                                    const SizedBox(width: KineticTokens.spaceXXS),
-                                    Text(
-                                      targetGoalText,
-                                      style: KineticTypography.bodySmall.copyWith(
-                                        color: colors.textPrimary,
-                                        fontWeight: FontWeight.w600,
-                                        decoration: TextDecoration.underline,
-                                        decorationColor: colors.primary.withValues(alpha: 0.6),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: KineticTokens.spaceXXS,
+                                    vertical: 2,
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      BladeIcon(
+                                        BladeIconName.flag,
+                                        size: 14,
+                                        color: colors.primary,
                                       ),
-                                    ),
-                                    const SizedBox(width: KineticTokens.spaceXXS),
-                                    BladeIcon(
-                                      BladeIconName.chevR,
-                                      size: 13,
-                                      color: colors.primary,
-                                    ),
-                                  ],
+                                      const SizedBox(width: KineticTokens.spaceXXS),
+                                      Flexible(
+                                        child: Text(
+                                          targetGoalText,
+                                          style: KineticTypography.bodySmall.copyWith(
+                                            color: colors.textPrimary,
+                                            fontWeight: FontWeight.w600,
+                                            decoration: TextDecoration.underline,
+                                            decorationColor: colors.primary
+                                                .withValues(alpha: 0.6),
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      const SizedBox(width: KineticTokens.spaceXXS),
+                                      BladeIcon(
+                                        BladeIconName.chevR,
+                                        size: 13,
+                                        color: colors.primary,
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
                           )
                         else
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              BladeIcon(
-                                BladeIconName.flag,
-                                size: 14,
-                                color: colors.primary,
-                              ),
-                              const SizedBox(width: KineticTokens.spaceXXS),
-                              Text(
-                                targetGoalText,
-                                style: KineticTypography.bodySmall.copyWith(
-                                  color: colors.textSecondary,
-                                  fontWeight: FontWeight.w500,
+                          Flexible(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                BladeIcon(
+                                  BladeIconName.flag,
+                                  size: 14,
+                                  color: colors.primary,
                                 ),
-                              ),
-                            ],
+                                const SizedBox(width: KineticTokens.spaceXXS),
+                                Flexible(
+                                  child: Text(
+                                    targetGoalText,
+                                    style: KineticTypography.bodySmall.copyWith(
+                                      color: colors.textSecondary,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                       ],
                     ),

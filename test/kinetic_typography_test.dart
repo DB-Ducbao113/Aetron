@@ -5,8 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('Kinetic typography', () {
-    test('uses Space Grotesk for display and telemetry styles', () {
-      expect(KineticTypography.displayFontFamily, 'SpaceGrotesk');
+    test('uses BeVietnamPro for display and telemetry styles with tabular figures', () {
+      expect(KineticTypography.displayFontFamily, 'BeVietnamPro');
       expect(
         [
           KineticTypography.metricHero,
@@ -18,9 +18,13 @@ void main() {
         ].map((style) => style.fontFamily),
         everyElement(KineticTypography.displayFontFamily),
       );
+      expect(
+        KineticTypography.metricHero.fontFeatures,
+        KineticTypography.tabularFigures,
+      );
     });
 
-    test('uses Be Vietnam Pro for Vietnamese body copy', () {
+    test('uses BeVietnamPro for Vietnamese body copy', () {
       expect(KineticTypography.bodyFontFamily, 'BeVietnamPro');
       expect(
         [
@@ -34,13 +38,13 @@ void main() {
       );
     });
 
-    test('uses a supported Space Grotesk weight for prominent styles', () {
-      expect(KineticTypography.metricHero.fontWeight, FontWeight.w700);
+    test('uses bold weights for prominent styles', () {
+      expect(KineticTypography.metricHero.fontWeight, FontWeight.w800);
       expect(KineticTypography.displayLarge.fontWeight, FontWeight.w700);
-      expect(KineticTypography.pageTitle.fontWeight, FontWeight.w700);
+      expect(KineticTypography.pageTitle.fontWeight, FontWeight.w800);
     });
 
-    test('defaults unstyled app text to Be Vietnam Pro', () {
+    test('defaults unstyled app text to BeVietnamPro in light and dark themes', () {
       for (final brightness in Brightness.values) {
         final theme = KineticTheme.buildTheme(brightness);
         expect(theme.textTheme.bodyMedium?.fontFamily, 'BeVietnamPro');

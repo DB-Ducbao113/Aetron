@@ -1,7 +1,5 @@
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 
 class KineticDetailsDeleteDialog extends StatelessWidget {
@@ -18,20 +16,10 @@ class KineticDetailsDeleteDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.kinetic;
 
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Container(
-        padding: const EdgeInsets.all(22),
-        decoration: BoxDecoration(
-          color: colors.surface1,
-          borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
-          border: Border.all(
-            color: colors.error.withValues(alpha: 0.35),
-            width: 1,
-          ),
-        ),
-        child: Column(
+    return KineticGlassDialog(
+      borderColor: colors.error.withValues(alpha: 0.38),
+      padding: const EdgeInsets.all(22),
+      child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -75,62 +63,34 @@ class KineticDetailsDeleteDialog extends StatelessWidget {
               children: [
                 // Cancel Button
                 Expanded(
-                  child: OutlinedButton(
+                  child: KineticButton(
+                    label: AppTranslations.get('cancel', currentLang),
+                    variant: KineticButtonVariant.secondary,
+                    height: KineticTokens.buttonHeight,
                     onPressed: () => Navigator.of(context).pop(),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      side: BorderSide(color: colors.borderSubtle),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
-                      ),
-                    ),
-                    child: Text(
-                      AppTranslations.get('cancel', currentLang),
-                      style: KineticTypography.label.copyWith(
-                        color: colors.textMuted,
-                      ),
-                    ),
                   ),
                 ),
                 const SizedBox(width: 10),
 
                 // Delete Confirm Button
                 Expanded(
-                  child: ElevatedButton.icon(
+                  child: KineticButton(
+                    label: currentLang == AppLanguage.vi
+                        ? 'Xác nhận xóa'
+                        : 'Confirm Delete',
+                    icon: Icons.delete_outline_rounded,
+                    variant: KineticButtonVariant.danger,
+                    height: KineticTokens.buttonHeight,
                     onPressed: () {
                       Navigator.of(context).pop();
                       onConfirm();
                     },
-                    icon: const Icon(
-                      Icons.delete_outline_rounded,
-                      size: 16,
-                      color: Colors.white,
-                    ),
-                    label: Text(
-                      currentLang == AppLanguage.vi
-                          ? 'Xác nhận xóa'
-                          : 'Confirm Delete',
-                      style: KineticTypography.label.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colors.error,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
-                      ),
-                      elevation: 0,
-                    ),
                   ),
                 ),
               ],
             ),
           ],
         ),
-      ),
     );
   }
 }

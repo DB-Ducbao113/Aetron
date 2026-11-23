@@ -1,6 +1,7 @@
+import 'package:fitness_exercise_application/core/constants/debug_config.dart';
+import 'package:fitness_exercise_application/core/storage/database_helper.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:fitness_exercise_application/core/storage/database_helper.dart';
 
 part 'app_providers.g.dart';
 
@@ -23,6 +24,9 @@ final authStateChangesProvider = StreamProvider<AuthState>((ref) {
 /// Current User ID Provider
 @riverpod
 String? currentUserId(CurrentUserIdRef ref) {
+  if (kDebugBypassAuth) {
+    return 'debug-user';
+  }
   ref.watch(authStateChangesProvider);
   final user = ref.watch(supabaseClientProvider).auth.currentUser;
   return user?.id;

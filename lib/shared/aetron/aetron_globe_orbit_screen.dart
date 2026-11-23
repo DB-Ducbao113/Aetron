@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,6 +16,8 @@ class AetronGlobeOrbitScreen extends ConsumerStatefulWidget {
   final bool showCloseButton;
   final String? statusPillText;
   final bool forceDarkPalette;
+  final bool showTelemetryChips;
+  final bool showSubtitle;
 
   const AetronGlobeOrbitScreen({
     super.key,
@@ -24,6 +28,8 @@ class AetronGlobeOrbitScreen extends ConsumerStatefulWidget {
     this.showCloseButton = false,
     this.statusPillText,
     this.forceDarkPalette = false,
+    this.showTelemetryChips = false,
+    this.showSubtitle = false,
   });
 
   @override
@@ -35,23 +41,26 @@ class _AetronGlobeOrbitScreenState extends ConsumerState<AetronGlobeOrbitScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   bool _completed = false;
+  Timer? _completionTimer;
   bool? _animationsDisabled;
-  double _userRotationOffset = 0.0;
+  final _userRotationOffset = ValueNotifier<double>(0);
+  late final Listenable _globeMotion;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(vsync: this, duration: widget.duration)
       ..addStatusListener((status) {
-        if (status == AnimationStatus.completed && !_completed) {
+        if (status == AnimationStatus.completed &&
+            !_completed &&
+            widget.onComplete != null) {
           _completed = true;
-          if (widget.onComplete != null) {
-            Future<void>.delayed(const Duration(milliseconds: 180), () {
-              if (mounted) widget.onComplete!();
-            });
-          }
+          _completionTimer = Timer(const Duration(milliseconds: 180), () {
+            if (mounted) widget.onComplete?.call();
+          });
         }
       });
+    _globeMotion = Listenable.merge([_controller, _userRotationOffset]);
   }
 
   @override
@@ -60,12 +69,31 @@ class _AetronGlobeOrbitScreenState extends ConsumerState<AetronGlobeOrbitScreen>
     final animationsDisabled = MediaQuery.disableAnimationsOf(context);
     if (_animationsDisabled == animationsDisabled) return;
     _animationsDisabled = animationsDisabled;
+    _configureAnimation();
+  }
 
-    if (animationsDisabled) {
+  @override
+  void didUpdateWidget(covariant AetronGlobeOrbitScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final modeChanged =
+        (oldWidget.onComplete == null) != (widget.onComplete == null);
+    final durationChanged = oldWidget.duration != widget.duration;
+    if (!modeChanged && !durationChanged) return;
+    _controller.duration = widget.duration;
+    if (modeChanged) {
+      _completionTimer?.cancel();
+      _completed = false;
+      _controller.reset();
+    }
+    _configureAnimation();
+  }
+
+  void _configureAnimation() {
+    if (_animationsDisabled == true) {
       _controller.stop();
       _controller.value = widget.onComplete == null ? 0.18 : 1;
     } else if (widget.onComplete != null) {
-      _controller.forward(from: _controller.value);
+      if (!_completed) _controller.forward(from: _controller.value);
     } else {
       _controller.repeat();
     }
@@ -73,7 +101,9 @@ class _AetronGlobeOrbitScreenState extends ConsumerState<AetronGlobeOrbitScreen>
 
   @override
   void dispose() {
+    _completionTimer?.cancel();
     _controller.dispose();
+    _userRotationOffset.dispose();
     super.dispose();
   }
 
@@ -89,6 +119,7 @@ class _AetronGlobeOrbitScreenState extends ConsumerState<AetronGlobeOrbitScreen>
     return Scaffold(
       backgroundColor: colors.background,
       body: Stack(
+        fit: StackFit.expand,
         children: [
           // 1. Ambient Radial Glow Background aligned with Kinetic palette
           Positioned.fill(
@@ -114,22 +145,8 @@ class _AetronGlobeOrbitScreenState extends ConsumerState<AetronGlobeOrbitScreen>
               builder: (context, constraints) {
                 final compactWidth = constraints.maxWidth <= 360;
                 final compactHeight = constraints.maxHeight < 650;
-                final heightBasedSize =
-                    constraints.maxHeight *
-                    (compactHeight
-                        ? 0.38
-                        : constraints.maxHeight < 760
-                        ? 0.42
-                        : 0.46);
-                final globeSize = math
-                    .min(
-                      constraints.maxWidth - 24,
-                      math.min(310, heightBasedSize),
-                    )
-                    .clamp(144.0, 310.0)
-                    .toDouble();
-
                 return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     SizedBox(
                       height: 48,
@@ -166,8 +183,8 @@ class _AetronGlobeOrbitScreenState extends ConsumerState<AetronGlobeOrbitScreen>
                                 liveRegion: true,
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
+                                    horizontal: 14,
+                                    vertical: 6.5,
                                   ),
                                   decoration: BoxDecoration(
                                     color: colors.surface2.withValues(
@@ -176,7 +193,7 @@ class _AetronGlobeOrbitScreenState extends ConsumerState<AetronGlobeOrbitScreen>
                                     borderRadius: BorderRadius.circular(20),
                                     border: Border.all(
                                       color: colors.primary.withValues(
-                                        alpha: 0.3,
+                                        alpha: 0.35,
                                       ),
                                     ),
                                   ),
@@ -184,8 +201,8 @@ class _AetronGlobeOrbitScreenState extends ConsumerState<AetronGlobeOrbitScreen>
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Container(
-                                        width: 6,
-                                        height: 6,
+                                        width: 7,
+                                        height: 7,
                                         decoration: BoxDecoration(
                                           color: colors.primary,
                                           shape: BoxShape.circle,
@@ -199,7 +216,7 @@ class _AetronGlobeOrbitScreenState extends ConsumerState<AetronGlobeOrbitScreen>
                                           ],
                                         ),
                                       ),
-                                      const SizedBox(width: 6),
+                                      const SizedBox(width: 7),
                                       Text(
                                         widget.statusPillText ??
                                             (isVi
@@ -208,8 +225,9 @@ class _AetronGlobeOrbitScreenState extends ConsumerState<AetronGlobeOrbitScreen>
                                         style: KineticTypography.unitLabel
                                             .copyWith(
                                               color: colors.primary,
-                                              fontSize: 10.5,
-                                              letterSpacing: 0.8,
+                                              fontSize: 11.5,
+                                              fontWeight: FontWeight.w700,
+                                              letterSpacing: 0.9,
                                             ),
                                       ),
                                     ],
@@ -225,36 +243,73 @@ class _AetronGlobeOrbitScreenState extends ConsumerState<AetronGlobeOrbitScreen>
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Semantics(
-                            image: true,
-                            label: isVi
-                                ? 'Địa cầu GPS đang đồng bộ'
-                                : 'GPS globe synchronizing',
-                            child: GestureDetector(
-                              onHorizontalDragUpdate: (details) {
-                                setState(() {
-                                  _userRotationOffset -=
-                                      details.primaryDelta! / 85.0;
-                                });
-                              },
-                              child: SizedBox.square(
-                                dimension: globeSize,
-                                child: AnimatedBuilder(
-                                  animation: _controller,
-                                  builder: (context, _) => CustomPaint(
-                                    painter: _CyberGlobePainter(
-                                      progress: _controller.value,
-                                      userRotation: _userRotationOffset,
-                                      colors: colors,
+                          Flexible(
+                            child: LayoutBuilder(
+                              builder: (context, globeConstraints) {
+                                final globeSize = math.min(
+                                  310.0,
+                                  math.min(
+                                    math.max(
+                                      0.0,
+                                      globeConstraints.maxWidth - 24,
+                                    ),
+                                    globeConstraints.maxHeight,
+                                  ),
+                                );
+                                return Center(
+                                  heightFactor: 1,
+                                  child: Semantics(
+                                    image: true,
+                                    label: isVi
+                                        ? 'Địa cầu GPS đang đồng bộ'
+                                        : 'GPS globe synchronizing',
+                                    child: GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onHorizontalDragUpdate: (details) {
+                                        _userRotationOffset.value -=
+                                            (details.primaryDelta ?? 0) / 85.0;
+                                      },
+                                      child: SizedBox.square(
+                                        key: const ValueKey(
+                                          'aetron-globe-canvas',
+                                        ),
+                                        dimension: globeSize,
+                                        child: ClipRect(
+                                          child: Stack(
+                                            fit: StackFit.expand,
+                                            children: [
+                                              for (final layer
+                                                  in _GlobeLayer.values)
+                                                RepaintBoundary(
+                                                  child: CustomPaint(
+                                                    painter: _CyberGlobePainter(
+                                                      progress: _controller,
+                                                      userRotation:
+                                                          _userRotationOffset,
+                                                      colors: colors,
+                                                      layer: layer,
+                                                      motion: _globeMotion,
+                                                    ),
+                                                    isComplex: true,
+                                                    willChange: layer.animated,
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ),
+                                );
+                              },
                             ),
                           ),
                           SizedBox(height: compactHeight ? 6 : 20),
                           Text(
                             widget.customTitle ?? 'Aetron',
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                             style: KineticTypography.headlineLarge.copyWith(
                               color: colors.textPrimary,
                               fontWeight: FontWeight.w900,
@@ -267,72 +322,67 @@ class _AetronGlobeOrbitScreenState extends ConsumerState<AetronGlobeOrbitScreen>
                               ],
                             ),
                           ),
-                          SizedBox(height: compactHeight ? 4 : 8),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
-                            child: Text(
-                              widget.customSubtitle ??
-                                  (isVi
-                                      ? 'Đang đồng bộ dữ liệu...'
-                                      : 'Synchronizing system data...'),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                              style: KineticTypography.bodyMedium.copyWith(
-                                color: colors.textSecondary,
-                                fontWeight: FontWeight.w500,
+                          if (widget.showTelemetryChips) ...[
+                            SizedBox(height: compactHeight ? 12 : 20),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: _telemetryChip(
+                                      icon: Icons.satellite_alt_rounded,
+                                      label: compactWidth
+                                          ? '12 GPS'
+                                          : (isVi
+                                                ? '12 VỆ TINH GPS'
+                                                : '12 GPS SATS'),
+                                      semanticLabel: isVi
+                                          ? 'Đã kết nối 12 vệ tinh GPS'
+                                          : 'Connected to 12 GPS satellites',
+                                      color: colors.primary,
+                                      colors: colors,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: _telemetryChip(
+                                      icon: Icons.wifi_tethering_rounded,
+                                      label: compactWidth
+                                          ? '20,200 KM'
+                                          : (isVi
+                                                ? 'ĐỘ CAO 20,200 KM'
+                                                : 'ALT 20,200 KM'),
+                                      semanticLabel: isVi
+                                          ? 'Độ cao vệ tinh 20.200 ki-lô-mét'
+                                          : 'Satellite altitude 20,200 kilometers',
+                                      color: colors.secondary,
+                                      colors: colors,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ),
-                          SizedBox(height: compactHeight ? 12 : 20),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: _telemetryChip(
-                                    icon: Icons.satellite_alt_rounded,
-                                    label: compactWidth
-                                        ? '12 GPS'
-                                        : (isVi
-                                              ? '12 VỆ TINH GPS'
-                                              : '12 GPS SATS'),
-                                    semanticLabel: isVi
-                                        ? 'Đã kết nối 12 vệ tinh GPS'
-                                        : 'Connected to 12 GPS satellites',
-                                    color: colors.primary,
-                                    colors: colors,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: _telemetryChip(
-                                    icon: Icons.wifi_tethering_rounded,
-                                    label: compactWidth
-                                        ? '20,200 KM'
-                                        : (isVi
-                                              ? 'ĐỘ CAO 20,200 KM'
-                                              : 'ALT 20,200 KM'),
-                                    semanticLabel: isVi
-                                        ? 'Độ cao vệ tinh 20.200 ki-lô-mét'
-                                        : 'Satellite altitude 20,200 kilometers',
-                                    color: colors.secondary,
-                                    colors: colors,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                          ],
                         ],
                       ),
                     ),
                     Padding(
-                      padding: EdgeInsets.only(bottom: compactHeight ? 12 : 24),
-                      child: AnimatedBuilder(
-                        animation: _controller,
-                        builder: (context, _) => _buildProgress(
-                          progress: _controller.value,
-                          colors: colors,
+                      padding: EdgeInsets.only(
+                        bottom: compactHeight ? 14 : 28,
+                      ),
+                      child: Center(
+                        child: RepaintBoundary(
+                          child: AnimatedBuilder(
+                            animation: _controller,
+                            builder: (context, _) => _buildProgress(
+                              progress: _controller.value,
+                              colors: colors,
+                              isVi: isVi,
+                              barWidth: compactWidth ? 220.0 : 268.0,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -357,7 +407,7 @@ class _AetronGlobeOrbitScreenState extends ConsumerState<AetronGlobeOrbitScreen>
       label: semanticLabel,
       excludeSemantics: true,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: colors.surface2,
           borderRadius: BorderRadius.circular(16),
@@ -366,8 +416,8 @@ class _AetronGlobeOrbitScreenState extends ConsumerState<AetronGlobeOrbitScreen>
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 13, color: color),
-            const SizedBox(width: 5),
+            Icon(icon, size: 14, color: color),
+            const SizedBox(width: 6),
             Flexible(
               child: Text(
                 label,
@@ -376,7 +426,8 @@ class _AetronGlobeOrbitScreenState extends ConsumerState<AetronGlobeOrbitScreen>
                 softWrap: false,
                 style: KineticTypography.unitLabel.copyWith(
                   color: color,
-                  fontSize: 10.5,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
@@ -389,16 +440,21 @@ class _AetronGlobeOrbitScreenState extends ConsumerState<AetronGlobeOrbitScreen>
   Widget _buildProgress({
     required double progress,
     required KineticColors colors,
+    required bool isVi,
+    required double barWidth,
   }) {
+    final percentInt = (progress.clamp(0.0, 1.0) * 100).toInt();
     final track = BoxDecoration(
       color: colors.surface2,
       borderRadius: BorderRadius.circular(3),
     );
 
+    const barHeight = 5.5;
+    final Widget bar;
     if (widget.onComplete != null) {
-      return Container(
-        width: 160,
-        height: 4.5,
+      bar = Container(
+        width: barWidth,
+        height: barHeight,
         decoration: track,
         child: FractionallySizedBox(
           alignment: Alignment.centerLeft,
@@ -406,30 +462,75 @@ class _AetronGlobeOrbitScreenState extends ConsumerState<AetronGlobeOrbitScreen>
           child: DecoratedBox(decoration: _progressFill(colors)),
         ),
       );
+    } else {
+      bar = Container(
+        width: barWidth,
+        height: barHeight,
+        decoration: track,
+        clipBehavior: Clip.antiAlias,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final pillWidth = constraints.maxWidth * 0.45;
+            final offset =
+                (constraints.maxWidth + pillWidth) * progress - pillWidth;
+            return Stack(
+              children: [
+                Positioned(
+                  left: offset,
+                  top: 0,
+                  bottom: 0,
+                  width: pillWidth,
+                  child: DecoratedBox(decoration: _progressFill(colors)),
+                ),
+              ],
+            );
+          },
+        ),
+      );
     }
 
-    return Container(
-      width: 160,
-      height: 4.5,
-      decoration: track,
-      clipBehavior: Clip.antiAlias,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final pillWidth = constraints.maxWidth * 0.45;
-          final offset =
-              (constraints.maxWidth + pillWidth) * progress - pillWidth;
-          return Stack(
+    final label =
+        widget.customSubtitle ?? (isVi ? 'Đang tải...' : 'Loading...');
+
+    return SizedBox(
+      width: barWidth,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
             children: [
-              Positioned(
-                left: offset,
-                top: 0,
-                bottom: 0,
-                width: pillWidth,
-                child: DecoratedBox(decoration: _progressFill(colors)),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: KineticTypography.bodyMedium.copyWith(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w600,
+                    color: colors.textSecondary,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                '$percentInt%',
+                style: KineticTypography.headlineSmall.copyWith(
+                  fontSize: 15.0,
+                  fontWeight: FontWeight.w800,
+                  color: colors.primary,
+                  letterSpacing: 0.5,
+                  fontFeatures: KineticTypography.tabularFigures,
+                ),
               ),
             ],
-          );
-        },
+          ),
+          const SizedBox(height: 9),
+          bar,
+        ],
       ),
     );
   }
@@ -450,194 +551,275 @@ class _AetronGlobeOrbitScreenState extends ConsumerState<AetronGlobeOrbitScreen>
 }
 
 /// Pure 3D Kinetic Earth Globe with Atmospheric Glow, Rotating Continents & Orbital Telemetry
-class _CyberGlobePainter extends CustomPainter {
-  final double progress;
-  final double userRotation;
-  final KineticColors colors;
+enum _GlobeLayer {
+  background,
+  surface,
+  foreground,
+  telemetry;
 
-  const _CyberGlobePainter({
+  bool get animated => this == surface || this == telemetry;
+}
+
+class _CyberGlobePainter extends CustomPainter {
+  final Animation<double> progress;
+  final ValueListenable<double> userRotation;
+  final KineticColors colors;
+  final _GlobeLayer layer;
+
+  _CyberGlobePainter({
     required this.progress,
     required this.userRotation,
     required this.colors,
-  });
+    required this.layer,
+    required Listenable motion,
+  }) : super(repaint: layer.animated ? motion : null);
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final globeRadius = size.width * 0.28; // ~86px
-    final orbitRadiusX = size.width * 0.44; // ~136px
-    final orbitRadiusY = size.width * 0.22; // ~68px (tilted orbital plane)
+    // One canonical scene ensures all details, including stars and beacon,
+    // scale uniformly and stay centered on small and large viewports.
+    final scale = size.shortestSide / 310;
+    if (scale <= 0) return;
+    canvas.save();
+    canvas.translate(size.width / 2, size.height / 2);
+    canvas.scale(scale);
+    const center = Offset.zero;
+    const globeRadius = 310 * 0.28;
+    const orbitRadiusX = 310 * 0.44;
+    const orbitRadiusY = 310 * 0.22;
     final orbitTilt = -math.pi / 7.5; // ~ -24 degrees
 
     // Current rotation of Earth (auto animation + touch user offset)
-    final earthRotation = (progress * 2 * math.pi) + userRotation;
-
-    // ── 0. Distant Cosmic Starfield / Data Particles ────────────────────────
-    _drawStarfield(canvas, center, size, progress);
-
-    // ── 1. Atmospheric Nebula Glow (Behind Globe) ───────────────────────────
-    canvas.drawCircle(
-      center,
-      globeRadius + 32,
-      Paint()
-        ..color = colors.primary.withValues(alpha: 0.16)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 28),
-    );
-    canvas.drawCircle(
-      center,
-      globeRadius + 14,
-      Paint()
-        ..color = colors.secondary.withValues(alpha: 0.18)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 16),
-    );
-
-    // ── 2. Back Half of Tilted Orbital Telemetry Track ──────────────────────
-    _drawOrbitTrack(
-      canvas: canvas,
-      center: center,
-      radiusX: orbitRadiusX,
-      radiusY: orbitRadiusY,
-      tilt: orbitTilt,
-      isFrontHalf: false,
-    );
-
-    // ── 3. Cyber Earth Sphere Base (Obsidian Ocean with 3D Spherical Shader) ─
+    final phase = progress.value;
+    final earthRotation = (phase * 2 * math.pi) + userRotation.value;
     final globeRect = Rect.fromCircle(center: center, radius: globeRadius);
 
-    // Outer Globe Rim Glow (Pre-clip)
-    canvas.drawCircle(
-      center,
-      globeRadius + 1.5,
-      Paint()
-        ..color = colors.primary.withValues(alpha: 0.35)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5,
-    );
+    if (layer == _GlobeLayer.background) {
+      // ── 1. Atmospheric Nebula Glow (Behind Globe) ───────────────────────────
+      final glowAtmospherePrimary = colors.isDark
+          ? colors.primary
+          : const Color(0xFF0EA5E9);
+      final glowAtmosphereSecondary = colors.isDark
+          ? colors.secondary
+          : const Color(0xFF38BDF8);
 
-    // Clip to Globe Sphere for all surface rendering
-    canvas.save();
-    canvas.clipPath(Path()..addOval(globeRect));
-
-    // 3a. Deep Ocean 3D Gradient matching Kinetic Dark tones
-    final oceanPaint = Paint()
-      ..shader = RadialGradient(
-        center: const Alignment(-0.35, -0.35),
-        radius: 0.95,
-        colors: [colors.surface2, colors.surface1, colors.background],
-        stops: const [0.0, 0.55, 1.0],
-      ).createShader(globeRect);
-    canvas.drawRect(globeRect, oceanPaint);
-
-    // 3b. Latitude Grid Lines (Parallels)
-    final gridPaint = Paint()
-      ..color = colors.primary.withValues(alpha: 0.18)
-      ..strokeWidth = 0.9
-      ..style = PaintingStyle.stroke;
-
-    final equatorPaint = Paint()
-      ..color = colors.secondary.withValues(alpha: 0.35)
-      ..strokeWidth = 1.2
-      ..style = PaintingStyle.stroke;
-
-    const latAngles = [-60.0, -40.0, -20.0, 0.0, 20.0, 40.0, 60.0];
-    for (final lat in latAngles) {
-      final yOffset = -math.sin(lat * math.pi / 180) * globeRadius;
-      final rSlice = math.cos(lat * math.pi / 180) * globeRadius;
-      final rect = Rect.fromCenter(
-        center: Offset(center.dx, center.dy + yOffset),
-        width: rSlice * 2,
-        height: rSlice * 0.38,
+      canvas.drawCircle(
+        center,
+        globeRadius + 32,
+        Paint()
+          ..color = glowAtmospherePrimary.withValues(
+            alpha: colors.isDark ? 0.16 : 0.22,
+          )
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 28),
       );
-      canvas.drawOval(rect, lat == 0.0 ? equatorPaint : gridPaint);
-    }
+      canvas.drawCircle(
+        center,
+        globeRadius + 14,
+        Paint()
+          ..color = glowAtmosphereSecondary.withValues(
+            alpha: colors.isDark ? 0.18 : 0.24,
+          )
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 16),
+      );
 
-    // 3c. Longitude Meridians (Rotating seamlessly with Earth)
-    const meridianCount = 12;
-    for (var i = 0; i < meridianCount; i++) {
-      final angle = earthRotation + (i * math.pi / (meridianCount / 2));
-      final cosA = math.cos(angle);
-      final isFacingFront = cosA > 0;
+      // ── 2. Back Half of Tilted Orbital Telemetry Track ──────────────────────
+      _drawOrbitTrack(
+        canvas: canvas,
+        center: center,
+        radiusX: orbitRadiusX,
+        radiusY: orbitRadiusY,
+        tilt: orbitTilt,
+        isFrontHalf: false,
+      );
 
-      final meridianPaint = Paint()
-        ..color = colors.primary.withValues(
-          alpha: isFacingFront ? (0.08 + 0.14 * cosA) : 0.04,
-        )
-        ..strokeWidth = isFacingFront ? 1.0 : 0.6
+      // ── 3. Cyber Earth Sphere Base (Blue Ocean with 3D Spherical Shader) ────
+      // Outer Globe Rim Glow (Pre-clip)
+      final outerRimColor = colors.isDark
+          ? colors.primary
+          : const Color(0xFF0284C7);
+
+      canvas.drawCircle(
+        center,
+        globeRadius + 1.5,
+        Paint()
+          ..color = outerRimColor.withValues(alpha: 0.45)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5,
+      );
+
+      // Clip to Globe Sphere for all surface rendering
+      canvas.save();
+      canvas.clipPath(Path()..addOval(globeRect));
+
+      // 3a. Deep Ocean 3D Gradient (True Blue Planet Earth)
+      final oceanColors = colors.isDark
+          ? const [
+              Color(0xFF1E3A8A), // Deep oceanic sapphire highlight
+              Color(0xFF0F172A), // Midnight oceanic navy
+              Color(0xFF020617), // Cosmic abyss
+            ]
+          : const [
+              Color(0xFF2563EB), // Rich vibrant royal sapphire blue
+              Color(0xFF1D4ED8), // Deep cobalt oceanic blue
+              Color(0xFF0F172A), // Deep oceanic navy depth
+            ];
+
+      final oceanPaint = Paint()
+        ..shader = RadialGradient(
+          center: const Alignment(-0.35, -0.35),
+          radius: 0.95,
+          colors: oceanColors,
+          stops: const [0.0, 0.55, 1.0],
+        ).createShader(globeRect);
+      canvas.drawRect(globeRect, oceanPaint);
+
+      // 3b. Latitude Grid Lines (Parallels)
+      final gridColor = colors.isDark
+          ? colors.primary.withValues(alpha: 0.22)
+          : const Color(0xFF93C5FD).withValues(alpha: 0.45);
+
+      final gridPaint = Paint()
+        ..color = gridColor
+        ..strokeWidth = 0.9
         ..style = PaintingStyle.stroke;
 
-      final rect = Rect.fromCenter(
-        center: center,
-        width: globeRadius * 2 * cosA.abs(),
-        height: globeRadius * 2,
-      );
-      canvas.drawOval(rect, meridianPaint);
+      final equatorColor = colors.isDark
+          ? colors.secondary.withValues(alpha: 0.38)
+          : const Color(0xFFFBBF24).withValues(alpha: 0.65);
+
+      final equatorPaint = Paint()
+        ..color = equatorColor
+        ..strokeWidth = 1.2
+        ..style = PaintingStyle.stroke;
+
+      const latAngles = [-60.0, -40.0, -20.0, 0.0, 20.0, 40.0, 60.0];
+      for (final lat in latAngles) {
+        final yOffset = -math.sin(lat * math.pi / 180) * globeRadius;
+        final rSlice = math.cos(lat * math.pi / 180) * globeRadius;
+        final rect = Rect.fromCenter(
+          center: Offset(center.dx, center.dy + yOffset),
+          width: rSlice * 2,
+          height: rSlice * 0.38,
+        );
+        canvas.drawOval(rect, lat == 0.0 ? equatorPaint : gridPaint);
+      }
+      canvas.restore(); // Globe clip.
     }
 
-    // 3d. 3D Rotating Continents (Orthographic Mathematical Projection)
-    _drawContinents(canvas, center, globeRadius, earthRotation);
+    if (layer == _GlobeLayer.surface) {
+      canvas.save();
+      canvas.clipPath(Path()..addOval(globeRect));
 
-    // 3e. Atmospheric Rim Light & Specular 3D Lighting Overlay
-    final specularPaint = Paint()
-      ..shader = RadialGradient(
-        center: const Alignment(-0.55, -0.55),
-        radius: 0.75,
-        colors: [
-          Colors.white.withValues(alpha: 0.22),
-          colors.primary.withValues(alpha: 0.12),
-          Colors.transparent,
-        ],
-        stops: const [0.0, 0.45, 1.0],
-      ).createShader(globeRect);
-    canvas.drawRect(globeRect, specularPaint);
+      // 3c. Longitude Meridians (Rotating seamlessly with Earth)
+      final meridianBaseColor = colors.isDark
+          ? colors.primary
+          : const Color(0xFF93C5FD);
 
-    // Dark Terminator Shadow on Night Side (Bottom-Right)
-    final shadowPaint = Paint()
-      ..shader = RadialGradient(
-        center: const Alignment(0.65, 0.65),
-        radius: 0.85,
-        colors: [
-          colors.background.withValues(alpha: 0.75),
-          colors.background.withValues(alpha: 0.35),
-          Colors.transparent,
-        ],
-        stops: const [0.0, 0.55, 1.0],
-      ).createShader(globeRect);
-    canvas.drawRect(globeRect, shadowPaint);
+      const meridianCount = 12;
+      for (var i = 0; i < meridianCount; i++) {
+        final angle = earthRotation + (i * math.pi / (meridianCount / 2));
+        final cosA = math.cos(angle);
+        final isFacingFront = cosA > 0;
 
-    canvas.restore(); // End Globe Clip
+        final meridianPaint = Paint()
+          ..color = meridianBaseColor.withValues(
+            alpha: isFacingFront ? (0.10 + 0.18 * cosA) : 0.05,
+          )
+          ..strokeWidth = isFacingFront ? 1.0 : 0.6
+          ..style = PaintingStyle.stroke;
 
-    // ── 4. Front Atmospheric Crescent Rim (Gives Crisp Optical Depth) ────────
-    canvas.drawArc(
-      globeRect,
-      math.pi * 0.95,
-      math.pi * 0.85,
-      false,
-      Paint()
-        ..color = colors.primary.withValues(alpha: 0.65)
-        ..strokeWidth = 2.0
-        ..style = PaintingStyle.stroke
-        ..maskFilter = const MaskFilter.blur(BlurStyle.solid, 2),
-    );
+        final rect = Rect.fromCenter(
+          center: center,
+          width: globeRadius * 2 * cosA.abs(),
+          height: globeRadius * 2,
+        );
+        canvas.drawOval(rect, meridianPaint);
+      }
 
-    // ── 5. Front Half of Tilted Orbital Telemetry Track ─────────────────────
-    _drawOrbitTrack(
-      canvas: canvas,
-      center: center,
-      radiusX: orbitRadiusX,
-      radiusY: orbitRadiusY,
-      tilt: orbitTilt,
-      isFrontHalf: true,
-    );
+      // 3d. 3D Rotating Continents (Orthographic Mathematical Projection)
+      _drawContinents(canvas, center, globeRadius, earthRotation);
+      canvas.restore();
+    }
 
-    // ── 6. Luminous Orbiting GPS Telemetry Beacon / Satellite Pulse ─────────
-    _drawOrbitBeacon(
-      canvas: canvas,
-      center: center,
-      radiusX: orbitRadiusX,
-      radiusY: orbitRadiusY,
-      tilt: orbitTilt,
-      progress: progress,
-    );
+    if (layer == _GlobeLayer.foreground) {
+      canvas.save();
+      canvas.clipPath(Path()..addOval(globeRect));
+      // 3e. Atmospheric Rim Light & Specular 3D Lighting Overlay
+      final specularColor = colors.isDark
+          ? colors.primary
+          : const Color(0xFF60A5FA);
+
+      final specularPaint = Paint()
+        ..shader = RadialGradient(
+          center: const Alignment(-0.55, -0.55),
+          radius: 0.75,
+          colors: [
+            Colors.white.withValues(alpha: 0.30),
+            specularColor.withValues(alpha: 0.16),
+            Colors.transparent,
+          ],
+          stops: const [0.0, 0.45, 1.0],
+        ).createShader(globeRect);
+      canvas.drawRect(globeRect, specularPaint);
+
+      // Dark Terminator Shadow on Night Side (Bottom-Right) - Deep Space Shadow
+      const shadowColor = Color(0xFF020617);
+      final shadowPaint = Paint()
+        ..shader = RadialGradient(
+          center: const Alignment(0.65, 0.65),
+          radius: 0.85,
+          colors: [
+            shadowColor.withValues(alpha: 0.72),
+            shadowColor.withValues(alpha: 0.35),
+            Colors.transparent,
+          ],
+          stops: const [0.0, 0.55, 1.0],
+        ).createShader(globeRect);
+      canvas.drawRect(globeRect, shadowPaint);
+
+      canvas.restore(); // End Globe Clip
+
+      // ── 4. Front Atmospheric Crescent Rim (Gives Crisp Optical Depth) ────────
+      final crescentColor = colors.isDark
+          ? colors.primary
+          : const Color(0xFF0EA5E9);
+
+      canvas.drawArc(
+        globeRect,
+        math.pi * 0.95,
+        math.pi * 0.85,
+        false,
+        Paint()
+          ..color = crescentColor.withValues(alpha: 0.75)
+          ..strokeWidth = 2.0
+          ..style = PaintingStyle.stroke
+          ..maskFilter = const MaskFilter.blur(BlurStyle.solid, 2),
+      );
+
+      // ── 5. Front Half of Tilted Orbital Telemetry Track ─────────────────────
+      _drawOrbitTrack(
+        canvas: canvas,
+        center: center,
+        radiusX: orbitRadiusX,
+        radiusY: orbitRadiusY,
+        tilt: orbitTilt,
+        isFrontHalf: true,
+      );
+    }
+
+    if (layer == _GlobeLayer.telemetry) {
+      _drawStarfield(canvas, center, phase);
+      // ── 6. Luminous Orbiting GPS Telemetry Beacon / Satellite Pulse ─────────
+      _drawOrbitBeacon(
+        canvas: canvas,
+        center: center,
+        radiusX: orbitRadiusX,
+        radiusY: orbitRadiusY,
+        tilt: orbitTilt,
+        progress: phase,
+      );
+    }
+    canvas.restore();
   }
 
   /// Draw realistic rotating continental landmasses with Kinetic styling
@@ -647,7 +829,7 @@ class _CyberGlobePainter extends CustomPainter {
     double radius,
     double rotation,
   ) {
-    final continents = <List<List<double>>>[
+    const continents = <List<List<double>>>[
       // North America
       [
         [70, -165],
@@ -793,16 +975,22 @@ class _CyberGlobePainter extends CustomPainter {
       if (hasVisiblePoint && !isFirst) {
         path.close();
 
-        // 1. Glowing Landmass Base Fill (Secondary kinetic mint)
+        // 1. Glowing Landmass Base Fill (Emerald Mint)
+        final landFillColor = colors.isDark
+            ? const Color(0xFF10B981)
+            : const Color(0xFF059669);
         final landFillPaint = Paint()
-          ..color = colors.secondary.withValues(alpha: 0.28)
+          ..color = landFillColor.withValues(alpha: colors.isDark ? 0.35 : 0.44)
           ..style = PaintingStyle.fill;
         canvas.drawPath(path, landFillPaint);
 
         // 2. High-Tech Kinetic Primary Coastline Contour
+        final coastColor = colors.isDark
+            ? colors.primary
+            : const Color(0xFF38BDF8);
         final coastPaint = Paint()
-          ..color = colors.primary.withValues(alpha: 0.85)
-          ..strokeWidth = 1.15
+          ..color = coastColor.withValues(alpha: 0.95)
+          ..strokeWidth = 1.25
           ..style = PaintingStyle.stroke;
         canvas.drawPath(path, coastPaint);
       }
@@ -961,13 +1149,8 @@ class _CyberGlobePainter extends CustomPainter {
   }
 
   /// Ambient background starfield & data twinkles
-  void _drawStarfield(
-    Canvas canvas,
-    Offset center,
-    Size size,
-    double progress,
-  ) {
-    final stars = [
+  void _drawStarfield(Canvas canvas, Offset center, double progress) {
+    const stars = [
       [-110.0, -100.0, 1.4, 0.4],
       [120.0, -90.0, 1.2, 0.5],
       [-125.0, 80.0, 1.6, 0.3],
@@ -998,6 +1181,7 @@ class _CyberGlobePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _CyberGlobePainter oldDelegate) =>
+      oldDelegate.layer != layer ||
       oldDelegate.progress != progress ||
       oldDelegate.userRotation != userRotation ||
       oldDelegate.colors != colors;

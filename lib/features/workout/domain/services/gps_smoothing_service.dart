@@ -1,11 +1,16 @@
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
+import 'package:fitness_exercise_application/features/workout/domain/services/gnss_correction/gnss_correction_models.dart';
 
-// [UPGRADE: 4-State EKF Core Service - Tạm thời comment import để làm UI/UX trước]
-// import 'package:fitness_exercise_application/features/workout/domain/services/ekf/extended_kalman_filter.dart';
+import 'package:fitness_exercise_application/core/constants/debug_config.dart';
+import 'package:fitness_exercise_application/features/workout/domain/services/ekf/extended_kalman_filter.dart';
+import 'package:fitness_exercise_application/features/workout/domain/services/gnss_correction/adaptive_gnss_correction_engine.dart';
+import 'package:fitness_exercise_application/features/workout/domain/services/gnss_correction/gnss_correction_interface.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/gps_validation_models.dart';
 import 'package:latlong2/latlong.dart';
 
 const Distance _gpsDistance = Distance();
+const Distance _preciseGpsDistance = Distance(roundResult: false);
 
 class GpsSmoothingUpdate {
   final LatLng smoothedPoint;
@@ -21,12 +26,71 @@ class GpsSmoothingUpdate {
   });
 }
 
-class GpsSmoothingService {
-  const GpsSmoothingService();
+/// Filter algorithm selection for GPS trajectory smoothing.
+enum GpsFilterAlgorithm {
+  /// Standard 4-State Extended Kalman Filter (State: [px, py, v, theta]).
+  ekf4State,
 
-  // [UPGRADE: EKF Reset Hook - Để trống khi dùng thuật toán cũ, kích hoạt lại khi bật EKF]
+  /// Original Fixed Alpha with turn-boost filter (Historical baseline).
+  fixedAlpha,
+}
+
+class GpsSmoothingService {
+  final GpsFilterAlgorithm algorithm;
+  final ExtendedKalmanFilter _ekf;
+  final IGnssCorrectionEngine? _gnssCorrectionEngine;
+  final bool enableGnssCorrection;
+  final bool enableShadowMode;
+
+  /// Duration after which a GPS absence is treated as a major blackout gap.
+  static const double kGpsGapThresholdSec = 5.0;
+
+  GpsSmoothingService({
+    ExtendedKalmanFilter? ekf,
+    GpsFilterAlgorithm? algorithm,
+    IGnssCorrectionEngine? gnssCorrectionEngine,
+    bool? enableGnssCorrection,
+    bool? enableShadowMode,
+  }) : algorithm =
+           algorithm ??
+           (kGpsFilterAlgoConfig.toLowerCase() == 'fixedalpha'
+               ? GpsFilterAlgorithm.fixedAlpha
+               : GpsFilterAlgorithm.ekf4State),
+       enableGnssCorrection = enableGnssCorrection ?? kEnableGnssCorrection,
+       enableShadowMode = enableShadowMode ?? kEnableGnssCorrectionShadowMode,
+       _gnssCorrectionEngine =
+           gnssCorrectionEngine ??
+           ((enableGnssCorrection ?? kEnableGnssCorrection) ||
+                   (enableShadowMode ?? kEnableGnssCorrectionShadowMode)
+               ? AdaptiveGnssCorrectionEngine()
+               : null),
+       _ekf =
+           ekf ??
+           ExtendedKalmanFilter(
+             processPosStd: 0.6,
+             processSpeedStd: 1.2,
+             processHeadingStd: 0.5,
+             gnssCorrectionEngine:
+                 gnssCorrectionEngine ??
+                 ((enableGnssCorrection ?? kEnableGnssCorrection) ||
+                         (enableShadowMode ?? kEnableGnssCorrectionShadowMode)
+                     ? AdaptiveGnssCorrectionEngine()
+                     : null),
+             enableGnssCorrection:
+                 enableGnssCorrection ?? kEnableGnssCorrection,
+             enableShadowMode:
+                 enableShadowMode ?? kEnableGnssCorrectionShadowMode,
+           );
+
+  /// Human-readable identifier of the active smoothing algorithm.
+  String get algorithmName => algorithm == GpsFilterAlgorithm.ekf4State
+      ? (enableGnssCorrection ? 'aekf_4state' : 'ekf_4state')
+      : 'fixed_alpha';
+
+  /// Resets filter state (e.g. at workout start, mode flip, or after long GPS blackout)
   void reset() {
-    // _ekf.reset();
+    _ekf.reset();
+    _gnssCorrectionEngine?.reset();
   }
 
   GpsSmoothingUpdate smoothAcceptedPoint({
@@ -39,7 +103,11 @@ class GpsSmoothingService {
     required double speedMs,
     required double timeDeltaSec,
     required double gpsGapDurationSec,
+    double? sensorHeadingDeg,
+    bool resetAnchor = false,
   }) {
+    final researchMotion =
+        algorithm == GpsFilterAlgorithm.ekf4State && enableGnssCorrection;
     final confidence = _confidenceFor(
       accuracyMeters: accuracyMeters,
       speedMs: speedMs,
@@ -48,12 +116,19 @@ class GpsSmoothingService {
     );
     final acceptedDelta = previousAcceptedPoint == null
         ? 0.0
-        : _gpsDistance.distance(previousAcceptedPoint, acceptedPoint);
+        : (researchMotion ? _preciseGpsDistance : _gpsDistance).distance(
+            previousAcceptedPoint,
+            acceptedPoint,
+          );
     final isStationary =
         previousAcceptedPoint != null &&
         gpsGapDurationSec <= 0 &&
         acceptedDelta <= _stationaryRadiusMeters(activityType) &&
-        (speedMs <= 0.8 || timeDeltaSec >= 1.0);
+        (researchMotion
+            ? (speedMs.isFinite && speedMs >= 0
+                  ? speedMs <= 0.8
+                  : timeDeltaSec > 0 && acceptedDelta / timeDeltaSec <= 0.8)
+            : (speedMs <= 0.8 || timeDeltaSec >= 1.0));
 
     final smoothedPoint = _smoothPoint(
       acceptedPoint: acceptedPoint,
@@ -66,6 +141,10 @@ class GpsSmoothingService {
       accuracyMeters: accuracyMeters,
       speedMs: speedMs,
       timeDeltaSec: timeDeltaSec,
+      gpsGapDurationSec: gpsGapDurationSec,
+      sensorHeadingDeg: sensorHeadingDeg,
+      resetAnchor: resetAnchor,
+      researchMotion: researchMotion,
     );
 
     final appendThreshold = _minAppendDistanceMeters(activityType);
@@ -73,7 +152,8 @@ class GpsSmoothingService {
         ? double.infinity
         : _gpsDistance.distance(lastSmoothedRoutePoint, smoothedPoint);
     final shouldAppendRoutePoint =
-        gpsGapDurationSec > 5.0 ||
+        resetAnchor ||
+        gpsGapDurationSec > kGpsGapThresholdSec ||
         lastSmoothedRoutePoint == null ||
         (!isStationary &&
             routeDelta >= appendThreshold &&
@@ -93,7 +173,7 @@ class GpsSmoothingService {
     required double timeDeltaSec,
     required double gpsGapDurationSec,
   }) {
-    if (gpsGapDurationSec > 5.0 || accuracyMeters > 30.0) {
+    if (gpsGapDurationSec > kGpsGapThresholdSec || accuracyMeters > 30.0) {
       return GpsConfidence.low;
     }
     if (accuracyMeters > 15.0 || timeDeltaSec > 2.5 || speedMs <= 0.4) {
@@ -113,35 +193,109 @@ class GpsSmoothingService {
     required double accuracyMeters,
     required double speedMs,
     required double timeDeltaSec,
+    required double gpsGapDurationSec,
+    required double? sensorHeadingDeg,
+    required bool resetAnchor,
+    required bool researchMotion,
   }) {
-    if (previousSmoothedPoint == null) return acceptedPoint;
-    if (isStationary && acceptedDelta < _stationaryFreezeMeters(activityType)) {
+    final validHeading =
+        sensorHeadingDeg != null &&
+            sensorHeadingDeg.isFinite &&
+            sensorHeadingDeg >= 0 &&
+            sensorHeadingDeg < 360
+        ? sensorHeadingDeg
+        : null;
+    if (resetAnchor ||
+        previousSmoothedPoint == null ||
+        gpsGapDurationSec > kGpsGapThresholdSec) {
+      _ekf.reset();
+      _ekf.init(
+        initialPoint: acceptedPoint,
+        initialAccuracyMeters: accuracyMeters,
+        initialSpeedMs: speedMs.isFinite && speedMs >= 0 ? speedMs : 0,
+        initialHeadingDeg: researchMotion ? validHeading : null,
+      );
+      return acceptedPoint;
+    }
+
+    final freezeMarker =
+        isStationary && acceptedDelta < _stationaryFreezeMeters(activityType);
+    if (freezeMarker && !researchMotion) {
       return previousSmoothedPoint;
     }
 
-    /*
-    // =========================================================================
-    // [UPGRADE: 4-State Extended Kalman Filter (EKF) Core]
-    // Tạm thời comment khối này để làm UI/UX trước theo yêu cầu của bạn.
-    // Khi muốn kích hoạt lại, chỉ việc mở comment khối này và comment khối bên dưới:
-    // =========================================================================
-    final headingDeg = previousAcceptedPoint != null
-        ? _bearing(previousAcceptedPoint, acceptedPoint)
-        : null;
+    if (algorithm == GpsFilterAlgorithm.fixedAlpha) {
+      return _smoothPointFixedAlpha(
+        acceptedPoint: acceptedPoint,
+        previousAcceptedPoint: previousAcceptedPoint,
+        previousSmoothedPoint: previousSmoothedPoint,
+        confidence: confidence,
+        acceptedDelta: acceptedDelta,
+      );
+    }
+
+    // Default: 4-State Extended Kalman Filter (EKF) Core
+    final estimate = _smoothPointEkf(
+      acceptedPoint: acceptedPoint,
+      previousAcceptedPoint: previousAcceptedPoint,
+      accuracyMeters: accuracyMeters,
+      speedMs: speedMs,
+      timeDeltaSec: timeDeltaSec,
+      activityType: activityType,
+      sensorHeadingDeg: researchMotion ? validHeading : null,
+      researchMotion: researchMotion,
+      acceptedDelta: acceptedDelta,
+    );
+    // Update filter time even while freezing the stationary display marker.
+    return freezeMarker ? previousSmoothedPoint : estimate;
+  }
+
+  LatLng _smoothPointEkf({
+    required LatLng acceptedPoint,
+    required LatLng? previousAcceptedPoint,
+    required double accuracyMeters,
+    required double speedMs,
+    required double timeDeltaSec,
+    required String activityType,
+    required double? sensorHeadingDeg,
+    required bool researchMotion,
+    required double acceptedDelta,
+  }) {
+    // Noisy coordinate-derived heading is unreliable over short displacements.
+    final headingDeg =
+        sensorHeadingDeg ??
+        (previousAcceptedPoint != null &&
+                (!researchMotion || acceptedDelta >= 2.0)
+            ? _bearing(previousAcceptedPoint, acceptedPoint)
+            : null);
 
     final estimate = _ekf.update(
       measurementPoint: acceptedPoint,
       accuracyMeters: accuracyMeters,
       timeDeltaSec: timeDeltaSec,
-      speedMs: speedMs,
+      speedMs: speedMs.isFinite && speedMs >= 0.0 ? speedMs : null,
       headingDeg: headingDeg,
+      activityType: activityType,
     );
 
+    if (enableShadowMode &&
+        estimate.correctionQuality != null &&
+        estimate.correctionQuality != GnssCorrectionQuality.nominal) {
+      debugPrint(
+        '[GPS-P02-SHADOW] quality=${estimate.correctionQuality!.name} '
+        'NIS=${estimate.mahalanobisDistanceSq}',
+      );
+    }
     return estimate.position;
-    // =========================================================================
-    */
+  }
 
-    // --- THUẬT TOÁN GỐC (Fixed Alpha & Turn-Boost) ---
+  LatLng _smoothPointFixedAlpha({
+    required LatLng acceptedPoint,
+    required LatLng? previousAcceptedPoint,
+    required LatLng previousSmoothedPoint,
+    required GpsConfidence confidence,
+    required double acceptedDelta,
+  }) {
     var alpha = switch (confidence) {
       GpsConfidence.high => 0.72,
       GpsConfidence.medium => 0.52,
@@ -164,6 +318,11 @@ class GpsSmoothingService {
       previousSmoothedPoint.longitude * (1 - alpha) +
           acceptedPoint.longitude * alpha,
     );
+  }
+
+  double _bearingDelta(double a, double b) {
+    final delta = (a - b).abs();
+    return delta > 180 ? 360 - delta : delta;
   }
 
   double _minAppendDistanceMeters(String activityType) {
@@ -212,10 +371,5 @@ class GpsSmoothingService {
         math.sin(lat1) * math.cos(lat2) * math.cos(dLng);
     final bearing = math.atan2(y, x) * 180.0 / math.pi;
     return (bearing + 360.0) % 360.0;
-  }
-
-  double _bearingDelta(double a, double b) {
-    final delta = (a - b).abs();
-    return delta > 180 ? 360 - delta : delta;
   }
 }

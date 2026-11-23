@@ -55,58 +55,38 @@ class KineticWorkoutStopSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.kinetic;
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     final distanceDisplay = useMetricUnits
         ? (distanceMeters / 1000.0).toStringAsFixed(2)
         : (distanceMeters / 1609.34).toStringAsFixed(2);
     final distanceUnit = useMetricUnits ? 'KM' : 'MI';
 
-    final durationDisplay = WorkoutFormatters.formatElapsedClock(durationSeconds);
+    final durationDisplay = WorkoutFormatters.formatElapsedClock(
+      durationSeconds,
+    );
     final isCycling = activityType.toLowerCase() == 'cycling';
     final paceOrSpeedLabel = isCycling ? (isVi ? 'TỐC ĐỘ' : 'SPEED') : 'PACE';
     final paceOrSpeedValue = isCycling
         ? speedKmh.toStringAsFixed(1)
         : (speedKmh > 0.1
-            ? WorkoutFormatters.formatPaceFromSpeedKmh(
-                speedKmh,
-                useMetric: useMetricUnits,
-              ).replaceAll('/km', '').replaceAll('/mi', '')
-            : '--');
-    final paceOrSpeedUnit = isCycling ? (useMetricUnits ? 'km/h' : 'mph') : (useMetricUnits ? '/km' : '/mi');
+              ? WorkoutFormatters.formatPaceFromSpeedKmh(
+                  speedKmh,
+                  useMetric: useMetricUnits,
+                ).replaceAll('/km', '').replaceAll('/mi', '')
+              : '--');
+    final paceOrSpeedUnit = isCycling
+        ? (useMetricUnits ? 'km/h' : 'mph')
+        : (useMetricUnits ? '/km' : '/mi');
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-      padding: EdgeInsets.fromLTRB(20, 16, 20, 24 + bottomInset),
-      decoration: BoxDecoration(
-        color: colors.surface1,
-        borderRadius: BorderRadius.circular(KineticTokens.radiusXXL),
-        border: Border.all(
-          color: colors.tertiary.withValues(alpha: 0.5),
-          width: 1.4,
-        ),
-        boxShadow: KineticTokens.shadowPanel(Colors.black),
-      ),
-      child: SafeArea(
-        top: false,
+    return KineticGlassBottomSheet(
+      floating: true,
+      borderRadius: 28,
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
+      child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Top Grab Handle
-            Align(
-              alignment: Alignment.center,
-              child: Container(
-                width: 38,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: colors.borderSubtle,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-            ),
-            const SizedBox(height: 18),
-
             // Hero Warning / Stop Badge
             Align(
               alignment: Alignment.center,
@@ -115,16 +95,12 @@ class KineticWorkoutStopSheet extends StatelessWidget {
                 height: 64,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: colors.tertiary.withValues(alpha: 0.14),
-                  border: Border.all(
-                    color: colors.tertiary.withValues(alpha: 0.55),
-                    width: 2,
-                  ),
+                  color: colors.primaryTint,
                 ),
                 child: BladeIcon(
                   BladeIconName.flag,
-                  size: 34,
-                  color: colors.tertiary,
+                  size: 32,
+                  color: colors.primary,
                 ),
               ),
             ),
@@ -210,77 +186,28 @@ class KineticWorkoutStopSheet extends StatelessWidget {
             ),
             const SizedBox(height: 22),
 
-            // Primary Action: STOP & SAVE WORKOUT (Prominent, High-Contrast)
-            Container(
-              height: 52,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
-                color: colors.tertiary,
-              ),
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  HapticFeedback.heavyImpact();
-                  Navigator.of(context).pop(true);
-                },
-                icon: BladeIcon(
-                  BladeIconName.flag,
-                  color: Colors.white,
-                  size: 24,
-                ),
-                label: Text(
-                  isVi ? 'KẾT THÚC & LƯU BÀI TẬP' : 'FINISH & SAVE SESSION',
-                  style: KineticTypography.unitLabel.copyWith(
-                    fontWeight: FontWeight.w900,
-                    color: Colors.white,
-                    letterSpacing: 0.8,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.transparent,
-                  shadowColor: Colors.transparent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(KineticTokens.radiusLG),
-                  ),
-                ),
-              ),
+            // Primary Action: STOP & SAVE WORKOUT
+            KineticButton(
+              label: isVi ? 'KẾT THÚC & LƯU BÀI TẬP' : 'FINISH & SAVE SESSION',
+              icon: Icons.flag_rounded,
+              height: KineticTokens.buttonHeightPrimary,
+              onPressed: () {
+                HapticFeedback.heavyImpact();
+                Navigator.of(context).pop(true);
+              },
             ),
             const SizedBox(height: 10),
 
             // Secondary Action: CONTINUE WORKOUT (Dismiss sheet & continue)
-            SizedBox(
-              height: 50,
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  HapticFeedback.lightImpact();
-                  Navigator.of(context).pop(false);
-                },
-                icon: BladeIcon(
-                  BladeIconName.play,
-                  color: colors.primary,
-                  size: 22,
-                ),
-                label: Text(
-                  isVi ? 'TIẾP TỤC TẬP LUYỆN' : 'CONTINUE WORKOUT',
-                  style: KineticTypography.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: colors.primary,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: colors.primary,
-                  backgroundColor: colors.surface2,
-                  side: BorderSide(
-                    color: colors.primary.withValues(alpha: 0.55),
-                    width: 1.4,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(KineticTokens.radiusLG),
-                  ),
-                ),
-              ),
+            KineticButton(
+              label: isVi ? 'TIẾP TỤC TẬP LUYỆN' : 'CONTINUE WORKOUT',
+              icon: Icons.play_arrow_rounded,
+              variant: KineticButtonVariant.secondary,
+              height: KineticTokens.buttonHeight,
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                Navigator.of(context).pop(false);
+              },
             ),
           ],
         ),

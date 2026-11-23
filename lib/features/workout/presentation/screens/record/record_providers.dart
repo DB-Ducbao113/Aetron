@@ -1,14 +1,17 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:convert';
 import 'dart:math' as math;
+import 'package:fitness_exercise_application/features/workout/data/local/local_db.dart';
 import 'package:fitness_exercise_application/core/constants/debug_config.dart';
 import 'package:fitness_exercise_application/core/services/environment_detector.dart';
+import 'package:fitness_exercise_application/features/iod/presentation/providers/iod_controller.dart';
 import 'package:fitness_exercise_application/features/profile/domain/entities/user_profile.dart';
-import 'package:fitness_exercise_application/features/workout/data/local/local_db.dart';
-import 'package:fitness_exercise_application/features/workout/data/local/schema/local_gps_point.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
+import 'package:fitness_exercise_application/features/workout/domain/repositories/workout_repository.dart';
 import 'package:fitness_exercise_application/features/workout/domain/constants/workout_processing_contract.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/gps_pipeline.dart';
+import 'package:fitness_exercise_application/features/workout/domain/services/gps_raw_signal_continuity.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/gps_smoothing_service.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/gps_validation_models.dart';
 import 'package:fitness_exercise_application/core/providers/app_providers.dart';
@@ -23,15 +26,19 @@ import 'package:fitness_exercise_application/features/workout/presentation/scree
 import 'package:fitness_exercise_application/features/workout/presentation/screens/record/workout_session_starter.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/screens/record/workout_session_state.dart';
 import 'package:fitness_exercise_application/core/services/location_tracking_service.dart';
+import 'package:fitness_exercise_application/core/services/sensor/step_sensor_types.dart';
 import 'package:fitness_exercise_application/core/services/step_tracking_service.dart';
+import 'package:fitness_exercise_application/features/workout/domain/services/trajectory_preprocessing/trajectory_preprocessor_interface.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/workout_metrics_calculator.dart';
+import 'package:fitness_exercise_application/features/workout/domain/services/research_walking_step_length.dart';
+import 'package:fitness_exercise_application/features/workout/domain/services/research_running_step_length.dart';
+import 'package:fitness_exercise_application/features/workout/domain/services/research_step_length_fallback.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/workout_tracking_engine.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 
 import 'package:latlong2/latlong.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'package:fitness_exercise_application/features/workout/providers/workout_providers_infra.dart';
 
@@ -66,6 +73,11 @@ String? _normalizeGender(String? gender) {
 }
 
 double _defaultStrideLength(String activityType, String? gender) {
+  final research = ResearchStepLengthFallback.estimateMeters(
+    activityType: activityType,
+    heightCm: null,
+  );
+  if (research != null) return research;
   final isRunning = activityType.toLowerCase().contains('run');
   final normalizedGender = _normalizeGender(gender);
   if (isRunning) {
@@ -79,7 +91,12 @@ double computeStrideLength({
   double? heightCm,
   String? gender,
 }) {
-  if (heightCm == null || heightCm <= 0) {
+  final research = ResearchStepLengthFallback.estimateMeters(
+    activityType: activityType,
+    heightCm: heightCm,
+  );
+  if (research != null) return research;
+  if (heightCm == null || !heightCm.isFinite || heightCm <= 0) {
     return _defaultStrideLength(activityType, gender);
   }
   final isRunning = activityType.toLowerCase().contains('run');
@@ -97,7 +114,18 @@ final workoutSessionProvider =
     StateNotifierProvider.autoDispose<
       WorkoutSessionNotifier,
       WorkoutSessionState
-    >((ref) => WorkoutSessionNotifier(ref));
+    >((ref) {
+      final notifier = WorkoutSessionNotifier(ref);
+      ref.listen<IodState>(iodControllerProvider, (previous, next) {
+        if (previous?.latestSnapshot != next.latestSnapshot ||
+            previous?.currentPrediction != next.currentPrediction ||
+            previous?.sessionId != next.sessionId ||
+            previous?.isRecording != next.isRecording) {
+          notifier._refreshIodEnvironmentHint(next);
+        }
+      });
+      return notifier;
+    });
 
 // Notifier
 
@@ -105,7 +133,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   final Ref _ref;
   final WorkoutRecordingCoordinator _recordingCoordinator;
   final WorkoutTrackingEngine _trackingEngine = const WorkoutTrackingEngine();
-  final GpsSmoothingService _gpsSmoothingService = const GpsSmoothingService();
+  final GpsSmoothingService _gpsSmoothingService = GpsSmoothingService();
   final WorkoutSessionFinalizer _sessionFinalizer =
       const WorkoutSessionFinalizer();
   final WorkoutSessionLifecycle _sessionLifecycle =
@@ -120,7 +148,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
 
   // Subscriptions
   StreamSubscription<Position>? _locationSub;
-  StreamSubscription<int>? _stepSub;
+  StreamSubscription<dynamic>? _stepSub;
 
   // Timers
   Timer? _uiTicker;
@@ -129,6 +157,14 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   Timer? _pauseAutoStopTimer;
   Timer? _gpsHealthTimer;
   Timer? _checkpointTimer;
+  RecordingPersistence<WorkoutSessionFinalization> _persistence =
+      RecordingPersistence<WorkoutSessionFinalization>();
+  DateTime? _stopRequestedAt;
+  WorkoutSessionState? _frozenStopState;
+  String? _recordingOwnerId;
+  bool _pauseCheckpointSaved = false;
+  Future<void>? _pauseOperation;
+  KeepAliveLink? _recordingKeepAlive;
 
   final Stopwatch _stopwatch = Stopwatch();
 
@@ -139,6 +175,9 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   double? _heightCm;
   String? _gender;
   DateTime? _lastAcceptedPositionTime;
+  final GpsRawSignalContinuity _rawSignalContinuity = GpsRawSignalContinuity(
+    gapThresholdSec: WorkoutTrackingEngine.kStaleSignalGapThresholdSec,
+  );
   DateTime? _lastStepTime;
   int _lastSessionSteps = 0;
   int _pausedStepsOffset = 0;
@@ -148,11 +187,20 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   double _lastSplitDistanceMeters = 0;
   int _nextLapIndex = 1;
   bool _shouldResetGpsAnchorOnResume = false;
+  bool _allowOfflineReconstruction = true;
   bool _isStopping = false;
   bool _isRecoveringGpsStream = false;
+  DateTime? _lastRecoveryAttemptTime;
+  static const Duration _kRecoveryCooldown = Duration(seconds: 15);
+  bool _isAwaitingRecoveryEvidence = false;
+  String? _pendingRecoveryReason;
   DateTime? _lastGpsEventTime;
   DateTime? _lastModeFlipTime;
+  // Retain the pre-IOD hint separately so expired advice cannot persist.
+  String _legacyEnvironmentHint = 'detecting';
   final List<Position> _rawGpsPositions = [];
+  StreamingTrajectoryPreprocessor? _streamingPreprocessor;
+  int _rawPositionSequence = 0;
   static const Duration _kPauseAutoStopDelay = Duration(minutes: 15);
   static const Duration _kIndoorWatchdogTick = Duration(seconds: 2);
   static const Duration _kIndoorStepGrace = Duration(seconds: 4);
@@ -216,7 +264,20 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
 
   // Public API
 
+  bool hasUnfinishedRecordingForOtherUser(String? userId) =>
+      _recordingOwnerId != null &&
+      _recordingOwnerId != (userId ?? 'local_user') &&
+      state.status != RecordingState.finished &&
+      state.status != RecordingState.idle;
+
   void startWorkout(String activityType, {Position? startupGpsLock}) {
+    if (state.status == RecordingState.active ||
+        state.status == RecordingState.paused ||
+        state.status == RecordingState.stopping ||
+        state.status == RecordingState.error ||
+        state.status == RecordingState.initializing) {
+      return; // Never replace an unfinished or unsaved recording.
+    }
     final sessionId = const Uuid().v4();
     final stride = computeStrideLength(
       activityType: activityType,
@@ -234,6 +295,20 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       recordingSource: _defaultRecordingSource(activityType),
     );
     _resetRuntimeTrackingState();
+    _recordingOwnerId = _ref.read(currentUserIdProvider) ?? 'local_user';
+    LocalDB.registerRecording(sessionId);
+    _legacyEnvironmentHint = startPlan.environmentHint;
+    if (kEnableTrajectoryPreprocessing ||
+        kEnableTrajectoryPreprocessingShadowMode) {
+      _streamingPreprocessor =
+          TrajectoryPreprocessor.forActivity(
+            activityType,
+            debugLocationMode: kDebugLocationMode,
+          ).createStreamingSession(
+            enableQualityGate: kEnableGpsQualityGate,
+            enableShadowMode: kEnableGpsQualityGateShadowMode,
+          );
+    }
     final startupLockPoint = startupGpsLock == null
         ? null
         : LatLng(startupGpsLock.latitude, startupGpsLock.longitude);
@@ -295,6 +370,10 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
         mode: startPlan.trackingMode,
       ),
     );
+
+    // 3. Start IOD recording; fresh independent estimates may advise the
+    // environment hint, never drive the distance source directly.
+    _ref.read(iodControllerProvider.notifier).startSession(startPlan.sessionId);
   }
 
   void onUserDraggedMap() {
@@ -303,7 +382,9 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   }
 
   bool requestRecenter() {
-    if (state.currentLatLng == null && state.initialPosition == null) return false;
+    if (state.currentLatLng == null && state.initialPosition == null) {
+      return false;
+    }
     state = state.copyWith(
       followUser: true,
       recenterRequestId: state.recenterRequestId + 1,
@@ -348,9 +429,13 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       }
       unawaited(_startStepCounterBackground());
       _refreshIndoorWatchdog();
-      debugPrint('[Workout] sensors and tracking successfully initiated in background');
+      debugPrint(
+        '[Workout] sensors and tracking successfully initiated in background',
+      );
     } catch (e, stack) {
-      debugPrint('[Workout] Error initializing sensors in background: $e\n$stack');
+      debugPrint(
+        '[Workout] Error initializing sensors in background: $e\n$stack',
+      );
     }
   }
 
@@ -402,9 +487,14 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
           unawaited(_recoverGpsStream(activityType, reason: 'stream_done'));
         },
       );
+      _lastRecoveryAttemptTime = null;
+      _isAwaitingRecoveryEvidence = false;
+      _pendingRecoveryReason = null;
       _lastGpsEventTime = DateTime.now();
       _startGpsHealthWatchdog(activityType);
-      debugPrint('[Workout] GPS position subscription started');
+      debugPrint(
+        '[Workout] GPS position subscription started (Algorithm: ${_gpsSmoothingService.algorithmName})',
+      );
     } catch (e) {
       debugPrint('[Workout] GPS error: $e');
       if (mounted) {
@@ -452,6 +542,17 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
         logLevel: 'warning',
         silence: silence,
       );
+
+      final lastAttempt = _lastRecoveryAttemptTime;
+      if (lastAttempt != null &&
+          DateTime.now().difference(lastAttempt) < _kRecoveryCooldown) {
+        debugPrint(
+          '[Workout] GPS recovery on cooldown (${silence.inSeconds}s stalled, '
+          'cooldown ${_kRecoveryCooldown.inSeconds}s)',
+        );
+        return;
+      }
+
       unawaited(_recoverGpsStream(activityType, reason: 'stale_stream'));
     });
   }
@@ -462,7 +563,17 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   }) async {
     if (_isRecoveringGpsStream || _isStopping || !mounted) return;
     if (state.status != RecordingState.active) return;
+
+    final now = DateTime.now();
+    final lastAttempt = _lastRecoveryAttemptTime;
+    if (lastAttempt != null &&
+        now.difference(lastAttempt) < _kRecoveryCooldown) {
+      debugPrint('[Workout] GPS recovery skipped (cooldown active)');
+      return;
+    }
+
     _isRecoveringGpsStream = true;
+    _lastRecoveryAttemptTime = now;
     final locationService = _ref.read(locationTrackingServiceProvider);
 
     try {
@@ -473,17 +584,36 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
         reason: reason,
       );
 
+      // Do NOT pass stale cached fallback (e.g. getLastKnownPosition).
+      // Only accept fresh direct sensor readings with verified timestamp.
       final rescuePosition = await locationService
-          .getCurrentPositionWithTimeout(
-            fallback: await locationService.getLastKnownPosition(),
-            timeout: const Duration(seconds: 4),
-          );
+          .getCurrentPositionWithTimeout(timeout: const Duration(seconds: 4));
       if (rescuePosition != null && mounted) {
-        _lastGpsEventTime = DateTime.now();
-        _onPosition(rescuePosition);
+        final fixTime = rescuePosition.timestamp;
+        final age = DateTime.now().difference(fixTime).abs();
+        final isRecent = age <= const Duration(seconds: 5);
+        final isAfterWorkoutStart =
+            state.startedAt == null || !fixTime.isBefore(state.startedAt!);
+        final isChronological =
+            _rawSignalContinuity.lastRawFixTimestamp == null ||
+            fixTime.isAfter(_rawSignalContinuity.lastRawFixTimestamp!);
+
+        if (isRecent && isAfterWorkoutStart && isChronological) {
+          _lastGpsEventTime = DateTime.now();
+          _onPosition(rescuePosition);
+        } else {
+          debugPrint(
+            '[Workout] ignored stale rescue position: timestamp=$fixTime, age=${age.inSeconds}s',
+          );
+        }
       }
 
       await _locationSub?.cancel();
+      _locationSub = null;
+      if (!mounted || state.status != RecordingState.active || _isStopping) {
+        return;
+      }
+
       _locationSub = await _sensorController.startGpsTracking(
         locationService: locationService,
         activityType: activityType,
@@ -510,15 +640,13 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
           unawaited(_recoverGpsStream(activityType, reason: 'stream_done'));
         },
       );
-      _lastGpsEventTime = DateTime.now();
-      debugPrint('[Workout] GPS recovery succeeded');
-      _logGpsHealthEvent(
-        eventType: kGpsRecoverySucceededEvent,
-        message: kGpsRecoverySucceededMessage,
-        reason: reason,
-        payloadOverrides: {
-          'recovery_used_rescue_position': rescuePosition != null,
-        },
+
+      // Set awaiting recovery evidence: recovery is only declared succeeded
+      // once an actual fresh fix arrives from the restarted stream.
+      _isAwaitingRecoveryEvidence = true;
+      _pendingRecoveryReason = reason;
+      debugPrint(
+        '[Workout] GPS stream restarted, awaiting fresh fix evidence...',
       );
     } catch (e) {
       debugPrint('[Workout] GPS recovery failed: $e');
@@ -537,13 +665,15 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   // Steps
 
   Future<void> _startStepCounterBackground() async {
+    if (state.activityType.toLowerCase() == 'cycling') return;
     debugPrint('[Workout] pedometer startup begin at ${DateTime.now()}');
     try {
       final stepService = _ref.read(stepTrackingServiceProvider);
       await _stepSub?.cancel();
-      _stepSub = await _sensorController.startStepTracking(
+      _stepSub = await _sensorController.startWorkoutStepTracking(
         stepService: stepService,
-        onStep: _onStep,
+        activityType: state.activityType,
+        onStepUpdate: _onStepUpdate,
       );
       debugPrint('[Workout] pedometer subscription active');
     } catch (e) {
@@ -560,6 +690,8 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   // Session control
 
   Future<void> pauseWorkout() async {
+    if (state.status != RecordingState.active || _isStopping) return;
+    _allowOfflineReconstruction = false;
     _flushRouteBufferToState(force: true);
     _stopwatch.stop();
     _uiTicker?.cancel();
@@ -568,27 +700,62 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     _gpsHealthTimer?.cancel();
     _checkpointTimer?.cancel();
     _checkpointTimer = null;
-    final locationService = _ref.read(locationTrackingServiceProvider);
-    await _sensorController.stopGpsTracking(
-      locationService: locationService,
-      subscription: _locationSub,
-    );
-    _locationSub = null;
-    _stepSub?.pause();
-    state = _sessionLifecycle.pause(
-      current: state,
-      pauseAutoStopRemainingSeconds: _kPauseAutoStopDelay.inSeconds,
-    );
-    _syncLiveActivityState();
-    _startPauseAutoStopCountdown();
+    state = _sessionLifecycle
+        .pause(
+          current: state.copyWith(
+            durationSeconds: math.max(
+              state.durationSeconds,
+              _stopwatch.elapsed.inSeconds,
+            ),
+          ),
+          pauseAutoStopRemainingSeconds: _kPauseAutoStopDelay.inSeconds,
+        )
+        .copyWith(currentCadenceSpm: 0);
+    // Capture the pause boundary before any asynchronous sensor shutdown.
+    _pauseCheckpointSaved = false;
+    final checkpoint = _persistCheckpoint(force: true);
+    _startCheckpointTimer(); // Retry a failed pause checkpoint while paused.
+    final pause = () async {
+      try {
+        final locationService = _ref.read(locationTrackingServiceProvider);
+        await _sensorController.stopGpsTracking(
+          locationService: locationService,
+          subscription: _locationSub,
+        );
+        _locationSub = null;
+        final stepService = _ref.read(stepTrackingServiceProvider);
+        _sensorController.pauseStepTracking(stepService);
+      } catch (error, stack) {
+        debugPrint('[Workout] Pause sensor shutdown failed: $error\n$stack');
+      }
+      await checkpoint;
+    }();
+    _pauseOperation = pause;
+    try {
+      await pause;
+    } finally {
+      _pauseOperation = null;
+      if (mounted && state.status == RecordingState.paused) {
+        _syncLiveActivityState();
+        _startPauseAutoStopCountdown();
+      }
+    }
   }
 
   Future<void> resumeWorkout() async {
+    if (state.status != RecordingState.paused || _isStopping) return;
+    await _pauseOperation;
+    if (!mounted || state.status != RecordingState.paused || _isStopping) {
+      return;
+    }
     _cancelPauseAutoStopCountdown();
     _stopwatch.start();
-    _stepSub?.resume();
+    final stepService = _ref.read(stepTrackingServiceProvider);
+    _sensorController.resumeStepTracking(stepService);
     _speedSamples.clear();
     _shouldResetGpsAnchorOnResume = true;
+    _streamingPreprocessor?.reset();
+    _gpsSmoothingService.reset();
     _lastGpsEventTime = DateTime.now();
     _startTicker();
     _startCalorieTimer();
@@ -606,99 +773,166 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       debugPrint('[Workout] stopWorkout ignored — stop already in progress');
       return;
     }
+    if (state.status != RecordingState.active &&
+        state.status != RecordingState.paused &&
+        state.status != RecordingState.error) {
+      return;
+    }
     _isStopping = true;
+    // Keep a terminal attempt (and failed retry data) alive even if the route
+    // rebuilds. Active tracking itself must not be pinned across sign-out.
+    _recordingKeepAlive ??= _ref.keepAlive();
 
     try {
-      _flushRouteBufferToState(force: true);
-      _cancelPauseAutoStopCountdown();
-      state = _sessionLifecycle.stopping(state);
-
-      try {
-        await _shutdownTrackingInfrastructure();
-      } catch (e) {
-        debugPrint('[Workout] Error shutting down tracking: $e');
-      }
-
-      final finishedAt = DateTime.now();
-      final finalCalories = _computeCalories(
-        distanceMeters: state.distanceMeters,
-        durationSec: state.durationSeconds,
-      );
-
-      final resolvedUserId = _ref.read(currentUserIdProvider) ??
-          Supabase.instance.client.auth.currentUser?.id ??
-          'local_user';
-
-      final finalization = _sessionFinalizer.finalize(
-        state: state,
-        userId: resolvedUserId,
-        finishedAt: finishedAt,
-        caloriesBurned: finalCalories,
-        fallbackStrideLengthMeters: _defaultStrideLength(
-          state.activityType,
-          _gender,
-        ),
-        trackingEngine: _trackingEngine,
-        rawGpsPositions: List<Position>.unmodifiable(_rawGpsPositions),
-        filteredRouteSegments: List<List<LatLng>>.unmodifiable(
-          state.routeSegments
-              .where((segment) => segment.isNotEmpty)
-              .map((segment) => List<LatLng>.unmodifiable(segment)),
-        ),
-      );
-
-      // 1. Immediately cache locally with safe error handling
-      final repo = _ref.read(workoutRepositoryProvider);
-      try {
-        await repo.cacheSessionLocal(
-          finalization.session,
-          isSynced: false,
+      _persistence.seal();
+      if (_frozenStopState == null) {
+        _stopwatch.stop();
+        _checkpointTimer?.cancel();
+        _uiTicker?.cancel();
+        _flushRouteBufferToState(force: true);
+        _cancelPauseAutoStopCountdown();
+        state = _sessionLifecycle.stopping(
+          state.copyWith(
+            durationSeconds: math.max(
+              state.durationSeconds,
+              _stopwatch.elapsed.inSeconds,
+            ),
+          ),
         );
-      } catch (e) {
-        debugPrint('[Workout] Local session cache error: $e');
+        _stopRequestedAt = DateTime.now();
+        _frozenStopState = state;
+        // Pause shutdown may still be running; do not race sensor operations.
+        await _pauseOperation;
+        try {
+          await _shutdownTrackingInfrastructure();
+        } catch (error, stack) {
+          debugPrint('[Workout] Error shutting down tracking: $error\n$stack');
+        }
+        try {
+          _ref.read(iodControllerProvider.notifier).stopSession();
+        } catch (error, stack) {
+          debugPrint('[Workout] Error stopping IOD: $error\n$stack');
+        }
+      } else {
+        state = _sessionLifecycle.stopping(_frozenStopState!);
       }
-      // Show the finished session in History/Analytics right away instead of
-      // invalidating (the refetch would race the background remote save and
-      // return a list without this session on web).
-      _ref
-          .read(workoutListProvider.notifier)
-          .insertLocalSession(finalization.session);
+
+      final currentOwnerId = _ref.read(currentUserIdProvider) ?? 'local_user';
+      final resolvedUserId = _recordingOwnerId ??= currentOwnerId;
+      if (resolvedUserId != currentOwnerId) {
+        throw StateError('Recording owner changed before save');
+      }
+
+      final currentProfile = UserProfile(
+        id: 'active-session',
+        userId: resolvedUserId,
+        weightKg: _weightKg,
+        heightCm: (_heightCm ?? 170).clamp(50.0, 250.0),
+        legacyAge: 0,
+        gender: _gender ?? 'male',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        updatedAt: DateTime.fromMillisecondsSinceEpoch(0),
+      );
+
+      final frozen = _frozenStopState!;
+      final finalization = _persistence.freezeFinalization(
+        () => _sessionFinalizer.finalize(
+          state: frozen,
+          userId: resolvedUserId,
+          finishedAt: _stopRequestedAt!,
+          caloriesBurned: _computeCalories(
+            distanceMeters: frozen.distanceMeters,
+            durationSec: frozen.durationSeconds,
+          ),
+          fallbackStrideLengthMeters: _defaultStrideLength(
+            frozen.activityType,
+            _gender,
+          ),
+          trackingEngine: _trackingEngine,
+          rawGpsPositions: List<Position>.unmodifiable(_rawGpsPositions),
+          filteredRouteSegments: List<List<LatLng>>.unmodifiable(
+            (frozen.smoothedRouteSegments.isNotEmpty
+                    ? frozen.smoothedRouteSegments
+                    : frozen.routeSegments)
+                .where((segment) => segment.isNotEmpty)
+                .map((segment) => List<LatLng>.unmodifiable(segment)),
+          ),
+          gpsAlgorithm: _gpsSmoothingService.algorithmName,
+          enableTrajectoryReconstruction:
+              kEnableTrajectoryReconstruction && _allowOfflineReconstruction,
+          userProfile: currentProfile,
+        ),
+      );
+
+      // 1. Wait for every accepted checkpoint to settle before writing the
+      // immutable final session. A write failure must not mean "finished".
+      final repo = _ref.read(workoutRepositoryProvider);
+      await _recordingCoordinator.drainLocalWrites();
+      await _persistence.saveFinal(
+        (pending) => repo.cacheSessionLocal(pending.session, isSynced: false),
+      );
+      LocalDB.unregisterRecording(finalization.sessionId);
+
+      try {
+        _ref
+            .read(workoutListProvider.notifier)
+            .insertLocalSession(finalization.session);
+      } catch (error, stack) {
+        // History presentation is not the durability acknowledgement.
+        debugPrint('[Workout] History refresh failed: $error\n$stack');
+      }
 
       // 2. IMMEDIATELY transition state to finished so UI navigates to Summary
       // without waiting on slow network or remote database roundtrips.
       if (mounted) {
-        final endedState = _sessionLifecycle.finish(
-          current: state,
-          caloriesBurned: finalization.caloriesBurned,
-          avgSpeedKmh: finalization.avgSpeedKmh,
-          sessionId: finalization.sessionId,
-          gpsAnalysis: finalization.gpsAnalysis,
-        );
+        final endedState = _sessionLifecycle
+            .finish(
+              current: frozen,
+              caloriesBurned: finalization.caloriesBurned,
+              avgSpeedKmh: finalization.avgSpeedKmh,
+              sessionId: finalization.sessionId,
+              gpsAnalysis: finalization.gpsAnalysis,
+            )
+            .copyWith(
+              distanceMeters: finalization.session.distanceKm * 1000,
+              stepCount: finalization.session.steps,
+              lapSplits: finalization.session.lapSplits,
+            );
         state = endedState;
         try {
-          unawaited(_endLiveActivity(endedState));
+          unawaited(
+            _endLiveActivity(endedState).catchError((
+              Object error,
+              StackTrace stack,
+            ) {
+              debugPrint('[Workout] Live activity end error: $error\n$stack');
+            }),
+          );
         } catch (e) {
           debugPrint('[Workout] Live activity end error: $e');
         }
       }
 
       // 3. Asynchronously synchronize remotely in the background without blocking UI
-      unawaited(_syncSessionRemoteInBackground(
-        finalization: finalization,
-        resolvedUserId: resolvedUserId,
-        routeSegments: List<List<LatLng>>.unmodifiable(state.routeSegments),
-        lastGpsGapDurationSec: state.lastGpsGapDurationSec,
-        isGpsSignalWeak: state.isGpsSignalWeak,
-      ));
+      unawaited(
+        _syncSessionRemoteInBackground(
+          finalization: finalization,
+          resolvedUserId: finalization.session.userId,
+          repo: repo,
+        ).catchError((Object error, StackTrace stack) {
+          debugPrint('[Workout] Background sync failed: $error\n$stack');
+        }),
+      );
+      _recordingKeepAlive?.close();
+      _recordingKeepAlive = null;
     } catch (e, stack) {
       debugPrint('[Workout] Error stopping workout: $e\n$stack');
-      // Emergency recovery: Transition to finished so user is never trapped in stopping state
+      // The frozen finalization stays in memory for an idempotent retry. It
+      // is not a durable save and must never trigger summary navigation.
       if (mounted && state.status != RecordingState.finished) {
-        final emergencySessionId = state.sessionId ??
-            DateTime.now().millisecondsSinceEpoch.toString();
         state = state.copyWith(
-          status: RecordingState.finished,
-          sessionId: emergencySessionId,
+          status: RecordingState.error,
+          errorMessage: 'recording_save_failed',
         );
       }
     } finally {
@@ -709,11 +943,8 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   Future<void> _syncSessionRemoteInBackground({
     required WorkoutSessionFinalization finalization,
     required String resolvedUserId,
-    required List<List<LatLng>> routeSegments,
-    required double lastGpsGapDurationSec,
-    required bool isGpsSignalWeak,
+    required WorkoutRepository repo,
   }) async {
-    final repo = _ref.read(workoutRepositoryProvider);
     bool savedRemotely = false;
     if (resolvedUserId != 'local_user') {
       try {
@@ -722,13 +953,6 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
             .timeout(const Duration(seconds: 10));
         savedRemotely = true;
         debugPrint('[Workout] Remote session save succeeded in background');
-        // Update local cache sync status
-        try {
-          await repo.cacheSessionLocal(
-            finalization.session,
-            isSynced: true,
-          );
-        } catch (_) {}
       } catch (e) {
         // Common real causes worth grepping for in the log:
         //  - 'invalid input syntax for type uuid'  -> bad session id
@@ -752,61 +976,40 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       );
     }
 
-    // Raw tracking flush runs independently (may throw on web due to no Isar);
-    // route snapshot must not be blocked by it.
-    unawaited(
-      _recordingCoordinator
-          .flushPendingRawTracking(
-            workoutId: finalization.sessionId,
-            force: true,
-          )
-          .catchError(
-            (e) =>
-                debugPrint('[Workout] RawTracking flush error: $e'),
-          ),
-    );
-    _recordingCoordinator.markRemoteWorkoutShellReady();
-    _recordingCoordinator.queueLiveRouteSnapshot(
-      workoutId: finalization.sessionId,
-      routeSegments: routeSegments,
-      lastGpsGapDurationSec: lastGpsGapDurationSec,
-      isGpsSignalWeak: isGpsSignalWeak,
-    );
-    await _recordingCoordinator.syncLiveRouteSnapshot(force: true);
-
     if (savedRemotely) {
       try {
+        _recordingCoordinator.markRemoteWorkoutShellReady();
+        final drained = await _recordingCoordinator
+            .flushForFinalization(finalization.sessionId)
+            .timeout(const Duration(seconds: 15));
+        if (!drained) {
+          throw StateError('Raw workout upload still pending');
+        }
+        // saveSession already persisted the final filtered route and client
+        // artifact. Don't send a live snapshot after finalization.
         await _recordingCoordinator.enqueueProcessingForSession(
           finalization.session,
         );
         await _recordingCoordinator.enqueueRouteCorrectionForSession(
           finalization.session,
         );
+        await repo.cacheSessionLocal(finalization.session, isSynced: true);
+        if (mounted) _ref.invalidate(workoutListProvider);
+        return;
       } catch (e) {
-        debugPrint('[Workout] Remote job enqueue error: $e');
+        debugPrint('[Workout] Finalization upload/queue pending: $e');
       }
-      // The row now exists on the server: refresh the shared workout list so
-      // History/Analytics/Home show this session without requiring an app
-      // reload (the invalidate in stopWorkout runs before the remote save).
-      if (mounted) {
-        _ref.invalidate(workoutListProvider);
-      }
-    } else {
-      debugPrint(
-        '[Workout] Skipping job enqueue — session not saved to Supabase yet',
-      );
-      // The row is safely in the local cache but not in the cloud. Kick off a
-      // sync pass so a transient failure (network blip, 10s timeout) is
-      // retried now instead of only on the next app start / sign-in.
-      unawaited(_retryRemoteSync());
     }
+
+    // Leave local session unsynced until raw upload and job enqueue succeed.
+    // The normal sync pass retries the same UUID and idempotent raw records.
+    if (resolvedUserId != 'local_user') unawaited(_retryRemoteSync(repo));
   }
 
   /// Best-effort retry of every session still waiting in the local cache.
   /// [WorkoutRepositoryImpl.syncPendingData] skips unauthorised users, so this
   /// is a no-op when nobody is signed in.
-  Future<void> _retryRemoteSync() async {
-    final repo = _ref.read(workoutRepositoryProvider);
+  Future<void> _retryRemoteSync(WorkoutRepository repo) async {
     try {
       await repo.syncPendingData();
       debugPrint('[Workout] Pending-session retry sync finished');
@@ -849,10 +1052,18 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   }
 
   void _resetRuntimeTrackingState() {
+    _persistence = RecordingPersistence<WorkoutSessionFinalization>();
+    _stopRequestedAt = null;
+    _frozenStopState = null;
+    _recordingOwnerId = null;
+    _pauseCheckpointSaved = false;
+    _pauseOperation = null;
+    _allowOfflineReconstruction = true;
     _gpsPipeline.reset();
     _lastRouteSnapshotTime = null;
     _speedSamples.clear();
     _lastAcceptedPositionTime = null;
+    _rawSignalContinuity.reset();
     _lastStepTime = null;
     _lastSessionSteps = 0;
     _pausedStepsOffset = 0;
@@ -865,8 +1076,16 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     _nextLapIndex = 1;
     _shouldResetGpsAnchorOnResume = false;
     _isStopping = false;
+    _isRecoveringGpsStream = false;
+    _isAwaitingRecoveryEvidence = false;
+    _pendingRecoveryReason = null;
+    _lastRecoveryAttemptTime = null;
     _gpsSmoothingService.reset();
+    _streamingPreprocessor?.reset();
+    _streamingPreprocessor = null;
+    _rawPositionSequence = 0;
     _lastModeFlipTime = null;
+    _legacyEnvironmentHint = 'detecting';
   }
 
   // Calories
@@ -882,12 +1101,17 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       createdAt: DateTime.fromMillisecondsSinceEpoch(0),
       updatedAt: DateTime.fromMillisecondsSinceEpoch(0),
     );
-    return WorkoutMetricsCalculator.computeCaloriesKcal(
+    final calculated = WorkoutMetricsCalculator.computeCaloriesKcal(
       profile: profile,
       activityType: state.activityType,
       distanceMeters: distanceMeters ?? state.distanceMeters,
       durationSec: durationSec ?? state.durationSeconds,
+      movingDurationSec: state.movingTimeSeconds,
     );
+    // Recompute consistently from the current MET estimate.
+    return _requiresGpsTracking(state.activityType)
+        ? calculated
+        : math.max(state.caloriesBurned, calculated);
   }
 
   void _startCalorieTimer() {
@@ -965,6 +1189,29 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
 
   // Mode changes
 
+  void _refreshIodEnvironmentHint(IodState iod) {
+    if (!mounted ||
+        state.status != RecordingState.active ||
+        !_requiresGpsTracking(state.activityType) ||
+        (state.trackingMode == kIndoorMode && !state.gpsFallbackActive)) {
+      return;
+    }
+    final advice = WorkoutEnvironmentController.resolveIodAdvice(
+      workout: state,
+      legacyHint: _legacyEnvironmentHint,
+      iod: iod,
+      now: DateTime.now(),
+      lastAcceptedGpsAt: _lastAcceptedPositionTime,
+    );
+    if (state.environmentHint != advice.hint) {
+      state = state.copyWith(environmentHint: advice.hint);
+      debugPrint(
+        '[Workout][IOD] hint=${advice.hint} '
+        'source=${advice.usedForHint ? "deepiod_c_mobile_adapted" : "gps_step_legacy"}',
+      );
+    }
+  }
+
   void _onEnvironmentChanged(ClassifierEvent event) {
     if (!mounted) return;
     final nextHint = switch (event.environment) {
@@ -974,7 +1221,18 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     };
 
     if (_requiresGpsTracking(state.activityType)) {
-      state = state.copyWith(environmentHint: nextHint);
+      _legacyEnvironmentHint = nextHint;
+      final advice = WorkoutEnvironmentController.resolveIodAdvice(
+        workout: state,
+        legacyHint: nextHint,
+        iod: _ref.read(iodControllerProvider),
+        now: DateTime.now(),
+        lastAcceptedGpsAt: _lastAcceptedPositionTime,
+      );
+      state = state.copyWith(environmentHint: advice.hint);
+      if (advice.corroborated) {
+        debugPrint('[Workout][IOD] independent C-Mobile agrees with $nextHint');
+      }
 
       // Classifier phát hiện indoor + GPS thực sự yếu → kích hoạt step-fallback.
       // Điều kiện kép: environment == indoor VÀ fallbackSuggested (accuracy cao +
@@ -991,8 +1249,8 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       if (shouldActivateFallback) {
         final now = DateTime.now();
         final lastFlip = _lastModeFlipTime;
-        final cooldownActive = lastFlip != null &&
-            now.difference(lastFlip) < _kModeFlipCooldown;
+        final cooldownActive =
+            lastFlip != null && now.difference(lastFlip) < _kModeFlipCooldown;
         if (cooldownActive && event.confidence < _kModeFlipHighConfidence) {
           debugPrint(
             '[Workout][HYSTERESIS] outdoor→indoor flip blocked '
@@ -1050,10 +1308,23 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     final isGpsPrimary = _requiresGpsTracking(state.activityType);
     final livePoint = LatLng(position.latitude, position.longitude);
     _lastGpsEventTime = DateTime.now();
+    if (_isAwaitingRecoveryEvidence) {
+      _isAwaitingRecoveryEvidence = false;
+      debugPrint('[Workout] GPS recovery succeeded with verified fix');
+      _logGpsHealthEvent(
+        eventType: kGpsRecoverySucceededEvent,
+        message: kGpsRecoverySucceededMessage,
+        reason: _pendingRecoveryReason ?? 'stream_restored',
+      );
+      _pendingRecoveryReason = null;
+    }
     final rawGpsDeviceSource =
         state.isGpsSignalWeak || _shouldResetGpsAnchorOnResume
         ? 'geolocator_position_stream_recovery'
         : 'geolocator_position_stream';
+
+    // Multi-source IOD acquisition; neural advice is handled separately.
+    _ref.read(iodControllerProvider.notifier).onPositionUpdate(position);
 
     if (kDebugMode) {
       debugPrint(
@@ -1065,6 +1336,8 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     }
 
     if (state.status == RecordingState.paused) {
+      _rawSignalContinuity.reset();
+      _rawSignalContinuity.observe(position.timestamp);
       _distanceAnchorPoint = livePoint;
       _lastAcceptedPositionTime = position.timestamp;
       state = state.copyWith(
@@ -1093,6 +1366,15 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     _rawGpsPositions.add(position);
     _environmentController.addPosition(position);
 
+    // Compare consecutive raw timestamps; rejected stationary fixes still
+    // prove the GPS stream is healthy. Ignore stale samples for route updates.
+    if (!_rawSignalContinuity.observe(position.timestamp)) {
+      if (kDebugMode) {
+        debugPrint('[Workout][GPS] ignored out-of-order/duplicate raw fix');
+      }
+      return;
+    }
+
     if (!isGpsPrimary && state.trackingMode == kIndoorMode) {
       state = state.copyWith(
         currentLatLng: livePoint,
@@ -1115,17 +1397,55 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       return;
     }
 
-    final decision = _trackingEngine.evaluateGpsUpdate(
+    final rawSample = TrajectoryRawSample(
+      index: _rawPositionSequence++,
+      timestamp: position.timestamp,
+      point: livePoint,
+      altitudeMeters: position.altitude,
+      sensorSpeedMs: position.speed,
+      accuracyMeters: position.accuracy,
+      sensorHeadingDeg: position.heading,
+      deviceSource: rawGpsDeviceSource,
+    );
+
+    final legacyDecision = _trackingEngine.evaluateGpsUpdate(
       position: position,
       activityType: state.activityType,
       routePoints: state.routePoints,
       currentLatLng: state.currentLatLng,
       distanceAnchorPoint: _distanceAnchorPoint,
       lastAcceptedPositionTime: _lastAcceptedPositionTime,
+      rawGpsGapDurationSec: _rawSignalContinuity.pendingGapDurationSec,
       shouldResetAnchorOnResume: _shouldResetGpsAnchorOnResume,
       wasGpsSignalWeak: state.isGpsSignalWeak,
       debugLocationMode: kDebugLocationMode,
     );
+
+    ProcessedTrajectoryPoint? processedSample;
+    if (_streamingPreprocessor != null) {
+      processedSample = _streamingPreprocessor!.processSample(rawSample);
+    }
+
+    if (kEnableTrajectoryPreprocessingShadowMode && processedSample != null) {
+      _logTrajectoryPreprocessingShadow(
+        index: rawSample.index,
+        legacyDecision: legacyDecision,
+        processed: processedSample,
+      );
+    }
+
+    final TrackingGpsDecision decision;
+    if (kEnableTrajectoryPreprocessing && processedSample != null) {
+      decision = _trackingEngine.resolveTrajectoryPreprocessingDecision(
+        legacyDecision: legacyDecision,
+        processedSample: processedSample,
+        livePoint: livePoint,
+        pendingGapDurationSec: _rawSignalContinuity.pendingGapDurationSec,
+      );
+    } else {
+      decision = legacyDecision;
+    }
+
     state = state.copyWith(currentLatLng: decision.previewPoint);
     _recordGpsDecision(
       position: position,
@@ -1149,10 +1469,12 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     }
 
     if (decision.type == TrackingGpsDecisionType.seedRoute) {
+      _rawSignalContinuity.acknowledgeRouteAnchor();
       _lastAcceptedPositionTime = position.timestamp;
       _distanceAnchorPoint = decision.livePoint;
       _gpsPipeline.seedRoute(decision.livePoint);
       _flushRouteBufferToState(force: true);
+      _legacyEnvironmentHint = 'outdoor';
       state = state.copyWith(
         initialPosition: state.initialPosition ?? decision.livePoint,
         currentLatLng: decision.livePoint,
@@ -1181,9 +1503,20 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     }
 
     if (decision.type == TrackingGpsDecisionType.resetAnchor) {
+      _rawSignalContinuity.acknowledgeRouteAnchor();
       _shouldResetGpsAnchorOnResume = false;
       _distanceAnchorPoint = decision.livePoint;
       _lastAcceptedPositionTime = position.timestamp;
+      if (_gpsPipeline.routePoints.isNotEmpty) {
+        _gpsPipeline.appendAcceptedSegment(
+          routeCandidate: decision.livePoint,
+          displayRoutePoint: decision.livePoint,
+          shouldBreakRouteForDisplay: true,
+          gpsGapDurationSec: 0,
+          shouldAppendSmoothedPoint: true,
+        );
+        _flushRouteBufferToState(force: true);
+      }
       state = state.copyWith(
         currentLatLng: decision.livePoint,
         smoothedCurrentLatLng: decision.livePoint,
@@ -1213,27 +1546,22 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       shouldAddDistance: decision.shouldAddDistance,
       shouldBreakRouteForDisplay: decision.shouldBreakRouteForDisplay,
       gpsGapDurationSec: decision.gpsGapDurationSec,
+      covarianceScale: decision.covarianceScale,
     );
   }
 
   // Step updates
-  void _onStep(int sessionSteps) {
+  void _onStepUpdate(WorkoutStepUpdate update) {
+    if (state.activityType.toLowerCase() == 'cycling') return;
     if (state.status == RecordingState.paused) {
-      // Collect steps occurred during pause into offset
-      if (_lastSessionSteps > 0 && sessionSteps > _lastSessionSteps) {
-        _pausedStepsOffset += (sessionSteps - _lastSessionSteps);
-      }
-      _lastSessionSteps = sessionSteps;
+      state = state.copyWith(currentCadenceSpm: 0);
       return;
     }
 
     if (state.status != RecordingState.active) return;
 
-    if (_lastSessionSteps == 0) {
-      _lastSessionSteps = sessionSteps;
-    }
-
-    final effectiveSteps = math.max(0, sessionSteps - _pausedStepsOffset);
+    final effectiveSteps = update.activeSessionSteps;
+    _lastSessionSteps = update.totalSessionSteps;
 
     final stepDecision = _trackingEngine.evaluateStepUpdate(
       sessionSteps: effectiveSteps,
@@ -1243,19 +1571,37 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       gpsFallbackActive: state.gpsFallbackActive,
       recordingSource: state.recordingSource,
       lastAcceptedPositionTime: _lastAcceptedPositionTime,
-      now: DateTime.now(),
+      now: update.timestamp,
     );
-    _lastSessionSteps = sessionSteps;
+
     final delta = stepDecision.delta;
+    state = state.copyWith(
+      stepCount: effectiveSteps,
+      researchDetectedSteps:
+          state.researchDetectedSteps +
+          (update.source == StepSensorSource.oxfordWpd
+              ? math.max(0, delta)
+              : 0),
+      xuDetectedSteps:
+          state.xuDetectedSteps +
+          (update.source == StepSensorSource.xuRunning
+              ? math.max(0, delta)
+              : 0),
+      currentCadenceSpm: update.currentCadenceSpm,
+      avgCadenceSpm: update.avgCadenceSpm,
+    );
+
     if (delta <= 0) return;
 
     _recordingCoordinator.bufferRawStepInterval(
       delta,
       startedAt: state.startedAt,
       workoutId: state.sessionId,
+      observationTime: update.timestamp,
+      deviceSource: update.source.name,
     );
     _environmentController.addStepDelta(delta);
-    state = state.copyWith(stepCount: effectiveSteps);
+    _ref.read(iodControllerProvider.notifier).onStepDelta(delta);
 
     if (stepDecision.shouldActivateGpsFallback) {
       state = state.copyWith(
@@ -1269,17 +1615,67 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     }
 
     if (!_requiresGpsTracking(state.activityType) || state.gpsFallbackActive) {
-      _updateIndoorDistanceFromSteps(delta);
+      _updateIndoorDistanceFromSteps(
+        delta,
+        cadenceSpm: update.isCadenceAvailable ? update.currentCadenceSpm : null,
+      );
     }
+  }
+
+  @visibleForTesting
+  void onStep(int sessionSteps) {
+    if (state.status == RecordingState.paused) {
+      // Collect steps occurred during pause into offset
+      if (_lastSessionSteps > 0 && sessionSteps > _lastSessionSteps) {
+        _pausedStepsOffset += (sessionSteps - _lastSessionSteps);
+      }
+      _lastSessionSteps = sessionSteps;
+      state = state.copyWith(currentCadenceSpm: 0);
+      return;
+    }
+
+    if (state.status != RecordingState.active) return;
+
+    if (_lastSessionSteps == 0) {
+      _lastSessionSteps = sessionSteps;
+    }
+
+    final effectiveSteps = math.max(0, sessionSteps - _pausedStepsOffset);
+    final delta = effectiveSteps - state.stepCount;
+
+    _onStepUpdate(
+      WorkoutStepUpdate(
+        totalSessionSteps: sessionSteps,
+        activeSessionSteps: effectiveSteps,
+        deltaSteps: math.max(0, delta),
+        currentCadenceSpm: state.currentCadenceSpm,
+        avgCadenceSpm: state.avgCadenceSpm,
+        timestamp: DateTime.now(),
+        isPaused: false,
+        source: StepSensorSource.unknown,
+      ),
+    );
   }
 
   // Indoor distance
 
-  void _updateIndoorDistanceFromSteps(int newSteps) {
+  void _updateIndoorDistanceFromSteps(int newSteps, {int? cadenceSpm}) {
+    _allowOfflineReconstruction = false;
+    final researchLength =
+        ResearchWalkingStepLength.estimateMeters(
+          activityType: state.activityType,
+          heightCm: _heightCm,
+          cadenceSpm: cadenceSpm,
+        ) ??
+        ResearchRunningStepLength.estimateMeters(
+          activityType: state.activityType,
+          heightCm: _heightCm,
+          cadenceSpm: cadenceSpm,
+        );
     final now = DateTime.now();
     final contribution = _trackingEngine.computeIndoorStepContribution(
       stepDelta: newSteps,
-      strideLengthMeters: state.strideLengthMeters,
+      strideLengthMeters: researchLength ?? state.strideLengthMeters,
       now: now,
       lastStepTime: _lastStepTime,
     );
@@ -1299,184 +1695,17 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
 
     state = state.copyWith(
       distanceMeters: newDistanceM,
+      stepDistanceMeters:
+          state.stepDistanceMeters + contribution.addedDistanceMeters,
+      adaptiveStepCount:
+          state.adaptiveStepCount + (researchLength != null ? newSteps : 0),
       speedKmh: newSpeedKmh,
       lapSplits: _captureLapSplits(newDistanceM),
       caloriesBurned: newCalories,
       isAutoPaused: false,
     );
-    _appendIndoorSyntheticRoute(
-      addedDistanceMeters: contribution.addedDistanceMeters,
-      recordedAt: now,
-    );
-  }
-
-  void _appendIndoorSyntheticRoute({
-    required double addedDistanceMeters,
-    required DateTime recordedAt,
-  }) {
-    if (!mounted || addedDistanceMeters <= 0) return;
-
-    final anchor = state.initialPosition ?? state.currentLatLng;
-    if (anchor == null) return;
-
-    final updatedRoute = List<LatLng>.from(state.routePoints);
-    final updatedFilteredRoute = List<LatLng>.from(state.filteredRoutePoints);
-    final updatedRouteSegments = state.routeSegments
-        .map((segment) => List<LatLng>.from(segment))
-        .toList();
-    if (updatedRoute.isEmpty) {
-      updatedRoute.add(anchor);
-      updatedFilteredRoute.add(anchor);
-      updatedRouteSegments.add([anchor]);
-      state = state.copyWith(
-        smoothedCurrentLatLng: anchor,
-        smoothedRoutePoints: [anchor],
-        smoothedRouteSegments: [
-          [anchor],
-        ],
-        gpsConfidence: GpsConfidence.high,
-        isStationaryByGps: false,
-      );
-      unawaited(
-        _persistSyntheticRoutePoint(
-          anchor,
-          recordedAt,
-          headingDeg: state.indoorSyntheticHeadingDeg,
-        ),
-      );
-    }
-
-    final baseHeading = state.indoorSyntheticHeadingDeg == 0
-        ? 20.0
-        : state.indoorSyntheticHeadingDeg;
-    final displayMeters = (addedDistanceMeters * 0.18).clamp(0.8, 4.5);
-    final cadenceTurn = 18.0 + ((state.stepCount % 9) * 2.5);
-    final waveTurn = math.sin(state.stepCount / 6) * 9.0;
-    final nextHeading = (baseHeading + cadenceTurn + waveTurn) % 360.0;
-    final previousPoint = updatedRoute.last;
-    final projectedPoint = _offsetLatLng(
-      previousPoint,
-      distanceMeters: displayMeters,
-      headingDeg: nextHeading,
-    );
-    final constrainedPoint = _constrainSyntheticPoint(
-      anchor: anchor,
-      candidate: projectedPoint,
-      fallback: previousPoint,
-    );
-
-    if (_distanceBetween(previousPoint, constrainedPoint) < 0.6) {
-      state = state.copyWith(
-        currentLatLng: constrainedPoint,
-        smoothedCurrentLatLng: constrainedPoint,
-        initialPosition: state.initialPosition ?? anchor,
-        isIndoorSyntheticRoute: true,
-        indoorSyntheticHeadingDeg: (nextHeading + 28.0) % 360.0,
-      );
-      return;
-    }
-
-    updatedRoute.add(constrainedPoint);
-    updatedFilteredRoute.add(constrainedPoint);
-    if (updatedRouteSegments.isEmpty) {
-      updatedRouteSegments.add([constrainedPoint]);
-    } else {
-      updatedRouteSegments.last.add(constrainedPoint);
-    }
-    state = state.copyWith(
-      filteredRoutePoints: updatedFilteredRoute,
-      smoothedRoutePoints: updatedFilteredRoute,
-      routePoints: updatedRoute,
-      routeSegments: updatedRouteSegments,
-      smoothedRouteSegments: updatedRouteSegments,
-      currentLatLng: constrainedPoint,
-      smoothedCurrentLatLng: constrainedPoint,
-      initialPosition: state.initialPosition ?? anchor,
-      isIndoorSyntheticRoute: true,
-      indoorSyntheticHeadingDeg: nextHeading,
-      gpsConfidence: GpsConfidence.high,
-      isStationaryByGps: false,
-    );
-    unawaited(
-      _persistSyntheticRoutePoint(
-        constrainedPoint,
-        recordedAt,
-        headingDeg: nextHeading,
-      ),
-    );
-  }
-
-  LatLng _offsetLatLng(
-    LatLng origin, {
-    required double distanceMeters,
-    required double headingDeg,
-  }) {
-    const metersPerDegreeLat = 111320.0;
-    final headingRad = headingDeg * math.pi / 180.0;
-    final latDelta = math.cos(headingRad) * distanceMeters / metersPerDegreeLat;
-    final lngScale = math.max(
-      0.2,
-      math.cos(origin.latitude * math.pi / 180.0).abs(),
-    );
-    final lngDelta =
-        math.sin(headingRad) * distanceMeters / (metersPerDegreeLat * lngScale);
-    return LatLng(origin.latitude + latDelta, origin.longitude + lngDelta);
-  }
-
-  LatLng _constrainSyntheticPoint({
-    required LatLng anchor,
-    required LatLng candidate,
-    required LatLng fallback,
-  }) {
-    final anchorDistance = _distanceBetween(anchor, candidate);
-    if (anchorDistance <= 55) return candidate;
-
-    final fallbackHeading = _bearingDegrees(anchor, fallback);
-    final returnHeading = (fallbackHeading + 42.0) % 360.0;
-    return _offsetLatLng(
-      fallback,
-      distanceMeters: 2.6,
-      headingDeg: returnHeading,
-    );
-  }
-
-  double _distanceBetween(LatLng a, LatLng b) {
-    return const Distance().as(LengthUnit.Meter, a, b);
-  }
-
-  double _bearingDegrees(LatLng start, LatLng end) {
-    final lat1 = start.latitude * math.pi / 180.0;
-    final lat2 = end.latitude * math.pi / 180.0;
-    final lngDelta = (end.longitude - start.longitude) * math.pi / 180.0;
-    final y = math.sin(lngDelta) * math.cos(lat2);
-    final x =
-        math.cos(lat1) * math.sin(lat2) -
-        math.sin(lat1) * math.cos(lat2) * math.cos(lngDelta);
-    final bearing = math.atan2(y, x) * 180.0 / math.pi;
-    return (bearing + 360.0) % 360.0;
-  }
-
-  Future<void> _persistSyntheticRoutePoint(
-    LatLng point,
-    DateTime timestamp, {
-    required double headingDeg,
-  }) async {
-    final sessionId = state.sessionId;
-    if (sessionId == null || sessionId.isEmpty) return;
-
-    final localPoint = LocalGPSPoint()
-      ..sessionId = sessionId
-      ..localWorkoutId = 0
-      ..timestamp = timestamp
-      ..latitude = point.latitude
-      ..longitude = point.longitude
-      ..accuracy = 0
-      ..speed = 0
-      ..heading = headingDeg
-      ..deviceSource = 'indoor_synthetic_route'
-      ..confidence = 'synthetic'
-      ..isSynced = true;
-    await LocalDB.saveRawGpsPoint(localPoint);
+    // A step length has no measured geographic direction. Keep the last
+    // genuine GNSS route and do not invent a geographic indoor path.
   }
 
   void _applyAcceptedGpsSegment({
@@ -1490,7 +1719,14 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     required bool shouldAddDistance,
     required bool shouldBreakRouteForDisplay,
     required double gpsGapDurationSec,
+    double covarianceScale = 1.0,
   }) {
+    final recoveringFromSteps =
+        state.gpsFallbackActive && state.stepDistanceMeters > 0;
+    if (recoveringFromSteps) {
+      shouldAddDistance = false;
+      shouldBreakRouteForDisplay = true;
+    }
     if (shouldAddDistance && candidateSpeedKmh > 0) {
       _addSpeedSample(candidateSpeedKmh);
     }
@@ -1510,16 +1746,26 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
                         .difference(_lastAcceptedPositionTime!)
                         .inMilliseconds /
                     1000.0);
+    final effectiveAccuracy = covarianceScale > 1.0
+        ? position.accuracy * math.sqrt(covarianceScale)
+        : position.accuracy;
     final smoothingUpdate = _gpsSmoothingService.smoothAcceptedPoint(
       activityType: state.activityType,
       acceptedPoint: routeCandidate,
       previousAcceptedPoint: lastRoutePoint,
       previousSmoothedPoint: state.smoothedCurrentLatLng,
       lastSmoothedRoutePoint: lastSmoothedRoutePoint,
-      accuracyMeters: position.accuracy,
+      accuracyMeters: effectiveAccuracy,
       speedMs: position.speed,
       timeDeltaSec: timeDeltaSec,
       gpsGapDurationSec: gpsGapDurationSec,
+      sensorHeadingDeg:
+          position.headingAccuracy.isFinite &&
+              position.headingAccuracy > 0 &&
+              position.headingAccuracy <= 45
+          ? position.heading
+          : null,
+      resetAnchor: shouldBreakRouteForDisplay,
     );
     final displayRoutePoint = shouldBreakRouteForDisplay
         ? routeCandidate
@@ -1544,9 +1790,11 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       _lastModeFlipTime = DateTime.now();
     }
     _lastAcceptedPositionTime = position.timestamp;
+    _rawSignalContinuity.acknowledgeRouteAnchor();
     _distanceAnchorPoint = livePoint;
 
     // Update lightweight metrics state (1Hz)
+    _legacyEnvironmentHint = 'outdoor';
     state = state.copyWith(
       trackingMode: kOutdoorMode,
       environmentHint: 'outdoor',
@@ -1561,6 +1809,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       gpsConfidence: smoothingUpdate.confidence,
       isStationaryByGps: smoothingUpdate.isStationary,
       distanceMeters: newDistanceM,
+      gpsDistanceMeters: state.gpsDistanceMeters + distanceDelta,
       speedKmh: shouldAddDistance ? smoothedKmh : 0,
       lapSplits: _captureLapSplits(newDistanceM),
       caloriesBurned: newCalories,
@@ -1572,7 +1821,8 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     // Periodic snapshot to state every 5s or on route break
     final now = DateTime.now();
     final lastSnap = _lastRouteSnapshotTime;
-    final shouldSnapshot = shouldBreakRouteForDisplay ||
+    final shouldSnapshot =
+        shouldBreakRouteForDisplay ||
         lastSnap == null ||
         now.difference(lastSnap) >= _kRouteStateSnapshotInterval;
     if (shouldSnapshot) {
@@ -1629,6 +1879,26 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     }
   }
 
+  void _logTrajectoryPreprocessingShadow({
+    required int index,
+    required TrackingGpsDecision legacyDecision,
+    required ProcessedTrajectoryPoint processed,
+  }) {
+    final legacyAccepted =
+        legacyDecision.type == TrackingGpsDecisionType.acceptRoute ||
+        legacyDecision.type == TrackingGpsDecisionType.seedRoute ||
+        legacyDecision.type == TrackingGpsDecisionType.resetAnchor;
+    final preprocessorAccepted = processed.isAccepted;
+
+    if (legacyAccepted != preprocessorAccepted) {
+      debugPrint(
+        '[GPS-SHADOW-DIVERGENCE] #$index '
+        'legacy=${legacyDecision.type.name}(${legacyDecision.reason.name}) vs '
+        'preprocessor=${preprocessorAccepted ? "accept" : "reject"}(${processed.qualityFlags})',
+      );
+    }
+  }
+
   void _refreshIndoorWatchdog() {
     _indoorDistanceTimer?.cancel();
     _indoorDistanceTimer = null;
@@ -1667,8 +1937,8 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       if (secondsSinceGps <= _kRecoveredGpsWindow.inSeconds) {
         final now = DateTime.now();
         final lastFlip = _lastModeFlipTime;
-        final cooldownActive = lastFlip != null &&
-            now.difference(lastFlip) < _kModeFlipCooldown;
+        final cooldownActive =
+            lastFlip != null && now.difference(lastFlip) < _kModeFlipCooldown;
         if (cooldownActive) {
           debugPrint(
             '[Workout][HYSTERESIS] indoor→outdoor flip blocked '
@@ -1711,6 +1981,8 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     _uiTicker?.cancel();
     _uiTicker = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
+      // Recheck freshness when the IOD stream stops delivering epochs.
+      _refreshIodEnvironmentHint(_ref.read(iodControllerProvider));
 
       final elapsedSec = _stopwatch.elapsed.inSeconds;
       var liveSpeedKmh = state.speedKmh;
@@ -1724,16 +1996,32 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
         isAutoPaused = true;
       }
 
-      if (state.recordingSource == 'gps' &&
-          _lastAcceptedPositionTime != null &&
-          DateTime.now().difference(_lastAcceptedPositionTime!).inSeconds >=
-              5) {
-        state = _sessionLifecycle.markGpsSignalWeak(current: state);
-        // A stale accepted fix is a GPS-quality issue, not proof that the
-        // athlete stopped. Preserve the last confirmed motion state; route
-        // recovery still starts a separate segment and never bridges distance.
-        liveSpeedKmh = state.speedKmh;
-        isAutoPaused = false;
+      if (state.recordingSource == 'gps') {
+        final lastRawTime = _rawSignalContinuity.lastRawFixTimestamp;
+        final hasRawGpsOutage =
+            lastRawTime != null &&
+            DateTime.now().difference(lastRawTime).inSeconds >= 5;
+
+        if (hasRawGpsOutage) {
+          state = _sessionLifecycle.markGpsSignalWeak(current: state);
+          // Grace period: for the first 5 seconds of signal loss, hold motion.
+          // Beyond 5 seconds without sensor evidence, do not assume continuous
+          // movement indefinitely until GPS or steps recover.
+          final outageSec = DateTime.now().difference(lastRawTime).inSeconds;
+          if (outageSec > 5) {
+            liveSpeedKmh = 0;
+          } else {
+            liveSpeedKmh = state.speedKmh;
+          }
+          isAutoPaused = false;
+        } else if (_lastAcceptedPositionTime != null &&
+            DateTime.now().difference(_lastAcceptedPositionTime!).inSeconds >=
+                5) {
+          // Raw stream is healthy, but fixes are filtered (stationary).
+          // Do NOT mark GPS signal weak; user is stationary.
+          liveSpeedKmh = 0;
+          isAutoPaused = false;
+        }
       }
 
       if (_isMoving(liveSpeedKmh, state.activityType)) {
@@ -1856,28 +2144,49 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   }
 
   // Crash-recovery checkpointing (H4)
+  // Summary writes do not make raw GPS/step records atomic or flush the
+  // coordinator's outstanding async writes. A process kill or disk error
+  // can lose the most recent summary and any raw samples not yet durable.
   void _startCheckpointTimer() {
     _checkpointTimer?.cancel();
-    _checkpointTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      _persistCheckpoint();
+    _checkpointTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      unawaited(_persistCheckpoint());
     });
   }
 
-  void _persistCheckpoint() {
+  Future<void> _persistCheckpoint({bool force = false}) async {
     if (!mounted ||
+        _persistence.isSealed ||
+        (!force && _persistence.hasPendingCheckpoint) ||
+        (!force &&
+            state.status == RecordingState.paused &&
+            _pauseCheckpointSaved) ||
         (state.status != RecordingState.active &&
             state.status != RecordingState.paused)) {
       return;
     }
-    // Only checkpoint meaningful progress
-    if (state.durationSeconds < 60 && state.distanceMeters < 100) return;
-
-    final userId = _ref.read(currentUserIdProvider) ??
-        Supabase.instance.client.auth.currentUser?.id ??
-        'local_user';
+    // Save early, not only after a long run; an empty session is not a workout.
+    if (state.durationSeconds <= 0 &&
+        state.distanceMeters <= 0 &&
+        state.stepCount <= 0) {
+      return;
+    }
 
     try {
+      final isPauseSnapshot = state.status == RecordingState.paused;
+      final userId = _recordingOwnerId ??=
+          _ref.read(currentUserIdProvider) ?? 'local_user';
       _flushRouteBufferToState(force: true);
+      final currentProfile = UserProfile(
+        id: 'active-session',
+        userId: userId,
+        weightKg: _weightKg,
+        heightCm: (_heightCm ?? 170).clamp(50.0, 250.0),
+        legacyAge: 0,
+        gender: _gender ?? 'male',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        updatedAt: DateTime.fromMillisecondsSinceEpoch(0),
+      );
       final finalization = _sessionFinalizer.finalize(
         state: state,
         userId: userId,
@@ -1890,18 +2199,40 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
         trackingEngine: _trackingEngine,
         rawGpsPositions: List<Position>.unmodifiable(_rawGpsPositions),
         filteredRouteSegments: List<List<LatLng>>.unmodifiable(
-          state.routeSegments
+          (state.smoothedRouteSegments.isNotEmpty
+                  ? state.smoothedRouteSegments
+                  : state.routeSegments)
               .where((segment) => segment.isNotEmpty)
               .map((segment) => List<LatLng>.unmodifiable(segment)),
         ),
+        gpsAlgorithm: _gpsSmoothingService.algorithmName,
+        enableTrajectoryReconstruction: false,
+        userProfile: currentProfile,
       );
 
       final repo = _ref.read(workoutRepositoryProvider);
-      unawaited(
-        repo.cacheSessionLocal(
-          finalization.session,
-          isSynced: false,
-        ),
+      // A checkpoint is a recoverable partial summary, not a final artifact.
+      // Repository sync must preserve this distinction.
+      final checkpointMetrics =
+          jsonDecode(finalization.session.routeMatchMetricsJson)
+              as Map<String, dynamic>;
+      final checkpointSession = finalization.session.copyWith(
+        routeMatchMetricsJson: jsonEncode({
+          ...checkpointMetrics,
+          'recording_checkpoint': true,
+        }),
+      );
+      await _persistence.checkpoint(
+        () async {
+          await repo.cacheSessionLocal(checkpointSession, isSynced: false);
+          if (isPauseSnapshot) _pauseCheckpointSaved = true;
+        },
+        force: force,
+        onError: (error, stack) {
+          debugPrint(
+            '[Workout] Checkpoint write failed; next tick/pause retries: $error\n$stack',
+          );
+        },
       );
     } catch (e) {
       debugPrint('[Workout] Checkpoint persist error: $e');
@@ -1912,6 +2243,15 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
 
   @override
   void dispose() {
+    _persistence.seal();
+    final sessionId = state.sessionId;
+    if (sessionId != null) {
+      unawaited(
+        _persistence.drained.whenComplete(
+          () => LocalDB.unregisterRecording(sessionId),
+        ),
+      );
+    }
     _stopwatch.stop();
     _uiTicker?.cancel();
     _indoorDistanceTimer?.cancel();

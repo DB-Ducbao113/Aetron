@@ -1,5 +1,6 @@
 // Tests for workout metric consistency.
 
+import 'package:fitness_exercise_application/features/profile/domain/entities/user_profile.dart';
 import 'package:fitness_exercise_application/features/workout/domain/constants/workout_processing_contract.dart';
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
 import 'package:fitness_exercise_application/features/workout/data/datasources/remote/raw_tracking_remote_datasource.dart';
@@ -7,66 +8,153 @@ import 'package:fitness_exercise_application/features/workout/domain/services/wo
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  // Calories
+  UserProfile makeProfile({double weightKg = 70, String gender = 'male'}) {
+    final now = DateTime.utc(2026, 1, 1);
+    return UserProfile(
+      id: 'calorie-test',
+      userId: 'calorie-test',
+      weightKg: weightKg,
+      heightCm: 175,
+      gender: gender,
+      createdAt: now,
+      updatedAt: now,
+    );
+  }
 
-  group('CalorieFormula', () {
-    double computeCalories({
-      required double weightKg,
-      required double distKm,
-      required double speedKmh,
-      required bool isRunning,
-    }) {
-      double k = isRunning ? 1.05 : 0.92;
-      if (speedKmh > 10) k += 0.05;
-      if (speedKmh > 15) k += 0.05;
-      return weightKg * distKm * k;
+  group('2024 Adult Compendium calorie model', () {
+    // Exact codes/MET values from the PACOMPENDIUM 2024 PDF (pages 1, 14, 21).
+    // No source-defined speed interval is widened or interpolated.
+    final table = <({String activity, double mph, String code, double met})>[
+      (activity: 'Walking', mph: 2.2, code: '17152', met: 2.8),
+      (activity: 'Walking', mph: 3.0, code: '17190', met: 3.8),
+      (activity: 'Walking', mph: 3.7, code: '17200', met: 4.8),
+      (activity: 'Walking', mph: 4.2, code: '17220', met: 5.5),
+      (activity: 'Running', mph: 4.1, code: '12028', met: 6.5),
+      (activity: 'Running', mph: 4.5, code: '12029', met: 7.8),
+      (activity: 'Running', mph: 5.1, code: '12030', met: 8.5),
+      (activity: 'Running', mph: 5.6, code: '12045', met: 9.0),
+      (activity: 'Running', mph: 6.2, code: '12050', met: 9.3),
+      (activity: 'Running', mph: 7.5, code: '12080', met: 11.8),
+      (activity: 'Running', mph: 9.5, code: '12115', met: 14.8),
+      (activity: 'Cycling', mph: 9.0, code: '01010', met: 4.0),
+      (activity: 'Cycling', mph: 11.0, code: '01020', met: 6.8),
+      (activity: 'Cycling', mph: 13.0, code: '01030', met: 8.0),
+      (activity: 'Cycling', mph: 15.0, code: '01040', met: 10.0),
+      (activity: 'Cycling', mph: 17.0, code: '01050', met: 12.0),
+      (activity: 'Cycling', mph: 21.0, code: '01060', met: 16.8),
+    ];
+
+    for (final row in table) {
+      test(
+        '${row.activity} ${row.mph} mph uses PAC ${row.code} = ${row.met} MET',
+        () {
+          final entry = UserProfile.compendiumDistanceMet(
+            activityType: row.activity,
+            speedKmh: row.mph * 1.609344,
+          );
+          expect(entry?.code, row.code);
+          expect(entry?.met, row.met);
+          expect(
+            makeProfile().calculateCalories(
+              activityType: row.activity,
+              distanceKm: 1,
+              speedKmh: row.mph * 1.609344,
+              durationSec: 1800,
+            ),
+            closeTo(row.met * 70 * 0.5, 1e-9),
+          );
+        },
+      );
     }
 
-    test('zero distance → zero calories', () {
+    test('unknown speed uses published self-selected/general codes', () {
+      for (final expected in [
+        (activity: 'Walking', code: '17255', met: 4.0),
+        (activity: 'Running', code: '12145', met: 10.5),
+        (activity: 'Cycling', code: '01014', met: 7.0),
+      ]) {
+        final entry = UserProfile.compendiumDistanceMet(
+          activityType: expected.activity,
+        );
+        expect(entry?.code, expected.code);
+        expect(entry?.met, expected.met);
+      }
       expect(
-        computeCalories(weightKg: 70, distKm: 0, speedKmh: 10, isRunning: true),
-        0.0,
+        UserProfile.compendiumDistanceMet(
+          activityType: 'Running',
+          speedKmh: double.nan,
+        )?.code,
+        '12145',
       );
     });
 
-    test('running 1 km at 8 km/h (70 kg) uses base running k=1.05', () {
-      final cal = computeCalories(
-        weightKg: 70,
-        distKm: 1,
-        speedKmh: 8,
-        isRunning: true,
+    test('unlisted speed gaps do not invent published bands', () {
+      expect(
+        UserProfile.compendiumDistanceMet(
+          activityType: 'Running',
+          speedKmh: 4.9 * 1.609344,
+        )?.code,
+        '12145',
       );
-      expect(cal, closeTo(70 * 1 * 1.05, 0.01)); // 73.5 kcal
+      expect(
+        UserProfile.compendiumDistanceMet(
+          activityType: 'Walking',
+          speedKmh: 2.6 * 1.609344,
+        )?.code,
+        '17255',
+      );
+      expect(
+        UserProfile.compendiumDistanceMet(
+          activityType: 'Cycling',
+          speedKmh: 19.5 * 1.609344,
+        )?.code,
+        '01014',
+      );
     });
 
-    test('fast run >10 km/h adds 0.05 bonus', () {
-      final cal = computeCalories(
-        weightKg: 70,
-        distKm: 1,
-        speedKmh: 12,
-        isRunning: true,
+    test('1 MET = 1 kcal/kg/hour, duration is moving not elapsed', () {
+      final profile = makeProfile(weightKg: 70);
+      final kcal = profile.calculateCalories(
+        activityType: 'Running',
+        distanceKm: 2,
+        speedKmh: 6.2 * 1.609344,
+        durationSec: 1800,
+        movingDurationSec: 600,
       );
-      expect(cal, closeTo(70 * 1 * 1.10, 0.01)); // 77.0 kcal
+      expect(kcal, closeTo(9.3 * 70 / 6, 1e-9));
     });
 
-    test('sprint >15 km/h adds another 0.05 bonus', () {
-      final cal = computeCalories(
-        weightKg: 70,
-        distKm: 1,
-        speedKmh: 16,
-        isRunning: true,
+    test('same mass/activity yields same MET estimate for any gender', () {
+      final male = makeProfile(gender: 'male');
+      final female = makeProfile(gender: 'female');
+      double estimate(UserProfile p) => p.calculateCalories(
+        activityType: 'Walking',
+        distanceKm: 1,
+        speedKmh: 3.0 * 1.609344,
+        durationSec: 900,
       );
-      expect(cal, closeTo(70 * 1 * 1.15, 0.01)); // 80.5 kcal
+      expect(estimate(male), equals(estimate(female)));
     });
 
-    test('walking uses lower base k=0.92', () {
-      final cal = computeCalories(
-        weightKg: 70,
-        distKm: 1,
-        speedKmh: 5,
-        isRunning: false,
+    test('zero distance or zero duration stays zero', () {
+      final profile = makeProfile();
+      expect(
+        profile.calculateCalories(
+          activityType: 'Running',
+          distanceKm: 0,
+          speedKmh: 10,
+          durationSec: 600,
+        ),
+        0,
       );
-      expect(cal, closeTo(70 * 1 * 0.92, 0.01)); // 64.4 kcal
+      expect(
+        profile.calculateCalories(
+          activityType: 'Cycling',
+          distanceKm: 1,
+          speedKmh: 10,
+        ),
+        0,
+      );
     });
   });
 
@@ -113,10 +201,13 @@ void main() {
           ? distKm / (durationSec / 3600.0)
           : 0.0;
 
-      double k = isRunning ? 1.05 : 0.92;
-      if (avgSpeedKmh > 10) k += 0.05;
-      if (avgSpeedKmh > 15) k += 0.05;
-      final calories = (weightKg * distKm * k).round();
+      final calories = WorkoutMetricsCalculator.computeCaloriesKcal(
+        profile: makeProfile(weightKg: weightKg),
+        activityType: isRunning ? 'Running' : 'Walking',
+        distanceMeters: distanceMeters,
+        durationSec: durationSec,
+        movingDurationSec: durationSec,
+      );
 
       final persisted = {
         'distanceKm': distKm,
@@ -141,8 +232,8 @@ void main() {
 
         final distKm = distanceMeters / 1000.0;
         final avgSpeedKmh = distKm / (durationSec / 3600.0);
-        double k = 0.92;
-        final liveCalories = (weightKg * distKm * k).round();
+        // Walking ~2.98 mph => PAC 17190, 3.8 MET.
+        final liveCalories = (3.8 * weightKg * durationSec / 3600).round();
 
         final readBack = simulateStopAndPersist(
           durationSec: durationSec,
@@ -166,10 +257,8 @@ void main() {
 
         final distKm = distanceMeters / 1000.0;
         final avgSpeedKmh = distKm / (durationSec / 3600.0);
-        double k = 1.05;
-        if (avgSpeedKmh > 10) k += 0.05;
-        if (avgSpeedKmh > 15) k += 0.05;
-        final liveCalories = (weightKg * distKm * k).round();
+        // 6.34 mph is between published running bands: 12145, 10.5 MET.
+        final liveCalories = (10.5 * weightKg * durationSec / 3600).round();
 
         final readBack = simulateStopAndPersist(
           durationSec: durationSec,

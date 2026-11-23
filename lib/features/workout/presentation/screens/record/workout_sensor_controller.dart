@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:fitness_exercise_application/core/services/location_tracking_service.dart';
+import 'package:fitness_exercise_application/core/services/sensor/step_sensor_types.dart';
 import 'package:fitness_exercise_application/core/services/step_tracking_service.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -45,9 +46,30 @@ class WorkoutSensorController {
     return stepService.stepStream.listen(onStep);
   }
 
+  Future<StreamSubscription<WorkoutStepUpdate>> startWorkoutStepTracking({
+    required StepTrackingService stepService,
+    required void Function(WorkoutStepUpdate update) onStepUpdate,
+    String? activityType,
+  }) async {
+    final activity = activityType?.toLowerCase();
+    await stepService.startTracking(
+      activityType: activity,
+      useResearchImu: activity == 'walking' || activity == 'running',
+    );
+    return stepService.updateStream.listen(onStepUpdate);
+  }
+
+  void pauseStepTracking(StepTrackingService stepService) {
+    stepService.pauseTracking();
+  }
+
+  void resumeStepTracking(StepTrackingService stepService) {
+    stepService.resumeTracking();
+  }
+
   Future<void> stopStepTracking({
     required StepTrackingService stepService,
-    required StreamSubscription<int>? subscription,
+    required StreamSubscription<dynamic>? subscription,
   }) async {
     stepService.stopTracking();
     await subscription?.cancel();

@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 
 import 'package:fitness_exercise_application/features/workout/data/datasources/remote/raw_tracking_remote_datasource.dart';
 import 'package:fitness_exercise_application/features/workout/data/local/schema/local_gps_point.dart';
@@ -10,6 +9,7 @@ import 'package:fitness_exercise_application/features/workout/data/local/schema/
 import 'package:fitness_exercise_application/features/workout/domain/entities/route_match_result.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
 import 'package:isar/isar.dart';
+import 'package:fitness_exercise_application/features/workout/domain/services/scientific_result_metadata.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -18,6 +18,16 @@ class LocalDB {
   static Future<void>? _initFuture;
   static bool _terminalOpenFailure = false;
   static bool _recoveryAttempted = false;
+  static final Set<String> _activeRecordingIds = {};
+
+  static void registerRecording(String id) => _activeRecordingIds.add(id);
+  static void unregisterRecording(String id) => _activeRecordingIds.remove(id);
+  static bool isRecordingActive(String id) => _activeRecordingIds.contains(id);
+  static bool isRecordingCheckpoint(LocalWorkout workout) =>
+      ScientificResultMetadata.decode(
+        workout.routeMatchMetricsJson,
+      )['recording_checkpoint'] ==
+      true;
 
   /// Directory that owns [_isar]. A reused instance must live in the exact same
   /// directory, so it is remembered next to the instance.
@@ -61,10 +71,10 @@ class LocalDB {
     late final Directory dir;
     try {
       dir = await getApplicationDocumentsDirectory();
-    } on MissingPluginException catch (e) {
-      // No platform channel for the path provider (e.g. the Android app process
-      // was restarted in the background, or a headless isolate). Nothing is
-      // broken — `init()` retries once the engine is back.
+    } catch (e) {
+      // No platform channel for the path provider (e.g. headless unit tests,
+      // background process, or platform isolate). Nothing is broken — `init()`
+      // retries once the engine is back.
       debugPrint('[LocalDB] no document directory yet: $e');
       return;
     }
@@ -82,7 +92,12 @@ class LocalDB {
     }
 
     try {
-      _isar = await Isar.open(_schemas, directory: dir.path, inspector: false);
+      _isar = await Isar.open(
+        _schemas,
+        directory: dir.path,
+        inspector: false,
+        relaxedDurability: false,
+      );
       _openedByUs = true;
       _dirPath = dir.path;
       _terminalOpenFailure = false;
@@ -114,6 +129,7 @@ class LocalDB {
               _schemas,
               directory: dir.path,
               inspector: false,
+              relaxedDurability: false,
             );
             _openedByUs = true;
             _dirPath = dir.path;
@@ -267,9 +283,13 @@ class LocalDB {
         _schemas,
         directory: directory.path,
         inspector: false,
+        relaxedDurability: false,
       );
       if (!hasAttachedCollections(reopened)) {
         throw StateError('Recreated Isar has no attached collections');
+      }
+      if (backupPath != null) {
+        await restoreReadableBackup(File(backupPath), reopened);
       }
       _isar = reopened;
       _openedByUs = true;
@@ -310,6 +330,54 @@ class LocalDB {
     return isar;
   }
 
+  /// Only attempt the backup from this recovery, never replay historical
+  /// backups (which may contain deliberately deleted workouts). Open a copy
+  /// so failed migration or recovery cannot modify the original evidence.
+  @visibleForTesting
+  static Future<bool> restoreReadableBackup(
+    File backup,
+    Isar destination,
+  ) async {
+    Directory? scratch;
+    Isar? source;
+    try {
+      scratch = await backup.parent.createTemp('isar-salvage-');
+      await backup.copy(p.join(scratch.path, 'salvage.isar'));
+      source = await Isar.open(
+        _schemas,
+        name: 'salvage',
+        directory: scratch.path,
+        inspector: false,
+        relaxedDurability: false,
+      );
+      final workouts = await source.localWorkouts.where().findAll();
+      final gps = await source.localGPSPoints.where().findAll();
+      final steps = await source.localStepIntervals.where().findAll();
+      await destination.writeTxn(() async {
+        if (await destination.localWorkouts.count() != 0 ||
+            await destination.localGPSPoints.count() != 0 ||
+            await destination.localStepIntervals.count() != 0) {
+          throw StateError('Recovery destination is not empty');
+        }
+        await destination.localWorkouts.putAll(workouts);
+        await destination.localGPSPoints.putAll(gps);
+        await destination.localStepIntervals.putAll(steps);
+      });
+      debugPrint(
+        '[LocalDB] restored ${workouts.length} workouts from recovery copy',
+      );
+      return true;
+    } catch (error) {
+      debugPrint(
+        '[LocalDB] backup not recoverable automatically; original preserved: $error',
+      );
+      return false;
+    } finally {
+      if (source != null) await source.close();
+      if (scratch != null) await scratch.delete(recursive: true);
+    }
+  }
+
   // New Workout Methods
 
   /// Insert locally. Used when finishing a session.
@@ -317,8 +385,38 @@ class LocalDB {
     if (kIsWeb) return;
     await init();
     final isar = _isar;
-    if (isar == null) return;
+    if (isar == null) {
+      debugPrint(
+        '[LocalDB] CRITICAL: Isar is unavailable; cannot save workout session ${workout.sessionId}',
+      );
+      throw StateError(
+        'LocalDB Isar instance is unavailable for saving workout session',
+      );
+    }
     await isar.writeTxn(() async {
+      final existing = await isar.localWorkouts
+          .filter()
+          .sessionIdEqualTo(workout.sessionId)
+          .findFirst();
+      if (existing != null) {
+        if (existing.userId != workout.userId) {
+          throw StateError('Workout id belongs to another account');
+        }
+        if (workout.endedAt.isBefore(existing.endedAt) ||
+            (isRecordingCheckpoint(workout) &&
+                !isRecordingCheckpoint(existing))) {
+          throw StateError('Stale workout snapshot');
+        }
+        if (workout.isSynced &&
+            !existing.isSynced &&
+            !existing.sameSnapshot(workout)) {
+          throw StateError('Sync acknowledgement does not match local workout');
+        }
+        if (existing.isSynced && existing.sameSnapshot(workout)) {
+          workout.isSynced = true;
+        }
+        workout.id = existing.id;
+      }
       await isar.localWorkouts.put(workout);
     });
   }
@@ -335,7 +433,11 @@ class LocalDB {
         .sortByStartedAtDesc()
         .findAll();
     return workouts
-        .where((w) => w.durationSec > 0 || w.distanceKm > 0 || w.steps > 0)
+        .where(
+          (w) =>
+              !isRecordingCheckpoint(w) &&
+              (w.durationSec > 0 || w.distanceKm > 0 || w.steps > 0),
+        )
         .toList();
   }
 
@@ -355,7 +457,11 @@ class LocalDB {
         .sortByStartedAtDesc()
         .findAll();
     return workouts
-        .where((w) => w.durationSec > 0 || w.distanceKm > 0 || w.steps > 0)
+        .where(
+          (w) =>
+              !isRecordingCheckpoint(w) &&
+              (w.durationSec > 0 || w.distanceKm > 0 || w.steps > 0),
+        )
         .toList();
   }
 
@@ -434,32 +540,34 @@ class LocalDB {
           .filter()
           .userIdEqualTo('local_user')
           .findAll();
-      for (final workout in guestWorkouts) {
+      final claimable = guestWorkouts
+          .where((w) => !isRecordingActive(w.sessionId))
+          .toList();
+      for (final workout in claimable) {
         workout.userId = userId;
         workout.isSynced = false;
       }
-      await isar.localWorkouts.putAll(guestWorkouts);
-      return guestWorkouts.length;
+      await isar.localWorkouts.putAll(claimable);
+      return claimable.length;
     });
   }
 
-  /// Wipe all local cache for a specific user (used on logout).
+  /// Explicit destructive operation for account/workout deletion, not logout.
   static Future<bool> clearAllForUser(String userId) async {
     if (kIsWeb) return true;
     try {
       await init();
       final isar = _isar;
       if (isar == null) return false;
-      final workouts = await isar.localWorkouts
-          .filter()
-          .userIdEqualTo(userId)
-          .findAll();
-      final sessionIds = workouts
-          .map((w) => w.sessionId)
-          .where((s) => s.isNotEmpty)
-          .toList();
-
       await isar.writeTxn(() async {
+        final workouts = await isar.localWorkouts
+            .filter()
+            .userIdEqualTo(userId)
+            .findAll();
+        final sessionIds = workouts
+            .map((w) => w.sessionId)
+            .where((s) => s.isNotEmpty)
+            .toList();
         for (final sessionId in sessionIds) {
           await isar.localGPSPoints
               .filter()
@@ -483,6 +591,7 @@ class LocalDB {
   static Future<void> syncRemoteSessions(
     List<WorkoutSession> remotes, {
     String? forUserId,
+    bool authoritativeSnapshot = false,
   }) async {
     if (kIsWeb) return;
     await init();
@@ -515,6 +624,9 @@ class LocalDB {
           final newWorkout = LocalWorkout.fromEntity(remote, isSynced: true);
           await isar.localWorkouts.put(newWorkout);
         } else {
+          // The server can have a stale shell or an earlier revision. Local
+          // pending work (including recording checkpoints) must survive it.
+          if (existing.userId != remote.userId || !existing.isSynced) continue;
           // If it exists locally, ensure it matches the cloud source of truth
           existing.userId = remote.userId;
           existing.activityType = remote.activityType;
@@ -536,12 +648,18 @@ class LocalDB {
               remote.gpsAnalysis.validDistanceKm <= 0 &&
               existing.gpsAnalysisJson.isNotEmpty &&
               existing.gpsAnalysisJson != '{}';
+          final hasFinalScienceVerdict =
+              ScientificResultMetadata.hasFinalServerVerdict(
+                remote.routeMatchMetricsJson,
+              );
           final shouldPreserveFilteredRoute =
+              !hasFinalScienceVerdict &&
               (remote.filteredRouteJson.isEmpty ||
                   remote.filteredRouteJson == '[]') &&
               existing.filteredRouteJson.isNotEmpty &&
               existing.filteredRouteJson != '[]';
           final shouldPreserveMatchedRoute =
+              !hasFinalScienceVerdict &&
               (remote.matchedRouteJson.isEmpty ||
                   remote.matchedRouteJson == '[]') &&
               existing.matchedRouteJson.isNotEmpty &&
@@ -555,26 +673,36 @@ class LocalDB {
           if (!shouldPreserveMatchedRoute) {
             existing.matchedRouteJson = remote.matchedRouteJson;
           }
-          existing.routeMatchStatus = remote.routeMatchStatus.isNotEmpty
-              ? remote.routeMatchStatus
-              : existing.routeMatchStatus;
+          if (!shouldPreserveMatchedRoute || hasFinalScienceVerdict) {
+            existing.routeMatchStatus = remote.routeMatchStatus.isNotEmpty
+                ? remote.routeMatchStatus
+                : existing.routeMatchStatus;
+          }
           existing.routeMatchConfidence = remote.routeMatchConfidence;
           existing.routeDistanceSource = remote.routeDistanceSource.isNotEmpty
               ? remote.routeDistanceSource
               : existing.routeDistanceSource;
           existing.matchedDistanceKm = remote.matchedDistanceKm;
-          existing.routeMatchMetricsJson =
-              (remote.routeMatchMetricsJson.isNotEmpty &&
-                  remote.routeMatchMetricsJson != '{}')
-              ? remote.routeMatchMetricsJson
-              : existing.routeMatchMetricsJson;
-          existing.isSynced = true;
+          existing.routeMatchMetricsJson = ScientificResultMetadata.mergeCache(
+            existing.routeMatchMetricsJson,
+            remote.routeMatchMetricsJson,
+          );
+          // A server row can exist while this device still owes raw records
+          // and a processing job. Do not discard that pending retry state.
+          existing.isSynced =
+              existing.isSynced ||
+              !ScientificResultMetadata.hasResearchSummary(
+                remote.routeMatchMetricsJson,
+              ) ||
+              hasFinalScienceVerdict;
 
           await isar.localWorkouts.put(existing);
         }
       }
 
-      if (targetUserId != null && targetUserId.isNotEmpty) {
+      if (authoritativeSnapshot &&
+          targetUserId != null &&
+          targetUserId.isNotEmpty) {
         final remoteIds = scopedRemotes.map((r) => r.id).toSet();
         final localForUser = await isar.localWorkouts
             .filter()
@@ -587,6 +715,17 @@ class LocalDB {
           )) {
             continue;
           }
+          final pendingGps = await isar.localGPSPoints
+              .filter()
+              .sessionIdEqualTo(local.sessionId)
+              .isSyncedEqualTo(false)
+              .count();
+          final pendingSteps = await isar.localStepIntervals
+              .filter()
+              .sessionIdEqualTo(local.sessionId)
+              .isSyncedEqualTo(false)
+              .count();
+          if (pendingGps > 0 || pendingSteps > 0) continue;
 
           // A successful cloud response is authoritative. Synced rows that
           // disappeared remotely were deleted elsewhere and must be removed
@@ -628,7 +767,14 @@ class LocalDB {
     if (kIsWeb) return;
     await init();
     final isar = _isar;
-    if (isar == null) return;
+    if (isar == null) {
+      debugPrint(
+        '[LocalDB] CRITICAL: Isar is unavailable; cannot persist raw GPS point for session ${point.sessionId}',
+      );
+      throw StateError(
+        'LocalDB Isar instance is unavailable for raw GPS persistence',
+      );
+    }
     await isar.writeTxn(() async {
       await isar.localGPSPoints.put(point);
     });
@@ -715,6 +861,27 @@ class LocalDB {
     });
   }
 
+  static Future<void> markGpsPointsAsSyncedForSession(
+    String sessionId, {
+    DateTime? upToTimestamp,
+  }) async {
+    if (kIsWeb) return;
+    await init();
+    final isar = _isar;
+    if (isar == null) return;
+    final unsynced = await getUnsyncedGpsPointsForSession(sessionId);
+    final targetPoints = upToTimestamp == null
+        ? unsynced
+        : unsynced.where((p) => !p.timestamp.isAfter(upToTimestamp)).toList();
+    if (targetPoints.isEmpty) return;
+    await isar.writeTxn(() async {
+      for (final point in targetPoints) {
+        point.isSynced = true;
+      }
+      await isar.localGPSPoints.putAll(targetPoints);
+    });
+  }
+
   static RawGpsPointPayload rawGpsPointToPayload(LocalGPSPoint point) {
     return RawGpsPointPayload(
       workoutId: point.sessionId,
@@ -733,7 +900,14 @@ class LocalDB {
     if (kIsWeb) return;
     await init();
     final isar = _isar;
-    if (isar == null) return;
+    if (isar == null) {
+      debugPrint(
+        '[LocalDB] CRITICAL: Isar is unavailable; cannot persist step interval for session ${interval.sessionId}',
+      );
+      throw StateError(
+        'LocalDB Isar instance is unavailable for raw step interval persistence',
+      );
+    }
     await isar.writeTxn(() async {
       await isar.localStepIntervals.put(interval);
     });
@@ -770,6 +944,50 @@ class LocalDB {
     });
   }
 
+  static Future<void> markStepIntervalsAsSyncedForSession(
+    String sessionId, {
+    DateTime? upToTimestamp,
+  }) async {
+    if (kIsWeb) return;
+    await init();
+    final isar = _isar;
+    if (isar == null) return;
+    final unsynced = await getUnsyncedStepIntervalsForSession(sessionId);
+    final targetIntervals = upToTimestamp == null
+        ? unsynced
+        : unsynced.where((i) => !i.intervalEnd.isAfter(upToTimestamp)).toList();
+    if (targetIntervals.isEmpty) return;
+    await isar.writeTxn(() async {
+      for (final interval in targetIntervals) {
+        interval.isSynced = true;
+      }
+      await isar.localStepIntervals.putAll(targetIntervals);
+    });
+  }
+
+  static Future<List<String>> getSessionIdsWithUnsyncedRawTracking() async {
+    if (kIsWeb) return const [];
+    await init();
+    final isar = _isar;
+    if (isar == null) return const [];
+    final unsyncedPoints = await isar.localGPSPoints
+        .filter()
+        .isSyncedEqualTo(false)
+        .findAll();
+    final unsyncedSteps = await isar.localStepIntervals
+        .filter()
+        .isSyncedEqualTo(false)
+        .findAll();
+    final sessionIds = <String>{};
+    for (final p in unsyncedPoints) {
+      if (p.sessionId.isNotEmpty) sessionIds.add(p.sessionId);
+    }
+    for (final s in unsyncedSteps) {
+      if (s.sessionId.isNotEmpty) sessionIds.add(s.sessionId);
+    }
+    return sessionIds.toList();
+  }
+
   static Future<void> updateRouteMatchResult(RouteMatchResult result) async {
     if (kIsWeb) return;
     await init();
@@ -787,7 +1005,10 @@ class LocalDB {
       workout.routeMatchConfidence = result.routeMatchConfidence;
       workout.routeDistanceSource = result.routeDistanceSource;
       workout.matchedDistanceKm = result.matchedDistanceKm;
-      workout.routeMatchMetricsJson = result.routeMatchMetricsJson;
+      workout.routeMatchMetricsJson = ScientificResultMetadata.mergeCache(
+        workout.routeMatchMetricsJson,
+        result.routeMatchMetricsJson,
+      );
 
       await isar.localWorkouts.put(workout);
     });

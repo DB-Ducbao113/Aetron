@@ -126,9 +126,9 @@ class _KineticSummaryHeroDistanceState
     return ScaleTransition(
       scale: _entranceScale,
       child: KineticCard(
-        padding: const EdgeInsets.fromLTRB(4, 8, 4, 4),
-        backgroundColor: Colors.transparent,
-        borderColor: Colors.transparent,
+        useLiquidGlass: true,
+        borderRadius: 21,
+        padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

@@ -104,6 +104,43 @@ class Matrix4x4 {
     return out;
   }
 
+  /// Enforces symmetry: P = 0.5 * (P + P^T), clamps diagonal variances >= minVariance,
+  /// and applies Cauchy-Schwarz constraint |P_ij| <= 0.999 * sqrt(P_ii * P_jj)
+  /// to ensure positive-definiteness and numerical stability across long tracking sessions.
+  void symmetrizeAndClamp([double minVariance = 1e-4]) {
+    // 1. Symmetrize off-diagonals
+    for (var r = 0; r < 4; r++) {
+      for (var c = r + 1; c < 4; c++) {
+        final avg = (storage[r * 4 + c] + storage[c * 4 + r]) * 0.5;
+        storage[r * 4 + c] = avg;
+        storage[c * 4 + r] = avg;
+      }
+    }
+
+    // 2. Clamp diagonal elements >= minVariance
+    for (var i = 0; i < 4; i++) {
+      final val = storage[i * 4 + i];
+      if (!val.isFinite || val < minVariance) {
+        storage[i * 4 + i] = minVariance;
+      }
+    }
+
+    // 3. Cauchy-Schwarz clamping on off-diagonal covariances
+    for (var r = 0; r < 4; r++) {
+      final varR = storage[r * 4 + r];
+      for (var c = r + 1; c < 4; c++) {
+        final varC = storage[c * 4 + c];
+        final maxCov = 0.999 * math.sqrt(varR * varC);
+        final cov = storage[r * 4 + c];
+        if (cov.abs() > maxCov) {
+          final clampedCov = cov.clamp(-maxCov, maxCov);
+          storage[r * 4 + c] = clampedCov;
+          storage[c * 4 + r] = clampedCov;
+        }
+      }
+    }
+  }
+
   /// Inverts a 4x4 matrix using Gauss-Jordan elimination with partial pivoting.
   /// Throws [StateError] if the matrix is singular or near-singular.
   Matrix4x4 invert([double epsilon = 1e-12]) {

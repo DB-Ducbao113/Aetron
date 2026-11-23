@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:fitness_exercise_application/core/constants/debug_config.dart';
 import 'package:fitness_exercise_application/core/providers/app_providers.dart';
 import 'package:fitness_exercise_application/core/constants/db_tables.dart';
 import 'package:fitness_exercise_application/features/profile/domain/entities/user_goal.dart';
@@ -53,6 +54,20 @@ class UserGoalNotifier extends StateNotifier<AsyncValue<UserGoal?>> {
   }
 
   Future<void> _load() async {
+    if (kDebugBypassAuth) {
+      state = AsyncValue.data(
+        UserGoal(
+          id: 'debug-goal-1',
+          userId: 'debug-user',
+          goalType: GoalType.distance,
+          targetValue: 30.0,
+          period: GoalPeriod.weekly,
+          createdAt: DateTime.now().subtract(const Duration(days: 30)),
+          updatedAt: DateTime.now(),
+        ),
+      );
+      return;
+    }
     final client = _supabase;
     if (client == null) {
       state = const AsyncValue.data(null);

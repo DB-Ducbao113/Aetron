@@ -2,9 +2,10 @@ name: Pull request quality and security
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, ekf]
   push:
-    branches: [main]
+    branches: [main, ekf]
+  workflow_call:
 
 permissions:
   contents: read
@@ -26,7 +27,23 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: flutter analyze
-      - run: flutter test
+      - run: flutter test --exclude-tags external-data
+
+  isar-native:
+    name: Isar persistence and ownership on macOS
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: '3.47.1'
+          cache: true
+      - run: echo "PUB_CACHE=$HOME/.pub-cache" >> "$GITHUB_ENV"
+      - run: flutter pub get
+      - name: Require Isar native library so ownership tests cannot silently skip
+        run: test -f "$HOME/.pub-cache/hosted/pub.dev/isar_flutter_libs-3.1.0+1/macos/libisar.dylib"
+      - run: flutter test test/workout_repository_sync_ownership_test.dart test/recording_durability_test.dart test/raw_tracking_upload_lifecycle_test.dart
 
   edge-functions:
     name: Deno lint, type-check and test
@@ -50,27 +67,58 @@ jobs:
   database:
     name: Database migrations, lint and RLS tests
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     defaults:
       run:
         working-directory: backend
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - name: Start clean local database and replay migrations
-        run: npx --yes supabase@2.120.0 db start
+      - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2
+        with:
+          deno-version: v2.9.7
+      - name: Start isolated local Supabase and replay migrations
+        run: python3 tests/prepare_http_qa.py .aetron-e2e-ci
       - name: Lint database functions and schema
-        run: npx --yes supabase@2.120.0 db lint --local --fail-on error
+        run: npx --yes supabase@2.120.0 db lint --local --workdir .aetron-e2e-ci --fail-on error
       - name: Run database integration tests
         run: |
           set -e
           for test_file in supabase/tests/*.sql; do
             echo "Running $test_file"
-            docker exec -i supabase_db_backend \
+            docker exec -i supabase_db_aetron-e2e-ci \
               psql -v ON_ERROR_STOP=1 -U postgres -d postgres < "$test_file"
+          done
+      - name: HTTP integration tests with local Auth, PostgREST and workers
+        run: |
+          deno cache supabase/functions/workouts-start/index.ts supabase/functions/gps-track/index.ts supabase/functions/workouts-end/index.ts supabase/functions/deterministic-finalize-worker/index.ts supabase/functions/generate-workout-insight/index.ts supabase/functions/recovery-email-start/index.ts supabase/functions/recovery-email-verify/index.ts
+          python3 tests/backend_http_e2e.py .aetron-e2e-ci
+      - name: Run dispatcher retry regression in isolated database
+        run: |
+          set -euo pipefail
+          fixture=aetron-dispatch-ci
+          docker run --rm -d --name "$fixture" --network none \
+            -e POSTGRES_PASSWORD=local-test-only \
+            public.ecr.aws/supabase/postgres:17.11.0.004
+          trap 'docker stop "$fixture" >/dev/null 2>&1 || true' EXIT
+          for i in $(seq 1 60); do
+            if docker exec "$fixture" pg_isready -h 127.0.0.1 -U postgres >/dev/null; then break; fi
+            sleep 1
+          done
+          docker exec "$fixture" pg_isready -h 127.0.0.1 -U postgres
+          docker exec "$fixture" createdb -U postgres aetron_dispatch_fixture
+          for file in tests/workout_dispatch/fixture.sql \
+            supabase/migrations/202607040003_stabilize_workout_processing_jobs.sql \
+            supabase/migrations/202611200001_bound_workout_dispatch_and_cron_history.sql \
+            tests/workout_dispatch/retry_test.sql; do
+            docker exec -i "$fixture" psql -X -v ON_ERROR_STOP=1 -U postgres \
+              -d aetron_dispatch_fixture < "$file"
           done
       - name: Stop local database
         if: always()
-        run: npx --yes supabase@2.120.0 stop --no-backup
+        run: |
+          if [ -f .aetron-e2e-ci/supabase/config.toml ]; then
+            npx --yes supabase@2.120.0 stop --workdir .aetron-e2e-ci --no-backup
+          fi
 
   dependency-security:
     name: Dependency, secret and config scan

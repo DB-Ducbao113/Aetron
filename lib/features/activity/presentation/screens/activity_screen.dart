@@ -1,49 +1,61 @@
 import 'dart:async';
+import 'dart:ui' show ImageFilter;
 
+import 'package:fitness_exercise_application/core/constants/debug_config.dart';
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
-import 'package:fitness_exercise_application/features/activity/presentation/widgets/kinetic_activity_card.dart';
-import 'package:fitness_exercise_application/features/activity/presentation/widgets/kinetic_activity_cockpit.dart';
-import 'package:fitness_exercise_application/features/activity/presentation/widgets/kinetic_activity_top_bar.dart';
-import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
+import 'package:fitness_exercise_application/features/shell/presentation/widgets/aetron_bottom_bar.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_target.dart';
-import 'package:fitness_exercise_application/features/workout/presentation/providers/workout_providers.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/screens/record/record_screen.dart';
+import 'package:fitness_exercise_application/features/workout/presentation/screens/running_programs_screen.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/record/tracking_map_widget.dart';
 import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_glass_icon_button.dart';
+import 'package:fitness_exercise_application/shared/kinetic/native_liquid_glass.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
-const List<ActivityOptionItem> _kActivities = [
-  ActivityOptionItem(
+class _ActivityOption {
+  const _ActivityOption({
+    required this.type,
+    required this.nameVi,
+    required this.nameEn,
+    required this.icon,
+    required this.requireGps,
+  });
+
+  final String type;
+  final String nameVi;
+  final String nameEn;
+  final BladeIconName icon;
+  final bool requireGps;
+}
+
+const List<_ActivityOption> _kActivities = [
+  _ActivityOption(
     type: 'running',
     nameVi: 'Chạy bộ',
     nameEn: 'Running',
-    imagePath: 'assets/activity_running_bright.jpg',
     icon: BladeIconName.run,
-    accentColor: Color(0xFFA8DCE7),
     requireGps: true,
   ),
-  ActivityOptionItem(
+  _ActivityOption(
     type: 'cycling',
     nameVi: 'Đạp xe',
     nameEn: 'Cycling',
-    imagePath: 'assets/activity_cycling_bright.jpg',
     icon: BladeIconName.bike,
-    accentColor: Color(0xFF39B5F2),
     requireGps: true,
   ),
-  ActivityOptionItem(
+  _ActivityOption(
     type: 'walking',
     nameVi: 'Đi bộ',
     nameEn: 'Walking',
-    imagePath: 'assets/activity_walking_bright.jpg',
     icon: BladeIconName.walk,
-    accentColor: Color(0xFF4EBE9E),
     requireGps: true,
   ),
 ];
@@ -51,7 +63,9 @@ const List<ActivityOptionItem> _kActivities = [
 final selectedActivityTypeProvider = StateProvider<String>((ref) => 'running');
 
 class ActivityScreen extends ConsumerStatefulWidget {
-  const ActivityScreen({super.key});
+  const ActivityScreen({super.key, this.showMapTiles = true});
+
+  final bool showMapTiles;
 
   @override
   ConsumerState<ActivityScreen> createState() => _ActivityScreenState();
@@ -61,7 +75,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen>
     with WidgetsBindingObserver {
   String _selectedType = 'running';
   final WorkoutTarget _selectedTarget = WorkoutTarget.free;
-  bool _isRefreshing = false;
+  int _recenterCount = 0;
 
   bool get _isOutdoor => _selectedOption.requireGps;
 
@@ -75,10 +89,10 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen>
       _permission == LocationPermission.always ||
       _permission == LocationPermission.whileInUse;
 
-  ActivityOptionItem get _selectedOption => _kActivities.firstWhere(
-        (a) => a.type == _selectedType,
-        orElse: () => _kActivities.first,
-      );
+  _ActivityOption get _selectedOption => _kActivities.firstWhere(
+    (a) => a.type == _selectedType,
+    orElse: () => _kActivities.first,
+  );
 
   @override
   void initState() {
@@ -106,8 +120,21 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen>
     setState(() => _checkingLocation = true);
 
     try {
-      final gpsEnabled =
-          kIsWeb ? true : await Geolocator.isLocationServiceEnabled();
+      if (kDebugBypassAuth) {
+        if (!mounted) return;
+        setState(() {
+          _gpsEnabled = true;
+          _permission = LocationPermission.whileInUse;
+          _gpsAccuracyM = 4.2;
+          _currentLocation = const LatLng(10.7769, 106.7009);
+          _checkingLocation = false;
+        });
+        return;
+      }
+
+      final gpsEnabled = kIsWeb
+          ? true
+          : await Geolocator.isLocationServiceEnabled();
       var permission = await Geolocator.checkPermission();
 
       if (permission == LocationPermission.denied && requestIfNeeded) {
@@ -159,90 +186,13 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen>
     await _refreshLocationStatus();
   }
 
-  void _showMapPreviewDialog(AppLanguage currentLang) {
-    HapticFeedback.lightImpact();
-    final colors = context.kinetic;
-
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (ctx) {
-        return FractionallySizedBox(
-          heightFactor: 0.75,
-          child: Container(
-            decoration: BoxDecoration(
-              color: colors.background,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(KineticTokens.radiusXXL),
-              ),
-              border: Border(
-                top: BorderSide(
-                  color: colors.primary.withValues(alpha: 0.4),
-                  width: 1.5,
-                ),
-              ),
-            ),
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: KineticTokens.page,
-                    vertical: 14,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          BladeIcon(
-                            BladeIconName.gps,
-                            size: 18,
-                            color: colors.primary,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            currentLang == AppLanguage.vi
-                                ? 'VỊ TRÍ GPS XUẤT PHÁT'
-                                : 'STARTING GPS PINPOINT',
-                            style: KineticTypography.label.copyWith(
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.8,
-                              color: colors.textPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                      IconButton(
-                        icon: const BladeIcon(BladeIconName.x, size: 24),
-                        onPressed: () => Navigator.of(ctx).pop(),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(KineticTokens.radiusXL),
-                    ),
-                    child: TrackingMapWidget(
-                      routePoints: const [],
-                      activityType: _selectedOption.type,
-                      initialPosition: _currentLocation,
-                      currentLocation: _currentLocation,
-                      followUser: true,
-                      recenterRequestId: 1,
-                      showRoute: false,
-                      currentLang: currentLang,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+  void _selectSport(String type) {
+    if (_selectedType == type) return;
+    HapticFeedback.selectionClick();
+    setState(() {
+      _selectedType = type;
+    });
+    ref.read(selectedActivityTypeProvider.notifier).state = type;
   }
 
   void _startWorkout() {
@@ -258,13 +208,40 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen>
     );
   }
 
+  String _startButtonLabel(bool isVi) {
+    switch (_selectedOption.type) {
+      case 'cycling':
+        return isVi ? 'Bắt đầu đạp xe' : 'Start Cycling';
+      case 'walking':
+        return isVi ? 'Bắt đầu đi bộ' : 'Start Walking';
+      case 'running':
+      default:
+        return isVi ? 'Bắt đầu chạy bộ' : 'Start Running';
+    }
+  }
+
+  String _gpsBadgeLabel(bool isVi) {
+    if (_checkingLocation) {
+      return isVi ? 'Đang dò GPS' : 'Locating GPS';
+    }
+    if (_gpsEnabled && _hasLocationPermission) {
+      final acc = _gpsAccuracyM;
+      if (acc != null && acc > 0 && acc < 100) {
+        return isVi
+            ? 'GPS tốt • ${acc.round()}m'
+            : 'GPS ready • ${acc.round()}m';
+      }
+      return isVi ? 'GPS sẵn sàng' : 'GPS ready';
+    }
+    return isVi ? 'Bật GPS' : 'Enable GPS';
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.kinetic;
     final currentLang = ref.watch(appLanguageProvider);
     final isVi = currentLang == AppLanguage.vi;
-    final workoutsAsync = ref.watch(workoutListProvider);
-    final workouts = workoutsAsync.valueOrNull ?? const <WorkoutSession>[];
+    final isGpsReady = _gpsEnabled && _hasLocationPermission;
 
     ref.listen<String>(selectedActivityTypeProvider, (previous, next) {
       if (next != _selectedType && mounted) {
@@ -274,91 +251,532 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen>
       }
     });
 
+    final gpsColor = _checkingLocation
+        ? colors.primary
+        : (isGpsReady ? colors.success : const Color(0xFFF59E0B));
+    final hPad = AetronBottomBar.horizontalPagePaddingOf(context);
+    final dockFootprint = AetronBottomBar.bottomFootprintOf(context);
+    final isCompactHeight = MediaQuery.sizeOf(context).height < 700;
+    final sheetBottomGap = dockFootprint + (isCompactHeight ? 8.0 : 10.0);
+
     return Scaffold(
       backgroundColor: colors.background,
-      body: SafeArea(
-        top: true,
-        child: Column(
-          children: [
-            // 1. Top Header Bar
-            KineticActivityTopBar(
-              isVi: isVi,
-              isOutdoor: _isOutdoor,
-              checkingLocation: _checkingLocation,
-              hasLocationPermission: _hasLocationPermission,
-              gpsEnabled: _gpsEnabled,
-              onGpsTap: _handleGpsAction,
-              onMapPreviewTap: () => _showMapPreviewDialog(currentLang),
+      body: Stack(
+        children: [
+          // 1. Full-bleed live start map
+          Positioned.fill(
+            child: TrackingMapWidget(
+              routePoints: const [],
+              activityType: _selectedOption.type,
+              initialPosition: _currentLocation,
+              currentLocation: _currentLocation,
+              followUser: true,
+              recenterRequestId: _recenterCount,
+              showRoute: false,
+              currentLang: currentLang,
+              showControls: false,
+              enableTilt: false,
+              showMapTiles: widget.showMapTiles,
             ),
+          ),
 
-            // 2. Scrollable Activity Mode Cards with Pull-to-Refresh Grey Skeleton
-            Expanded(
-              child: RefreshIndicator(
-                color: colors.primary,
-                backgroundColor: colors.surface2,
-                onRefresh: () async {
-                  setState(() => _isRefreshing = true);
-                  try {
-                    await Future.wait([
-                      ref.read(workoutListProvider.notifier).refresh(),
-                      _refreshLocationStatus(requestIfNeeded: false),
-                    ]);
-                  } finally {
-                    if (mounted) setState(() => _isRefreshing = false);
-                  }
-                },
-                child: _isRefreshing
-                    ? KineticSkeleton.activity()
-                    : ListView.separated(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.fromLTRB(
-                          KineticTokens.page,
-                          KineticTokens.spaceXS,
-                          KineticTokens.page,
-                          KineticTokens.spaceMD,
-                        ),
-                        itemCount: _kActivities.length,
-                        separatorBuilder: (context, index) =>
-                            const SizedBox(height: KineticTokens.spaceSM),
-                        itemBuilder: (context, index) {
-                          final option = _kActivities[index];
-                          final isSelected = option.type == _selectedType;
-
-                          return KineticActivityCard(
-                            option: option,
-                            isSelected: isSelected,
-                            workouts: workouts,
-                            isVi: isVi,
-                            onSelect: () {
-                              setState(() {
-                                _selectedType = option.type;
-                              });
-                              ref
-                                  .read(selectedActivityTypeProvider.notifier)
-                                  .state = option.type;
-                            },
-                          );
-                        },
-                      ),
+          // Subtle top gradient scrim in dark mode so white status bar text stays legible
+          if (colors.isDark)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: MediaQuery.paddingOf(context).top + 54,
+              child: const IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Color(0x990A1320),
+                        Color(0x380A1320),
+                        Colors.transparent,
+                      ],
+                      stops: [0.0, 0.55, 1.0],
+                    ),
+                  ),
+                ),
               ),
             ),
 
-            // 4. Cockpit Tray Dock (GPS Diagnostics & Start Button)
-            KineticActivityCockpit(
-              activityName: isVi ? _selectedOption.nameVi : _selectedOption.nameEn,
-              isOutdoor: true,
-              gpsEnabled: _gpsEnabled,
-              checkingLocation: _checkingLocation,
-              hasLocationPermission: _hasLocationPermission,
-              gpsAccuracyM: _gpsAccuracyM,
-              selectedTarget: _selectedTarget,
-              isVi: isVi,
-              onRefreshGps: _handleGpsAction,
-              onStartTap: _startWorkout,
-              onMapPreviewTap: () => _showMapPreviewDialog(currentLang),
+          // 2. Top floating pills (Active Sport + GPS Readiness)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  hPad,
+                  isCompactHeight ? 8 : KineticTokens.spaceSM,
+                  hPad,
+                  0,
+                ),
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                    Flexible(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(
+                          KineticTokens.radiusPill,
+                        ),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                          child: Container(
+                            key: const Key('activity-top-sport-pill'),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 9,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: colors.isDark
+                                  ? const LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [
+                                        Color(0x38344D6D),
+                                        Color(0x28183252),
+                                      ],
+                                    )
+                                  : const LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [
+                                        Color(0xD9FFFFFF),
+                                        Color(0x4D4EABE7),
+                                      ],
+                                    ),
+                              borderRadius: BorderRadius.circular(
+                                KineticTokens.radiusPill,
+                              ),
+                              boxShadow: colors.isDark
+                                  ? KineticTokens.shadowCardDark()
+                                  : KineticTokens.shadowCardLight(),
+                              border: Border.all(
+                                color: colors.isDark
+                                    ? const Color(0x4DB6DCFF)
+                                    : Colors.white.withValues(alpha: 0.90),
+                                width: 1.0,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                BladeIcon(
+                                  _selectedOption.icon,
+                                  size: 16,
+                                  color: colors.primary,
+                                ),
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Text(
+                                    isVi
+                                        ? _selectedOption.nameVi
+                                        : _selectedOption.nameEn,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: KineticTypography.label.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      color: colors.textPrimary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        GestureDetector(
+                          key: const Key('activity-gps-pill'),
+                          onTap: isGpsReady
+                              ? () => _refreshLocationStatus(requestIfNeeded: true)
+                              : _handleGpsAction,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(
+                              KineticTokens.radiusPill,
+                            ),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 9,
+                                ),
+                                decoration: BoxDecoration(
+                                  gradient: colors.isDark
+                                      ? const LinearGradient(
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                          colors: [
+                                            Color(0x38344D6D),
+                                            Color(0x28183252),
+                                          ],
+                                        )
+                                      : const LinearGradient(
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                          colors: [
+                                            Color(0xD9FFFFFF),
+                                            Color(0x4D4EABE7),
+                                          ],
+                                        ),
+                                  borderRadius: BorderRadius.circular(
+                                    KineticTokens.radiusPill,
+                                  ),
+                                  boxShadow: colors.isDark
+                                  ? KineticTokens.shadowCardDark()
+                                  : KineticTokens.shadowCardLight(),
+                              border: Border.all(
+                                color: colors.isDark
+                                    ? gpsColor.withValues(alpha: 0.55)
+                                    : Colors.white.withValues(alpha: 0.90),
+                                width: 1.0,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: gpsColor,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 7),
+                                Text(
+                                  _gpsBadgeLabel(isVi),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: KineticTypography.caption.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: colors.textPrimary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                        const SizedBox(width: 8),
+                        KineticGlassIconButton(
+                          label: 'GPS',
+                          size: 37,
+                          visualSize: 37,
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            setState(() => _recenterCount++);
+                            _refreshLocationStatus(requestIfNeeded: true);
+                          },
+                          icon: BladeIcon(
+                            BladeIconName.pin,
+                            size: 18,
+                            color: colors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                  ),
+                ),
+              ),
             ),
-          ],
-        ),
+          ),
+
+          // 3. Floating Glassline Start Sheet (above bottom dock) + Map Controls
+          Positioned(
+            left: hPad,
+            right: hPad,
+            bottom: sheetBottomGap,
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              heightFactor: 1.0,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.only(
+                        bottom: isCompactHeight ? 8 : KineticTokens.spaceSM,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          AetronMapTypeBuilder(
+                            builder: (context, mapType) {
+                              final isSatellite = mapType == AppMapType.satellite;
+                              return _MapCircleControlButton(
+                                buttonKey: const Key('activity-map-layer-btn'),
+                                tooltip: isVi
+                                    ? (isSatellite
+                                          ? 'Kiểu bản đồ: Vệ tinh'
+                                          : 'Kiểu bản đồ: Đường phố')
+                                    : (isSatellite
+                                          ? 'Map style: Satellite'
+                                          : 'Map style: Streets'),
+                                isHighlighted: isSatellite,
+                                onTap: () => showAetronMapStylePicker(
+                                  context: context,
+                                  currentType: mapType,
+                                  currentLang: currentLang,
+                                ),
+                                child: BladeIcon(
+                                  BladeIconName.layers,
+                                  size: 18,
+                                  color: isSatellite
+                                      ? colors.primary
+                                      : colors.textSecondary,
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: KineticTokens.spaceSM),
+                          _MapCircleControlButton(
+                            buttonKey: const Key('activity-recenter-btn'),
+                            tooltip: isVi
+                                ? 'Định vị vị trí hiện tại'
+                                : 'Recenter map',
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              setState(() => _recenterCount++);
+                              _refreshLocationStatus(requestIfNeeded: true);
+                            },
+                            child: BladeIcon(
+                              BladeIconName.locate,
+                              size: 18,
+                              color: colors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    KineticCard(
+                      useLiquidGlass: true,
+                      borderRadius: 24,
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        isCompactHeight ? 12 : 14,
+                        16,
+                        isCompactHeight ? 12 : 14,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+
+                          // 3-sport pill segmented bar
+                          if (NativeLiquidGlass.enabledOf(context))
+                            SizedBox(
+                              height: KineticTokens.segmentedControlHeight,
+                              child: NativeGlassSegmentedControl(
+                                labels: _kActivities
+                                    .map(
+                                      (option) =>
+                                          isVi ? option.nameVi : option.nameEn,
+                                    )
+                                    .toList(growable: false),
+                                symbols: const [],
+                                selectedIndex: _kActivities.indexWhere(
+                                  (option) =>
+                                      option.type == _selectedOption.type,
+                                ),
+                                onChanged: (index) {
+                                  if (index < 0 ||
+                                      index >= _kActivities.length) {
+                                    return;
+                                  }
+                                  _selectSport(_kActivities[index].type);
+                                },
+                              ),
+                            )
+                          else
+                            Container(
+                              padding: const EdgeInsets.all(KineticTokens.spaceXXS),
+                              decoration: BoxDecoration(
+                                color: colors.surface1,
+                                borderRadius: BorderRadius.circular(
+                                  KineticTokens.radiusPill,
+                                ),
+                                border: Border.all(
+                                  color: colors.borderSubtle,
+                                ),
+                              ),
+                              child: KineticSlidingSelection(
+                                index: _kActivities.indexWhere(
+                                  (option) =>
+                                      option.type == _selectedOption.type,
+                                ),
+                                count: _kActivities.length,
+                                child: Row(
+                                  children: _kActivities.map((option) {
+                                    final isSelected =
+                                        option.type == _selectedOption.type;
+                                    final label =
+                                        isVi ? option.nameVi : option.nameEn;
+                                    final ios = Theme.of(context).platform ==
+                                        TargetPlatform.iOS;
+                                    return Expanded(
+                                      child: GestureDetector(
+                                        key: Key('sport-pill-${option.type}'),
+                                        onTap: () => _selectSport(option.type),
+                                        child: AnimatedContainer(
+                                          duration: KineticTokens.respectingReduceMotion(
+                                            context,
+                                            KineticTokens.motionTab,
+                                          ),
+                                          height: 34,
+                                          alignment: Alignment.center,
+                                          decoration: BoxDecoration(
+                                            color: isSelected && !ios
+                                                ? colors.primary
+                                                : Colors.transparent,
+                                            borderRadius: BorderRadius.circular(
+                                              KineticTokens.radiusPill,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            label,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: KineticTypography
+                                                .segmentedLabel
+                                                .copyWith(
+                                                  fontWeight: isSelected
+                                                      ? FontWeight.w700
+                                                      : FontWeight.w500,
+                                                  color: isSelected
+                                                      ? (ios
+                                                            ? colors.primary
+                                                            : colors.onPrimary)
+                                                      : colors.textMuted,
+                                                ),
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                            ),
+                          const SizedBox(height: 12),
+
+                          // Compact shortcut to guided running programs
+                          InkWell(
+                            borderRadius: BorderRadius.circular(
+                              KineticTokens.radiusMD,
+                            ),
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const RunningProgramsScreen(),
+                                ),
+                              );
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                                vertical: 6,
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    LucideIcons.compass,
+                                    size: 16,
+                                    color: colors.primary,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      isVi
+                                          ? 'Giáo án luyện tập có hướng dẫn'
+                                          : 'Guided training programs',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: KineticTypography.caption.copyWith(
+                                        color: colors.textSecondary,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                  Icon(
+                                    LucideIcons.chevron_right,
+                                    size: 16,
+                                    color: colors.textMuted,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: isCompactHeight ? 8 : 10),
+
+                          // Primary Start CTA
+                          KineticButton(
+                            label: _startButtonLabel(isVi),
+                            icon: LucideIcons.play,
+                            onPressed: _startWorkout,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MapCircleControlButton extends StatelessWidget {
+  const _MapCircleControlButton({
+    required this.buttonKey,
+    required this.tooltip,
+    required this.onTap,
+    required this.child,
+    this.isHighlighted = false,
+  });
+
+  final Key buttonKey;
+  final String tooltip;
+  final VoidCallback onTap;
+  final Widget child;
+  final bool isHighlighted;
+
+  @override
+  Widget build(BuildContext context) {
+    return KeyedSubtree(
+      key: buttonKey,
+      child: KineticGlassIconButton(
+        label: tooltip,
+        icon: child,
+        active: isHighlighted,
+        size: 37,
+        visualSize: 37,
+        onPressed: onTap,
       ),
     );
   }

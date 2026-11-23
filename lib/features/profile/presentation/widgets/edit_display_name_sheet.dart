@@ -105,55 +105,24 @@ class _EditDisplayNameSheetState extends ConsumerState<EditDisplayNameSheet> {
     final colors = context.kinetic;
     final currentLang = ref.watch(appLanguageProvider);
     final isVi = currentLang == AppLanguage.vi;
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(
-        horizontal: KineticTokens.spaceXS,
-        vertical: KineticTokens.spaceSM,
-      ),
-      padding: EdgeInsets.fromLTRB(
+    return KineticGlassBottomSheet(
+      floating: true,
+      borderRadius: 26,
+      padding: const EdgeInsets.fromLTRB(
         KineticTokens.spaceLG,
         KineticTokens.spaceMD,
         KineticTokens.spaceLG,
-        KineticTokens.spaceXL + bottomInset,
+        KineticTokens.spaceXL,
       ),
-      decoration: BoxDecoration(
-        color: colors.surface1,
-        borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
-        border: Border.all(
-          color: colors.borderSubtle,
-          width: 1.2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 28,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Top Grab Handle
-            Align(
-              alignment: Alignment.center,
-              child: Container(
-                width: 38,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: colors.borderSubtle,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-            ),
-            const SizedBox(height: KineticTokens.spaceLG),
-
-            // Header Row
+      child: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Header Row
             Row(
               children: [
                 Container(
@@ -351,6 +320,7 @@ class _EditDisplayNameSheetState extends ConsumerState<EditDisplayNameSheet> {
               ],
             ),
           ],
+        ),
         ),
       ),
     );

@@ -85,7 +85,6 @@ class StructuredRunningProgram {
   final List<String> instructionsEn;
   final List<String> instructionsVi;
   final List<ProgramStep> steps;
-  final String imageAsset;
 
   const StructuredRunningProgram({
     required this.id,
@@ -101,7 +100,6 @@ class StructuredRunningProgram {
     required this.instructionsEn,
     required this.instructionsVi,
     required this.steps,
-    required this.imageAsset,
   });
 
   int get totalDurationSeconds =>

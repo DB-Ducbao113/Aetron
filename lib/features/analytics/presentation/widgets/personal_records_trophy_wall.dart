@@ -9,98 +9,101 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
   final DetailedPersonalRecords records;
   final bool useMetricUnits;
   final AppLanguage currentLang;
+  final String? activityType;
 
   const PersonalRecordsTrophyWall({
     super.key,
     required this.records,
     required this.useMetricUnits,
     required this.currentLang,
+    this.activityType,
   });
 
   @override
   Widget build(BuildContext context) {
     final colors = context.kinetic;
-    final all = records.allRecords;
-    final unlockedCount = records.unlockedCount;
+    final all = activityType == null || activityType == 'running'
+        ? records.allRecords
+        : [
+            records.longestDistance,
+            records.fastestPace,
+            records.maxCalories,
+            records.longestDuration,
+          ];
+    final unlockedCount = all.where((r) => r.isUnlocked).length;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(KineticTokens.spaceLG),
-      decoration: BoxDecoration(
-        color: colors.surface1,
-        borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
-        border: Border.all(
-          color: colors.borderSubtle,
-          width: 1,
-        ),
-      ),
+    return KineticCard(
+      useLiquidGlass: true,
+      padding: const EdgeInsets.all(KineticTokens.spaceSM),
+      borderRadius: 21,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header Bar
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 34,
-                    height: 34,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: colors.tertiary.withValues(alpha: 0.18),
-                      border: Border.all(color: colors.tertiary.withValues(alpha: 0.5)),
-                    ),
-                    child: const Icon(
-                      Icons.emoji_events_rounded,
-                      color: colors.tertiary,
-                      size: 18,
-                    ),
-                  ),
-                  const SizedBox(width: KineticTokens.spaceXS),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(2, 2, 2, 0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Row(
                     children: [
-                      Text(
-                        currentLang == AppLanguage.vi ? 'ĐỀN THỜ KỶ LỤC' : 'PR HALL OF FAME',
-                        style: KineticTypography.unitLabel.copyWith(
-                          color: colors.tertiary.withValues(alpha: 0.9),
-                          letterSpacing: 1.2,
+                      Container(
+                        width: 30,
+                        height: 30,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: colors.primaryTint,
+                        ),
+                        child: Icon(
+                          Icons.emoji_events_rounded,
+                          color: colors.primary,
+                          size: 16,
                         ),
                       ),
-                      Text(
-                        currentLang == AppLanguage.vi ? 'Kỷ Lục Cá Nhân (PRs)' : 'Personal Bests',
-                        style: KineticTypography.headlineSmall.copyWith(
-                          color: colors.textPrimary,
+                      const SizedBox(width: KineticTokens.spaceXS),
+                      Flexible(
+                        child: Text(
+                          currentLang == AppLanguage.vi
+                              ? 'Kỷ lục cá nhân'
+                              : 'Personal Bests',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: KineticTypography.sectionTitleOf(colors),
                         ),
                       ),
                     ],
                   ),
-                ],
-              ),
-
-              // Unlocked Counter Chip
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: KineticTokens.spaceXS, vertical: KineticTokens.spaceXXS),
-                decoration: BoxDecoration(
-                  color: colors.tertiary.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
-                  border: Border.all(color: colors.tertiary.withValues(alpha: 0.4)),
                 ),
-                child: Text(
-                  '$unlockedCount / ${all.length} ${currentLang == AppLanguage.vi ? 'KỶ LỤC' : 'RECORDS'}',
-                  style: KineticTypography.unitLabel.copyWith(
-                    fontWeight: FontWeight.w900,
-                    color: colors.tertiary,
-                    letterSpacing: 0.8,
+                const SizedBox(width: KineticTokens.spaceXS),
+
+                // Unlocked Counter Chip
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: KineticTokens.spaceXS,
+                    vertical: KineticTokens.spaceXXS,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colors.primaryTint,
+                    borderRadius: BorderRadius.circular(
+                      KineticTokens.radiusPill,
+                    ),
+                  ),
+                  child: Text(
+                    '$unlockedCount / ${all.length}',
+                    style: KineticTypography.unitLabel.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: colors.primary,
+                      letterSpacing: 0.4,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          const SizedBox(height: KineticTokens.spaceMD),
+          const SizedBox(height: KineticTokens.spaceSM),
 
-          // 2-Column Bento Grid
+          // 2-Column Compact Bento Grid
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -109,7 +112,7 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
               crossAxisCount: 2,
               crossAxisSpacing: KineticTokens.spaceXS,
               mainAxisSpacing: KineticTokens.spaceXS,
-              childAspectRatio: 1.15,
+              childAspectRatio: 1.62,
             ),
             itemBuilder: (context, index) {
               final record = all[index];
@@ -117,6 +120,7 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
                 record: record,
                 useMetricUnits: useMetricUnits,
                 currentLang: currentLang,
+                activityType: activityType,
                 onTap: () => _showRecordDetailSheet(context, record),
               );
             },
@@ -135,37 +139,15 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (_) => SafeArea(
-        child: Container(
-          margin: const EdgeInsets.fromLTRB(
-            KineticTokens.spaceSM,
-            0,
-            KineticTokens.spaceSM,
-            KineticTokens.spaceSM,
-          ),
-          padding: const EdgeInsets.all(KineticTokens.spaceXL),
-          decoration: BoxDecoration(
-            color: colors.surface1.withValues(alpha: 0.96),
-            borderRadius: BorderRadius.circular(KineticTokens.radiusXXL),
-            border: Border.all(
-              color: isUnlocked ? colors.tertiary : colors.borderSubtle,
-              width: 1,
-            ),
-            boxShadow: KineticTokens.shadowPanel(colors.background),
-          ),
+      builder: (_) => KineticGlassBottomSheet(
+        floating: true,
+        borderRadius: 28,
+        borderColor: isUnlocked ? colors.tertiary.withValues(alpha: 0.65) : null,
+        padding: const EdgeInsets.all(KineticTokens.spaceXL),
+        child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 38,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: colors.borderSubtle,
-                  borderRadius: BorderRadius.circular(KineticTokens.radiusXS),
-                ),
-              ),
-              const SizedBox(height: KineticTokens.spaceLG),
-
               // Emblem
               Container(
                 width: 64,
@@ -181,7 +163,9 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
                   ),
                 ),
                 child: Icon(
-                  isUnlocked ? Icons.emoji_events_rounded : Icons.lock_outline_rounded,
+                  isUnlocked
+                      ? Icons.emoji_events_rounded
+                      : Icons.lock_outline_rounded,
                   size: 32,
                   color: isUnlocked ? colors.tertiary : colors.textSecondary,
                 ),
@@ -189,7 +173,7 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
               const SizedBox(height: KineticTokens.spaceSM),
 
               Text(
-                isVi ? record.titleVi : record.titleEn,
+                _recordTitle(record, currentLang, activityType),
                 style: KineticTypography.cardTitle.copyWith(
                   color: colors.textPrimary,
                 ),
@@ -198,7 +182,9 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
 
               Text(
                 isUnlocked
-                    ? (isVi ? 'KỶ LỤC CÁ NHÂN ĐÃ XÁC LẬP' : 'PERSONAL BEST ESTABLISHED')
+                    ? (isVi
+                          ? 'KỶ LỤC CÁ NHÂN ĐÃ XÁC LẬP'
+                          : 'PERSONAL BEST ESTABLISHED')
                     : (isVi ? 'CHƯA MỞ KHÓA' : 'NOT YET UNLOCKED'),
                 style: KineticTypography.unitLabel.copyWith(
                   fontWeight: FontWeight.w900,
@@ -230,7 +216,11 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            _formatRecordValue(record, useMetricUnits),
+                            _formatRecordValue(
+                              record,
+                              useMetricUnits,
+                              activityType,
+                            ),
                             style: KineticTypography.headlineSmall.copyWith(
                               fontWeight: FontWeight.w900,
                               color: colors.tertiary,
@@ -238,6 +228,17 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
                           ),
                         ],
                       ),
+                      if (record.isEstimated) ...[
+                        const SizedBox(height: KineticTokens.spaceXS),
+                        Text(
+                          isVi
+                              ? 'Ước tính từ tốc độ trung bình của buổi tập.'
+                              : 'Estimated from the workout average pace.',
+                          style: KineticTypography.caption.copyWith(
+                            color: colors.textSecondary,
+                          ),
+                        ),
+                      ],
                       if (record.achievedAt != null) ...[
                         const SizedBox(height: KineticTokens.spaceXS),
                         Row(
@@ -286,15 +287,48 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
     );
   }
 
-  static String _formatRecordValue(SingleRecordItem record, bool useMetricUnits) {
+  static String _recordTitle(
+    SingleRecordItem record,
+    AppLanguage lang,
+    String? activityType,
+  ) {
+    if (record.id == 'pr_fastest_pace' && activityType == 'cycling') {
+      return lang == AppLanguage.vi
+          ? 'Tốc độ TB cao nhất'
+          : 'Top Average Speed';
+    }
+    return lang == AppLanguage.vi ? record.titleVi : record.titleEn;
+  }
+
+  static String _formatRecordValue(
+    SingleRecordItem record,
+    bool useMetricUnits,
+    String? activityType,
+  ) {
     if (record.durationSec != null) {
-      return WorkoutFormatters.formatDurationFromSeconds(record.durationSec!);
+      final duration = WorkoutFormatters.formatDurationFromSeconds(
+        record.durationSec!,
+      );
+      return record.isEstimated ? '≈ $duration' : duration;
     }
     if (record.id == 'pr_longest_dist' && record.numericValue != null) {
-      return WorkoutFormatters.formatDistance(record.numericValue!, useMetric: useMetricUnits, decimals: 1);
+      return WorkoutFormatters.formatDistance(
+        record.numericValue!,
+        useMetric: useMetricUnits,
+        decimals: 1,
+      );
     }
     if (record.id == 'pr_fastest_pace' && record.numericValue != null) {
-      return WorkoutFormatters.formatPaceFromSpeedKmh(record.numericValue!, useMetric: useMetricUnits);
+      if (activityType == 'cycling') {
+        final speed = useMetricUnits
+            ? record.numericValue!
+            : WorkoutFormatters.kmToMi(record.numericValue!);
+        return '${speed.toStringAsFixed(1)} ${useMetricUnits ? 'km/h' : 'mph'}';
+      }
+      return WorkoutFormatters.formatPaceFromSpeedKmh(
+        record.numericValue!,
+        useMetric: useMetricUnits,
+      );
     }
     if (record.id == 'pr_max_cal' && record.numericValue != null) {
       return '${record.numericValue!.round()} kcal';
@@ -308,12 +342,14 @@ class _TrophyCardItem extends StatelessWidget {
   final bool useMetricUnits;
   final AppLanguage currentLang;
   final VoidCallback onTap;
+  final String? activityType;
 
   const _TrophyCardItem({
     required this.record,
     required this.useMetricUnits,
     required this.currentLang,
     required this.onTap,
+    this.activityType,
   });
 
   @override
@@ -321,7 +357,11 @@ class _TrophyCardItem extends StatelessWidget {
     final colors = context.kinetic;
     final isUnlocked = record.isUnlocked;
     final isVi = currentLang == AppLanguage.vi;
-    final title = isVi ? record.titleVi : record.titleEn;
+    final title = PersonalRecordsTrophyWall._recordTitle(
+      record,
+      currentLang,
+      activityType,
+    );
 
     final accentColor = switch (record.category) {
       'speed' => colors.primary,
@@ -345,14 +385,18 @@ class _TrophyCardItem extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
         child: Container(
-          padding: const EdgeInsets.all(KineticTokens.spaceSM),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           decoration: BoxDecoration(
-            color: isUnlocked ? colors.surface1 : colors.background.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
+            color: isUnlocked
+                ? colors.surface1
+                : colors.surface2.withValues(alpha: 0.55),
+            borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
             border: Border.all(
-              color: isUnlocked ? accentColor.withValues(alpha: 0.45) : colors.borderSubtle,
+              color: isUnlocked
+                  ? accentColor.withValues(alpha: 0.38)
+                  : colors.borderSubtle,
               width: 1,
             ),
           ),
@@ -360,52 +404,72 @@ class _TrophyCardItem extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Top Row: Icon & Category Tag
+              // Top Row: Icon & Date Tag
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Icon(
                     isUnlocked ? icon : Icons.lock_outline_rounded,
-                    size: 18,
+                    size: 16,
                     color: isUnlocked ? accentColor : colors.textMuted,
                   ),
                   if (isUnlocked && record.achievedAt != null)
                     Text(
                       '${record.achievedAt!.toLocal().day.toString().padLeft(2, '0')}/${record.achievedAt!.toLocal().month.toString().padLeft(2, '0')}',
                       style: KineticTypography.caption.copyWith(
-                        fontWeight: FontWeight.w700,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w600,
                         color: colors.textSecondary.withValues(alpha: 0.8),
+                        fontFeatures: KineticTypography.tabularFigures,
                       ),
                     ),
                 ],
               ),
 
-              // Middle: Title
-              Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: KineticTypography.caption.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: isUnlocked ? colors.textPrimary : colors.textSecondary,
-                ),
-              ),
-
-              // Bottom: Value or Locked hint
-              Text(
-                isUnlocked
-                    ? PersonalRecordsTrophyWall._formatRecordValue(record, useMetricUnits)
-                    : (isVi ? 'Chưa mở khóa' : 'Locked'),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: isUnlocked
-                    ? KineticTypography.label.copyWith(
-                        fontWeight: FontWeight.w900,
-                        color: accentColor,
-                      )
-                    : KineticTypography.caption.copyWith(
-                        color: colors.textMuted,
-                      ),
+              // Bottom Block: Title & Value grouped tightly
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: KineticTypography.caption.copyWith(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: isUnlocked
+                          ? colors.textPrimary
+                          : colors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      isUnlocked
+                          ? PersonalRecordsTrophyWall._formatRecordValue(
+                              record,
+                              useMetricUnits,
+                              activityType,
+                            )
+                          : (isVi ? 'Chưa mở khóa' : 'Locked'),
+                      maxLines: 1,
+                      style: isUnlocked
+                          ? KineticTypography.bodyMedium.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: accentColor,
+                              fontFeatures: KineticTypography.tabularFigures,
+                              height: 1.15,
+                            )
+                          : KineticTypography.caption.copyWith(
+                              fontSize: 11,
+                              color: colors.textMuted,
+                            ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

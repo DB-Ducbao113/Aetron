@@ -1,14 +1,21 @@
+import 'dart:async';
+import 'dart:io';
+
+import 'package:fitness_exercise_application/core/constants/debug_config.dart';
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/activity/presentation/screens/activity_screen.dart';
+import 'package:fitness_exercise_application/features/analytics/presentation/screens/analytics_screen.dart';
 import 'package:fitness_exercise_application/features/history/presentation/screens/calendar_screen.dart';
 import 'package:fitness_exercise_application/features/home/presentation/screens/home_screen.dart';
 import 'package:fitness_exercise_application/features/profile/presentation/screens/profile_screen.dart';
-import 'package:fitness_exercise_application/features/analytics/presentation/screens/analytics_screen.dart';
 import 'package:fitness_exercise_application/features/shell/presentation/providers/main_tab_controller_provider.dart';
-import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
+import 'package:fitness_exercise_application/features/shell/presentation/widgets/aetron_bottom_bar.dart';
+import 'package:fitness_exercise_application/features/workout/presentation/providers/workout_providers.dart';
+import 'package:fitness_exercise_application/features/workout/presentation/widgets/record/tracking_map_widget.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_theme_provider.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,6 +30,8 @@ class MainShell extends ConsumerStatefulWidget {
 }
 
 class _MainShellState extends ConsumerState<MainShell> {
+  // Keep tab indices [0..4] stable for cross-tab callers across the app:
+  // 0 = Home, 1 = Record/Activity (center CTA), 2 = History, 3 = Analytics, 4 = Profile.
   static const _screens = [
     HomeScreen(),
     ActivityScreen(),
@@ -30,6 +39,8 @@ class _MainShellState extends ConsumerState<MainShell> {
     StatsScreen(),
     ProfileScreen(),
   ];
+  final Set<int> _visitedTabs = {};
+  HttpServer? _debugServer;
 
   @override
   void initState() {
@@ -40,6 +51,83 @@ class _MainShellState extends ConsumerState<MainShell> {
             widget.initialIndex;
       }
     });
+    if (kDebugMode && kDebugBypassAuth) {
+      _startDebugServer();
+    }
+  }
+
+  void _startDebugServer() async {
+    try {
+      _debugServer = await HttpServer.bind(InternetAddress.anyIPv4, 8888);
+      _debugServer!.listen((request) async {
+        final path = request.uri.path;
+        if (path == '/tab') {
+          final indexStr = request.uri.queryParameters['index'];
+          final idx = int.tryParse(indexStr ?? '');
+          if (idx != null && idx >= 0 && idx < 5 && mounted) {
+            ref.read(mainTabControllerProvider.notifier).state = idx;
+            request.response.statusCode = HttpStatus.ok;
+            request.response.write('OK: switched to tab $idx');
+            await request.response.close();
+            return;
+          }
+        } else if (path == '/theme') {
+          final modeStr = request.uri.queryParameters['mode'];
+          if (modeStr == 'dark') {
+            await ref
+                .read(themeModeProvider.notifier)
+                .setThemeMode(ThemeMode.dark);
+            request.response.statusCode = HttpStatus.ok;
+            request.response.write('OK: switched to dark mode');
+            await request.response.close();
+            return;
+          } else if (modeStr == 'light') {
+            await ref
+                .read(themeModeProvider.notifier)
+                .setThemeMode(ThemeMode.light);
+            request.response.statusCode = HttpStatus.ok;
+            request.response.write('OK: switched to light mode');
+            await request.response.close();
+            return;
+          }
+        } else if (path == '/lang') {
+          final code = request.uri.queryParameters['code'];
+          if (code == 'vi' || code == 'en') {
+            await ref
+                .read(appLanguageProvider.notifier)
+                .setLanguage(code == 'vi' ? AppLanguage.vi : AppLanguage.en);
+            request.response.statusCode = HttpStatus.ok;
+            request.response.write('OK: switched to lang $code');
+            await request.response.close();
+            return;
+          }
+        } else if (path == '/map') {
+          final type = request.uri.queryParameters['type'];
+          if (type == 'streets' || type == 'satellite') {
+            await ref
+                .read(appMapTypeProvider.notifier)
+                .setMapType(
+                  type == 'streets' ? AppMapType.streets : AppMapType.satellite,
+                );
+            request.response.statusCode = HttpStatus.ok;
+            request.response.write('OK: switched map to $type');
+            await request.response.close();
+            return;
+          }
+        }
+        request.response.statusCode = HttpStatus.badRequest;
+        request.response.write('Bad request');
+        await request.response.close();
+      });
+    } catch (e) {
+      debugPrint('[MainShell] Debug server failed: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    _debugServer?.close(force: true);
+    super.dispose();
   }
 
   void _onTabSelected(int index) {
@@ -54,6 +142,16 @@ class _MainShellState extends ConsumerState<MainShell> {
   @override
   Widget build(BuildContext context) {
     final currentIndex = ref.watch(mainTabControllerProvider);
+    _visitedTabs.add(currentIndex);
+    // History and Analytics refresh on activation. On the first visit their
+    // own listeners are not mounted yet, so preserve that refresh here.
+    ref.listen<int>(mainTabControllerProvider, (previous, next) {
+      if (previous != next &&
+          !_visitedTabs.contains(next) &&
+          (next == historyTabIndex || next == analyticsTabIndex)) {
+        unawaited(ref.read(workoutListProvider.notifier).refresh());
+      }
+    });
     final colors = context.kinetic;
     final currentLang = ref.watch(appLanguageProvider);
 
@@ -73,7 +171,7 @@ class _MainShellState extends ConsumerState<MainShell> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               duration: const Duration(seconds: 2),
-              backgroundColor: colors.surface2,
+              backgroundColor: colors.surface1,
               content: Text(
                 currentLang == AppLanguage.vi
                     ? 'Nhấn lần nữa để thoát ứng dụng'
@@ -91,128 +189,22 @@ class _MainShellState extends ConsumerState<MainShell> {
       },
       child: Scaffold(
         backgroundColor: colors.background,
-        body: IndexedStack(index: currentIndex, children: _screens),
-        bottomNavigationBar: _AetronDock(
+        extendBody: true,
+        body: IndexedStack(
+          index: currentIndex,
+          children: [
+            for (var i = 0; i < _screens.length; i++)
+              TickerMode(
+                enabled: i == currentIndex,
+                child: _visitedTabs.contains(i)
+                    ? _screens[i]
+                    : const SizedBox.expand(),
+              ),
+          ],
+        ),
+        bottomNavigationBar: AetronBottomBar(
           currentIndex: currentIndex,
           onChanged: _onTabSelected,
-        ),
-      ),
-    );
-  }
-}
-
-class _AetronDock extends ConsumerWidget {
-  const _AetronDock({required this.currentIndex, required this.onChanged});
-
-  final int currentIndex;
-  final ValueChanged<int> onChanged;
-
-  static const _items = [
-    (BladeIconName.home, 'nav_home'),
-    (BladeIconName.pulse, 'nav_activity'),
-    (BladeIconName.cal, 'nav_history'),
-    (BladeIconName.chart, 'nav_analytics'),
-    (BladeIconName.user, 'nav_profile'),
-  ];
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final currentLang = ref.watch(appLanguageProvider);
-    final bottom = MediaQuery.of(context).padding.bottom;
-    final colors = context.kinetic;
-
-    return RepaintBoundary(
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          KineticTokens.spaceMD,
-          0,
-          KineticTokens.spaceMD,
-          bottom > 0 ? bottom : KineticTokens.spaceSM,
-        ),
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: KineticTokens.spaceXS,
-            vertical: KineticTokens.spaceXS,
-          ),
-          decoration: BoxDecoration(
-            color: colors.surface1,
-            borderRadius: BorderRadius.circular(KineticTokens.radiusXXL),
-            border: Border.all(color: colors.borderSubtle, width: 1.0),
-            boxShadow: KineticTokens.shadowPanel(colors.background),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              for (var i = 0; i < _items.length; i++)
-                Expanded(
-                  child: _DockItem(
-                    icon: _items[i].$1,
-                    label: AppTranslations.get(_items[i].$2, currentLang),
-                    selected: i == currentIndex,
-                    onTap: () => onChanged(i),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DockItem extends StatelessWidget {
-  final BladeIconName icon;
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _DockItem({
-    required this.icon,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.kinetic;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedContainer(
-              duration: KineticTokens.motionTab,
-              curve: KineticTokens.animCurve,
-              width: selected ? 48 : 36,
-              height: 32,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: selected ? colors.primary : Colors.transparent,
-                borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
-              ),
-              child: BladeIcon(
-                icon,
-                color: selected ? colors.onPrimary : colors.textMuted,
-                size: selected ? 20 : 18,
-              ),
-            ),
-            const SizedBox(height: KineticTokens.spaceXXS),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: KineticTypography.caption.copyWith(
-                color: selected ? colors.textPrimary : colors.textMuted,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                letterSpacing: 0.1,
-              ),
-            ),
-          ],
         ),
       ),
     );

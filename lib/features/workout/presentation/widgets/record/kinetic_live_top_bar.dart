@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
 import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
@@ -97,8 +99,11 @@ class _KineticLiveTopBarState extends State<KineticLiveTopBar>
       statusText = widget.isVi ? 'Tự động dừng' : 'Auto-paused';
       pulseColor = colors.tertiary;
     } else if (widget.isPaused) {
-      if (widget.pausedCountdownSeconds != null && widget.pausedCountdownSeconds! > 0) {
-        final clock = WorkoutFormatters.formatElapsedClock(widget.pausedCountdownSeconds!);
+      if (widget.pausedCountdownSeconds != null &&
+          widget.pausedCountdownSeconds! > 0) {
+        final clock = WorkoutFormatters.formatElapsedClock(
+          widget.pausedCountdownSeconds!,
+        );
         statusText = widget.isVi ? 'Tạm dừng ($clock)' : 'Paused ($clock)';
       } else {
         statusText = widget.isVi ? 'Tạm dừng' : 'Paused';
@@ -132,20 +137,30 @@ class _KineticLiveTopBarState extends State<KineticLiveTopBar>
         children: [
           // 1. LEFT CORNER: Live Activity / Pause Status Pill (Góc trái màn hình)
           Flexible(
-            child: Container(
-              height: 42,
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              decoration: BoxDecoration(
-                gradient: KineticGradients.hudSurface(colors),
-                borderRadius: BorderRadius.circular(21),
-                border: Border.all(
-                  color: isAlertState
-                      ? colors.tertiary.withValues(alpha: 0.85)
-                      : colors.borderSubtle.withValues(alpha: 0.7),
-                  width: isAlertState ? 1.4 : 1.1,
-                ),
-                boxShadow: KineticTokens.shadowPanel(Colors.black),
-              ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(21),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                child: Container(
+                  height: KineticTokens.segmentedControlHeight,
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  decoration: BoxDecoration(
+                    color: colors.surface1.withValues(
+                      alpha: colors.isDark ? 0.84 : 0.88,
+                    ),
+                    borderRadius: BorderRadius.circular(21),
+                    border: Border.all(
+                      color: isAlertState
+                          ? colors.tertiary.withValues(alpha: 0.85)
+                          : (colors.isDark
+                                ? Colors.white.withValues(alpha: 0.16)
+                                : Colors.white.withValues(alpha: 0.78)),
+                      width: isAlertState ? 1.4 : 1.0,
+                    ),
+                    boxShadow: colors.isDark
+                        ? null
+                        : KineticTokens.shadowCardLight(),
+                  ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -170,8 +185,12 @@ class _KineticLiveTopBarState extends State<KineticLiveTopBar>
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: KineticTypography.bodySmall.copyWith(
-                        fontWeight: isAlertState ? FontWeight.w800 : FontWeight.w700,
-                        color: isAlertState ? colors.tertiary : colors.textPrimary,
+                        fontWeight: isAlertState
+                            ? FontWeight.w800
+                            : FontWeight.w700,
+                        color: isAlertState
+                            ? colors.tertiary
+                            : colors.textPrimary,
                         letterSpacing: isAlertState ? 0.3 : 0.0,
                       ),
                     ),
@@ -202,6 +221,8 @@ class _KineticLiveTopBarState extends State<KineticLiveTopBar>
                 ],
               ),
             ),
+              ),
+            ),
           ),
           const SizedBox(width: 10),
 
@@ -214,44 +235,60 @@ class _KineticLiveTopBarState extends State<KineticLiveTopBar>
                 widget.onToggleMetricsMode();
               },
               borderRadius: BorderRadius.circular(21),
-              child: Container(
-                height: 42,
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                decoration: BoxDecoration(
-                  gradient: KineticGradients.hudSurface(colors),
+              child: KineticTouchFinish(
+                radius: 21,
+                emphasis: widget.isLargeMetricsMode,
+                child: ClipRRect(
                   borderRadius: BorderRadius.circular(21),
-                  border: Border.all(
-                    color: widget.isLargeMetricsMode
-                        ? colors.primary.withValues(alpha: 0.85)
-                        : colors.borderSubtle.withValues(alpha: 0.7),
-                    width: widget.isLargeMetricsMode ? 1.4 : 1.1,
-                  ),
-                  boxShadow: KineticTokens.shadowPanel(Colors.black),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    BladeIcon(
-                      widget.isLargeMetricsMode
-                          ? BladeIconName.map
-                          : BladeIconName.chart,
-                      size: 16,
-                      color: colors.primary,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      widget.isLargeMetricsMode
-                          ? (widget.isVi ? 'Xem bản đồ' : 'Map View')
-                          : (widget.isVi ? 'Số liệu lớn' : 'Big Metrics'),
-                      style: KineticTypography.unitLabel.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: widget.isLargeMetricsMode
-                            ? colors.primary
-                            : colors.textPrimary,
-                        letterSpacing: 0.2,
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                    child: Container(
+                      height: KineticTokens.segmentedControlHeight,
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      decoration: BoxDecoration(
+                        color: colors.surface1.withValues(
+                          alpha: colors.isDark ? 0.84 : 0.88,
+                        ),
+                        borderRadius: BorderRadius.circular(21),
+                        border: Border.all(
+                          color: widget.isLargeMetricsMode
+                              ? colors.primary.withValues(alpha: 0.85)
+                              : (colors.isDark
+                                    ? Colors.white.withValues(alpha: 0.16)
+                                    : Colors.white.withValues(alpha: 0.78)),
+                          width: widget.isLargeMetricsMode ? 1.4 : 1.0,
+                        ),
+                        boxShadow: colors.isDark
+                            ? null
+                            : KineticTokens.shadowCardLight(),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          BladeIcon(
+                            widget.isLargeMetricsMode
+                                ? BladeIconName.map
+                                : BladeIconName.chart,
+                            size: 16,
+                            color: colors.primary,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            widget.isLargeMetricsMode
+                                ? (widget.isVi ? 'Xem bản đồ' : 'Map View')
+                                : (widget.isVi ? 'Số liệu lớn' : 'Big Metrics'),
+                            style: KineticTypography.unitLabel.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: widget.isLargeMetricsMode
+                                  ? colors.primary
+                                  : colors.textPrimary,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),

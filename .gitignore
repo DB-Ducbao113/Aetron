@@ -81,6 +81,24 @@ AGENTS.md
 GEMINI.md
 .tools/
 .skills/
+tasks/
+agent/
+.claude/
+skills-lock.json
+
+# Python virtual environments & bytecode cache
+.venv*/
+venv/
+**/__pycache__/
+*.py[cod]
 
 # Vercel deployment cache
 .vercel
+
+# Local research and GPS exports
+exports/
+*.zip
+
+# Local tools and benchmark datasets
+tool/
+tooling/

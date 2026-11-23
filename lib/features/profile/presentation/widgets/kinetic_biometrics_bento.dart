@@ -56,8 +56,9 @@ class KineticBiometricsBento extends StatelessWidget {
 
     if (profile == null) {
       return KineticCard(
-        padding: const EdgeInsets.all(KineticTokens.spaceLG),
-        borderRadius: KineticTokens.radiusLG,
+        useLiquidGlass: true,
+        padding: const EdgeInsets.all(17),
+        borderRadius: 21,
         child: Column(
           children: [
             Icon(Icons.monitor_weight_outlined, size: 36, color: colors.primary),
@@ -87,6 +88,7 @@ class KineticBiometricsBento extends StatelessWidget {
                   : 'SET UP BIOMETRICS',
               icon: Icons.add_rounded,
               isFullWidth: false,
+              height: 40,
               onPressed: onEdit,
             ),
           ],
@@ -112,8 +114,9 @@ class KineticBiometricsBento extends StatelessWidget {
     }
 
     return KineticCard(
-      padding: const EdgeInsets.all(KineticTokens.spaceMD),
-      borderRadius: KineticTokens.radiusLG,
+      useLiquidGlass: true,
+      padding: const EdgeInsets.all(17),
+      borderRadius: 21,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -127,9 +130,9 @@ class KineticBiometricsBento extends StatelessWidget {
                   const SizedBox(width: 6),
                   Text(
                     AppTranslations.get('biometric_data', currentLang),
-                    style: KineticTypography.unitLabel.copyWith(
+                    style: KineticTypography.cardEyebrowOf(
+                      colors,
                       color: colors.textPrimary,
-                      letterSpacing: 1.1,
                     ),
                   ),
                 ],
@@ -148,10 +151,7 @@ class KineticBiometricsBento extends StatelessWidget {
                         const SizedBox(width: 4),
                         Text(
                           currentLang == AppLanguage.vi ? 'Chỉnh sửa' : 'Edit',
-                          style: KineticTypography.caption.copyWith(
-                            color: colors.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: KineticTypography.linkActionOf(colors),
                         ),
                       ],
                     ),
@@ -226,6 +226,7 @@ class _BiometricTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.kinetic;
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -233,9 +234,17 @@ class _BiometricTile extends StatelessWidget {
         vertical: KineticTokens.spaceXS,
       ),
       decoration: BoxDecoration(
-        color: colors.surface2,
+        color: isIOS
+            ? (colors.isDark ? const Color(0x28314B6B) : const Color(0x66FFFFFF))
+            : colors.surface2,
         borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
-        border: Border.all(color: colors.borderSubtle),
+        border: Border.all(
+          color: isIOS
+              ? (colors.isDark
+                  ? const Color(0x38B6DCFF)
+                  : Colors.white.withValues(alpha: 0.85))
+              : colors.borderSubtle,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -6,6 +6,14 @@ class RouteMatchQualityService {
   const RouteMatchQualityService();
 
   RouteMatchResult normalize(RouteMatchResult result) {
+    if (result.routeMatchStatus == 'not_requested') {
+      return result.copyWith(
+        matchedRouteJson: '[]',
+        routeDistanceSource: 'filtered',
+        matchedDistanceKm: null,
+        routeMatchConfidence: null,
+      );
+    }
     if (!_hasUsableMatchedGeometry(result.matchedRouteJson)) {
       return result.copyWith(
         routeMatchStatus: 'match_failed_fallback_filtered',
@@ -15,6 +23,13 @@ class RouteMatchQualityService {
     }
 
     switch (result.routeMatchStatus) {
+      case 'reconstructed_pchip':
+      case 'reconstructed_linear':
+        return result.copyWith(
+          routeDistanceSource: 'filtered',
+          matchedDistanceKm: null,
+          routeMatchConfidence: null,
+        );
       case 'matched_success_high_confidence':
         if ((result.matchedDistanceKm ?? 0) > 0) {
           return result.copyWith(routeDistanceSource: 'matched');

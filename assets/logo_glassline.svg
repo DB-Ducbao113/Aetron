@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="58 66 372 372" fill="none">
+  <title>Aetron Glassline — Aero A</title>
+  <desc>Thin, continuous A with flowing crossbar and three speed streaks. Transparent.</desc>
+  <defs>
+    <linearGradient id="aero" x1="22%" y1="20%" x2="83%" y2="92%">
+      <stop offset="0" stop-color="#1dc1de"/>
+      <stop offset=".48" stop-color="#168cdb"/>
+      <stop offset="1" stop-color="#1463ca"/>
+    </linearGradient>
+  </defs>
+  <g stroke="url(#aero)" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M178 354 C203 305 246 194 270 161 C278 146 283 149 289 161 C316 215 353 303 380 354" stroke-width="23"/>
+    <path d="M218 295 C259 281 298 277 338 287" stroke-width="14"/>
+    <path d="M107 224 C147 224 196 224 241 224" stroke-width="9"/>
+    <path d="M120 264 C153 263 191 263 225 264" stroke-width="8"/>
+    <path d="M136 306 C155 306 180 305 202 305" stroke-width="7"/>
+  </g>
+  <g stroke="#d5f8ff" stroke-linecap="round" opacity=".55">
+    <path d="M184 343 C206 291 251 192 272 164" stroke-width="3"/>
+    <path d="M291 167 C320 231 356 312 376 347" stroke-width="2.6"/>
+    <path d="M220 292 C256 278 298 275 336 283" stroke-width="2.2"/>
+  </g>
+</svg>

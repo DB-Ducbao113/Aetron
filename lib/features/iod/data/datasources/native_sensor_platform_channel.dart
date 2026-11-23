@@ -1,0 +1,269 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+
+/// Structured telemetry from Android hardware GNSS chipset.
+class GnssSatelliteData {
+  final int satelliteCount;
+  final int usedInFixCount;
+  final double meanCn0DbHz;
+  final double maxCn0DbHz;
+  final double top4Cn0DbHz;
+  final DateTime timestamp;
+
+  const GnssSatelliteData({
+    required this.satelliteCount,
+    required this.usedInFixCount,
+    required this.meanCn0DbHz,
+    required this.maxCn0DbHz,
+    required this.top4Cn0DbHz,
+    required this.timestamp,
+  });
+
+  factory GnssSatelliteData.fromMap(Map<dynamic, dynamic> map) {
+    return GnssSatelliteData(
+      satelliteCount: (map['satelliteCount'] as num?)?.toInt() ?? 0,
+      usedInFixCount: (map['usedInFixCount'] as num?)?.toInt() ?? 0,
+      meanCn0DbHz: (map['meanCn0DbHz'] as num?)?.toDouble() ?? 0.0,
+      maxCn0DbHz: (map['maxCn0DbHz'] as num?)?.toDouble() ?? 0.0,
+      top4Cn0DbHz: (map['top4Cn0DbHz'] as num?)?.toDouble() ?? 0.0,
+      timestamp: DateTime.fromMillisecondsSinceEpoch(
+        (map['timestamp'] as num?)?.toInt() ??
+            DateTime.now().millisecondsSinceEpoch,
+      ),
+    );
+  }
+}
+
+/// Telemetry from ambient light sensor (lux photodiode).
+class LightSensorData {
+  final double lux;
+  final DateTime timestamp;
+
+  const LightSensorData({required this.lux, required this.timestamp});
+
+  factory LightSensorData.fromMap(Map<dynamic, dynamic> map) {
+    final lux = map['lux'];
+    if (lux is! num || !lux.isFinite || lux < 0) {
+      throw const FormatException('Missing or invalid native lux measurement');
+    }
+    return LightSensorData(
+      lux: lux.toDouble(),
+      timestamp: DateTime.fromMillisecondsSinceEpoch(
+        (map['timestamp'] as num?)?.toInt() ??
+            DateTime.now().millisecondsSinceEpoch,
+      ),
+    );
+  }
+}
+
+/// Telemetry from genuine Android Wi-Fi scan query (Yoo 2025).
+class WifiScanData {
+  final bool hasScan;
+  final int count;
+  final double? meanRssiDbm;
+  final Map<String, double> fingerprint; // BSSID -> RSSI (dBm)
+  final DateTime timestamp;
+  final String? reason;
+
+  const WifiScanData({
+    required this.hasScan,
+    required this.count,
+    this.meanRssiDbm,
+    this.fingerprint = const {},
+    required this.timestamp,
+    this.reason,
+  });
+
+  factory WifiScanData.fromMap(Map<dynamic, dynamic> map) {
+    final rawFp = map['fingerprint'] as Map<dynamic, dynamic>?;
+    final fp = <String, double>{};
+    if (rawFp != null) {
+      for (final entry in rawFp.entries) {
+        if (entry.value is num) {
+          fp[entry.key.toString()] = (entry.value as num).toDouble();
+        }
+      }
+    }
+    return WifiScanData(
+      hasScan: map['hasScan'] as bool? ?? false,
+      count: (map['count'] as num?)?.toInt() ?? 0,
+      meanRssiDbm: (map['meanRssiDbm'] as num?)?.toDouble(),
+      fingerprint: fp,
+      timestamp: DateTime.fromMillisecondsSinceEpoch(
+        (map['timestamp'] as num?)?.toInt() ??
+            DateTime.now().millisecondsSinceEpoch,
+      ),
+      reason: map['reason'] as String?,
+    );
+  }
+}
+
+/// Telemetry from genuine Android BLE beacon scan query (Yoo 2025).
+class BleScanData {
+  final bool hasScan;
+  final int count;
+  final double? meanRssiDbm;
+  final Map<String, double> fingerprint; // Beacon address/UUID -> RSSI (dBm)
+  final DateTime timestamp;
+  final String? reason;
+
+  const BleScanData({
+    required this.hasScan,
+    required this.count,
+    this.meanRssiDbm,
+    this.fingerprint = const {},
+    required this.timestamp,
+    this.reason,
+  });
+
+  factory BleScanData.fromMap(Map<dynamic, dynamic> map) {
+    final rawFp = map['fingerprint'] as Map<dynamic, dynamic>?;
+    final fp = <String, double>{};
+    if (rawFp != null) {
+      for (final entry in rawFp.entries) {
+        if (entry.value is num) {
+          fp[entry.key.toString()] = (entry.value as num).toDouble();
+        }
+      }
+    }
+    return BleScanData(
+      hasScan: map['hasScan'] as bool? ?? false,
+      count: (map['count'] as num?)?.toInt() ?? 0,
+      meanRssiDbm: (map['meanRssiDbm'] as num?)?.toDouble(),
+      fingerprint: fp,
+      timestamp: DateTime.fromMillisecondsSinceEpoch(
+        (map['timestamp'] as num?)?.toInt() ??
+            DateTime.now().millisecondsSinceEpoch,
+      ),
+      reason: map['reason'] as String?,
+    );
+  }
+}
+
+/// Platform channel bridge interfacing with Android native hardware sensors.
+///
+/// Gracefully degrades on non-Android platforms, desktop, web, or test environments.
+class NativeSensorPlatformChannel {
+  static const _gnssChannel = EventChannel('com.aetron.app/gnss_status');
+  static const _lightChannel = EventChannel('com.aetron.app/light_sensor');
+  static const _checkChannel = MethodChannel('com.aetron.app/sensors_check');
+
+  final bool? _isAndroidOverride;
+
+  NativeSensorPlatformChannel({bool? isAndroidOverride})
+    : _isAndroidOverride = isAndroidOverride;
+
+  Stream<GnssSatelliteData>? _gnssStream;
+  Stream<LightSensorData>? _lightStream;
+
+  bool get isAndroid =>
+      _isAndroidOverride ??
+      (!kIsWeb && defaultTargetPlatform == TargetPlatform.android);
+
+  /// Probes hardware sensor availability via Android native channel.
+  Future<Map<String, bool>> checkAvailability() async {
+    if (!isAndroid) {
+      return {'hasLightSensor': false, 'hasGnssStatus': false};
+    }
+
+    try {
+      final res = await _checkChannel.invokeMapMethod<String, dynamic>(
+        'checkSensorAvailability',
+      );
+      return {
+        'hasLightSensor': res?['hasLightSensor'] as bool? ?? false,
+        'hasGnssStatus': res?['hasGnssStatus'] as bool? ?? false,
+      };
+    } catch (e) {
+      debugPrint('[NativeSensorChannel] checkAvailability failed: $e');
+      return {'hasLightSensor': false, 'hasGnssStatus': false};
+    }
+  }
+
+  /// Broadcast stream of real-time GNSS satellite status.
+  Stream<GnssSatelliteData> get gnssStatusStream {
+    if (!isAndroid) return const Stream.empty();
+    _gnssStream ??= _gnssChannel
+        .receiveBroadcastStream()
+        .where((event) => event is Map)
+        .map((event) => GnssSatelliteData.fromMap(event as Map))
+        .handleError((error) {
+          debugPrint('[NativeSensorChannel] GNSS stream error: $error');
+          throw error;
+        });
+    return _gnssStream!;
+  }
+
+  /// Broadcast stream of real-time ambient illuminance (lux).
+  Stream<LightSensorData> get lightSensorStream {
+    if (!isAndroid) return const Stream.empty();
+    _lightStream ??= _lightChannel
+        .receiveBroadcastStream()
+        .where((event) => event is Map)
+        .map((event) => LightSensorData.fromMap(event as Map))
+        .handleError((error) {
+          debugPrint('[NativeSensorChannel] Light sensor error: $error');
+          throw error;
+        });
+    return _lightStream!;
+  }
+
+  /// Queries latest genuine Wi-Fi scan results from Android WifiManager (Yoo 2025).
+  Future<WifiScanData?> getLatestWifiScan() async {
+    if (!isAndroid) return null;
+    try {
+      final res = await _checkChannel.invokeMapMethod<String, dynamic>(
+        'getWifiScan',
+      );
+      if (res != null) {
+        return WifiScanData.fromMap(res);
+      }
+    } catch (e) {
+      debugPrint('[NativeSensorChannel] getLatestWifiScan error: $e');
+    }
+    return null;
+  }
+
+  /// Queries latest genuine BLE beacon scan results from Android BluetoothLeScanner (Yoo 2025).
+  Future<BleScanData?> getLatestBleScan() async {
+    if (!isAndroid) return null;
+    try {
+      final res = await _checkChannel.invokeMapMethod<String, dynamic>(
+        'getBleScan',
+      );
+      if (res != null) {
+        return BleScanData.fromMap(res);
+      }
+    } catch (e) {
+      debugPrint('[NativeSensorChannel] getLatestBleScan error: $e');
+    }
+    return null;
+  }
+
+  /// Starts genuine BLE beacon scanning on Android (Yoo 2025).
+  Future<bool> startBleScan() async {
+    if (!isAndroid) return false;
+    try {
+      final res = await _checkChannel.invokeMapMethod<String, dynamic>(
+        'startBleScan',
+      );
+      return res?['started'] as bool? ?? false;
+    } catch (e) {
+      debugPrint('[NativeSensorChannel] startBleScan error: $e');
+      return false;
+    }
+  }
+
+  /// Stops genuine BLE beacon scanning and clears volatile cache on Android (Yoo 2025).
+  Future<bool> stopBleScan() async {
+    if (!isAndroid) return false;
+    try {
+      final res = await _checkChannel.invokeMethod<bool>('stopBleScan');
+      return res ?? false;
+    } catch (e) {
+      debugPrint('[NativeSensorChannel] stopBleScan error: $e');
+      return false;
+    }
+  }
+}

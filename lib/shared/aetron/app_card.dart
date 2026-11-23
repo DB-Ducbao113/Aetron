@@ -1,5 +1,6 @@
 import 'package:fitness_exercise_application/shared/aetron/aetron_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_surface_finish.dart';
 
 class AppCard extends StatelessWidget {
   const AppCard({
@@ -28,7 +29,8 @@ class AppCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final effectiveBorder = borderColor ?? AetronColors.borderSubtle;
-    final effectiveBg = backgroundColor ?? AetronColors.panel.withValues(alpha: 0.95);
+    final effectiveBg =
+        backgroundColor ?? AetronColors.panel.withValues(alpha: 0.95);
 
     final cardContent = Container(
       padding: padding,
@@ -54,14 +56,19 @@ class AppCard extends StatelessWidget {
       child: child,
     );
 
-    if (onTap == null) return cardContent;
+    final finished = KineticSurfaceFinish(
+      radius: radius,
+      contentSurface: true,
+      child: cardContent,
+    );
+    if (onTap == null) return finished;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(radius),
-        child: cardContent,
+        child: finished,
       ),
     );
   }

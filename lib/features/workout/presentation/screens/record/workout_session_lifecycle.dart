@@ -1,6 +1,58 @@
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/screens/record/workout_session_state.dart';
 
+/// One recording's ordered summary writes. Checkpoints protect the last
+/// successfully written summary, not every raw sensor observation.
+class RecordingPersistence<T> {
+  Future<void> _tail = Future<void>.value();
+  bool _sealed = false;
+  int _queued = 0;
+  T? _finalization;
+
+  bool get hasPendingCheckpoint => _queued > 0;
+  bool get isSealed => _sealed;
+  Future<void> get drained => _tail;
+
+  Future<void> checkpoint(
+    Future<void> Function() write, {
+    required void Function(Object, StackTrace) onError,
+    bool force = false,
+  }) {
+    if (_sealed || (!force && hasPendingCheckpoint)) {
+      return Future<void>.value();
+    }
+    _queued++;
+    _tail = _tail.then((_) async {
+      try {
+        await write();
+      } catch (error, stack) {
+        onError(error, stack);
+      } finally {
+        _queued--;
+      }
+    });
+    return _tail;
+  }
+
+  /// Prevent newly scheduled checkpoints from racing the terminal write.
+  void seal() => _sealed = true;
+
+  T freezeFinalization(T Function() finalize) {
+    seal();
+    return _finalization ??= finalize();
+  }
+
+  Future<void> saveFinal(Future<void> Function(T) write) async {
+    seal();
+    await _tail;
+    final finalization = _finalization;
+    if (finalization == null) {
+      throw StateError('No frozen workout finalization');
+    }
+    await write(finalization);
+  }
+}
+
 class WorkoutSessionLifecycle {
   const WorkoutSessionLifecycle();
 
@@ -38,6 +90,11 @@ class WorkoutSessionLifecycle {
       durationSeconds: 0,
       movingTimeSeconds: 0,
       distanceMeters: 0,
+      gpsDistanceMeters: 0,
+      stepDistanceMeters: 0,
+      researchDetectedSteps: 0,
+      xuDetectedSteps: 0,
+      adaptiveStepCount: 0,
       speedKmh: 0,
       stepCount: 0,
       caloriesBurned: 0,

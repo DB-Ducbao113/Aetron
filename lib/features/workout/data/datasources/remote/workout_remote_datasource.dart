@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fitness_exercise_application/features/workout/data/models/workout_session_model.dart';
 import 'package:fitness_exercise_application/features/workout/domain/constants/workout_processing_contract.dart';
@@ -5,11 +6,20 @@ import 'package:fitness_exercise_application/features/workout/domain/entities/wo
 import 'package:fitness_exercise_application/core/constants/db_tables.dart';
 import 'package:flutter/foundation.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:fitness_exercise_application/features/workout/domain/services/scientific_result_metadata.dart';
 
 class WorkoutRemoteDataSource {
   final SupabaseClient _supabase;
 
   WorkoutRemoteDataSource(this._supabase);
+
+  String _requireOwner([String? expected]) {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null || (expected != null && expected != userId)) {
+      throw StateError('Workout operation requires the active account');
+    }
+    return userId;
+  }
 
   Future<void> createSessionShell({
     required String id,
@@ -19,6 +29,7 @@ class WorkoutRemoteDataSource {
     required DateTime startedAt,
     required DateTime createdAt,
   }) async {
+    _requireOwner(userId);
     await _supabase.from(DbTables.workoutSessions).upsert({
       'id': id,
       'user_id': userId,
@@ -30,10 +41,12 @@ class WorkoutRemoteDataSource {
       'processing_status': kClientRecordingStatus,
       'metrics_version': kClientMetricsVersion,
     });
+    _requireOwner(userId);
   }
 
   /// Saves the complete session to the cloud database
   Future<void> saveSession(WorkoutSession session) async {
+    _requireOwner(session.userId);
     final model = WorkoutSessionModel.fromEntity(session);
     final payload = model.toJson()
       ..remove('gps_analysis')
@@ -44,11 +57,51 @@ class WorkoutRemoteDataSource {
       ..remove('route_distance_source')
       ..remove('matched_distance_km')
       ..remove('route_match_metrics_json');
+    final research = buildResearchResult(session);
+    final filtered = _decodeRouteSafely(session.filteredRouteJson);
     await _supabase.from(DbTables.workoutSessions).upsert({
       ...payload,
+      'client_research_result_json': ?research,
+      if (filtered.isNotEmpty) 'filtered_route_json': filtered,
       'processing_status': kClientProcessingStatus,
       'metrics_version': kClientMetricsVersion,
     });
+    _requireOwner(session.userId);
+  }
+
+  /// Immutable-in-meaning final client result, separate from server audit.
+  /// This is an unverified client claim, not proof of exact server replay.
+  @visibleForTesting
+  static Map<String, dynamic>? buildResearchResult(WorkoutSession session) {
+    try {
+      final audit = jsonDecode(session.routeMatchMetricsJson);
+      if (audit is! Map<String, dynamic> ||
+          audit['scientific_result_version'] != 1) {
+        return null;
+      }
+      final filtered = jsonDecode(session.filteredRouteJson);
+      final reconstructed = jsonDecode(session.matchedRouteJson);
+      if (filtered is! List || reconstructed is! List) return null;
+      return {
+        'version': 1,
+        'session_id': session.id,
+        'activity_type': session.activityType.toLowerCase(),
+        'mode': session.mode,
+        'distance_km': session.distanceKm,
+        'duration_sec': session.durationSec,
+        'moving_time_sec': session.movingTimeSec,
+        'steps': session.steps,
+        'avg_speed_kmh': session.avgSpeedKmh,
+        'calories_kcal': session.caloriesKcal,
+        'lap_splits': session.lapSplits.map((split) => split.toJson()).toList(),
+        'filtered_route': filtered,
+        'reconstructed_route': reconstructed,
+        'reconstruction_status': session.routeMatchStatus,
+        'audit': audit,
+      };
+    } on FormatException {
+      return null;
+    }
   }
 
   Future<void> saveLiveRouteSnapshot({
@@ -58,6 +111,7 @@ class WorkoutRemoteDataSource {
     required double? lastGpsGapDurationSec,
     required bool isGpsSignalWeak,
   }) async {
+    final userId = _requireOwner();
     final filteredRouteJson = routeSegments
         .where((segment) => segment.isNotEmpty)
         .map(
@@ -89,32 +143,59 @@ class WorkoutRemoteDataSource {
             'snapshot_synced_at': DateTime.now().toUtc().toIso8601String(),
           },
         })
-        .eq('id', sessionId);
+        .eq('id', sessionId)
+        .eq('user_id', userId)
+        .eq('processing_status', kClientRecordingStatus);
+    _requireOwner(userId);
+  }
+
+  @visibleForTesting
+  static WorkoutSession decodeRemoteSession(Map<String, dynamic> row) {
+    return WorkoutSessionModel.fromJson(row).toEntity().copyWith(
+      routeMatchMetricsJson: ScientificResultMetadata.fromRemote(row),
+    );
   }
 
   /// Fetch workouts from Supabase for a specific user
   Future<List<WorkoutSession>> getSessionsByUser(String userId) async {
     try {
-      final response = await _supabase
-          .from(DbTables.workoutSessions)
-          .select()
-          .eq('user_id', userId)
-          .neq('processing_status', kClientRecordingStatus)
-          .order('started_at', ascending: false);
-
-      return (response as List)
-          .map(
-            (json) => WorkoutSessionModel.fromJson(
-              json as Map<String, dynamic>,
-            ).toEntity(),
-          )
-          .where(
-            (session) =>
-                session.durationSec > 0 ||
-                session.distanceKm > 0 ||
-                session.steps > 0,
-          )
-          .toList();
+      _requireOwner(userId);
+      // Cursor on the unique immutable primary key, so equal timestamps and
+      // concurrent deletes cannot shift offsets. Fetch until an empty page:
+      // the server may cap results below the requested page size.
+      const pageSize = 200;
+      final sessions = <WorkoutSession>[];
+      String? cursor;
+      while (true) {
+        _requireOwner(userId);
+        var query = _supabase
+            .from(DbTables.workoutSessions)
+            .select()
+            .eq('user_id', userId)
+            .neq('processing_status', kClientRecordingStatus);
+        if (cursor != null) query = query.gt('id', cursor);
+        final page = await query.order('id', ascending: true).limit(pageSize);
+        _requireOwner(userId);
+        if (page.isEmpty) break;
+        for (final row in page) {
+          final session = decodeRemoteSession(row);
+          if (session.userId != userId ||
+              (cursor != null && session.id.compareTo(cursor) <= 0)) {
+            throw StateError('Invalid workout pagination response');
+          }
+          cursor = session.id;
+          if (session.durationSec > 0 ||
+              session.distanceKm > 0 ||
+              session.steps > 0) {
+            sessions.add(session);
+          }
+        }
+      }
+      sessions.sort((a, b) {
+        final byTime = b.startedAt.compareTo(a.startedAt);
+        return byTime != 0 ? byTime : a.id.compareTo(b.id);
+      });
+      return sessions;
     } on PostgrestException catch (e) {
       debugPrint(
         '[WorkoutRemoteDataSource] getSessionsByUser error: ${e.message}',
@@ -131,14 +212,17 @@ class WorkoutRemoteDataSource {
   /// Fetch single workout
   Future<WorkoutSession?> getSessionById(String id) async {
     try {
+      final userId = _requireOwner();
       final response = await _supabase
           .from(DbTables.workoutSessions)
           .select()
           .eq('id', id)
+          .eq('user_id', userId)
           .maybeSingle();
 
-      if (response == null) return null;
-      return WorkoutSessionModel.fromJson(response).toEntity();
+      _requireOwner(userId);
+      if (response == null || response['user_id'] != userId) return null;
+      return decodeRemoteSession(response);
     } on PostgrestException catch (e) {
       debugPrint(
         '[WorkoutRemoteDataSource] getSessionById error: ${e.message}',
@@ -154,13 +238,16 @@ class WorkoutRemoteDataSource {
 
   Future<Map<String, dynamic>?> getRouteMatchPayload(String id) async {
     try {
+      final userId = _requireOwner();
       final response = await _supabase
           .from(DbTables.workoutSessions)
           .select()
           .eq('id', id)
+          .eq('user_id', userId)
           .maybeSingle();
 
-      if (response == null) return null;
+      _requireOwner(userId);
+      if (response == null || response['user_id'] != userId) return null;
       final payload = Map<String, dynamic>.from(response);
       final hasAnyRouteMatchField =
           payload.containsKey('matched_route_json') ||
@@ -186,7 +273,13 @@ class WorkoutRemoteDataSource {
   /// Delete workout from Supabase
   Future<void> deleteSession(String id) async {
     try {
-      await _supabase.from(DbTables.workoutSessions).delete().eq('id', id);
+      final userId = _requireOwner();
+      await _supabase
+          .from(DbTables.workoutSessions)
+          .delete()
+          .eq('id', id)
+          .eq('user_id', userId);
+      _requireOwner(userId);
     } catch (e) {
       debugPrint('[WorkoutRemoteDataSource] deleteSession error: $e');
       rethrow;
@@ -196,13 +289,24 @@ class WorkoutRemoteDataSource {
   /// Delete all workouts for a user from Supabase
   Future<void> deleteAllSessions(String userId) async {
     try {
+      _requireOwner(userId);
       await _supabase
           .from(DbTables.workoutSessions)
           .delete()
           .eq('user_id', userId);
+      _requireOwner(userId);
     } catch (e) {
       debugPrint('[WorkoutRemoteDataSource] deleteAllSessions error: $e');
       rethrow;
     }
+  }
+}
+
+List<dynamic> _decodeRouteSafely(String encoded) {
+  try {
+    final value = jsonDecode(encoded);
+    return value is List ? value : const [];
+  } on FormatException {
+    return const [];
   }
 }

@@ -12,6 +12,7 @@ class KineticLiveMetricsHud extends StatelessWidget {
   final double avgSpeedKmh;
   final int calories;
   final int stepCount;
+  final int cadenceSpm;
   final String activityType;
   final bool useMetricUnits;
   final bool isVi;
@@ -26,6 +27,7 @@ class KineticLiveMetricsHud extends StatelessWidget {
     required this.avgSpeedKmh,
     required this.calories,
     required this.stepCount,
+    this.cadenceSpm = 0,
     required this.activityType,
     required this.useMetricUnits,
     required this.isVi,
@@ -73,7 +75,7 @@ class KineticLiveMetricsHud extends StatelessWidget {
         avgSpeedKmh,
         useMetric: useMetricUnits,
       );
-      comparisonNote = '${isVi ? 'Pace trung bình' : 'Avg'}: $avgPaceStr';
+      comparisonNote = '${isVi ? 'Pace TB' : 'Avg'}: $avgPaceStr';
     }
 
     return Column(
@@ -85,39 +87,39 @@ class KineticLiveMetricsHud extends StatelessWidget {
           child: Semantics(
             container: true,
             label: isVi ? 'Quãng đường' : 'Distance',
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Text(
-                  displayDistance.toStringAsFixed(2),
-                  style: (isLargeMetricsMode
-                          ? KineticTypography.metricMega
-                          : KineticTypography.metricHero)
-                      .copyWith(
-                    color: colors.textPrimary,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    displayDistance.toStringAsFixed(2),
+                    style: KineticTypography.metricMega.copyWith(
+                      color: colors.textPrimary,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  distanceUnit,
-                  style: KineticTypography.metricUnit.copyWith(
-                    color: colors.primary,
-                    letterSpacing: 0.8,
-                    fontSize: isLargeMetricsMode ? 20 : 16,
+                  const SizedBox(width: 6),
+                  Text(
+                    distanceUnit,
+                    style: KineticTypography.metricUnit.copyWith(
+                      color: colors.primary,
+                      letterSpacing: 0.8,
+                      fontSize: isLargeMetricsMode ? 20 : 17,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
         const SizedBox(height: 12),
 
-        // Divider
+        // Hairline Divider
         Container(
-          height: 1,
-          color: colors.borderSubtle.withValues(alpha: 0.4),
+          height: 0.5,
+          color: colors.borderSubtle,
           margin: const EdgeInsets.symmetric(horizontal: 4),
         ),
         const SizedBox(height: 12),
@@ -193,8 +195,10 @@ class KineticLiveMetricsHud extends StatelessWidget {
                       icon: BladeIconName.walk,
                       value: '$stepCount',
                       unit: isVi ? 'bước' : 'steps',
-                      note: isVi ? 'Tổng số bước' : 'Total steps',
-                      isNotePositive: null,
+                      note: cadenceSpm > 0
+                          ? '$cadenceSpm spm'
+                          : (isVi ? 'Tổng số bước' : 'Total steps'),
+                      isNotePositive: cadenceSpm > 0 ? true : null,
                       showLeftDivider: true,
                     ),
             ),
@@ -480,37 +484,41 @@ class KineticMiniMetricsCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 10),
 
-                    // HERO distance (existing metric style)
+                    // HERO distance (Concept A: crisp 56pt tabular hero)
                     Semantics(
                       container: true,
                       label: isVi ? 'Quãng đường' : 'Distance',
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
-                        children: [
-                          Text(
-                            displayDistance.toStringAsFixed(2),
-                            style: KineticTypography.metricHero.copyWith(
-                              color: colors.textPrimary,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
+                          children: [
+                            Text(
+                              displayDistance.toStringAsFixed(2),
+                              style: KineticTypography.metricMega.copyWith(
+                                color: colors.textPrimary,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            distanceUnit,
-                            style: KineticTypography.metricUnit.copyWith(
-                              color: colors.primary,
-                              letterSpacing: 0.8,
-                              fontSize: 16,
+                            const SizedBox(width: 6),
+                            Text(
+                              distanceUnit,
+                              style: KineticTypography.metricUnit.copyWith(
+                                color: colors.primary,
+                                letterSpacing: 0.8,
+                                fontSize: 16,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(height: 12),
                     Container(
-                      height: 1,
-                      color: colors.borderSubtle.withValues(alpha: 0.4),
+                      height: 0.5,
+                      color: colors.borderSubtle,
                     ),
                     const SizedBox(height: 12),
 
@@ -570,14 +578,12 @@ class _MiniMetricColumn extends StatelessWidget {
   final String value;
   final String unit;
   final Color valueColor;
-  final bool highlightUnit;
 
   const _MiniMetricColumn({
     required this.label,
     required this.value,
     required this.unit,
     required this.valueColor,
-    this.highlightUnit = false,
   });
 
   @override
@@ -622,7 +628,7 @@ class _MiniMetricColumn extends StatelessWidget {
                 unit,
                 style: KineticTypography.unitLabel.copyWith(
                   fontWeight: FontWeight.w800,
-                  color: highlightUnit ? colors.primary : colors.textSecondary,
+                  color: colors.textSecondary,
                 ),
               ),
             ],

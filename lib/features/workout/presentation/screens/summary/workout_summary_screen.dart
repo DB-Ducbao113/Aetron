@@ -10,9 +10,8 @@ import 'package:fitness_exercise_application/features/workout/presentation/widge
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/summary/kinetic_summary_splits_card.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/summary/kinetic_summary_telemetry_grid.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/workout_share_card.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_entrance.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
+import 'package:fitness_exercise_application/features/shell/presentation/widgets/aetron_bottom_bar.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
@@ -132,6 +131,9 @@ class WorkoutSummaryScreen extends ConsumerWidget {
         ? gpsAnalysis.validDistanceKm
         : distanceKm;
 
+    final hPad = AetronBottomBar.horizontalPagePaddingOf(context);
+    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -141,35 +143,33 @@ class WorkoutSummaryScreen extends ConsumerWidget {
       },
       child: Scaffold(
         backgroundColor: colors.background,
-        body: SafeArea(
-          child: Column(
-            children: [
-              // Header — flat (V5 keeps decoration on Home header + Welcome only).
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  KineticTokens.page,
-                  12,
-                  KineticTokens.page,
-                  8,
-                ),
-                child: KineticSummaryHeader(
-                  activityType: activityType,
-                  trackingMode: trackingMode,
-                  currentLang: currentLang,
-                  onBackToHome: () => _navigateToHome(context),
-                ),
-              ),
-
-              // Scrollable Telemetry Body
-              Expanded(
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(
-                    KineticTokens.page,
-                    16,
-                    KineticTokens.page,
-                    32,
+        body: KineticGlasslineScaffoldBody(
+          showBottomScrim: false,
+          child: SafeArea(
+            bottom: false,
+            child: Column(
+              children: [
+                // Header
+                Padding(
+                  padding: EdgeInsets.fromLTRB(hPad, 12, hPad, 8),
+                  child: KineticSummaryHeader(
+                    activityType: activityType,
+                    trackingMode: trackingMode,
+                    currentLang: currentLang,
+                    onBackToHome: () => _navigateToHome(context),
                   ),
+                ),
+
+                // Scrollable Telemetry Body
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: EdgeInsets.fromLTRB(
+                      hPad,
+                      16,
+                      hPad,
+                      bottomInset + 24,
+                    ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -252,6 +252,7 @@ class WorkoutSummaryScreen extends ConsumerWidget {
               ),
             ],
           ),
+        ),
         ),
       ),
     );

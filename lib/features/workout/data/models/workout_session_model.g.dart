@@ -9,35 +9,40 @@ part of 'workout_session_model.dart';
 _$WorkoutSessionModelImpl _$$WorkoutSessionModelImplFromJson(
         Map<String, dynamic> json) =>
     _$WorkoutSessionModelImpl(
-      id: json['id'] as String? ?? '',
-      userId: json['user_id'] as String? ?? '',
-      activityType: json['activity_type'] as String? ?? 'running',
-      startedAt: json['started_at'] != null ? DateTime.parse(json['started_at'] as String) : DateTime.now(),
-      endedAt: json['ended_at'] != null ? DateTime.parse(json['ended_at'] as String) : DateTime.now(),
-      durationSec: (json['duration_sec'] as num?)?.toInt() ?? 0,
+      id: json['id'] as String,
+      userId: json['user_id'] as String,
+      activityType: json['activity_type'] as String,
+      startedAt: DateTime.parse(json['started_at'] as String),
+      endedAt: DateTime.parse(json['ended_at'] as String),
+      durationSec: (json['duration_sec'] as num).toInt(),
       movingTimeSec: (json['moving_time_sec'] as num?)?.toInt() ?? 0,
-      distanceKm: (json['distance_km'] as num?)?.toDouble() ?? 0.0,
-      steps: (json['steps'] as num?)?.toInt() ?? 0,
-      avgSpeedKmh: (json['avg_speed_kmh'] as num?)?.toDouble() ?? 0.0,
-      caloriesKcal: (json['calories_kcal'] as num?)?.toDouble() ?? 0.0,
-      mode: json['mode'] as String? ?? 'outdoor',
-      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at'] as String) : DateTime.now(),
+      distanceKm: (json['distance_km'] as num).toDouble(),
+      steps: (json['steps'] as num).toInt(),
+      avgSpeedKmh: (json['avg_speed_kmh'] as num).toDouble(),
+      caloriesKcal: (json['calories_kcal'] as num).toDouble(),
+      mode: json['mode'] as String,
+      createdAt: DateTime.parse(json['created_at'] as String),
       lapSplits: json['lap_splits'] == null
           ? const <WorkoutLapSplit>[]
           : _lapSplitsFromJson(json['lap_splits']),
       gpsAnalysis: json['gps_analysis'] == null
           ? const WorkoutGpsAnalysis()
           : _gpsAnalysisFromJson(json['gps_analysis']),
-      filteredRouteJson: _jsonFieldToString(json['filtered_route_json']),
-      matchedRouteJson: _jsonFieldToString(json['matched_route_json']),
+      filteredRouteJson: json['filtered_route_json'] == null
+          ? '[]'
+          : _jsonFieldToString(json['filtered_route_json']),
+      matchedRouteJson: json['matched_route_json'] == null
+          ? '[]'
+          : _jsonFieldToString(json['matched_route_json']),
       routeMatchStatus: json['route_match_status'] as String? ?? 'pending',
       routeMatchConfidence:
           (json['route_match_confidence'] as num?)?.toDouble(),
       routeDistanceSource:
           json['route_distance_source'] as String? ?? 'filtered',
       matchedDistanceKm: (json['matched_distance_km'] as num?)?.toDouble(),
-      routeMatchMetricsJson:
-          _jsonMetricsFieldToString(json['route_match_metrics_json']),
+      routeMatchMetricsJson: json['route_match_metrics_json'] == null
+          ? '{}'
+          : _jsonMetricsFieldToString(json['route_match_metrics_json']),
     );
 
 Map<String, dynamic> _$$WorkoutSessionModelImplToJson(

@@ -1,15 +1,27 @@
-import 'package:fitness_exercise_application/features/home/presentation/widgets/kinetic_hero_card.dart';
+import 'package:fitness_exercise_application/core/localization/app_translations.dart';
+import 'package:fitness_exercise_application/features/home/presentation/widgets/kinetic_home_top_bar.dart';
 import 'package:fitness_exercise_application/features/home/presentation/widgets/kinetic_your_week_bento.dart';
 import 'package:fitness_exercise_application/shared/aetron/aetron_globe_orbit_screen.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-Widget buildTestable(Widget child, {ThemeData? theme}) {
+class _TestViLanguageNotifier extends AppLanguageNotifier {
+  _TestViLanguageNotifier() : super() {
+    state = AppLanguage.vi;
+  }
+}
+
+Widget buildTestable(Widget child, {ThemeData? theme, bool isVi = false}) {
   return ProviderScope(
+    overrides: [
+      if (isVi)
+        appLanguageProvider.overrideWith((_) => _TestViLanguageNotifier()),
+    ],
     child: MaterialApp(
-      theme: theme ?? KineticTheme.darkTheme,
+      theme: theme ?? KineticTheme.lightTheme,
       home: Scaffold(body: child),
     ),
   );
@@ -17,7 +29,9 @@ Widget buildTestable(Widget child, {ThemeData? theme}) {
 
 void main() {
   group('KineticYourWeekBento Goal Entry Point Tests', () {
-    testWidgets('renders interactive goal chip in header and invokes onSetGoalTap', (tester) async {
+    testWidgets('renders weekly goal header, progress, and adjusts on tap', (
+      tester,
+    ) async {
       bool tapped = false;
 
       await tester.pumpWidget(
@@ -29,20 +43,24 @@ void main() {
             dateRangeText: '01 Th10 - 07 Th10',
             isVi: true,
             useMetricUnits: true,
+            activeWeekdays: const {1, 3, 5},
             onSetGoalTap: () => tapped = true,
           ),
         ),
       );
 
-      expect(find.text('Mục tiêu: 50%'), findsOneWidget);
-      expect(find.byIcon(Icons.track_changes_rounded), findsOneWidget);
+      expect(find.text('Mục tiêu tuần'), findsOneWidget);
+      expect(find.text('Điều chỉnh'), findsOneWidget);
+      expect(find.byIcon(LucideIcons.check), findsNWidgets(3));
 
-      await tester.tap(find.text('Mục tiêu: 50%'));
+      await tester.tap(find.text('Điều chỉnh'));
       await tester.pump();
       expect(tapped, isTrue);
     });
 
-    testWidgets('renders adjust goal footer action button and invokes onSetGoalTap', (tester) async {
+    testWidgets('renders English labels and invokes onSetGoalTap', (
+      tester,
+    ) async {
       bool tapped = false;
 
       await tester.pumpWidget(
@@ -59,44 +77,50 @@ void main() {
         ),
       );
 
-      expect(find.text('Adjust your fitness goals'), findsOneWidget);
-      expect(find.text('Settings'), findsOneWidget);
-      expect(find.byIcon(Icons.tune_rounded), findsOneWidget);
+      expect(find.text('Weekly goal'), findsOneWidget);
+      expect(find.text('Adjust'), findsOneWidget);
+      expect(find.byIcon(LucideIcons.chevron_right), findsOneWidget);
 
-      await tester.tap(find.text('Adjust your fitness goals'));
+      await tester.tap(find.text('Adjust'));
       await tester.pump();
       expect(tapped, isTrue);
     });
   });
 
-  group('KineticHeroCard Goal Entry Point Tests', () {
-    testWidgets('renders clickable targetGoalText when onGoalTap is provided', (tester) async {
-      bool goalTapped = false;
-      bool startTapped = false;
+  group('KineticHomeTopBar Streak & Avatar Entry Tests', () {
+    testWidgets('renders today heading, streak pill, bell, and avatar tap', (
+      tester,
+    ) async {
+      bool streakTapped = false;
+      bool notificationTapped = false;
 
       await tester.pumpWidget(
         buildTestable(
-          KineticHeroCard(
-            title: 'Chạy Buổi Sáng',
-            categoryName: 'Chạy Bộ',
-            weeklyProgressText: 'Tuần này: 15 km',
-            targetGoalText: 'Mục tiêu: 50 km',
-            ctaLabel: 'BẮT ĐẦU CHẠY',
-            onStartTap: () => startTapped = true,
-            onGoalTap: () => goalTapped = true,
+          KineticHomeTopBar(
+            avatarImage: null,
+            initials: 'DB',
+            displayName: 'Duc Bao',
+            greeting: 'Hôm nay',
+            streakCount: 7,
+            isVi: true,
+            onAvatarTap: () {},
+            onStreakTap: () => streakTapped = true,
+            onNotificationTap: () => notificationTapped = true,
           ),
         ),
       );
 
-      expect(find.text('Mục tiêu: 50 km'), findsOneWidget);
+      expect(find.text('Hôm nay'), findsOneWidget);
+      expect(find.text('7 ngày'), findsOneWidget);
+      expect(find.byIcon(LucideIcons.bell), findsOneWidget);
 
-      await tester.tap(find.text('Mục tiêu: 50 km'));
+      await tester.tap(find.text('7 ngày'));
       await tester.pump();
-      expect(goalTapped, isTrue);
+      expect(streakTapped, isTrue);
 
-      await tester.tap(find.text('BẮT ĐẦU CHẠY'));
+      await tester.tap(find.byIcon(LucideIcons.bell));
       await tester.pump();
-      expect(startTapped, isTrue);
+      expect(notificationTapped, isTrue);
     });
   });
 
@@ -113,16 +137,14 @@ void main() {
         buildTestable(
           const AetronGlobeOrbitScreen(
             customTitle: 'Aetron',
-            customSubtitle: 'Synchronizing system data...',
           ),
+          theme: KineticTheme.darkTheme,
         ),
       );
 
       expect(tester.takeException(), isNull);
       expect(find.text('Aetron'), findsOneWidget);
-      expect(find.text('Synchronizing system data...'), findsOneWidget);
-      expect(find.text('12 GPS'), findsOneWidget);
-      expect(find.text('20,200 KM'), findsOneWidget);
+      expect(find.textContaining('%'), findsOneWidget);
     });
 
     testWidgets(
@@ -139,6 +161,7 @@ void main() {
                 onComplete: () => completionCount += 1,
               ),
             ),
+            theme: KineticTheme.darkTheme,
           ),
         );
         await tester.pump(const Duration(milliseconds: 200));
@@ -150,22 +173,29 @@ void main() {
       },
     );
 
-    testWidgets('renders 3D orbit telemetry HUD and brand typography in dark theme', (tester) async {
-      await tester.pumpWidget(
-        buildTestable(
-          const AetronGlobeOrbitScreen(
-            customTitle: 'Aetron Orbit',
-            customSubtitle: 'Mạng lưới định vị vệ tinh GPS',
+    testWidgets(
+      'renders 3D orbit telemetry HUD and brand typography in Vietnamese',
+      (tester) async {
+        await tester.pumpWidget(
+          buildTestable(
+            const AetronGlobeOrbitScreen(
+              customTitle: 'Aetron Orbit',
+              customSubtitle: 'Mạng lưới định vị vệ tinh GPS',
+              showSubtitle: true,
+              showTelemetryChips: true,
+            ),
+            theme: KineticTheme.darkTheme,
+            isVi: true,
           ),
-        ),
-      );
+        );
 
-      expect(find.text('Aetron Orbit'), findsOneWidget);
-      expect(find.text('Mạng lưới định vị vệ tinh GPS'), findsOneWidget);
-      expect(find.text('12 VỆ TINH GPS'), findsOneWidget);
-      expect(find.text('ĐỘ CAO 20,200 KM'), findsOneWidget);
-      expect(find.byType(CustomPaint), findsWidgets);
-    });
+        expect(find.text('Aetron Orbit'), findsOneWidget);
+        expect(find.text('Mạng lưới định vị vệ tinh GPS'), findsOneWidget);
+        expect(find.text('12 VỆ TINH GPS'), findsOneWidget);
+        expect(find.text('ĐỘ CAO 20,200 KM'), findsOneWidget);
+        expect(find.byType(CustomPaint), findsWidgets);
+      },
+    );
 
     testWidgets('supports horizontal drag gesture on 3D globe without crashing', (tester) async {
       await tester.pumpWidget(

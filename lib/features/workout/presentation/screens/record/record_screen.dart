@@ -1,7 +1,11 @@
+import 'dart:ui';
+
+import 'package:fitness_exercise_application/features/shell/presentation/widgets/aetron_bottom_bar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/structured_running_program.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_target.dart';
+import 'package:fitness_exercise_application/features/iod/presentation/widgets/iod_debug_pill.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/record/guided_program_hud.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/record/live_lap_hud_toast.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/record/workout_3d_countdown_overlay.dart';
@@ -91,6 +95,20 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
   }
 
   Future<void> _startWorkout() async {
+    final existing = ref.read(workoutSessionProvider);
+    if (existing.status == RecordingState.active ||
+        existing.status == RecordingState.paused ||
+        existing.status == RecordingState.stopping ||
+        existing.status == RecordingState.error) {
+      if (mounted) {
+        setState(() {
+          _isPreparingWorkout = false;
+          _isLockingStartupGps = false;
+          _hasStartedWorkout = true;
+        });
+      }
+      return;
+    }
     _startupCountdownTimer?.cancel();
     _startupGpsLockFuture = null;
     _hasSkippedGpsLock = false;
@@ -357,16 +375,12 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: colors.surface1,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(KineticTokens.radiusXL),
-          side: BorderSide(color: colors.borderSubtle),
-        ),
+      builder: (ctx) => KineticGlassDialog(
         title: Text(
           title,
           style: KineticTypography.headlineSmall.copyWith(
             color: colors.textPrimary,
+            fontWeight: FontWeight.w800,
           ),
         ),
         content: Text(
@@ -386,22 +400,19 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
               style: TextStyle(color: colors.textMuted),
             ),
           ),
-          ?secondaryAction,
-          ElevatedButton(
+          // ignore: use_null_aware_elements
+          if (secondaryAction != null) secondaryAction,
+          TextButton(
             onPressed: () async {
               Navigator.of(ctx).pop();
               await onAction();
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: colors.primary,
-              foregroundColor: colors.onPrimary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
-              ),
-            ),
             child: Text(
               actionLabel,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: colors.primary,
+              ),
             ),
           ),
         ],
@@ -431,6 +442,14 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
         ref.read(metricUnitsPreferenceProvider).value ?? true;
     final state = ref.read(workoutSessionProvider);
 
+    if (state.status == RecordingState.error) {
+      await ref.read(workoutSessionProvider.notifier).stopWorkout();
+      return;
+    }
+    if (state.status != RecordingState.active &&
+        state.status != RecordingState.paused) {
+      return;
+    }
     final confirmed = await showKineticWorkoutStopConfirmation(
       context,
       distanceMeters: state.distanceMeters,
@@ -484,18 +503,12 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
       enableDrag: false,
       backgroundColor: Colors.transparent,
       builder: (modalContext) {
-        return Container(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 36),
-          decoration: BoxDecoration(
-            color: colors.surface1,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(KineticTokens.radiusXXL),
-            ),
-            border: Border(
-              top: BorderSide(color: colors.primary, width: 2.0),
-            ),
-            boxShadow: KineticTokens.shadowPanel(Colors.black),
-          ),
+        return KineticGlassBottomSheet(
+          floating: true,
+          borderRadius: 28,
+          borderColor: colors.primary.withValues(alpha: 0.45),
+          showHandle: false,
+          padding: const EdgeInsets.fromLTRB(24, 22, 24, 28),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -619,11 +632,28 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
   Widget build(BuildContext context) {
     final currentLang = ref.watch(appLanguageProvider);
     final state = ref.watch(workoutSessionProvider);
+    if (ref
+        .read(workoutSessionProvider.notifier)
+        .hasUnfinishedRecordingForOtherUser(ref.watch(currentUserIdProvider))) {
+      return Scaffold(
+        appBar: AppBar(),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(
+              AppTranslations.get('recording_other_owner', currentLang),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      );
+    }
     final useMetricUnits =
         ref.watch(metricUnitsPreferenceProvider).value ?? true;
 
     ref.listen<WorkoutSessionState>(workoutSessionProvider, (prev, next) {
-      if (next.errorMessage != null &&
+      if (next.status != RecordingState.error &&
+          next.errorMessage != null &&
           next.errorMessage != prev?.errorMessage) {
         _showStartError(next.errorMessage!);
       }
@@ -709,6 +739,7 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
     final canToggle = isRecording;
     final isPaused = state.status == RecordingState.paused;
     final isSaving = state.status == RecordingState.stopping;
+    final saveFailed = state.status == RecordingState.error;
     final bottomDockHeight = 74.0 + MediaQuery.of(context).padding.bottom;
 
     // V5 bottom-panel label row content (same wording as the live top bar).
@@ -732,9 +763,9 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
         : context.kinetic.primary;
 
     return PopScope(
-      canPop: !isRecording,
+      canPop: !isRecording && !isSaving && !saveFailed,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) {
+        if (!didPop && isRecording) {
           _confirmStop();
         }
       },
@@ -801,8 +832,8 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
                   curve: Curves.easeInOut,
                   child: IgnorePointer(
                     ignoring: !_isLargeMetricsMode,
-                    child: Container(
-                      color: context.kinetic.background,
+                    child: KineticGlasslineScaffoldBody(
+                      showBottomScrim: false,
                       child: SafeArea(
                         bottom: false,
                         child: ListView(
@@ -810,9 +841,9 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
                             parent: BouncingScrollPhysics(),
                           ),
                           padding: EdgeInsets.fromLTRB(
-                            16,
+                            AetronBottomBar.horizontalPagePaddingOf(context),
                             64, // Space below top bar
-                            16,
+                            AetronBottomBar.horizontalPagePaddingOf(context),
                             bottomDockHeight +
                                 16, // Space above fixed bottom dock
                           ),
@@ -969,6 +1000,14 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
                 ),
               ),
 
+            // 5.1. Real-time Indoor-Outdoor Detection Pill (Observational)
+            if (!_isPreparingWorkout && !_isLargeMetricsMode)
+              Positioned(
+                left: 16,
+                bottom: bottomDockHeight + _kPanelMetricsHeight + 12,
+                child: IodDebugPill(isVi: currentLang == AppLanguage.vi),
+              ),
+
             // 6. V5 BOTTOM PANEL — one flat panel (top radius 24) holding the
             // map-mode metrics section above the control dock. In large
             // metrics mode only the controls remain. All callbacks unchanged.
@@ -979,54 +1018,74 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
                 bottom: 0,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: context.kinetic.surface1,
                     borderRadius: const BorderRadius.vertical(
                       top: Radius.circular(KineticTokens.radiusHero),
                     ),
-                    border: Border(
-                      top: BorderSide(color: context.kinetic.borderSubtle),
-                    ),
+                    boxShadow: context.kinetic.isDark
+                        ? null
+                        : KineticTokens.shadowPanel(const Color(0xFF0F172A)),
                   ),
                   child: ClipRRect(
                     borderRadius: const BorderRadius.vertical(
                       top: Radius.circular(KineticTokens.radiusHero),
                     ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (!_isLargeMetricsMode)
-                          KineticMiniMetricsCard(
-                            distanceMeters: state.distanceMeters,
-                            durationSeconds: state.durationSeconds,
-                            speedKmh: state.speedKmh,
-                            avgSpeedKmh: state.avgSpeedKmh,
-                            calories: state.caloriesBurned,
-                            activityType: widget.activityType,
-                            useMetricUnits: useMetricUnits,
-                            isVi: currentLang == AppLanguage.vi,
-                            statusText: panelStatusText,
-                            gpsLabel: panelGpsLabel,
-                            gpsColor: panelGpsColor,
-                            onExpand: () {
-                              HapticFeedback.selectionClick();
-                              setState(() {
-                                _isLargeMetricsMode = true;
-                              });
-                            },
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: context.kinetic.surface1.withValues(
+                            alpha: context.kinetic.isDark ? 0.86 : 0.90,
                           ),
-                        KineticLiveControlDock(
-                          isPaused: isPaused,
-                          isLocked: _isScreenLocked,
-                          isSaving: isSaving,
-                          canToggle: canToggle,
-                          isVi: currentLang == AppLanguage.vi,
-                          onPauseResume: () => _handlePauseResume(state.status),
-                          onStop: _confirmStop,
-                          onToggleLock: () => setState(
-                            () => _isScreenLocked = !_isScreenLocked,
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(KineticTokens.radiusHero),
+                          ),
+                          border: Border(
+                            top: BorderSide(
+                              color: context.kinetic.isDark
+                                  ? Colors.white.withValues(alpha: 0.14)
+                                  : Colors.white.withValues(alpha: 0.78),
+                            ),
                           ),
                         ),
-                      ],
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (!_isLargeMetricsMode)
+                              KineticMiniMetricsCard(
+                                distanceMeters: state.distanceMeters,
+                                durationSeconds: state.durationSeconds,
+                                speedKmh: state.speedKmh,
+                                avgSpeedKmh: state.avgSpeedKmh,
+                                calories: state.caloriesBurned,
+                                activityType: widget.activityType,
+                                useMetricUnits: useMetricUnits,
+                                isVi: currentLang == AppLanguage.vi,
+                                statusText: panelStatusText,
+                                gpsLabel: panelGpsLabel,
+                                gpsColor: panelGpsColor,
+                                onExpand: () {
+                                  HapticFeedback.selectionClick();
+                                  setState(() {
+                                    _isLargeMetricsMode = true;
+                                  });
+                                },
+                              ),
+                            KineticLiveControlDock(
+                              isPaused: isPaused,
+                              isLocked: _isScreenLocked,
+                              isSaving: isSaving,
+                              canToggle: canToggle,
+                              isVi: currentLang == AppLanguage.vi,
+                              onPauseResume: () =>
+                                  _handlePauseResume(state.status),
+                              onStop: _confirmStop,
+                              onToggleLock: () => setState(
+                                () => _isScreenLocked = !_isScreenLocked,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -1106,6 +1165,54 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
                   activityType: widget.activityType,
                   currentLang: currentLang,
                   onSkip: _skipCountdown,
+                ),
+              ),
+            // Never navigate to a summary until the terminal save is durable.
+            if (saveFailed)
+              Positioned.fill(
+                child: ColoredBox(
+                  color: context.kinetic.background,
+                  child: SafeArea(
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              AppTranslations.get(
+                                'recording_save_failed',
+                                currentLang,
+                              ),
+                              style: KineticTypography.headlineSmall.copyWith(
+                                color: context.kinetic.textPrimary,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              AppTranslations.get(
+                                'recording_save_retry_message',
+                                currentLang,
+                              ),
+                              style: KineticTypography.bodySmall.copyWith(
+                                color: context.kinetic.textSecondary,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 24),
+                            KineticButton(
+                              label: AppTranslations.get(
+                                'recording_retry_save',
+                                currentLang,
+                              ),
+                              onPressed: _confirmStop,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
           ],
@@ -1195,6 +1302,7 @@ class _CompactRecordingHud extends ConsumerWidget {
           avgSpeedKmh: state.avgSpeedKmh,
           calories: state.caloriesBurned,
           stepCount: state.stepCount,
+          cadenceSpm: state.currentCadenceSpm,
           activityType: activityType,
           useMetricUnits: useMetricUnits,
           isVi: isVi,

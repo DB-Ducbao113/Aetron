@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
+import 'package:fitness_exercise_application/features/shell/presentation/widgets/aetron_bottom_bar.dart';
 import 'package:fitness_exercise_application/features/auth/presentation/helpers/password_validator.dart';
 import 'package:fitness_exercise_application/features/auth/presentation/screens/auth_wrapper.dart';
 import 'package:fitness_exercise_application/features/home/presentation/providers/streak_providers.dart';
@@ -15,9 +16,9 @@ import 'package:fitness_exercise_application/features/profile/presentation/widge
 import 'package:fitness_exercise_application/features/profile/presentation/widgets/kinetic_biometrics_bento.dart';
 import 'package:fitness_exercise_application/features/profile/presentation/widgets/kinetic_profile_action_tile.dart';
 import 'package:fitness_exercise_application/features/profile/presentation/widgets/kinetic_profile_top_bar.dart';
+import 'package:fitness_exercise_application/features/settings/presentation/screens/settings_screen.dart';
 import 'package:fitness_exercise_application/features/settings/presentation/providers/settings_preferences_providers.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/providers/workout_providers.dart';
-import 'package:fitness_exercise_application/features/workout/data/local/local_db.dart';
 import 'package:fitness_exercise_application/shared/aetron/aetron_logout_dialog.dart';
 import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
@@ -76,12 +77,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final useMetricUnits =
         ref.watch(metricUnitsPreferenceProvider).value ?? true;
 
+    final hPad = AetronBottomBar.horizontalPagePaddingOf(context);
+    final bottomPad = AetronBottomBar.scrollBottomPaddingOf(context);
+
     return Scaffold(
       backgroundColor: colors.background,
-      body: SafeArea(
+      body: KineticGlasslineScaffoldBody(
         child: RefreshIndicator(
           color: colors.primary,
-          backgroundColor: colors.surface2,
+          backgroundColor: colors.surface1,
           onRefresh: () => _handleRefresh(userId),
           child: _isRefreshing
               ? KineticSkeleton.profile()
@@ -104,134 +108,166 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ),
                   data: (profile) => ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(
-                      KineticTokens.page,
+                    padding: EdgeInsets.fromLTRB(
+                      hPad,
                       12,
-                      KineticTokens.page,
-                      100,
+                      hPad,
+                      bottomPad,
                     ),
                     children: [
-              // 1. Top Bar
-              KineticProfileTopBar(currentLang: currentLang),
-              const SizedBox(height: KineticTokens.spaceMD),
+                      // 1. Top Bar
+                      KineticProfileTopBar(currentLang: currentLang),
+                      const SizedBox(height: KineticTokens.spaceMD),
 
-              // 2. Athlete Card
-              KineticAthleteCard(
-                user: user,
-                profile: profile,
-                avatarState: avatar,
-                currentStreak: streak.currentStreak,
-                currentLang: currentLang,
-                onCameraTap: () => _showAvatarSourceSheet(context, ref),
-              ),
-              const SizedBox(height: KineticTokens.spaceSM),
-
-              // 3. Biometrics Bento
-              KineticBiometricsBento(
-                profile: profile,
-                useMetricUnits: useMetricUnits,
-                currentLang: currentLang,
-                onEdit: () => Navigator.of(context)
-                    .push(
-                      MaterialPageRoute(
-                        builder: (_) => profile != null
-                            ? ProfileSetupScreen(existingProfile: profile)
-                            : const ProfileSetupScreen(),
+                      // 2. Athlete Card
+                      KineticAthleteCard(
+                        user: user,
+                        profile: profile,
+                        avatarState: avatar,
+                        currentStreak: streak.currentStreak,
+                        currentLang: currentLang,
+                        onCameraTap: () => _showAvatarSourceSheet(context, ref),
                       ),
-                    )
-                    .then((_) {
-                      if (userId != null) {
-                        ref.invalidate(userProfileProvider(userId));
-                      }
-                    }),
-              ),
-              const SizedBox(height: KineticTokens.spaceLG),
+                      const SizedBox(height: KineticTokens.spaceSM),
 
-              // 4. System Actions Section
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: KineticTokens.spaceXXS),
-                child: Text(
-                  AppTranslations.get('system_actions', currentLang),
-                  style: KineticTypography.unitLabel.copyWith(
-                    color: colors.primary,
-                    letterSpacing: 1.2,
+                      // 3. Biometrics Bento
+                      KineticBiometricsBento(
+                        profile: profile,
+                        useMetricUnits: useMetricUnits,
+                        currentLang: currentLang,
+                        onEdit: () => Navigator.of(context)
+                            .push(
+                              MaterialPageRoute(
+                                builder: (_) => profile != null
+                                    ? ProfileSetupScreen(
+                                        existingProfile: profile,
+                                      )
+                                    : const ProfileSetupScreen(),
+                              ),
+                            )
+                            .then((_) {
+                              if (userId != null) {
+                                ref.invalidate(userProfileProvider(userId));
+                              }
+                            }),
+                      ),
+                      const SizedBox(height: KineticTokens.spaceLG),
+
+                      // 4. System Actions Section (Liquid Glass Card)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: KineticTokens.spaceXXS,
+                        ),
+                        child: Text(
+                          AppTranslations.get('system_actions', currentLang),
+                          style: KineticTypography.cardEyebrowOf(colors),
+                        ),
+                      ),
+                      const SizedBox(height: KineticTokens.spaceXS),
+
+                      KineticCard(
+                        useLiquidGlass: true,
+                        borderRadius: 21,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: KineticTokens.spaceSM,
+                          vertical: KineticTokens.spaceXS,
+                        ),
+                        child: Column(
+                          children: [
+                                // Training Goals Action
+                                KineticProfileActionTile(
+                                  icon: Icons.track_changes_rounded,
+                                  bladeIcon: BladeIconName.target,
+                                  iconColor: colors.primary,
+                                  label: currentLang == AppLanguage.vi
+                                      ? 'Mục tiêu rèn luyện'
+                                      : 'Training Goals',
+                                  badgeText: activeGoal != null
+                                      ? '${activeGoal.targetValue.toStringAsFixed(0)} ${activeGoal.goalType == GoalType.distance ? (useMetricUnits ? 'km' : 'mi') : (activeGoal.goalType == GoalType.workouts ? (currentLang == AppLanguage.vi ? 'buổi' : 'runs') : 'kcal')}'
+                                      : (currentLang == AppLanguage.vi
+                                            ? 'Thiết lập'
+                                            : 'Set goal'),
+                                  onTap: () => Navigator.of(context).push(
+                                    MaterialPageRoute(builder: (_) => const GoalScreen()),
+                                  ),
+                                ),
+                                const SizedBox(height: KineticTokens.spaceXXS),
+
+                                // Achievements Action
+                                KineticProfileActionTile(
+                                  icon: Icons.emoji_events_outlined,
+                                  bladeIcon: BladeIconName.trophy,
+                                  iconColor: colors.tertiary,
+                                  label: AppTranslations.get('achievements', currentLang),
+                                  badgeText:
+                                      '${workoutsAsync.valueOrNull?.length ?? 0} ${currentLang == AppLanguage.vi ? 'buổi' : 'runs'}',
+                                  onTap: () => _openAchievements(
+                                    context,
+                                    currentLang: currentLang,
+                                    totalWorkouts: workoutsAsync.valueOrNull?.length ?? 0,
+                                    currentStreak: streak.currentStreak,
+                                    longestStreak: streak.longestStreak,
+                                    totalDistanceKm:
+                                        workoutsAsync.valueOrNull?.fold<double>(
+                                          0,
+                                          (sum, workout) => sum + workout.distanceKm,
+                                        ) ??
+                                        0,
+                                  ),
+                                ),
+                                const SizedBox(height: KineticTokens.spaceXXS),
+
+                                // Settings Action
+                                KineticProfileActionTile(
+                                  icon: Icons.settings_outlined,
+                                  bladeIcon: BladeIconName.gear,
+                                  iconColor: colors.textSecondary,
+                                  label: AppTranslations.get('settings', currentLang),
+                                  subtitle: currentLang == AppLanguage.vi
+                                      ? 'Giao diện, ngôn ngữ, thông báo, quyền'
+                                      : 'Appearance, language, alerts, access',
+                                  onTap: () => Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => const SettingsScreen(),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: KineticTokens.spaceXXS),
+
+                                // Security & Password Action
+                                KineticProfileActionTile(
+                                  icon: Icons.shield_outlined,
+                                  bladeIcon: BladeIconName.shield,
+                                  iconColor: colors.secondary,
+                                  label: AppTranslations.get('security', currentLang),
+                                  onTap: () => _showSecuritySheet(
+                                    context,
+                                    _accountUsername(user),
+                                    currentLang,
+                                    ref,
+                                  ),
+                                ),
+                                const SizedBox(height: KineticTokens.spaceXXS),
+
+                                // Sign Out Action (Destructive)
+                                KineticProfileActionTile(
+                                  icon: Icons.logout_rounded,
+                                  bladeIcon: BladeIconName.logout,
+                                  isDestructive: true,
+                                  showDivider: false,
+                                  label: AppTranslations.get('logout', currentLang),
+                                  onTap: () => _logout(context, ref),
+                                ),
+                              ],
+                            ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              const SizedBox(height: KineticTokens.spaceXS),
-
-              // Training Goals Action
-              KineticProfileActionTile(
-                icon: Icons.track_changes_rounded,
-                bladeIcon: BladeIconName.target,
-                iconColor: colors.primary,
-                label: currentLang == AppLanguage.vi
-                    ? 'Mục tiêu rèn luyện'
-                    : 'Training Goals',
-                badgeText: activeGoal != null
-                    ? '${activeGoal.targetValue.toStringAsFixed(0)} ${activeGoal.goalType == GoalType.distance ? (useMetricUnits ? 'km' : 'mi') : (activeGoal.goalType == GoalType.workouts ? (currentLang == AppLanguage.vi ? 'buổi' : 'runs') : 'kcal')}'
-                    : (currentLang == AppLanguage.vi ? 'Thiết lập' : 'Set goal'),
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const GoalScreen()),
-                ),
-              ),
-              const SizedBox(height: KineticTokens.spaceXXS),
-
-              // Achievements Action
-              KineticProfileActionTile(
-                icon: Icons.emoji_events_outlined,
-                bladeIcon: BladeIconName.trophy,
-                iconColor: colors.tertiary,
-                label: AppTranslations.get('achievements', currentLang),
-                badgeText:
-                    '${workoutsAsync.valueOrNull?.length ?? 0} ${currentLang == AppLanguage.vi ? 'buổi' : 'runs'}',
-                onTap: () => _openAchievements(
-                  context,
-                  currentLang: currentLang,
-                  totalWorkouts: workoutsAsync.valueOrNull?.length ?? 0,
-                  currentStreak: streak.currentStreak,
-                  longestStreak: streak.longestStreak,
-                  totalDistanceKm:
-                      workoutsAsync.valueOrNull?.fold<double>(
-                        0,
-                        (sum, workout) => sum + workout.distanceKm,
-                      ) ??
-                      0,
-                ),
-              ),
-              const SizedBox(height: KineticTokens.spaceXXS),
-
-
-              // Security & Password Action
-              KineticProfileActionTile(
-                icon: Icons.shield_outlined,
-                bladeIcon: BladeIconName.shield,
-                iconColor: colors.secondary,
-                label: AppTranslations.get('security', currentLang),
-                onTap: () => _showSecuritySheet(
-                  context,
-                  _accountUsername(user),
-                  currentLang,
-                  ref,
-                ),
-              ),
-              const SizedBox(height: KineticTokens.spaceXXS),
-
-              // Sign Out Action (Destructive)
-              KineticProfileActionTile(
-                icon: Icons.logout_rounded,
-                bladeIcon: BladeIconName.logout,
-                isDestructive: true,
-                label: AppTranslations.get('logout', currentLang),
-                onTap: () => _logout(context, ref),
-              ),
-            ],
-          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   void _showAvatarSourceSheet(BuildContext context, WidgetRef ref) {
     final currentLang = ref.read(appLanguageProvider);
@@ -266,49 +302,64 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final user = Supabase.instance.client.auth.currentUser;
     final userMetadata = user?.userMetadata ?? {};
     final isGoogleUser = user?.appMetadata['provider'] == 'google';
-    final isPasswordUpgraded = isGoogleUser || (userMetadata['password_upgraded_v1'] == true);
+    final isPasswordUpgraded =
+        isGoogleUser || (userMetadata['password_upgraded_v1'] == true);
 
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (ctx) => SafeArea(
-        child: Container(
-          decoration: BoxDecoration(
-            color: colors.surface1,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(KineticTokens.radiusHero)),
-            border: Border(top: BorderSide(color: colors.borderSubtle)),
-          ),
-          padding: const EdgeInsets.fromLTRB(KineticTokens.spaceLG, KineticTokens.spaceMD, KineticTokens.spaceLG, KineticTokens.spaceXL),
+      builder: (ctx) => KineticGlassBottomSheet(
+        floating: true,
+        borderRadius: 28,
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
+        child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Align(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: colors.borderSubtle,
-                    borderRadius: BorderRadius.circular(999),
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: colors.secondary.withValues(alpha: 0.14),
+                      border: Border.all(
+                        color: colors.secondary.withValues(alpha: 0.35),
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.shield_outlined,
+                      color: colors.secondary,
+                      size: 20,
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                AppTranslations.get('security', currentLang),
-                style: KineticTypography.headlineMedium.copyWith(
-                  color: colors.textPrimary,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '@$accountUsername',
-                style: KineticTypography.bodySmall.copyWith(
-                  color: colors.textMuted,
-                  fontWeight: FontWeight.w600,
-                ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          AppTranslations.get('security', currentLang),
+                          style: KineticTypography.headlineMedium.copyWith(
+                            color: colors.textPrimary,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '@$accountUsername',
+                          style: KineticTypography.bodySmall.copyWith(
+                            color: colors.textMuted,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
 
@@ -318,15 +369,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: colors.surface2,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: colors.tertiary.withValues(alpha: 0.4), width: 1.2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: colors.tertiary.withValues(alpha: 0.12),
-                        blurRadius: 14,
-                      ),
-                    ],
+                    color: colors.tertiary.withValues(
+                      alpha: colors.isDark ? 0.14 : 0.08,
+                    ),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: colors.tertiary.withValues(alpha: 0.40),
+                      width: 1.1,
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -339,14 +389,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: colors.tertiary.withValues(alpha: 0.15),
-                              border: Border.all(color: colors.tertiary.withValues(alpha: 0.4)),
+                              border: Border.all(
+                                color: colors.tertiary.withValues(alpha: 0.4),
+                              ),
                             ),
-                            child: Icon(Icons.security_update_good_rounded, color: colors.tertiary, size: 20),
+                            child: Icon(
+                              Icons.security_update_good_rounded,
+                              color: colors.tertiary,
+                              size: 20,
+                            ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              AppTranslations.get('security_upgrade_title', currentLang),
+                              AppTranslations.get(
+                                'security_upgrade_title',
+                                currentLang,
+                              ),
                               style: KineticTypography.label.copyWith(
                                 color: colors.tertiary,
                                 fontWeight: FontWeight.w900,
@@ -358,7 +417,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        AppTranslations.get('security_upgrade_desc', currentLang),
+                        AppTranslations.get(
+                          'security_upgrade_desc',
+                          currentLang,
+                        ),
                         style: KineticTypography.bodySmall.copyWith(
                           color: colors.textSecondary,
                           height: 1.35,
@@ -366,7 +428,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                       const SizedBox(height: 12),
                       KineticButton(
-                        label: AppTranslations.get('update_password_action', currentLang),
+                        label: AppTranslations.get(
+                          'update_password_action',
+                          currentLang,
+                        ),
                         icon: Icons.lock_reset_rounded,
                         variant: KineticButtonVariant.primary,
                         onPressed: () {
@@ -383,15 +448,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: colors.surface2,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: colors.secondary.withValues(alpha: 0.4), width: 1.2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: colors.secondary.withValues(alpha: 0.12),
-                        blurRadius: 14,
-                      ),
-                    ],
+                    color: colors.secondary.withValues(
+                      alpha: colors.isDark ? 0.14 : 0.08,
+                    ),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: colors.secondary.withValues(alpha: 0.40),
+                      width: 1.1,
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -401,9 +465,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: colors.secondary.withValues(alpha: 0.15),
-                          border: Border.all(color: colors.secondary.withValues(alpha: 0.4)),
+                          border: Border.all(
+                            color: colors.secondary.withValues(alpha: 0.4),
+                          ),
                         ),
-                        child: Icon(Icons.verified_user_rounded, color: colors.secondary, size: 22),
+                        child: Icon(
+                          Icons.verified_user_rounded,
+                          color: colors.secondary,
+                          size: 22,
+                        ),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -463,7 +533,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     : 'Link a Google account to sign back in if you lose access.',
                 onTap: () {
                   Navigator.of(ctx).pop();
-                  _showGoogleGmailRecoverySheet(context, currentLang: currentLang);
+                  _showGoogleGmailRecoverySheet(
+                    context,
+                    currentLang: currentLang,
+                  );
                 },
               ),
               const SizedBox(height: 10),
@@ -497,15 +570,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final colors = context.kinetic;
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: colors.surface1,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-          side: BorderSide(
-            color: colors.error.withValues(alpha: 0.5),
-            width: 1.2,
-          ),
-        ),
+      builder: (ctx) => KineticGlassDialog(
+        borderColor: colors.error.withValues(alpha: 0.45),
         title: Row(
           children: [
             Container(
@@ -514,7 +580,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 shape: BoxShape.circle,
                 color: colors.error.withValues(alpha: 0.15),
               ),
-              child: Icon(Icons.warning_amber_rounded, color: colors.error, size: 22),
+              child: Icon(
+                Icons.warning_amber_rounded,
+                color: colors.error,
+                size: 22,
+              ),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -548,19 +618,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
             ),
           ),
-          ElevatedButton(
+          TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: colors.error,
-              foregroundColor: colors.onPrimary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
             child: Text(
               isVi ? 'Xác nhận xóa' : 'Confirm Delete',
               style: KineticTypography.label.copyWith(
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w700,
+                color: colors.error,
               ),
             ),
           ),
@@ -577,26 +641,30 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           builder: (ctx) => PopScope(
             canPop: false,
             child: Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
-                decoration: BoxDecoration(
-                  color: colors.surface1,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: colors.error.withValues(alpha: 0.4), width: 1.2),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(color: colors.error),
-                    const SizedBox(height: 18),
-                    Text(
-                      isVi ? 'Đang xóa tài khoản...' : 'Deleting account...',
-                      style: KineticTypography.bodyMedium.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: colors.textPrimary,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: KineticCard(
+                  useLiquidGlass: true,
+                  borderRadius: 21,
+                  borderColor: colors.error.withValues(alpha: 0.4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 28,
+                    vertical: 24,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(color: colors.error),
+                      const SizedBox(height: 18),
+                      Text(
+                        isVi ? 'Đang xóa tài khoản...' : 'Deleting account...',
+                        style: KineticTypography.bodyMedium.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: colors.textPrimary,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -624,7 +692,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   isVi
                       ? 'Tài khoản và toàn bộ dữ liệu đã được xóa thành công.'
                       : 'Account and all data deleted successfully.',
-                  style: KineticTypography.bodySmall.copyWith(color: colors.textPrimary),
+                  style: KineticTypography.bodySmall.copyWith(
+                    color: colors.textPrimary,
+                  ),
                 ),
               ),
             );
@@ -639,7 +709,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   isVi
                       ? 'Lỗi khi xóa tài khoản: $e'
                       : 'Error deleting account: $e',
-                  style: KineticTypography.bodySmall.copyWith(color: colors.onPrimary),
+                  style: KineticTypography.bodySmall.copyWith(
+                    color: colors.onPrimary,
+                  ),
                 ),
               ),
             );
@@ -658,7 +730,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  void _showGoogleGmailRecoverySheet(BuildContext context, {required AppLanguage currentLang}) {
+  void _showGoogleGmailRecoverySheet(
+    BuildContext context, {
+    required AppLanguage currentLang,
+  }) {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -675,20 +750,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     required int longestStreak,
     required double totalDistanceKm,
   }) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => const AchievementsScreen(),
-      ),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const AchievementsScreen()));
   }
 
   Future<void> _logout(BuildContext context, WidgetRef ref) async {
     final confirmed = await AetronLogoutDialog.show(context);
     if (confirmed == true && context.mounted) {
-      final currentUserId = Supabase.instance.client.auth.currentUser?.id;
-      if (currentUserId != null) {
-        await LocalDB.clearAllForUser(currentUserId);
-      }
+      // Keep durable local workouts, including pending uploads, on sign-out.
       await Supabase.instance.client.auth.signOut();
       ref.invalidate(workoutListProvider);
       if (context.mounted) {
@@ -737,14 +807,13 @@ class _GoogleGmailRecoverySheetState extends State<_GoogleGmailRecoverySheet> {
   void initState() {
     super.initState();
     try {
-      _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen((
-        _,
-      ) async {
-        try {
-          await Supabase.instance.client.auth.getUser();
-        } catch (_) {}
-        if (mounted) setState(() {});
-      });
+      _authSubscription = Supabase.instance.client.auth.onAuthStateChange
+          .listen((_) async {
+            try {
+              await Supabase.instance.client.auth.getUser();
+            } catch (_) {}
+            if (mounted) setState(() {});
+          });
     } catch (_) {}
   }
 
@@ -776,14 +845,14 @@ class _GoogleGmailRecoverySheetState extends State<_GoogleGmailRecoverySheet> {
         _isLinking = false;
         _statusMessage = opened
             ? (isVi
-                ? 'Hoàn tất đăng nhập Google trên trình duyệt, sau đó quay lại Aetron.'
-                : 'Complete Google sign-in in your browser, then return to Aetron.')
+                  ? 'Hoàn tất đăng nhập Google trên trình duyệt, sau đó quay lại Aetron.'
+                  : 'Complete Google sign-in in your browser, then return to Aetron.')
             : null;
         _errorMessage = opened
             ? null
             : (isVi
-                ? 'Không thể mở đăng nhập Google.'
-                : 'Could not open Google sign-in.');
+                  ? 'Không thể mở đăng nhập Google.'
+                  : 'Could not open Google sign-in.');
       });
     } on AuthException catch (error) {
       if (!mounted) return;
@@ -809,30 +878,15 @@ class _GoogleGmailRecoverySheetState extends State<_GoogleGmailRecoverySheet> {
     final isVi = widget.currentLang == AppLanguage.vi;
     final linked = _isGoogleLinked;
 
-    return SafeArea(
-      child: Container(
-        decoration: BoxDecoration(
-          color: colors.surface1,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(KineticTokens.radiusHero)),
-          border: Border(top: BorderSide(color: colors.borderSubtle)),
-        ),
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+    return KineticGlassBottomSheet(
+      floating: true,
+      borderRadius: 28,
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
+      child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: colors.borderSubtle,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
             Row(
               children: [
                 Container(
@@ -848,7 +902,9 @@ class _GoogleGmailRecoverySheetState extends State<_GoogleGmailRecoverySheet> {
                 const SizedBox(width: 14),
                 Expanded(
                   child: Text(
-                    isVi ? 'Khôi phục qua Google Gmail' : 'Google Gmail recovery',
+                    isVi
+                        ? 'Khôi phục qua Google Gmail'
+                        : 'Google Gmail recovery',
                     style: KineticTypography.headlineMedium.copyWith(
                       color: colors.textPrimary,
                       fontWeight: FontWeight.w900,
@@ -882,11 +938,11 @@ class _GoogleGmailRecoverySheetState extends State<_GoogleGmailRecoverySheet> {
                     child: Text(
                       linked
                           ? (isVi
-                              ? 'Đã liên kết: ${_googleEmail ?? "Tài khoản Google"}'
-                              : 'Linked: ${_googleEmail ?? "Google account"}')
+                                ? 'Đã liên kết: ${_googleEmail ?? "Tài khoản Google"}'
+                                : 'Linked: ${_googleEmail ?? "Google account"}')
                           : (isVi
-                              ? 'Chưa liên kết Google Gmail'
-                              : 'No Google Gmail linked'),
+                                ? 'Chưa liên kết Google Gmail'
+                                : 'No Google Gmail linked'),
                       style: KineticTypography.bodySmall.copyWith(
                         color: linked ? colors.secondary : colors.textPrimary,
                         fontWeight: FontWeight.w800,
@@ -900,11 +956,11 @@ class _GoogleGmailRecoverySheetState extends State<_GoogleGmailRecoverySheet> {
             Text(
               linked
                   ? (isVi
-                      ? 'Bạn có thể khôi phục quyền truy cập bằng cách chọn Tiếp tục với Google ở màn hình đăng nhập Aetron.'
-                      : 'You can recover access by choosing Continue with Google on the Aetron sign-in screen.')
+                        ? 'Bạn có thể khôi phục quyền truy cập bằng cách chọn Tiếp tục với Google ở màn hình đăng nhập Aetron.'
+                        : 'You can recover access by choosing Continue with Google on the Aetron sign-in screen.')
                   : (isVi
-                      ? 'Chọn tài khoản Gmail bạn muốn dùng để khôi phục tài khoản khi cần.'
-                      : 'Choose the Gmail account you want to use for account recovery.'),
+                        ? 'Chọn tài khoản Gmail bạn muốn dùng để khôi phục tài khoản khi cần.'
+                        : 'Choose the Gmail account you want to use for account recovery.'),
               style: KineticTypography.bodySmall.copyWith(
                 color: colors.textMuted,
                 height: 1.35,
@@ -924,7 +980,9 @@ class _GoogleGmailRecoverySheetState extends State<_GoogleGmailRecoverySheet> {
               label: linked
                   ? (isVi ? 'ĐÃ LIÊN KẾT GOOGLE GMAIL' : 'GOOGLE GMAIL LINKED')
                   : (isVi ? 'LIÊN KẾT GOOGLE GMAIL' : 'LINK GOOGLE GMAIL'),
-              variant: linked ? KineticButtonVariant.secondary : KineticButtonVariant.primary,
+              variant: linked
+                  ? KineticButtonVariant.secondary
+                  : KineticButtonVariant.primary,
               isLoading: _isLinking,
               onPressed: linked || _isLinking ? null : _linkGoogleGmail,
             ),
@@ -943,7 +1001,10 @@ class _RecoveryMessageBox extends StatelessWidget {
     required this.textColor,
   });
 
-  factory _RecoveryMessageBox.error(String message, {required KineticColors colors}) {
+  factory _RecoveryMessageBox.error(
+    String message, {
+    required KineticColors colors,
+  }) {
     return _RecoveryMessageBox(
       message: message,
       backgroundColor: colors.error.withValues(alpha: 0.15),
@@ -952,7 +1013,10 @@ class _RecoveryMessageBox extends StatelessWidget {
     );
   }
 
-  factory _RecoveryMessageBox.success(String message, {required KineticColors colors}) {
+  factory _RecoveryMessageBox.success(
+    String message, {
+    required KineticColors colors,
+  }) {
     return _RecoveryMessageBox(
       message: message,
       backgroundColor: colors.secondary.withValues(alpha: 0.15),
@@ -1000,60 +1064,17 @@ class _SecurityOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.kinetic;
-    final resolvedIconColor = iconColor ?? colors.primary;
+    final resolvedIconColor = iconColor;
+    final isDestructive =
+        resolvedIconColor != null && resolvedIconColor == context.kinetic.error;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Ink(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: colors.surface2,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: colors.borderSubtle),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: resolvedIconColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: resolvedIconColor, size: 18),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: KineticTypography.bodyMedium.copyWith(
-                        color: colors.textPrimary,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: KineticTypography.bodySmall.copyWith(
-                        color: colors.textMuted,
-                        height: 1.35,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(Icons.chevron_right_rounded, color: colors.textMuted),
-            ],
-          ),
-        ),
-      ),
+    return KineticGlassOptionTile(
+      icon: icon,
+      title: title,
+      subtitle: subtitle,
+      accentColor: resolvedIconColor,
+      isDestructive: isDestructive,
+      onTap: onTap,
     );
   }
 }
@@ -1117,7 +1138,9 @@ class _UpdatePasswordSheetState extends State<_UpdatePasswordSheet> {
         SnackBar(
           content: Text(
             AppTranslations.get('password_updated_success', widget.currentLang),
-            style: KineticTypography.bodySmall.copyWith(color: colors.onPrimary),
+            style: KineticTypography.bodySmall.copyWith(
+              color: colors.onPrimary,
+            ),
           ),
           backgroundColor: colors.secondary,
         ),
@@ -1144,39 +1167,19 @@ class _UpdatePasswordSheetState extends State<_UpdatePasswordSheet> {
     final colors = context.kinetic;
     final lang = widget.currentLang;
 
-    return SafeArea(
-      child: Container(
-        decoration: BoxDecoration(
-          color: colors.surface1,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(KineticTokens.radiusHero)),
-          border: Border(top: BorderSide(color: colors.borderSubtle)),
-        ),
-        padding: EdgeInsets.fromLTRB(
-          20,
-          16,
-          20,
-          MediaQuery.of(context).viewInsets.bottom + 24,
-        ),
-        child: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Align(
-                  child: Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: colors.borderSubtle,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  AppTranslations.get('security_upgrade_title', lang),
+    return KineticGlassBottomSheet(
+      floating: true,
+      borderRadius: 28,
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
+      child: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                AppTranslations.get('security_upgrade_title', lang),
                   style: KineticTypography.headlineSmall.copyWith(
                     color: colors.textPrimary,
                     fontWeight: FontWeight.w900,
@@ -1217,14 +1220,21 @@ class _UpdatePasswordSheetState extends State<_UpdatePasswordSheet> {
                     ),
                     filled: true,
                     fillColor: colors.surface2,
-                    prefixIcon: Icon(Icons.lock_outline_rounded, color: colors.primary, size: 20),
+                    prefixIcon: Icon(
+                      Icons.lock_outline_rounded,
+                      color: colors.primary,
+                      size: 20,
+                    ),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                        _obscurePassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
                         color: colors.primary,
                         size: 20,
                       ),
-                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
@@ -1272,14 +1282,23 @@ class _UpdatePasswordSheetState extends State<_UpdatePasswordSheet> {
                     ),
                     filled: true,
                     fillColor: colors.surface2,
-                    prefixIcon: Icon(Icons.lock_clock_outlined, color: colors.primary, size: 20),
+                    prefixIcon: Icon(
+                      Icons.lock_clock_outlined,
+                      color: colors.primary,
+                      size: 20,
+                    ),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscureConfirmPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                        _obscureConfirmPassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
                         color: colors.primary,
                         size: 20,
                       ),
-                      onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                      onPressed: () => setState(
+                        () =>
+                            _obscureConfirmPassword = !_obscureConfirmPassword,
+                      ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
@@ -1314,7 +1333,6 @@ class _UpdatePasswordSheetState extends State<_UpdatePasswordSheet> {
             ),
           ),
         ),
-      ),
     );
   }
 }

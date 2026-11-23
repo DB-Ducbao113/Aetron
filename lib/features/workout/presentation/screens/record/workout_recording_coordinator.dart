@@ -32,49 +32,112 @@ class WorkoutRecordingCoordinator {
     required WorkoutRemoteDataSource workoutRemote,
     required WorkoutProcessingRemoteDataSource processingRemote,
     required String? Function() currentUserId,
+    Future<void> Function(LocalGPSPoint)? persistGps,
+    Future<void> Function(LocalStepInterval)? persistStep,
+    DateTime Function()? snapshotClock,
   }) : _rawTracking = rawTracking,
        _workoutRemote = workoutRemote,
        _processingRemote = processingRemote,
-       _currentUserId = currentUserId;
+       _currentUserId = currentUserId,
+       _persistGps = persistGps ?? LocalDB.saveRawGpsPoint,
+       _persistStep = persistStep ?? LocalDB.saveRawStepInterval,
+       _snapshotClock = snapshotClock ?? DateTime.now;
 
   final RawTrackingRemoteDataSource _rawTracking;
   final WorkoutRemoteDataSource _workoutRemote;
   final WorkoutProcessingRemoteDataSource _processingRemote;
   final String? Function() _currentUserId;
+  final Future<void> Function(LocalGPSPoint) _persistGps;
+  final Future<void> Function(LocalStepInterval) _persistStep;
+  final DateTime Function() _snapshotClock;
+  final _localWrites = <Future<void>>{};
+  final _failedLocalWrites = <Future<void> Function()>[];
   final WorkoutTrackingEngine _trackingEngine = const WorkoutTrackingEngine();
 
   static const int _kRawGpsFlushThreshold = 24;
   static const int _kRawStepFlushThreshold = 6;
   static const Duration _kRawTrackingFlushInterval = Duration(seconds: 5);
-  static const Duration _kLiveRouteSnapshotInterval = Duration(seconds: 5);
+  // Full route snapshots are auxiliary recovery data. Raw tracking and
+  // local durability retain their independent five-second flush cadence.
+  static const Duration _kLiveRouteSnapshotInterval = Duration(seconds: 30);
 
   final List<_BufferedRawGpsPoint> _pendingRawGpsPoints = [];
   final List<_BufferedRawStepInterval> _pendingRawStepIntervals = [];
 
   DateTime? _lastRawStepIntervalEnd;
-  DateTime? _lastLiveRouteSnapshotSyncAt;
+  DateTime? _lastLiveRouteSnapshotAttemptAt;
   String? _activeWorkoutId;
   bool _remoteWorkoutShellReady = false;
   bool _isFlushingRawGpsPoints = false;
   bool _isFlushingRawStepIntervals = false;
   bool _isSyncingLiveRouteSnapshot = false;
+  bool _hasLocalStorageError = false;
   Timer? _rawTrackingFlushTimer;
   _PendingLiveRouteSnapshot? _pendingLiveRouteSnapshot;
 
   int get pendingRawGpsPointCount => _pendingRawGpsPoints.length;
   int get pendingRawStepIntervalCount => _pendingRawStepIntervals.length;
+  bool get hasLocalStorageError => _hasLocalStorageError;
+
+  void _persistRaw(Future<void> Function() write) {
+    late final Future<void> attempt;
+    attempt = Future<void>.sync(write)
+        .then<void>(
+          (_) {},
+          onError: (Object error, StackTrace stack) {
+            _failedLocalWrites.add(write);
+            _hasLocalStorageError = true;
+            debugPrint(
+              '[Workout][StorageError] Raw record retained for retry: $error',
+            );
+          },
+        )
+        .whenComplete(() => _localWrites.remove(attempt));
+    _localWrites.add(attempt);
+  }
+
+  /// Before acknowledging a workout, finish in-flight writes and retry any
+  /// failed raw writes once. A failed retry leaves the data in memory and
+  /// blocks the terminal save; it is never treated as a durable record.
+  Future<void> drainLocalWrites() async {
+    while (_localWrites.isNotEmpty) {
+      await Future.wait(_localWrites.toList());
+    }
+    final retries = List<Future<void> Function()>.of(_failedLocalWrites);
+    _failedLocalWrites.clear();
+    for (final write in retries) {
+      _persistRaw(write);
+    }
+    while (_localWrites.isNotEmpty) {
+      await Future.wait(_localWrites.toList());
+    }
+    _hasLocalStorageError = _failedLocalWrites.isNotEmpty;
+    if (_hasLocalStorageError) {
+      throw StateError('Raw workout records could not be persisted');
+    }
+  }
 
   void reset() {
+    if (_pendingRawGpsPoints.isNotEmpty ||
+        _pendingRawStepIntervals.isNotEmpty) {
+      debugPrint(
+        '[WorkoutRecordingCoordinator] reset called with '
+        '${_pendingRawGpsPoints.length} GPS points and '
+        '${_pendingRawStepIntervals.length} step intervals pending in memory '
+        '(persisted in LocalDB).',
+      );
+    }
     _pendingRawGpsPoints.clear();
     _pendingRawStepIntervals.clear();
     _pendingLiveRouteSnapshot = null;
     _lastRawStepIntervalEnd = null;
-    _lastLiveRouteSnapshotSyncAt = null;
+    _lastLiveRouteSnapshotAttemptAt = null;
     _activeWorkoutId = null;
     _remoteWorkoutShellReady = false;
     _isFlushingRawGpsPoints = false;
     _isFlushingRawStepIntervals = false;
     _isSyncingLiveRouteSnapshot = false;
+    _hasLocalStorageError = false;
     _rawTrackingFlushTimer?.cancel();
     _rawTrackingFlushTimer = null;
   }
@@ -128,7 +191,7 @@ class WorkoutRecordingCoordinator {
         ..confidence = _trackingEngine.confidenceForAccuracy(
           position.accuracy >= 0 ? position.accuracy : null,
         );
-      unawaited(LocalDB.saveRawGpsPoint(localPoint));
+      _persistRaw(() => _persistGps(localPoint));
     }
 
     _pendingRawGpsPoints.add(
@@ -143,6 +206,13 @@ class WorkoutRecordingCoordinator {
         deviceSource: deviceSource,
       ),
     );
+    debugPrint(
+      '[Workout][RawTracking] buffered raw fix #$pendingRawGpsPointCount: '
+      'lat=${position.latitude.toStringAsFixed(6)}, '
+      'lng=${position.longitude.toStringAsFixed(6)}, '
+      'acc=${position.accuracy.toStringAsFixed(1)}m, '
+      'time=${position.timestamp.toUtc().toIso8601String()}',
+    );
     _maybeFlushRawTrackingBuffers(workoutId);
   }
 
@@ -150,8 +220,11 @@ class WorkoutRecordingCoordinator {
     int stepsCount, {
     required DateTime? startedAt,
     required String? workoutId,
+    DateTime? observationTime,
+    String deviceSource = 'pedometer_step_count_stream',
   }) {
-    final nowUtc = DateTime.now().toUtc();
+    if (stepsCount <= 0) return;
+    final nowUtc = (observationTime ?? DateTime.now()).toUtc();
     final intervalStart = (_lastRawStepIntervalEnd ?? startedAt ?? nowUtc)
         .toUtc();
     final intervalEnd = nowUtc.isAfter(intervalStart)
@@ -164,8 +237,8 @@ class WorkoutRecordingCoordinator {
         ..intervalStart = intervalStart
         ..intervalEnd = intervalEnd
         ..stepsCount = stepsCount
-        ..deviceSource = 'pedometer_step_count_stream';
-      unawaited(LocalDB.saveRawStepInterval(localInterval));
+        ..deviceSource = deviceSource;
+      _persistRaw(() => _persistStep(localInterval));
     }
 
     _pendingRawStepIntervals.add(
@@ -173,7 +246,7 @@ class WorkoutRecordingCoordinator {
         intervalStart: intervalStart,
         intervalEnd: intervalEnd,
         stepsCount: stepsCount,
-        deviceSource: 'pedometer_step_count_stream',
+        deviceSource: deviceSource,
       ),
     );
     _lastRawStepIntervalEnd = intervalEnd;
@@ -183,6 +256,10 @@ class WorkoutRecordingCoordinator {
   void markRemoteWorkoutShellReady() {
     _remoteWorkoutShellReady = true;
     _ensurePeriodicFlushTimer();
+    final workoutId = _activeWorkoutId;
+    if (workoutId != null && workoutId.isNotEmpty) {
+      unawaited(flushPendingRawTracking(workoutId: workoutId, force: true));
+    }
   }
 
   void queueLiveRouteSnapshot({
@@ -195,10 +272,10 @@ class WorkoutRecordingCoordinator {
 
     _activeWorkoutId = workoutId;
 
-    final now = DateTime.now();
-    final lastSync = _lastLiveRouteSnapshotSyncAt;
-    if (lastSync != null &&
-        now.difference(lastSync) < _kLiveRouteSnapshotInterval) {
+    final now = _snapshotClock();
+    final lastAttempt = _lastLiveRouteSnapshotAttemptAt;
+    if (lastAttempt != null &&
+        now.difference(lastAttempt) < _kLiveRouteSnapshotInterval) {
       return;
     }
 
@@ -219,63 +296,159 @@ class WorkoutRecordingCoordinator {
     required String workoutId,
     required bool force,
   }) async {
-    if (kIsWeb) return; // web has no Isar; raw points uploaded via live snapshot
+    if (kIsWeb) {
+      return; // web has no Isar; raw points uploaded via live snapshot
+    }
     if (!_remoteWorkoutShellReady) return;
-    if (_pendingRawGpsPoints.isEmpty && _pendingRawStepIntervals.isEmpty) {
-      return;
+
+    // Handle concurrent forced flush by waiting briefly for any active flush to complete
+    if (force) {
+      var waitCycles = 0;
+      while ((_isFlushingRawGpsPoints || _isFlushingRawStepIntervals) &&
+          waitCycles < 50) {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+        waitCycles++;
+      }
     }
 
     if ((force || _pendingRawGpsPoints.length >= _kRawGpsFlushThreshold) &&
-        _pendingRawGpsPoints.isNotEmpty &&
         !_isFlushingRawGpsPoints) {
-      final gpsBatch = List<_BufferedRawGpsPoint>.from(_pendingRawGpsPoints);
-      _pendingRawGpsPoints.clear();
-      _isFlushingRawGpsPoints = true;
-      try {
-        await _rawTracking.saveRawGpsPoints(
-          gpsBatch
-              .map((point) => point.toPayload(workoutId))
-              .toList(growable: false),
+      List<RawGpsPointPayload> payloadsToUpload = [];
+      DateTime? maxTimestamp;
+      List<int>? localIdsToMark;
+      int memoryBatchCount = 0;
+
+      if (_pendingRawGpsPoints.isNotEmpty) {
+        final memoryBatch = List<_BufferedRawGpsPoint>.from(
+          _pendingRawGpsPoints,
         );
-        debugPrint(
-          '[Workout][RawTracking] uploaded ${gpsBatch.length} raw GPS points',
+        memoryBatchCount = memoryBatch.length;
+        payloadsToUpload = memoryBatch
+            .map((point) => point.toPayload(workoutId))
+            .toList(growable: false);
+        maxTimestamp = memoryBatch.last.timestamp;
+      } else if (force) {
+        final unsyncedLocal = await LocalDB.getUnsyncedGpsPointsForSession(
+          workoutId,
         );
-      } catch (e) {
-        _pendingRawGpsPoints.insertAll(0, gpsBatch);
-        debugPrint(
-          '[Workout][RawTracking] GPS upload failed for $workoutId: $e',
-        );
-      } finally {
-        _isFlushingRawGpsPoints = false;
+        if (unsyncedLocal.isNotEmpty) {
+          localIdsToMark = unsyncedLocal.map((p) => p.id).toList();
+          payloadsToUpload = unsyncedLocal
+              .map(LocalDB.rawGpsPointToPayload)
+              .toList();
+          maxTimestamp = unsyncedLocal.last.timestamp;
+        }
+      }
+
+      if (payloadsToUpload.isNotEmpty) {
+        _isFlushingRawGpsPoints = true;
+        try {
+          await _rawTracking.saveRawGpsPoints(payloadsToUpload);
+          if (memoryBatchCount > 0) {
+            final removeCount = memoryBatchCount > _pendingRawGpsPoints.length
+                ? _pendingRawGpsPoints.length
+                : memoryBatchCount;
+            _pendingRawGpsPoints.removeRange(0, removeCount);
+          }
+          if (localIdsToMark != null && localIdsToMark.isNotEmpty) {
+            await LocalDB.markGpsPointsAsSynced(localIdsToMark);
+          } else if (maxTimestamp != null) {
+            await LocalDB.markGpsPointsAsSyncedForSession(
+              workoutId,
+              upToTimestamp: maxTimestamp,
+            );
+          }
+          debugPrint(
+            '[Workout][RawTracking] uploaded ${payloadsToUpload.length} raw GPS points',
+          );
+        } catch (e) {
+          debugPrint(
+            '[Workout][RawTracking] GPS upload failed for $workoutId: $e',
+          );
+        } finally {
+          _isFlushingRawGpsPoints = false;
+        }
       }
     }
 
     if ((force || _pendingRawStepIntervals.length >= _kRawStepFlushThreshold) &&
-        _pendingRawStepIntervals.isNotEmpty &&
         !_isFlushingRawStepIntervals) {
-      final stepBatch = List<_BufferedRawStepInterval>.from(
-        _pendingRawStepIntervals,
-      );
-      _pendingRawStepIntervals.clear();
-      _isFlushingRawStepIntervals = true;
-      try {
-        await _rawTracking.saveRawStepIntervals(
-          stepBatch
-              .map((interval) => interval.toPayload(workoutId))
-              .toList(growable: false),
+      List<RawStepIntervalPayload> payloadsToUpload = [];
+      DateTime? maxEndTimestamp;
+      List<int>? localIdsToMark;
+      int memoryBatchCount = 0;
+
+      if (_pendingRawStepIntervals.isNotEmpty) {
+        final memoryBatch = List<_BufferedRawStepInterval>.from(
+          _pendingRawStepIntervals,
         );
-        debugPrint(
-          '[Workout][RawTracking] uploaded ${stepBatch.length} raw step intervals',
+        memoryBatchCount = memoryBatch.length;
+        payloadsToUpload = memoryBatch
+            .map((interval) => interval.toPayload(workoutId))
+            .toList(growable: false);
+        maxEndTimestamp = memoryBatch.last.intervalEnd;
+      } else if (force) {
+        final unsyncedLocal = await LocalDB.getUnsyncedStepIntervalsForSession(
+          workoutId,
         );
-      } catch (e) {
-        _pendingRawStepIntervals.insertAll(0, stepBatch);
-        debugPrint(
-          '[Workout][RawTracking] step upload failed for $workoutId: $e',
-        );
-      } finally {
-        _isFlushingRawStepIntervals = false;
+        if (unsyncedLocal.isNotEmpty) {
+          localIdsToMark = unsyncedLocal.map((i) => i.id).toList();
+          payloadsToUpload = unsyncedLocal
+              .map((interval) => interval.toPayload())
+              .toList();
+          maxEndTimestamp = unsyncedLocal.last.intervalEnd;
+        }
+      }
+
+      if (payloadsToUpload.isNotEmpty) {
+        _isFlushingRawStepIntervals = true;
+        try {
+          await _rawTracking.saveRawStepIntervals(payloadsToUpload);
+          if (memoryBatchCount > 0) {
+            final removeCount =
+                memoryBatchCount > _pendingRawStepIntervals.length
+                ? _pendingRawStepIntervals.length
+                : memoryBatchCount;
+            _pendingRawStepIntervals.removeRange(0, removeCount);
+          }
+          if (localIdsToMark != null && localIdsToMark.isNotEmpty) {
+            await LocalDB.markStepIntervalsAsSynced(localIdsToMark);
+          } else if (maxEndTimestamp != null) {
+            await LocalDB.markStepIntervalsAsSyncedForSession(
+              workoutId,
+              upToTimestamp: maxEndTimestamp,
+            );
+          }
+          debugPrint(
+            '[Workout][RawTracking] uploaded ${payloadsToUpload.length} raw step intervals',
+          );
+        } catch (e) {
+          debugPrint(
+            '[Workout][RawTracking] step upload failed for $workoutId: $e',
+          );
+        } finally {
+          _isFlushingRawStepIntervals = false;
+        }
       }
     }
+  }
+
+  /// Force-drain in-memory records then the durable Isar backlog. A failed
+  /// upload keeps the local workout pending instead of queuing an incomplete
+  /// server audit. Server count checks are still required.
+  Future<bool> flushForFinalization(String workoutId) async {
+    if (kIsWeb) return true;
+    for (var i = 0; i < 2; i++) {
+      await flushPendingRawTracking(workoutId: workoutId, force: true);
+    }
+    if (_isFlushingRawGpsPoints ||
+        _isFlushingRawStepIntervals ||
+        _pendingRawGpsPoints.isNotEmpty ||
+        _pendingRawStepIntervals.isNotEmpty) {
+      return false;
+    }
+    return (await LocalDB.getUnsyncedGpsPointsForSession(workoutId)).isEmpty &&
+        (await LocalDB.getUnsyncedStepIntervalsForSession(workoutId)).isEmpty;
   }
 
   Future<void> syncLiveRouteSnapshot({required bool force}) async {
@@ -283,15 +456,16 @@ class WorkoutRecordingCoordinator {
     if (!_remoteWorkoutShellReady || snapshot == null) return;
     if (_isSyncingLiveRouteSnapshot) return;
 
-    final now = DateTime.now();
-    final lastSyncAt = _lastLiveRouteSnapshotSyncAt;
+    final now = _snapshotClock();
+    final lastAttemptAt = _lastLiveRouteSnapshotAttemptAt;
     if (!force &&
-        lastSyncAt != null &&
-        now.difference(lastSyncAt) < _kLiveRouteSnapshotInterval) {
+        lastAttemptAt != null &&
+        now.difference(lastAttemptAt) < _kLiveRouteSnapshotInterval) {
       return;
     }
 
     _isSyncingLiveRouteSnapshot = true;
+    _lastLiveRouteSnapshotAttemptAt = now;
     try {
       final routePointCount = snapshot.routeSegments.fold<int>(
         0,
@@ -306,7 +480,6 @@ class WorkoutRecordingCoordinator {
             : null,
         isGpsSignalWeak: snapshot.isGpsSignalWeak,
       );
-      _lastLiveRouteSnapshotSyncAt = now;
       if (identical(_pendingLiveRouteSnapshot, snapshot)) {
         _pendingLiveRouteSnapshot = null;
       }
@@ -357,6 +530,7 @@ class WorkoutRecordingCoordinator {
       );
     } catch (e) {
       debugPrint('[Workout][Processing] enqueue failed for ${session.id}: $e');
+      rethrow;
     }
   }
 
@@ -384,7 +558,6 @@ class WorkoutRecordingCoordinator {
           'distance_km_filtered': session.distanceKm,
           'gps_gap_count': session.gpsAnalysis.gpsGapCount,
           'gps_gap_duration_sec': session.gpsAnalysis.gpsGapDurationSec,
-          'filtered_route_json': session.filteredRouteJson,
           'route_match_status': session.routeMatchStatus,
           'route_distance_source': session.routeDistanceSource,
           'route_segment_count': routeSummary.segmentCount,
@@ -395,6 +568,7 @@ class WorkoutRecordingCoordinator {
       debugPrint(
         '[Workout][RouteCorrection] enqueue failed for ${session.id}: $e',
       );
+      rethrow;
     }
   }
 
@@ -427,7 +601,9 @@ class WorkoutRecordingCoordinator {
   }
 
   void _maybeFlushRawTrackingBuffers(String? workoutId) {
-    if (!_remoteWorkoutShellReady || workoutId == null) return;
+    if (workoutId == null || workoutId.isEmpty) return;
+    _activeWorkoutId = workoutId;
+    if (!_remoteWorkoutShellReady) return;
 
     final gpsReady = _pendingRawGpsPoints.length >= _kRawGpsFlushThreshold;
     final stepReady =

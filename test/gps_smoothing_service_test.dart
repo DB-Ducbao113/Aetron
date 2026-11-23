@@ -5,7 +5,7 @@ import 'package:latlong2/latlong.dart';
 
 void main() {
   group('GpsSmoothingService', () {
-    const service = GpsSmoothingService();
+    final service = GpsSmoothingService();
 
     test('freezes marker on low-movement stationary updates', () {
       final update = service.smoothAcceptedPoint(

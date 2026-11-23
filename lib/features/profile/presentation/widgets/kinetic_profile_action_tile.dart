@@ -3,6 +3,7 @@ import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart'
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/services.dart';
 
 class KineticProfileActionTile extends StatelessWidget {
@@ -17,6 +18,7 @@ class KineticProfileActionTile extends StatelessWidget {
   /// Optional Blade icon: when set, renders this Aetron Blade glyph
   /// instead of [icon]. Call sites that omit it render as before.
   final BladeIconName? bladeIcon;
+  final bool showDivider;
 
   const KineticProfileActionTile({
     super.key,
@@ -28,6 +30,7 @@ class KineticProfileActionTile extends StatelessWidget {
     required this.onTap,
     this.isDestructive = false,
     this.bladeIcon,
+    this.showDivider = true,
   });
 
   @override
@@ -46,18 +49,37 @@ class KineticProfileActionTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(
           horizontal: KineticTokens.spaceXS,
-          vertical: KineticTokens.spaceSM,
+          vertical: 10,
         ),
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: colors.borderSubtle),
-          ),
-        ),
+        decoration: showDivider
+            ? BoxDecoration(
+                border: Border(bottom: BorderSide(color: colors.borderSubtle)),
+              )
+            : null,
         child: Row(
           children: [
-            bladeIcon != null
-                ? BladeIcon(bladeIcon!, size: 22, color: effectiveColor)
-                : Icon(icon, size: 22, color: effectiveColor),
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: effectiveColor.withValues(alpha: 0.15),
+                border: Border.all(
+                  color: effectiveColor.withValues(alpha: 0.32),
+                  width: 1.0,
+                ),
+              ),
+              child: Center(
+                child: bladeIcon != null
+                    ? BladeIcon(
+                        bladeIcon!,
+                        size: 17,
+                        color: effectiveColor,
+                        strokeWidth: 1.7,
+                      )
+                    : Icon(icon, size: 17, color: effectiveColor),
+              ),
+            ),
             const SizedBox(width: KineticTokens.spaceSM),
             Expanded(
               child: Column(
@@ -91,8 +113,7 @@ class KineticProfileActionTile extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                   color: colors.surface2,
-                  borderRadius:
-                      BorderRadius.circular(KineticTokens.radiusPill),
+                  borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
                 ),
                 child: Text(
                   badgeText!,
@@ -104,7 +125,9 @@ class KineticProfileActionTile extends StatelessWidget {
               const SizedBox(width: KineticTokens.spaceXS),
             ],
             Icon(
-              Icons.chevron_right_rounded,
+              Theme.of(context).platform == TargetPlatform.iOS
+                  ? CupertinoIcons.chevron_forward
+                  : Icons.chevron_right_rounded,
               size: 18,
               color: colors.textMuted,
             ),

@@ -40,7 +40,7 @@ final supabaseClientProvider = AutoDisposeProvider<SupabaseClient>.internal(
 );
 
 typedef SupabaseClientRef = AutoDisposeProviderRef<SupabaseClient>;
-String _$currentUserIdHash() => r'f68f0318d3a32f57c4a1fa65002ee4250643b1bf';
+String _$currentUserIdHash() => r'988a933ba42f5e2197734a30c2f6e4695c8ceaa2';
 
 /// Current User ID Provider
 ///

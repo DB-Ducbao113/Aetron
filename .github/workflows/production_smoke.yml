@@ -15,7 +15,7 @@ jobs:
     env:
       SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
     steps:
-      - name: Check frontend and Supabase health
+      - name: Check Supabase health
         run: |
           if [ -z "$SUPABASE_ANON_KEY" ]; then
             echo "::error title=Missing GitHub Actions secret::SUPABASE_ANON_KEY is not configured"
@@ -43,24 +43,21 @@ jobs:
             }
           }
 
-          check_endpoint frontend https://aetrongps.vercel.app/app/ 200
           check_endpoint supabase-auth \
             https://xsqptdzselqyefpmdozz.supabase.co/auth/v1/health 200 \
             --header "apikey: $SUPABASE_ANON_KEY"
 
-      - name: Check Edge Function CORS preflight
+      - name: Check protected Edge Function authentication
         run: |
-          for function_name in workouts-start workouts-end gps-track generate-workout-insight; do
+          for function_name in workouts-start workouts-end gps-track generate-workout-insight deterministic-finalize-worker route-correction-worker; do
             result=$(curl --silent --show-error --output /dev/null \
               --write-out '%{http_code} %{time_total}' --max-time 10 \
-              --request OPTIONS \
-              --header 'Origin: https://aetrongps.vercel.app' \
-              --header 'Access-Control-Request-Method: POST' \
+              --request POST --header 'Content-Type: application/json' --data '{}' \
               "https://xsqptdzselqyefpmdozz.supabase.co/functions/v1/$function_name")
             status=${result%% *}
             duration=${result##* }
             echo "$function_name status=$status duration_seconds=$duration"
-            if [ "$status" != "204" ]; then
+            if [ "$status" != "401" ]; then
               echo "::error title=Edge Function unavailable::$function_name returned $status"
               exit 1
             fi

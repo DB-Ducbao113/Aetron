@@ -1,5 +1,6 @@
 // @deno-types="https://esm.sh/@supabase/supabase-js@2.105.1"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.105.1";
+import { authorizedWorkoutDispatcher } from "../_shared/workout_dispatch_auth.ts";
 
 type RoutePoint = {
   lat: number;
@@ -40,9 +41,13 @@ type ProcessingJobRow = {
   id: string;
   workout_id: string;
   attempt_count: number | null;
+  dispatch_nonce: string;
 };
 
 type WorkoutRouteRow = {
+  processing_status: string;
+  metrics_version: number;
+  client_research_result_json?: unknown;
   filtered_route_json: unknown;
   distance_km: number | null;
   route_match_metrics_json: Record<string, unknown> | null;
@@ -61,7 +66,9 @@ const corsHeaders = {
   "Content-Type": "application/json",
 };
 
-Deno.serve(async (req: Request) => {
+if (import.meta.main) Deno.serve(handleRequest);
+
+async function handleRequest(req: Request): Promise<Response> {
   try {
     if (req.method !== "POST") {
       return json({ error: "Method not allowed" }, 405);
@@ -69,41 +76,77 @@ Deno.serve(async (req: Request) => {
 
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
       Deno.env.get("AETRON_SERVICE_ROLE_KEY");
-    const authHeader = req.headers.get("Authorization") ?? "";
-    const apiKeyHeader = req.headers.get("apikey") ?? "";
-    const bearerToken = authHeader.replace(/^Bearer\s+/i, "").trim();
-
-    if (
-      !serviceRoleKey ||
-      (bearerToken !== serviceRoleKey && apiKeyHeader !== serviceRoleKey)
-    ) {
+    const payload = await authorizedWorkoutDispatcher(
+      req, "route-correction-worker", Deno.env.get("AETRON_WORKER_DISPATCH_SECRET"),
+    );
+    if (!payload) {
       return json({ error: "Unauthorized" }, 401);
     }
+    if (!serviceRoleKey) return json({ error: "Worker unavailable" }, 503);
 
-    const payload = await req.json().catch(() => ({}));
-    const workoutId = payload.workout_id as string | undefined;
-    const jobId = payload.job_id as string | undefined;
-
-    if (!workoutId && !jobId) {
-      return json({ error: "Missing workout_id or job_id" }, 400);
-    }
+    const { workout_id: workoutId, job_id: jobId, dispatch_nonce: dispatchNonce } = payload;
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       serviceRoleKey,
     );
 
-    const job = await fetchQueuedJob(supabase, { workoutId, jobId });
+    const job = await fetchQueuedJob(supabase, { workoutId, jobId, dispatchNonce });
     if (!job) {
       return json({ status: "noop", reason: "job_not_found" });
     }
-
-    await markJobStarted(supabase, job.id);
 
     const workout = await fetchWorkout(supabase, job.workout_id);
     if (!workout) {
       await failJob(supabase, job.id, "workout_not_found");
       return json({ status: "failed", reason: "workout_not_found" }, 404);
+    }
+    // The dispatcher is not the only caller. Check dependency even for
+    // direct requests and a deterministic job that exhausted its retries.
+    const { data: finalizeJob, error: finalizeError } = await supabase
+      .from("workout_processing_jobs").select("id, status")
+      .eq("workout_id", job.workout_id)
+      .eq("job_type", "deterministic_finalize")
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(1).maybeSingle();
+    if (finalizeError) throw finalizeError;
+    if (!routeCorrectionReady(workout, finalizeJob?.status)) {
+      return json({
+        status: "deferred",
+        reason: "deterministic_finalize_not_completed",
+      });
+    }
+    if (!await markJobStarted(supabase, job)) {
+      return json({ status: "noop", reason: "job_already_claimed" });
+    }
+
+    const reconciliation = workout.route_match_metrics_json
+      ?.client_scientific_reconciliation;
+    if (
+      workout.client_research_result_json != null ||
+      reconciliation != null
+    ) {
+      await completeJob(supabase, job.id);
+      return json({
+        status: "completed",
+        reason: "scientific_server_audit_preserved",
+      });
+    }
+
+    // The only implementation was identity geometry ("stub"), not a
+    // map matcher. Never award matched confidence or bridge GPS gaps.
+    const provider = Deno.env.get("ROUTE_MATCH_PROVIDER") ?? "stub";
+    if (!routeMatchingAvailable(provider)) {
+      const result = fallbackResult("no_verified_route_matching_adapter");
+      await persistRouteMatchResult(
+        supabase,
+        job.workout_id,
+        result,
+        workout.route_match_metrics_json,
+      );
+      await completeJob(supabase, job.id);
+      return json({ status: "completed", result });
     }
 
     const filteredRoute = parseRouteSegments(workout.filtered_route_json);
@@ -121,7 +164,12 @@ Deno.serve(async (req: Request) => {
       filteredRoute.length === 0
     ) {
       const result = fallbackResult("trace_too_short");
-      await persistRouteMatchResult(supabase, job.workout_id, result);
+      await persistRouteMatchResult(
+        supabase,
+        job.workout_id,
+        result,
+        workout.route_match_metrics_json,
+      );
       await completeJob(supabase, job.id);
       return json({ status: "completed", result });
     }
@@ -156,7 +204,12 @@ Deno.serve(async (req: Request) => {
       totalChunks: chunks.length,
     });
 
-    await persistRouteMatchResult(supabase, job.workout_id, result);
+    await persistRouteMatchResult(
+      supabase,
+      job.workout_id,
+      result,
+      workout.route_match_metrics_json,
+    );
     await completeJob(supabase, job.id);
 
     return json({
@@ -174,26 +227,36 @@ Deno.serve(async (req: Request) => {
       500,
     );
   }
-});
+}
+
+export function routeCorrectionReady(
+  workout: Pick<WorkoutRouteRow, "processing_status" | "metrics_version">,
+  latestFinalizeStatus: string | undefined,
+): boolean {
+  return workout.processing_status === "client_finalized" &&
+    workout.metrics_version >= 2 && latestFinalizeStatus === "completed";
+}
+
+export function routeMatchingAvailable(_provider: string): boolean {
+  // No real provider is implemented in matchChunk; the stub is not evidence.
+  return false;
+}
 
 async function fetchQueuedJob(
   supabase: SupabaseAdminClient,
-  input: { workoutId?: string; jobId?: string },
+  input: { workoutId: string; jobId: string; dispatchNonce: string },
 ): Promise<ProcessingJobRow | null> {
-  let query = supabase
+  const query = supabase
     .from("workout_processing_jobs")
     .select("*")
     .eq("job_type", ROUTE_CORRECTION_JOB_TYPE)
     .eq("status", "queued")
+    .eq("id", input.jobId)
+    .eq("workout_id", input.workoutId)
+    .eq("dispatch_nonce", input.dispatchNonce)
     .lt("attempt_count", MAX_ATTEMPTS)
     .order("created_at", { ascending: true })
     .limit(1);
-
-  if (input.jobId) {
-    query = query.eq("id", input.jobId);
-  } else if (input.workoutId) {
-    query = query.eq("workout_id", input.workoutId);
-  }
 
   const { data, error } = await query.maybeSingle();
   if (error) throw error;
@@ -215,24 +278,25 @@ async function fetchWorkout(
 
 async function markJobStarted(
   supabase: SupabaseAdminClient,
-  jobId: string,
-) {
-  const { data: current, error: currentError } = await supabase
-    .from("workout_processing_jobs")
-    .select("attempt_count")
-    .eq("id", jobId)
-    .maybeSingle();
-  if (currentError) throw currentError;
-
-  const { error } = await supabase
+  job: ProcessingJobRow,
+): Promise<boolean> {
+  const { data, error } = await supabase
     .from("workout_processing_jobs")
     .update({
       status: "running",
       started_at: new Date().toISOString(),
-      attempt_count: Number(current?.attempt_count ?? 0) + 1,
+      attempt_count: Number(job.attempt_count ?? 0) + 1,
+      dispatch_nonce: null,
+      finished_at: null,
+      error_message: null,
     })
-    .eq("id", jobId);
+    .eq("id", job.id)
+    .eq("status", "queued")
+    .eq("attempt_count", Number(job.attempt_count ?? 0))
+    .eq("dispatch_nonce", job.dispatch_nonce)
+    .select("id").maybeSingle();
   if (error) throw error;
+  return data != null;
 }
 
 async function completeJob(
@@ -431,6 +495,7 @@ async function persistRouteMatchResult(
   supabase: SupabaseAdminClient,
   workoutId: string,
   result: RouteMatchResult,
+  existingMetrics: Record<string, unknown> | null,
 ) {
   const { error } = await supabase
     .from("workout_sessions")
@@ -440,7 +505,7 @@ async function persistRouteMatchResult(
       route_match_confidence: result.confidence,
       route_distance_source: result.distanceSource,
       matched_distance_km: result.matchedDistanceKm,
-      route_match_metrics_json: result.metrics,
+      route_match_metrics_json: { ...existingMetrics, ...result.metrics },
     })
     .eq("id", workoutId);
   if (error) throw error;

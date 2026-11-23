@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/gps_validation_models.dart';
 import 'package:geolocator/geolocator.dart';
+import 'trajectory_preprocessing/trajectory_sample.dart';
 import 'package:latlong2/latlong.dart';
 
 enum TrackingGpsDecisionType { skip, seedRoute, resetAnchor, acceptRoute }
@@ -21,6 +22,7 @@ class TrackingGpsDecision {
   final double gpsGapDurationSec;
   final GpsPointOutcome outcome;
   final GpsRejectReason reason;
+  final double covarianceScale;
 
   const TrackingGpsDecision({
     required this.type,
@@ -36,7 +38,43 @@ class TrackingGpsDecision {
     this.gpsGapDurationSec = 0,
     this.outcome = GpsPointOutcome.accepted,
     this.reason = GpsRejectReason.none,
+    this.covarianceScale = 1.0,
   });
+
+  TrackingGpsDecision copyWith({
+    TrackingGpsDecisionType? type,
+    LatLng? livePoint,
+    LatLng? previewPoint,
+    String? skipReason,
+    double? segmentMeters,
+    double? rawSegmentMeters,
+    double? routeSegmentMeters,
+    double? candidateSpeedKmh,
+    bool? shouldAddDistance,
+    bool? shouldBreakRouteForDisplay,
+    double? gpsGapDurationSec,
+    GpsPointOutcome? outcome,
+    GpsRejectReason? reason,
+    double? covarianceScale,
+  }) {
+    return TrackingGpsDecision(
+      type: type ?? this.type,
+      livePoint: livePoint ?? this.livePoint,
+      previewPoint: previewPoint ?? this.previewPoint,
+      skipReason: skipReason ?? this.skipReason,
+      segmentMeters: segmentMeters ?? this.segmentMeters,
+      rawSegmentMeters: rawSegmentMeters ?? this.rawSegmentMeters,
+      routeSegmentMeters: routeSegmentMeters ?? this.routeSegmentMeters,
+      candidateSpeedKmh: candidateSpeedKmh ?? this.candidateSpeedKmh,
+      shouldAddDistance: shouldAddDistance ?? this.shouldAddDistance,
+      shouldBreakRouteForDisplay:
+          shouldBreakRouteForDisplay ?? this.shouldBreakRouteForDisplay,
+      gpsGapDurationSec: gpsGapDurationSec ?? this.gpsGapDurationSec,
+      outcome: outcome ?? this.outcome,
+      reason: reason ?? this.reason,
+      covarianceScale: covarianceScale ?? this.covarianceScale,
+    );
+  }
 }
 
 class StepTrackingDecision {
@@ -100,6 +138,137 @@ class GpsWorkoutAnalysisInput {
 class WorkoutTrackingEngine {
   const WorkoutTrackingEngine();
 
+  /// Historical main baseline uses a 5s accepted-fix gap policy.
+  /// NOTE: stationary fixes rejected by validation may appear as a GPS gap;
+  /// baseline parity does not itself fix that distinction.
+  static const double kStaleSignalGapThresholdSec = 5.0;
+
+  TrackingGpsDecision resolveTrajectoryPreprocessingDecision({
+    required TrackingGpsDecision legacyDecision,
+    required ProcessedTrajectoryPoint processedSample,
+    required LatLng livePoint,
+    required double pendingGapDurationSec,
+  }) {
+    // 1. First fix / route seeding
+    if (legacyDecision.type == TrackingGpsDecisionType.seedRoute) {
+      if (!processedSample.isAccepted) {
+        return TrackingGpsDecision(
+          type: TrackingGpsDecisionType.skip,
+          livePoint: livePoint,
+          previewPoint: legacyDecision.previewPoint,
+          outcome: GpsPointOutcome.softRejected,
+          reason: GpsRejectReason.waitingForBetterFirstFix,
+          skipReason:
+              'preprocessor_rejected_first_fix: ${processedSample.qualityFlags}',
+        );
+      }
+      return legacyDecision;
+    }
+
+    // 2. Pause-resume lifecycle anchor reset
+    if (legacyDecision.type == TrackingGpsDecisionType.resetAnchor) {
+      return legacyDecision;
+    }
+
+    // Respect hard/soft safety rejection before considering an outage anchor.
+    if (legacyDecision.type == TrackingGpsDecisionType.skip) {
+      return legacyDecision;
+    }
+
+    // 3. Outage / Signal Gap recovery
+    final isOutageGap =
+        (processedSample.isAccepted &&
+            processedSample.isGapRecovery &&
+            pendingGapDurationSec > 5.0) ||
+        (processedSample.isAccepted &&
+            legacyDecision.type == TrackingGpsDecisionType.acceptRoute &&
+            legacyDecision.outcome == GpsPointOutcome.signalGap);
+    if (isOutageGap) {
+      final gapDuration = math.max(
+        pendingGapDurationSec,
+        processedSample.timeDeltaSec,
+      );
+      return TrackingGpsDecision(
+        type: TrackingGpsDecisionType.acceptRoute,
+        livePoint: livePoint,
+        previewPoint: legacyDecision.previewPoint,
+        segmentMeters: 0,
+        rawSegmentMeters: legacyDecision.rawSegmentMeters,
+        routeSegmentMeters: legacyDecision.routeSegmentMeters,
+        candidateSpeedKmh: 0,
+        shouldAddDistance: false,
+        shouldBreakRouteForDisplay: true,
+        gpsGapDurationSec: gapDuration,
+        outcome: GpsPointOutcome.signalGap,
+        reason: GpsRejectReason.staleSignalGap,
+      );
+    }
+
+    // 5. Kinematic & accuracy outliers flagged by Preprocessor
+    if (!processedSample.isAccepted) {
+      final GpsRejectReason reason;
+      final GpsPointOutcome outcome;
+      if (processedSample.qualityFlags.contains(
+        TrajectoryQualityFlag.lowAccuracy,
+      )) {
+        reason = GpsRejectReason.lowAccuracy;
+        outcome = GpsPointOutcome.softRejected;
+      } else if (processedSample.qualityFlags.contains(
+        TrajectoryQualityFlag.speedSpike,
+      )) {
+        reason = GpsRejectReason.gpsSpeedHardSpike;
+        outcome = GpsPointOutcome.hardRejected;
+      } else if (processedSample.qualityFlags.contains(
+        TrajectoryQualityFlag.accelerationSpike,
+      )) {
+        reason = GpsRejectReason.impliedSpeedHardSpike;
+        outcome = GpsPointOutcome.hardRejected;
+      } else if (processedSample.qualityFlags.contains(
+        TrajectoryQualityFlag.headingSpike,
+      )) {
+        reason = GpsRejectReason.headingSpike;
+        outcome = GpsPointOutcome.hardRejected;
+      } else {
+        reason = GpsRejectReason.tinySegment;
+        outcome = GpsPointOutcome.softRejected;
+      }
+      return TrackingGpsDecision(
+        type: TrackingGpsDecisionType.skip,
+        livePoint: livePoint,
+        previewPoint: legacyDecision.previewPoint,
+        skipReason: 'preprocessor_outlier: ${processedSample.qualityFlags}',
+        segmentMeters: legacyDecision.segmentMeters,
+        rawSegmentMeters: legacyDecision.rawSegmentMeters,
+        routeSegmentMeters: legacyDecision.routeSegmentMeters,
+        outcome: outcome,
+        reason: reason,
+      );
+    }
+
+    // 6. Stationary stay point drift suppression
+    if (processedSample.isStayPoint) {
+      return TrackingGpsDecision(
+        type: TrackingGpsDecisionType.skip,
+        livePoint: livePoint,
+        previewPoint: legacyDecision.previewPoint,
+        skipReason: 'preprocessor_stay_point_dwell',
+        segmentMeters: legacyDecision.segmentMeters,
+        rawSegmentMeters: legacyDecision.rawSegmentMeters,
+        routeSegmentMeters: legacyDecision.routeSegmentMeters,
+        outcome: GpsPointOutcome.softRejected,
+        reason: GpsRejectReason.tinySegment,
+      );
+    }
+
+    // 7. Clean accepted sample
+    if (processedSample.covarianceScale != 1.0) {
+      return legacyDecision.copyWith(
+        covarianceScale: processedSample.covarianceScale,
+      );
+    }
+    return legacyDecision;
+  }
+
   TrackingGpsDecision evaluateGpsUpdate({
     required Position position,
     required String activityType,
@@ -107,6 +276,10 @@ class WorkoutTrackingEngine {
     required LatLng? currentLatLng,
     required LatLng? distanceAnchorPoint,
     required DateTime? lastAcceptedPositionTime,
+    // Real raw-signal interruption duration. Null keeps legacy callers' behavior.
+    // The live recorder passes 0 when raw GPS is flowing, even if validation
+    // has not accepted a moving point for a long stationary interval.
+    double? rawGpsGapDurationSec,
     required bool shouldResetAnchorOnResume,
     bool wasGpsSignalWeak = false,
     bool debugLocationMode = false,
@@ -171,21 +344,6 @@ class WorkoutTrackingEngine {
     );
     final segmentMeters = rawSegmentMeters;
 
-    if (segmentMeters < minSegmentMeters) {
-      return TrackingGpsDecision(
-        type: TrackingGpsDecisionType.skip,
-        livePoint: livePoint,
-        previewPoint: previewPoint,
-        skipReason:
-            'segment=${segmentMeters.toStringAsFixed(2)}m < $minSegmentMeters',
-        segmentMeters: segmentMeters,
-        rawSegmentMeters: rawSegmentMeters,
-        routeSegmentMeters: routeSegmentMeters,
-        outcome: GpsPointOutcome.softRejected,
-        reason: GpsRejectReason.tinySegment,
-      );
-    }
-
     if (position.accuracy > maxAccuracy) {
       return TrackingGpsDecision(
         type: TrackingGpsDecisionType.skip,
@@ -221,7 +379,10 @@ class WorkoutTrackingEngine {
         ? 0.0
         : position.timestamp.difference(previousAcceptedTime).inMilliseconds /
               1000.0;
-    if (timeDeltaSec > 5.0) {
+    // Accepted-fix age alone is NOT a signal outage: stationary/filtered fixes
+    // can keep the raw stream healthy. Actual blackout is based on raw fixes.
+    final signalGapSec = rawGpsGapDurationSec ?? timeDeltaSec;
+    if (signalGapSec > kStaleSignalGapThresholdSec) {
       return TrackingGpsDecision(
         type: TrackingGpsDecisionType.acceptRoute,
         livePoint: livePoint,
@@ -232,9 +393,24 @@ class WorkoutTrackingEngine {
         candidateSpeedKmh: 0,
         shouldAddDistance: false,
         shouldBreakRouteForDisplay: true,
-        gpsGapDurationSec: timeDeltaSec,
+        gpsGapDurationSec: signalGapSec,
         outcome: GpsPointOutcome.signalGap,
         reason: GpsRejectReason.staleSignalGap,
+      );
+    }
+
+    if (segmentMeters < minSegmentMeters) {
+      return TrackingGpsDecision(
+        type: TrackingGpsDecisionType.skip,
+        livePoint: livePoint,
+        previewPoint: previewPoint,
+        skipReason:
+            'segment=${segmentMeters.toStringAsFixed(2)}m < $minSegmentMeters',
+        segmentMeters: segmentMeters,
+        rawSegmentMeters: rawSegmentMeters,
+        routeSegmentMeters: routeSegmentMeters,
+        outcome: GpsPointOutcome.softRejected,
+        reason: GpsRejectReason.tinySegment,
       );
     }
 
@@ -342,14 +518,16 @@ class WorkoutTrackingEngine {
         ? routeSegmentMeters / timeDeltaSec
         : 0.0;
 
-    if (wasGpsSignalWeak && routeSegmentMeters >= jumpMeters * 0.65) {
-      return true;
-    }
     if (accuracyMeters >= weakAccuracy && routeSegmentMeters >= jumpMeters) {
       return true;
     }
-    if (timeDeltaSec >= 2.0 &&
+    if (timeDeltaSec > 0 &&
         routeSegmentMeters >= jumpMeters &&
+        impliedSpeedMs > plausibleSpeedMs) {
+      return true;
+    }
+    if (wasGpsSignalWeak &&
+        routeSegmentMeters >= jumpMeters * 0.65 &&
         impliedSpeedMs > plausibleSpeedMs) {
       return true;
     }
@@ -639,6 +817,22 @@ class WorkoutTrackingEngine {
   }
 
   WorkoutGpsAnalysis analyzeGpsWorkout(GpsWorkoutAnalysisInput input) {
+    // Diagnose true GPS outages BEFORE filtering: dropped spikes and tiny fixes
+    // must not be reclassified as an unavailable raw sensor stream.
+    final rawSorted = List<Position>.from(input.rawPositions)
+      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    final rawSignalGaps = <({DateTime end, double durationSec})>[];
+    for (var i = 1; i < rawSorted.length; i++) {
+      final dt =
+          rawSorted[i].timestamp
+              .difference(rawSorted[i - 1].timestamp)
+              .inMilliseconds /
+          1000.0;
+      if (dt > kStaleSignalGapThresholdSec) {
+        rawSignalGaps.add((end: rawSorted[i].timestamp, durationSec: dt));
+      }
+    }
+
     final filtered = _filterRawPositions(input.rawPositions);
     if (filtered.length < 2) {
       final fallbackKm = (input.fallbackDistanceMeters / 1000).clamp(
@@ -661,8 +855,11 @@ class WorkoutTrackingEngine {
     var suspiciousDistanceM = 0.0;
     var invalidDistanceM = 0.0;
     var restDurationSec = 0.0;
-    var gpsGapCount = 0;
-    var gpsGapDurationSec = 0.0;
+    final gpsGapCount = rawSignalGaps.length;
+    final gpsGapDurationSec = rawSignalGaps.fold<double>(
+      0.0,
+      (sum, gap) => sum + gap.durationSec,
+    );
 
     var segmentStartIndex = 0;
     var segmentDistanceM = 0.0;
@@ -679,9 +876,13 @@ class WorkoutTrackingEngine {
         continue;
       }
 
-      if (deltaSec > 5.0) {
-        gpsGapCount += 1;
-        gpsGapDurationSec += deltaSec;
+      // A long interval between retained fixes is not necessarily an outage.
+      // Break only if the original raw stream actually stopped in this span.
+      final crossedRawOutage = rawSignalGaps.any(
+        (gap) =>
+            gap.end.isAfter(prev.timestamp) && !gap.end.isAfter(curr.timestamp),
+      );
+      if (crossedRawOutage) {
         _finalizeSegment(
           filtered: filtered,
           startIndex: segmentStartIndex,

@@ -3,7 +3,9 @@ import 'package:fitness_exercise_application/features/history/presentation/scree
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
+import 'package:fitness_exercise_application/shared/kinetic/native_liquid_glass.dart';
 import 'package:flutter/material.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_sliding_selection.dart';
 import 'package:flutter/services.dart';
 
 class KineticHistoryRangeTabs extends StatelessWidget {
@@ -21,55 +23,87 @@ class KineticHistoryRangeTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.kinetic;
+    final ios = Theme.of(context).platform == TargetPlatform.iOS;
+
+    if (NativeLiquidGlass.enabledOf(context)) {
+      return SizedBox(
+        height: KineticTokens.segmentedControlHeight,
+        child: NativeGlassSegmentedControl(
+          labels: HistoryRange.values
+              .map((range) => range.getLabel(currentLang))
+              .toList(growable: false),
+          symbols: const [],
+          selectedIndex: HistoryRange.values.indexOf(selected),
+          onChanged: (index) {
+            if (index < 0 || index >= HistoryRange.values.length) return;
+            HapticFeedback.selectionClick();
+            onChanged(HistoryRange.values[index]);
+          },
+        ),
+      );
+    }
 
     return Container(
       padding: const EdgeInsets.all(KineticTokens.spaceXXS),
       decoration: BoxDecoration(
-        color: colors.surface1,
+        color: colors.isDark
+            ? colors.surface1.withValues(alpha: 0.78)
+            : Colors.white.withValues(alpha: 0.78),
         borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
-        border: Border.all(color: colors.borderSubtle),
+        border: Border.all(
+          color: colors.isDark
+              ? Colors.white.withValues(alpha: 0.14)
+              : colors.borderSubtle,
+        ),
       ),
-      child: Row(
-        children: HistoryRange.values.map((range) {
-          final isSelected = selected == range;
-          final label = range.getLabel(currentLang);
+      child: KineticSlidingSelection(
+        index: HistoryRange.values.indexOf(selected),
+        count: HistoryRange.values.length,
+        child: Row(
+          children: HistoryRange.values.map((range) {
+            final isSelected = selected == range;
+            final label = range.getLabel(currentLang);
 
-          return Expanded(
-            child: InkWell(
-              onTap: () {
-                HapticFeedback.selectionClick();
-                onChanged(range);
-              },
-              borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
-              child: AnimatedContainer(
-                duration: KineticTokens.motionTab,
-                padding: const EdgeInsets.symmetric(
-                  vertical: KineticTokens.spaceXS,
-                ),
-                decoration: BoxDecoration(
-                  color: isSelected ? colors.primary : Colors.transparent,
-                  borderRadius: BorderRadius.circular(
-                    KineticTokens.radiusPill,
+            return Expanded(
+              child: InkWell(
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  onChanged(range);
+                },
+                borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
+                child: AnimatedContainer(
+                  duration: KineticTokens.respectingReduceMotion(
+                    context,
+                    KineticTokens.motionTab,
                   ),
-                ),
-                child: Center(
+                  height: 34,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: isSelected && !ios
+                        ? colors.primary
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(
+                      KineticTokens.radiusPill,
+                    ),
+                  ),
                   child: Text(
                     label,
-                    style: KineticTypography.label.copyWith(
+                    style: KineticTypography.segmentedLabel.copyWith(
                       color: isSelected
-                          ? colors.onPrimary
+                          ? (ios ? colors.primary : colors.onPrimary)
                           : colors.textMuted,
-                      fontSize: 12,
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : FontWeight.w500,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ),
-            ),
-          );
-        }).toList(),
+            );
+          }).toList(),
+        ),
       ),
     );
   }

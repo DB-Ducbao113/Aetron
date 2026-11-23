@@ -1,5 +1,6 @@
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/settings/presentation/providers/settings_preferences_providers.dart';
+import 'package:fitness_exercise_application/features/shell/presentation/widgets/aetron_bottom_bar.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/providers/workout_providers.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/screens/details/workout_route_full_map_screen.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/details/kinetic_details_delete_dialog.dart';
@@ -14,8 +15,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class WorkoutDetailsScreen extends ConsumerWidget {
   final String workoutId;
+  final bool showMapTiles;
 
-  const WorkoutDetailsScreen({super.key, required this.workoutId});
+  const WorkoutDetailsScreen({
+    super.key,
+    required this.workoutId,
+    this.showMapTiles = true,
+  });
 
   void _showDeleteDialog(BuildContext context, WidgetRef ref) {
     final lang = ref.read(appLanguageProvider);
@@ -66,21 +72,14 @@ class WorkoutDetailsScreen extends ConsumerWidget {
     final routeAsync = ref.watch(workoutRoutePresentationProvider(workoutId));
     final useMetricUnits = ref.watch(metricUnitsPreferenceProvider).value ?? true;
 
+    final hPad = AetronBottomBar.horizontalPagePaddingOf(context);
+
     return Scaffold(
       backgroundColor: colors.background,
-      body: SafeArea(
-        child: Stack(
+      body: KineticGlasslineScaffoldBody(
+        showBottomScrim: false,
+        child: Column(
           children: [
-            // V4: topographic backdrop behind the header zone only.
-            const Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              height: 240,
-              child: TopographicBackdrop(),
-            ),
-            Column(
-              children: [
             // Top Bar
             KineticDetailsTopBar(
               currentLang: currentLang,
@@ -125,21 +124,27 @@ class WorkoutDetailsScreen extends ConsumerWidget {
 
                   return ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(KineticTokens.page, 8, KineticTokens.page, 40),
+                    padding: EdgeInsets.fromLTRB(
+                      hPad,
+                      8,
+                      hPad,
+                      MediaQuery.viewPaddingOf(context).bottom + 28,
+                    ),
                     children: [
-                      // 1. Activity Header (Chỉ hiển thị Đi bộ / Chạy bộ / Đạp xe, không có thứ ở dưới)
+                      // 1. Activity Header
                       KineticDetailsHeader(
                         workout: workout,
                         currentLang: currentLang,
                       ),
                       const SizedBox(height: 14),
 
-                      // 2. Route Map Card (Màn hình route)
+                      // 2. Route Map Card
                       KineticDetailsRouteCard(
                         routePoints: routePoints,
                         routeSegments: routeSegments,
                         activityType: workout.activityType,
                         currentLang: currentLang,
+                        showMapTiles: showMapTiles,
                         onViewFullMap: routePoints.length < 2
                             ? null
                             : () {
@@ -178,8 +183,6 @@ class WorkoutDetailsScreen extends ConsumerWidget {
                 },
               ),
             ),
-          ],
-        ),
           ],
         ),
       ),

@@ -7,6 +7,7 @@ import 'package:fitness_exercise_application/features/workout/presentation/widge
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/summary/kinetic_summary_hero_distance.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/summary/kinetic_summary_splits_card.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/summary/kinetic_summary_telemetry_grid.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -53,11 +54,15 @@ void main() {
         // GPS Ngoài trời is now removed
         expect(find.text('GPS Ngoài trời'), findsNothing);
 
-        await tester.tap(find.byIcon(Icons.arrow_back_rounded));
+        await tester.tap(
+          find.byIcon(BladeIcon.iconDataFor(BladeIconName.chevL)),
+        );
         await tester.pump();
         expect(backTapped, isTrue);
 
-        await tester.tap(find.byIcon(Icons.ios_share_rounded));
+        await tester.tap(
+          find.byIcon(BladeIcon.iconDataFor(BladeIconName.share)),
+        );
         await tester.pump();
         expect(shareTapped, isTrue);
       },

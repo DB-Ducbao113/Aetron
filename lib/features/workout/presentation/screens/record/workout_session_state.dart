@@ -41,7 +41,14 @@ class WorkoutSessionState {
   final double speedKmh;
   final double avgSpeedKmh;
   final int stepCount;
+  final int currentCadenceSpm;
+  final int avgCadenceSpm;
   final double strideLengthMeters;
+  final int adaptiveStepCount;
+  final double stepDistanceMeters;
+  final double gpsDistanceMeters;
+  final int researchDetectedSteps;
+  final int xuDetectedSteps;
   final int caloriesBurned;
   final List<LatLng> filteredRoutePoints;
   final List<LatLng> smoothedRoutePoints;
@@ -90,7 +97,14 @@ class WorkoutSessionState {
     this.speedKmh = 0,
     this.avgSpeedKmh = 0,
     this.stepCount = 0,
+    this.currentCadenceSpm = 0,
+    this.avgCadenceSpm = 0,
     this.strideLengthMeters = 0.75,
+    this.adaptiveStepCount = 0,
+    this.stepDistanceMeters = 0,
+    this.gpsDistanceMeters = 0,
+    this.researchDetectedSteps = 0,
+    this.xuDetectedSteps = 0,
     this.caloriesBurned = 0,
     this.filteredRoutePoints = const [],
     this.smoothedRoutePoints = const [],
@@ -134,7 +148,14 @@ class WorkoutSessionState {
     double? speedKmh,
     double? avgSpeedKmh,
     int? stepCount,
+    int? currentCadenceSpm,
+    int? avgCadenceSpm,
     double? strideLengthMeters,
+    int? adaptiveStepCount,
+    double? stepDistanceMeters,
+    double? gpsDistanceMeters,
+    int? researchDetectedSteps,
+    int? xuDetectedSteps,
     int? caloriesBurned,
     List<LatLng>? filteredRoutePoints,
     List<LatLng>? smoothedRoutePoints,
@@ -177,7 +198,15 @@ class WorkoutSessionState {
       speedKmh: speedKmh ?? this.speedKmh,
       avgSpeedKmh: avgSpeedKmh ?? this.avgSpeedKmh,
       stepCount: stepCount ?? this.stepCount,
+      currentCadenceSpm: currentCadenceSpm ?? this.currentCadenceSpm,
+      avgCadenceSpm: avgCadenceSpm ?? this.avgCadenceSpm,
       strideLengthMeters: strideLengthMeters ?? this.strideLengthMeters,
+      adaptiveStepCount: adaptiveStepCount ?? this.adaptiveStepCount,
+      stepDistanceMeters: stepDistanceMeters ?? this.stepDistanceMeters,
+      gpsDistanceMeters: gpsDistanceMeters ?? this.gpsDistanceMeters,
+      researchDetectedSteps:
+          researchDetectedSteps ?? this.researchDetectedSteps,
+      xuDetectedSteps: xuDetectedSteps ?? this.xuDetectedSteps,
       caloriesBurned: caloriesBurned ?? this.caloriesBurned,
       filteredRoutePoints: filteredRoutePoints ?? this.filteredRoutePoints,
       smoothedRoutePoints: smoothedRoutePoints ?? this.smoothedRoutePoints,

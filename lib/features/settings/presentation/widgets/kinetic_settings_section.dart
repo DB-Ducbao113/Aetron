@@ -1,7 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 
 class KineticSettingsSectionGroup extends StatelessWidget {
@@ -18,6 +17,32 @@ class KineticSettingsSectionGroup extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.kinetic;
 
+    final groupContent = Column(
+      children: [
+        for (var i = 0; i < children.length; i++) ...[
+          children[i],
+          if (i != children.length - 1)
+            Divider(
+              height: 1,
+              thickness: 1,
+              indent: KineticTokens.spaceMD + 42,
+              endIndent: KineticTokens.spaceMD,
+              color: colors.borderSubtle,
+            ),
+        ],
+      ],
+    );
+
+    final Widget sectionCard = KineticCard(
+      useLiquidGlass: true,
+      borderRadius: 21,
+      padding: EdgeInsets.zero,
+      child: Material(
+        color: Colors.transparent,
+        child: groupContent,
+      ),
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -33,44 +58,7 @@ class KineticSettingsSectionGroup extends StatelessWidget {
             ),
           ),
         ),
-        Material(
-          color: colors.surface1,
-          borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
-          clipBehavior: Clip.antiAlias,
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
-              border: Border.all(color: colors.borderSubtle),
-              boxShadow: Theme.of(context).brightness == Brightness.light
-                  ? [
-                      // Morning identity: grouped cards lift off the paper
-                      // background with a soft ambient shadow.
-                      BoxShadow(
-                        color: const Color(0xFF172B33).withValues(alpha: 0.10),
-                        blurRadius: 24,
-                        offset: const Offset(0, 10),
-                        spreadRadius: -8,
-                      ),
-                    ]
-                  : null,
-            ),
-            child: Column(
-              children: [
-                for (var i = 0; i < children.length; i++) ...[
-                  children[i],
-                  if (i != children.length - 1)
-                    Divider(
-                      height: 1,
-                      thickness: 1,
-                      indent: KineticTokens.spaceMD + 42,
-                      endIndent: KineticTokens.spaceMD,
-                      color: colors.borderSubtle,
-                    ),
-                ],
-              ],
-            ),
-          ),
-        ),
+        sectionCard,
       ],
     );
   }
@@ -108,6 +96,7 @@ class KineticSettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.kinetic;
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
     final effectiveColor = accentColor ?? colors.primary;
 
     return Semantics(
@@ -122,16 +111,30 @@ class KineticSettingsTile extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
         ),
+        splashColor: isIOS ? Colors.transparent : null,
         leading: Container(
-          width: 30,
-          height: 30,
+          width: 32,
+          height: 32,
           decoration: BoxDecoration(
-            color: effectiveColor.withValues(alpha: 0.14),
-            borderRadius: BorderRadius.circular(KineticTokens.radiusSM + 2),
+            shape: BoxShape.circle,
+            color: effectiveColor.withValues(alpha: isIOS ? 0.16 : 0.14),
+            border: Border.all(
+              color: isIOS
+                  ? effectiveColor.withValues(alpha: 0.35)
+                  : effectiveColor.withValues(alpha: 0.20),
+              width: 1.0,
+            ),
           ),
-          child: bladeIcon != null
-              ? BladeIcon(bladeIcon!, size: 17, color: effectiveColor)
-              : Icon(icon, color: effectiveColor, size: 16),
+          child: Center(
+            child: bladeIcon != null
+                ? BladeIcon(
+                    bladeIcon!,
+                    size: 17,
+                    color: effectiveColor,
+                    strokeWidth: 1.7,
+                  )
+                : Icon(icon, color: effectiveColor, size: 16),
+          ),
         ),
         title: Text(
           title,
@@ -150,7 +153,16 @@ class KineticSettingsTile extends StatelessWidget {
                 ),
               )
             : null,
-        trailing: trailing,
+        trailing:
+            isIOS &&
+                trailing is Icon &&
+                (trailing as Icon).icon == Icons.chevron_right_rounded
+            ? Icon(
+                CupertinoIcons.chevron_forward,
+                size: (trailing as Icon).size,
+                color: (trailing as Icon).color ?? colors.textMuted,
+              )
+            : trailing,
       ),
     );
   }

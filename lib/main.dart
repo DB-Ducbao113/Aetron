@@ -1,4 +1,5 @@
 import 'package:fitness_exercise_application/app/app.dart';
+import 'package:fitness_exercise_application/shared/kinetic/native_liquid_glass.dart';
 import 'package:fitness_exercise_application/features/workout/data/local/local_db.dart';
 import 'package:fitness_exercise_application/core/services/notification_service.dart';
 import 'package:fitness_exercise_application/core/services/notification_state_store.dart';
@@ -62,6 +63,7 @@ void main() async {
     await NotificationStateStore.instance.init();
     debugPrint('[Startup] notification service & state store initialized');
 
+    await NativeLiquidGlass.initialize();
     runApp(const ProviderScope(child: MyApp()));
     debugPrint('[Startup] runApp');
   } catch (error) {

@@ -83,7 +83,7 @@ void main() {
 
       expect(find.text('Phân tích'), findsOneWidget);
       expect(find.text('NHỊP ĐIỆU VẬN ĐỘNG'), findsNothing);
-      expect(find.text('Đã đồng bộ'), findsOneWidget);
+      expect(find.text('HIỆU SUẤT'), findsOneWidget);
       expect(find.text('Tuần này'), findsOneWidget);
       expect(find.text('Tháng này'), findsOneWidget);
       expect(find.text('Năm nay'), findsOneWidget);

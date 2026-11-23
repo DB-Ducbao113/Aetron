@@ -1,3 +1,5 @@
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_glass_icon_button.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
@@ -22,26 +24,16 @@ class KineticAchievementsTopBar extends StatelessWidget {
 
     return Row(
       children: [
-        // Back Button
-        Semantics(
-          button: true,
+        KineticGlassIconButton(
+          size: 37,
+          visualSize: 37,
           label: currentLang == AppLanguage.vi ? 'Quay lại' : 'Back',
-          child: InkWell(
-            onTap: () => Navigator.of(context).pop(),
-            borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
-            child: Container(
-              padding: const EdgeInsets.all(KineticTokens.spaceXS),
-              decoration: BoxDecoration(
-                color: colors.surface1,
-                borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
-                border: Border.all(color: colors.borderSubtle),
-              ),
-              child: Icon(
-                Icons.arrow_back_ios_new_rounded,
-                size: 16,
-                color: colors.textPrimary,
-              ),
-            ),
+          onPressed: () => Navigator.of(context).pop(),
+          icon: BladeIcon(
+            BladeIconName.chevL,
+            size: 18,
+            color: colors.textSecondary,
+            strokeWidth: 1.7,
           ),
         ),
         const SizedBox(width: KineticTokens.spaceSM),
@@ -86,11 +78,7 @@ class KineticAchievementsTopBar extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                Icons.emoji_events_rounded,
-                size: 14,
-                color: colors.primary,
-              ),
+              Icon(Icons.emoji_events_rounded, size: 14, color: colors.primary),
               const SizedBox(width: 5),
               Text(
                 '$unlockedCount / $totalCount',

@@ -101,14 +101,14 @@ void main() {
     });
 
     test(
-      'accepts GPS recovery route without adding distance after a stale gap',
+      'accepts GPS recovery route without adding distance after a stale gap (> 20s)',
       () {
         final t0 = DateTime.utc(2026, 4, 14, 10);
         final decision = engine.evaluateGpsUpdate(
           position: buildPosition(
             latitude: 10.0002,
             longitude: 106.0,
-            timestamp: t0.add(const Duration(seconds: 8)),
+            timestamp: t0.add(const Duration(seconds: 25)),
             accuracy: 4,
           ),
           activityType: 'running',
@@ -122,7 +122,38 @@ void main() {
         expect(decision.type, TrackingGpsDecisionType.acceptRoute);
         expect(decision.shouldAddDistance, isFalse);
         expect(decision.segmentMeters, 0);
-        expect(decision.gpsGapDurationSec, greaterThan(5));
+        expect(decision.gpsGapDurationSec, greaterThan(20));
+      },
+    );
+
+    test(
+      'continues route when accepted fixes lag but raw GPS arrived throughout',
+      () {
+        final t0 = DateTime.utc(2026, 4, 14, 10);
+        final decision = engine.evaluateGpsUpdate(
+          position: buildPosition(
+            latitude: 10.0002, // ~22.2m displacement
+            longitude: 106.0,
+            timestamp: t0.add(
+              const Duration(seconds: 8),
+            ), // implied speed 2.78m/s (10km/h)
+            accuracy: 6,
+            speed: 2.8,
+          ),
+          activityType: 'running',
+          routePoints: const [LatLng(10.0, 106.0)],
+          currentLatLng: const LatLng(10.0, 106.0),
+          distanceAnchorPoint: const LatLng(10.0, 106.0),
+          lastAcceptedPositionTime: t0,
+          // Intermediate raw fixes arrived each second but were not accepted.
+          rawGpsGapDurationSec: 1.0,
+          shouldResetAnchorOnResume: false,
+        );
+
+        expect(decision.type, TrackingGpsDecisionType.acceptRoute);
+        expect(decision.shouldAddDistance, isTrue);
+        expect(decision.segmentMeters, greaterThan(20.0));
+        expect(decision.shouldBreakRouteForDisplay, isFalse);
       },
     );
 
@@ -296,9 +327,24 @@ void main() {
       expect(result.session.routeDistanceSource, 'filtered');
       expect(result.session.matchedRouteJson, '[]');
       expect(result.session.filteredRouteJson, isNot('[]'));
+
+      final audit =
+          jsonDecode(result.session.routeMatchMetricsJson)
+              as Map<String, dynamic>;
+      expect(
+        audit['distance_selection_policy'],
+        'raw_valid_then_raw_total_then_live',
+      );
+      expect(audit['raw_gps_fix_count'], 0);
+      expect(audit['live_distance_km'], 5.0);
+      expect(audit['saved_distance_km'], 5.0);
+      expect(audit['saved_minus_live_distance_km'], 0.0);
+      // Displayed route geometry may differ from saved workout distance.
+      expect(audit['filtered_route_distance_km'], lessThan(5.0));
+      expect(audit['filtered_minus_saved_distance_km'], lessThan(0.0));
     });
 
-    test('estimates steps from stride when sensor steps are unavailable', () {
+    test('does not invent steps when sensor steps are unavailable', () {
       final state = WorkoutSessionState(
         status: RecordingState.stopping,
         activityType: 'Walking',
@@ -323,7 +369,7 @@ void main() {
         ],
       );
 
-      expect(result.session.steps, 1000);
+      expect(result.session.steps, 0);
       expect(result.session.id, isNotEmpty);
       expect(result.session.routeMatchStatus, 'pending');
       expect(result.session.routeDistanceSource, 'filtered');

@@ -81,9 +81,9 @@ class DailyWorkoutList extends ConsumerWidget {
                         const SizedBox(width: KineticTokens.spaceXS),
                         Text(
                           dateHeader,
-                          style: KineticTypography.unitLabel.copyWith(
+                          style: KineticTypography.cardEyebrowOf(
+                            colors,
                             color: colors.textPrimary,
-                            letterSpacing: 1.0,
                           ),
                         ),
                       ],

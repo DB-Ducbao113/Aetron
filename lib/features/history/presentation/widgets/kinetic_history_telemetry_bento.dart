@@ -54,9 +54,17 @@ class KineticHistoryTelemetryBento extends StatelessWidget {
           )
         : '—';
 
+    final innerFill = colors.isDark
+        ? const Color(0x28314B6B)
+        : const Color(0x66FFFFFF);
+    final innerBorder = colors.isDark
+        ? const Color(0x38B6DCFF)
+        : Colors.white.withValues(alpha: 0.85);
+
     return KineticCard(
-      padding: const EdgeInsets.all(KineticTokens.spaceMD),
-      borderRadius: KineticTokens.radiusLG,
+      useLiquidGlass: true,
+      padding: const EdgeInsets.all(17),
+      borderRadius: 21,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -64,25 +72,31 @@ class KineticHistoryTelemetryBento extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                isVi ? 'TỔNG QUAN GIAI ĐOẠN' : 'PERIOD TELEMETRY MATRIX',
-                style: KineticTypography.unitLabel.copyWith(
-                  color: colors.primary,
-                  letterSpacing: 1.1,
+              Expanded(
+                child: Text(
+                  isVi ? 'TỔNG QUAN GIAI ĐOẠN' : 'PERIOD TELEMETRY MATRIX',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: KineticTypography.cardEyebrowOf(colors),
                 ),
               ),
+              const SizedBox(width: KineticTokens.spaceXS),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: KineticTokens.spaceXS, vertical: KineticTokens.spaceXXS),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 9,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
-                  color: colors.surface2,
-                  borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
-                  border: Border.all(color: colors.borderSubtle),
+                  color: innerFill,
+                  borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
+                  border: Border.all(color: innerBorder),
                 ),
                 child: Text(
                   '${summary.workouts} ${isVi ? 'hoạt động' : 'workouts'}',
                   style: KineticTypography.unitLabel.copyWith(
                     color: colors.textSecondary,
-                    fontSize: 11,
+                    fontSize: 10.5,
+                    letterSpacing: 0.2,
                   ),
                 ),
               ),
@@ -100,9 +114,9 @@ class KineticHistoryTelemetryBento extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(KineticTokens.spaceSM),
                   decoration: BoxDecoration(
-                    color: colors.surface2,
-                    borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
-                    border: Border.all(color: colors.borderSubtle),
+                    color: innerFill,
+                    borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
+                    border: Border.all(color: innerBorder),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -111,11 +125,15 @@ class KineticHistoryTelemetryBento extends StatelessWidget {
                         children: [
                           Icon(Icons.route_rounded, size: 14, color: colors.primary),
                           const SizedBox(width: 5),
-                          Text(
-                            (isVi ? 'QUÃNG ĐƯỜNG' : 'DISTANCE').toUpperCase(),
-                            style: KineticTypography.unitLabel.copyWith(
-                              color: colors.textMuted,
-                              fontSize: 11,
+                          Expanded(
+                            child: Text(
+                              (isVi ? 'QUÃNG ĐƯỜNG' : 'DISTANCE').toUpperCase(),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: KineticTypography.unitLabel.copyWith(
+                                color: colors.textMuted,
+                                fontSize: 10.5,
+                              ),
                             ),
                           ),
                         ],
@@ -158,15 +176,18 @@ class KineticHistoryTelemetryBento extends StatelessWidget {
                 child: Column(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: KineticTokens.spaceXS, vertical: KineticTokens.spaceXS),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: KineticTokens.spaceSM,
+                        vertical: 10,
+                      ),
                       decoration: BoxDecoration(
-                        color: colors.surface2,
-                        borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
-                        border: Border.all(color: colors.borderSubtle),
+                        color: innerFill,
+                        borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
+                        border: Border.all(color: innerBorder),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.timer_rounded, size: 13, color: colors.secondary),
+                          Icon(Icons.timer_rounded, size: 14, color: colors.secondary),
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
@@ -185,16 +206,22 @@ class KineticHistoryTelemetryBento extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: KineticTokens.spaceXS, vertical: KineticTokens.spaceXS),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: KineticTokens.spaceSM,
+                        vertical: 10,
+                      ),
                       decoration: BoxDecoration(
-                        color: colors.surface2,
-                        borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
-                        border: Border.all(color: colors.borderSubtle),
+                        color: innerFill,
+                        borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
+                        border: Border.all(color: innerBorder),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.local_fire_department_rounded,
-                              size: 13, color: colors.tertiary),
+                          Icon(
+                            Icons.local_fire_department_rounded,
+                            size: 14,
+                            color: colors.tertiary,
+                          ),
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
@@ -220,28 +247,38 @@ class KineticHistoryTelemetryBento extends StatelessWidget {
 
           // Bottom Bar: Average Pace
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: KineticTokens.spaceSM, vertical: KineticTokens.spaceXS),
+            padding: const EdgeInsets.symmetric(
+              horizontal: KineticTokens.spaceSM,
+              vertical: 9,
+            ),
             decoration: BoxDecoration(
-              color: colors.surface2,
-              borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
-              border: Border.all(color: colors.borderSubtle),
+              color: innerFill,
+              borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
+              border: Border.all(color: innerBorder),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Icon(Icons.speed_rounded, size: 13, color: colors.primary),
-                    const SizedBox(width: 6),
-                    Text(
-                      isVi ? 'Pace trung bình:' : 'Average Pace:',
-                      style: KineticTypography.bodySmall.copyWith(
-                        color: colors.textSecondary,
-                        fontSize: 11,
+                Expanded(
+                  child: Row(
+                    children: [
+                      Icon(Icons.speed_rounded, size: 13, color: colors.primary),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          isVi ? 'Pace trung bình:' : 'Average Pace:',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: KineticTypography.bodySmall.copyWith(
+                            color: colors.textSecondary,
+                            fontSize: 11,
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+                const SizedBox(width: KineticTokens.spaceXS),
                 Text(
                   avgPaceStr,
                   style: KineticTypography.label.copyWith(

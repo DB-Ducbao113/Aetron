@@ -15,7 +15,7 @@ extension GetLocalGPSPointCollection on Isar {
 
 const LocalGPSPointSchema = CollectionSchema(
   name: r'LocalGPSPoint',
-  id: 3435071770331508,
+  id: 3435071770331508665,
   properties: {
     r'accuracy': PropertySchema(
       id: 0,
@@ -85,7 +85,7 @@ const LocalGPSPointSchema = CollectionSchema(
   idName: r'id',
   indexes: {
     r'sessionId': IndexSchema(
-      id: 6949518585047923,
+      id: 6949518585047923839,
       name: r'sessionId',
       unique: false,
       replace: false,

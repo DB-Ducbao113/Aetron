@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:fitness_exercise_application/core/constants/debug_config.dart';
 import 'package:fitness_exercise_application/core/providers/app_providers.dart';
 import 'package:fitness_exercise_application/features/profile/domain/entities/user_profile.dart';
 import 'package:fitness_exercise_application/features/profile/presentation/providers/user_profile_providers.dart';
@@ -106,6 +107,21 @@ final currentAvatarDisplayProvider = Provider<AvatarDisplayState>((ref) {
 });
 
 final currentUserProfileProvider = Provider<AsyncValue<UserProfile?>>((ref) {
+  if (kDebugBypassAuth) {
+    final now = DateTime.now();
+    return AsyncValue.data(
+      UserProfile(
+        id: 'debug-profile-1',
+        userId: 'debug-user',
+        weightKg: 68.0,
+        heightCm: 175.0,
+        legacyAge: 25,
+        gender: 'male',
+        createdAt: now.subtract(const Duration(days: 120)),
+        updatedAt: now,
+      ),
+    );
+  }
   final userId = ref.watch(currentUserIdProvider);
   if (userId == null) {
     return const AsyncValue.data(null);

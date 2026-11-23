@@ -1,11 +1,15 @@
+import 'dart:ui' show ImageFilter;
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/auth/presentation/screens/auth_wrapper.dart';
 import 'package:fitness_exercise_application/features/profile/domain/entities/user_profile.dart';
 import 'package:fitness_exercise_application/features/profile/presentation/providers/user_profile_providers.dart';
 import 'package:fitness_exercise_application/features/settings/presentation/providers/settings_preferences_providers.dart';
+import 'package:fitness_exercise_application/features/shell/presentation/widgets/aetron_bottom_bar.dart';
 import 'package:fitness_exercise_application/shared/aetron/aetron_feedback.dart';
 import 'package:fitness_exercise_application/shared/aetron/aetron_logout_dialog.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_glass_icon_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -73,9 +77,11 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     try {
       user = Supabase.instance.client.auth.currentUser;
     } catch (_) {}
-    final initialName = (user?.userMetadata?['display_name'] ??
-            user?.userMetadata?['full_name'] ??
-            user?.userMetadata?['name']) as String? ??
+    final initialName =
+        (user?.userMetadata?['display_name'] ??
+                user?.userMetadata?['full_name'] ??
+                user?.userMetadata?['name'])
+            as String? ??
         '';
     _displayNameController = TextEditingController(text: initialName);
     _selectedGender = profile?.gender ?? 'male';
@@ -108,7 +114,10 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       final cleanWeight = _weightController.text.trim().replaceAll(',', '.');
       final cleanHeight = _heightController.text.trim().replaceAll(',', '.');
       final cleanFeet = _heightFeetController.text.trim();
-      final cleanInches = _heightInchesController.text.trim().replaceAll(',', '.');
+      final cleanInches = _heightInchesController.text.trim().replaceAll(
+        ',',
+        '.',
+      );
       final cleanAge = _ageController.text.trim();
 
       final enteredWeight = double.parse(cleanWeight);
@@ -147,7 +156,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
             UserAttributes(data: {'display_name': cleanDisplayName}),
           );
         } catch (e) {
-          debugPrint('[ProfileSetupScreen] Could not update display name in auth metadata: $e');
+          debugPrint(
+            '[ProfileSetupScreen] Could not update display name in auth metadata: $e',
+          );
         }
       }
 
@@ -231,7 +242,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     final now = DateTime.now();
     final targetYear = now.year - age;
     if (now.month == 2 && now.day == 29) {
-      final isLeapYear = (targetYear % 4 == 0 && targetYear % 100 != 0) ||
+      final isLeapYear =
+          (targetYear % 4 == 0 && targetYear % 100 != 0) ||
           (targetYear % 400 == 0);
       return DateTime(targetYear, 2, isLeapYear ? 29 : 28);
     }
@@ -240,7 +252,10 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<AsyncValue<bool>>(metricUnitsPreferenceProvider, (previous, next) {
+    ref.listen<AsyncValue<bool>>(metricUnitsPreferenceProvider, (
+      previous,
+      next,
+    ) {
       if (next.hasValue && !_hasInitializedUnits) {
         _hasInitializedUnits = true;
         _populateControllers(next.value!);
@@ -251,21 +266,35 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     final useMetricUnits =
         ref.watch(metricUnitsPreferenceProvider).value ?? true;
     final colors = context.kinetic;
+    final hPad = AetronBottomBar.horizontalPagePaddingOf(context);
 
     return Scaffold(
       backgroundColor: colors.background,
-      body: SafeArea(
+      body: KineticGlasslineScaffoldBody(
+        showBottomScrim: false,
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: KineticTokens.page, vertical: KineticTokens.spaceSM),
+              padding: EdgeInsets.symmetric(
+                horizontal: hPad,
+                vertical: KineticTokens.spaceSM,
+              ),
               child: Row(
                 children: [
                   if (isEditing) ...[
-                    IconButton(
+                    KineticGlassIconButton(
+                      size: 37,
+                      visualSize: 37,
+                      label: currentLang == AppLanguage.vi
+                          ? 'Quay lại'
+                          : 'Back',
                       onPressed: () => Navigator.of(context).pop(),
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
-                      color: colors.primary,
+                      icon: BladeIcon(
+                        BladeIconName.chevL,
+                        size: 18,
+                        color: colors.textSecondary,
+                        strokeWidth: 1.7,
+                      ),
                     ),
                     const SizedBox(width: 4),
                   ],
@@ -277,20 +306,19 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                           isEditing
                               ? AppTranslations.get('edit_profile', currentLang)
                               : AppTranslations.get('profile', currentLang),
-                          style: KineticTypography.headlineSmall.copyWith(
+                          style: KineticTypography.pageTitleCompact.copyWith(
                             color: colors.textPrimary,
-                            fontWeight: FontWeight.w800,
                           ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           currentLang == AppLanguage.vi
                               ? (isEditing
-                                  ? 'Cập nhật chỉ số sinh trắc học'
-                                  : 'Thiết lập chỉ số sinh trắc học')
+                                    ? 'Cập nhật chỉ số sinh trắc học'
+                                    : 'Thiết lập chỉ số sinh trắc học')
                               : (isEditing
-                                  ? 'Update biometric metrics'
-                                  : 'Initial biometric calibration'),
+                                    ? 'Update biometric metrics'
+                                    : 'Initial biometric calibration'),
                           style: KineticTypography.bodySmall.copyWith(
                             color: colors.textSecondary,
                           ),
@@ -299,16 +327,29 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                     ),
                   ),
                   if (!isEditing)
-                    IconButton(
-                      tooltip: currentLang == AppLanguage.vi ? 'Đăng xuất' : 'Sign out',
-                      icon: Icon(Icons.logout_rounded, color: colors.textSecondary),
+                    KineticGlassIconButton(
+                      size: 37,
+                      visualSize: 37,
+                      label: currentLang == AppLanguage.vi
+                          ? 'Đăng xuất'
+                          : 'Sign out',
+                      icon: BladeIcon(
+                        BladeIconName.logout,
+                        color: colors.textSecondary,
+                        size: 18,
+                        strokeWidth: 1.7,
+                      ),
                       onPressed: () async {
-                        final confirmed = await AetronLogoutDialog.show(context);
+                        final confirmed = await AetronLogoutDialog.show(
+                          context,
+                        );
                         if (confirmed == true && context.mounted) {
                           await Supabase.instance.client.auth.signOut();
                           if (context.mounted) {
                             Navigator.of(context).pushAndRemoveUntil(
-                              MaterialPageRoute(builder: (_) => const AuthWrapper()),
+                              MaterialPageRoute(
+                                builder: (_) => const AuthWrapper(),
+                              ),
                               (_) => false,
                             );
                           }
@@ -320,7 +361,13 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
             ),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(KineticTokens.page, KineticTokens.spaceSM, KineticTokens.page, KineticTokens.spaceXXL),
+                padding: EdgeInsets.fromLTRB(
+                  hPad,
+                  KineticTokens.spaceSM,
+                  hPad,
+                  MediaQuery.viewPaddingOf(context).bottom +
+                      KineticTokens.spaceXL,
+                ),
                 child: Form(
                   key: _formKey,
                   child: Column(
@@ -355,14 +402,23 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                             const SizedBox(height: KineticTokens.spaceLG),
                             _InputField(
                               controller: _displayNameController,
-                              label: AppTranslations.get('display_name', currentLang),
-                              hint: AppTranslations.get('display_name_hint', currentLang),
+                              label: AppTranslations.get(
+                                'display_name',
+                                currentLang,
+                              ),
+                              hint: AppTranslations.get(
+                                'display_name_hint',
+                                currentLang,
+                              ),
                               icon: Icons.badge_outlined,
                               keyboardType: TextInputType.name,
                               validator: (value) {
                                 final trimmed = value?.trim() ?? '';
                                 if (trimmed.isEmpty) {
-                                  return AppTranslations.get('display_name_empty', currentLang);
+                                  return AppTranslations.get(
+                                    'display_name_empty',
+                                    currentLang,
+                                  );
                                 }
                                 if (trimmed.length < 2) {
                                   return currentLang == AppLanguage.vi
@@ -381,7 +437,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                               keyboardType: TextInputType.number,
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
-                                  return currentLang == AppLanguage.vi ? 'Vui lòng nhập cân nặng' : 'Please enter your weight';
+                                  return currentLang == AppLanguage.vi
+                                      ? 'Vui lòng nhập cân nặng'
+                                      : 'Please enter your weight';
                                 }
                                 final weight = double.tryParse(
                                   value.trim().replaceAll(',', '.'),
@@ -394,8 +452,12 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                                     weight < minWeight ||
                                     weight > maxWeight) {
                                   return useMetricUnits
-                                      ? (currentLang == AppLanguage.vi ? 'Cân nặng phải từ 30-300 kg' : 'Weight must be between 30-300 kg')
-                                      : (currentLang == AppLanguage.vi ? 'Cân nặng phải từ 66-661 lb' : 'Weight must be between 66-661 lb');
+                                      ? (currentLang == AppLanguage.vi
+                                            ? 'Cân nặng phải từ 30-300 kg'
+                                            : 'Weight must be between 30-300 kg')
+                                      : (currentLang == AppLanguage.vi
+                                            ? 'Cân nặng phải từ 66-661 lb'
+                                            : 'Weight must be between 66-661 lb');
                                 }
                                 return null;
                               },
@@ -404,7 +466,10 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                             if (useMetricUnits)
                               _InputField(
                                 controller: _heightController,
-                                label: AppTranslations.get('height', currentLang),
+                                label: AppTranslations.get(
+                                  'height',
+                                  currentLang,
+                                ),
                                 hint: 'cm',
                                 icon: Icons.straighten_rounded,
                                 keyboardType:
@@ -413,7 +478,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                                     ),
                                 validator: (value) {
                                   if (value == null || value.trim().isEmpty) {
-                                    return currentLang == AppLanguage.vi ? 'Vui lòng nhập chiều cao' : 'Please enter your height';
+                                    return currentLang == AppLanguage.vi
+                                        ? 'Vui lòng nhập chiều cao'
+                                        : 'Please enter your height';
                                   }
                                   final height = double.tryParse(
                                     value.trim().replaceAll(',', '.'),
@@ -421,7 +488,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                                   if (height == null ||
                                       height < 100 ||
                                       height > 250) {
-                                    return currentLang == AppLanguage.vi ? 'Chiều cao phải từ 100-250 cm' : 'Height must be between 100-250 cm';
+                                    return currentLang == AppLanguage.vi
+                                        ? 'Chiều cao phải từ 100-250 cm'
+                                        : 'Height must be between 100-250 cm';
                                   }
                                   return null;
                                 },
@@ -437,7 +506,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                                       icon: Icons.height_rounded,
                                       keyboardType: TextInputType.number,
                                       validator: (value) {
-                                        final feet = int.tryParse(value?.trim() ?? '');
+                                        final feet = int.tryParse(
+                                          value?.trim() ?? '',
+                                        );
                                         if (feet == null ||
                                             feet < 3 ||
                                             feet > 8) {
@@ -460,7 +531,10 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                                           ),
                                       validator: (value) {
                                         final inches = double.tryParse(
-                                          (value ?? '').trim().replaceAll(',', '.'),
+                                          (value ?? '').trim().replaceAll(
+                                            ',',
+                                            '.',
+                                          ),
                                         );
                                         if (inches == null ||
                                             inches < 0 ||
@@ -477,16 +551,23 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                             _InputField(
                               controller: _ageController,
                               label: AppTranslations.get('age', currentLang),
-                              hint: AppTranslations.get('years_old', currentLang),
+                              hint: AppTranslations.get(
+                                'years_old',
+                                currentLang,
+                              ),
                               icon: Icons.cake_outlined,
                               keyboardType: TextInputType.number,
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
-                                  return currentLang == AppLanguage.vi ? 'Vui lòng nhập tuổi' : 'Please enter your age';
+                                  return currentLang == AppLanguage.vi
+                                      ? 'Vui lòng nhập tuổi'
+                                      : 'Please enter your age';
                                 }
                                 final age = int.tryParse(value);
                                 if (age == null || age < 10 || age > 120) {
-                                  return currentLang == AppLanguage.vi ? 'Tuổi phải từ 10-120' : 'Age must be between 10-120 years';
+                                  return currentLang == AppLanguage.vi
+                                      ? 'Tuổi phải từ 10-120'
+                                      : 'Age must be between 10-120 years';
                                 }
                                 return null;
                               },
@@ -507,7 +588,10 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                               children: [
                                 Expanded(
                                   child: _GenderOption(
-                                    label: AppTranslations.get('male', currentLang),
+                                    label: AppTranslations.get(
+                                      'male',
+                                      currentLang,
+                                    ),
                                     value: 'male',
                                     groupValue: _selectedGender,
                                     onTap: () => setState(
@@ -518,7 +602,10 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: _GenderOption(
-                                    label: AppTranslations.get('female', currentLang),
+                                    label: AppTranslations.get(
+                                      'female',
+                                      currentLang,
+                                    ),
                                     value: 'female',
                                     groupValue: _selectedGender,
                                     onTap: () => setState(
@@ -573,6 +660,8 @@ class _UnitSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.kinetic;
     final isVi = currentLang == AppLanguage.vi;
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    final isDark = colors.isDark;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -587,37 +676,105 @@ class _UnitSelector extends StatelessWidget {
             ),
           ),
         ),
-        Container(
-          height: 48,
-          padding: const EdgeInsets.all(KineticTokens.spaceXXS),
-          decoration: BoxDecoration(
-            color: colors.surface1,
-            borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
-            border: Border.all(
-              color: colors.borderSubtle,
-              width: 1.0,
-            ),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: _UnitOption(
-                  label: isVi ? 'HỆ MÉT' : 'METRIC',
-                  detail: 'kg / cm',
-                  selected: useMetricUnits,
-                  onTap: () => onChanged(true),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
+          child: isIOS
+              ? BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                  child: Container(
+                    height: 48,
+                    padding: const EdgeInsets.all(KineticTokens.spaceXXS),
+                    decoration: BoxDecoration(
+                      gradient: isDark
+                          ? const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Color(0x26CAE9FF),
+                                Color(0x1F314B6B),
+                              ],
+                            )
+                          : const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Color(0xB3FFFFFF),
+                                Color(0x80FFFFFF),
+                              ],
+                            ),
+                      borderRadius:
+                          BorderRadius.circular(KineticTokens.radiusMD),
+                      border: Border.all(
+                        color: isDark
+                            ? const Color(0x4DB6DCFF)
+                            : Colors.white.withValues(alpha: .85),
+                        width: 1.0,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: isDark
+                              ? Colors.black.withValues(alpha: 0.20)
+                              : const Color(0xFF1F406E).withValues(alpha: 0.08),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: KineticSlidingSelection(
+                      index: useMetricUnits ? 0 : 1,
+                      count: 2,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _UnitOption(
+                              label: isVi ? 'HỆ MÉT' : 'METRIC',
+                              detail: 'kg / cm',
+                              selected: useMetricUnits,
+                              onTap: () => onChanged(true),
+                            ),
+                          ),
+                          Expanded(
+                            child: _UnitOption(
+                              label: isVi ? 'HỆ ANH' : 'IMPERIAL',
+                              detail: 'lb / ft',
+                              selected: !useMetricUnits,
+                              onTap: () => onChanged(false),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              : Container(
+                  height: 48,
+                  padding: const EdgeInsets.all(KineticTokens.spaceXXS),
+                  decoration: BoxDecoration(
+                    color: colors.surface1,
+                    borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
+                    border: Border.all(color: colors.borderSubtle, width: 1.0),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _UnitOption(
+                          label: isVi ? 'HỆ MÉT' : 'METRIC',
+                          detail: 'kg / cm',
+                          selected: useMetricUnits,
+                          onTap: () => onChanged(true),
+                        ),
+                      ),
+                      Expanded(
+                        child: _UnitOption(
+                          label: isVi ? 'HỆ ANH' : 'IMPERIAL',
+                          detail: 'lb / ft',
+                          selected: !useMetricUnits,
+                          onTap: () => onChanged(false),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              Expanded(
-                child: _UnitOption(
-                  label: isVi ? 'HỆ ANH' : 'IMPERIAL',
-                  detail: 'lb / ft',
-                  selected: !useMetricUnits,
-                  onTap: () => onChanged(false),
-                ),
-              ),
-            ],
-          ),
         ),
       ],
     );
@@ -643,19 +800,8 @@ class _UnitOption extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: KineticTokens.motionTab,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: selected
-              ? colors.primary.withValues(alpha: 0.15)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
-          border: Border.all(
-            color: selected ? colors.primary : Colors.transparent,
-            width: selected ? 1.4 : 1.0,
-          ),
-        ),
+      behavior: HitTestBehavior.opaque,
+      child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -702,43 +848,66 @@ class _InputField extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.kinetic;
 
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      style: KineticTypography.bodyMedium.copyWith(
-        color: colors.textPrimary,
-        fontWeight: FontWeight.w600,
-      ),
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        labelStyle: KineticTypography.bodyMedium.copyWith(
-          color: colors.textMuted,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 2, bottom: 6),
+          child: Text(
+            label,
+            style: KineticTypography.caption.copyWith(
+              color: colors.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ),
-        hintStyle: KineticTypography.bodyMedium.copyWith(
-          color: colors.textMuted.withValues(alpha: 0.6),
+        TextFormField(
+          controller: controller,
+          keyboardType: keyboardType,
+          style: KineticTypography.bodyMedium.copyWith(
+            color: colors.textPrimary,
+            fontWeight: FontWeight.w600,
+          ),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: KineticTypography.bodyMedium.copyWith(
+              color: colors.textMuted.withValues(alpha: 0.65),
+            ),
+            prefixIcon: Icon(icon, color: colors.primary, size: 19),
+            filled: true,
+            fillColor: colors.isDark
+                ? Colors.white.withValues(alpha: 0.06)
+                : Colors.white.withValues(alpha: 0.80),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 14,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
+              borderSide: BorderSide(
+                color: colors.isDark
+                    ? Colors.white.withValues(alpha: 0.14)
+                    : colors.borderSubtle,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
+              borderSide: BorderSide(color: colors.primary, width: 1.4),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
+              borderSide: BorderSide(color: colors.error),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
+              borderSide: BorderSide(color: colors.error, width: 1.4),
+            ),
+          ),
+          validator: validator,
         ),
-        prefixIcon: Icon(icon, color: colors.primary, size: 20),
-        filled: true,
-        fillColor: colors.surface1,
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
-          borderSide: BorderSide(color: colors.borderSubtle),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
-          borderSide: BorderSide(color: colors.primary, width: 1.4),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
-          borderSide: BorderSide(color: colors.error),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
-          borderSide: BorderSide(color: colors.error, width: 1.4),
-        ),
-      ),
-      validator: validator,
+      ],
     );
   }
 }
@@ -761,43 +930,130 @@ class _GenderOption extends StatelessWidget {
     final colors = context.kinetic;
     final selected = value == groupValue;
     final activeColor = value == 'male' ? colors.primary : colors.secondary;
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    final isDark = colors.isDark;
 
     return GestureDetector(
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: KineticTokens.motionTab,
-        padding: const EdgeInsets.symmetric(
-          horizontal: KineticTokens.spaceSM,
-          vertical: KineticTokens.spaceSM,
-        ),
-        decoration: BoxDecoration(
-          color: selected
-              ? activeColor.withValues(alpha: 0.15)
-              : colors.surface2,
-          borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
-          border: Border.all(
-            color: selected ? activeColor : colors.borderSubtle,
-            width: selected ? 1.4 : 1.0,
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              value == 'male' ? Icons.male_rounded : Icons.female_rounded,
-              color: selected ? activeColor : colors.textMuted,
-              size: 20,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: KineticTypography.bodyMedium.copyWith(
-                color: selected ? colors.textPrimary : colors.textMuted,
-                fontWeight: FontWeight.w700,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
+        child: isIOS
+            ? BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                child: AnimatedContainer(
+                  duration: KineticTokens.motionTab,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: KineticTokens.spaceSM,
+                    vertical: KineticTokens.spaceSM,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: selected
+                        ? LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: isDark
+                                ? [
+                                    activeColor.withValues(alpha: 0.35),
+                                    activeColor.withValues(alpha: 0.18),
+                                  ]
+                                : [
+                                    activeColor.withValues(alpha: 0.22),
+                                    activeColor.withValues(alpha: 0.10),
+                                  ],
+                          )
+                        : (isDark
+                            ? const LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Color(0x1FCAE9FF),
+                                  Color(0x14314B6B),
+                                ],
+                              )
+                            : const LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Color(0x8CFFFFFF),
+                                  Color(0x4DFFFFFF),
+                                ],
+                              )),
+                    borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
+                    border: Border.all(
+                      color: selected
+                          ? (isDark
+                              ? const Color(0x6BB6DCFF)
+                              : activeColor.withValues(alpha: 0.85))
+                          : (isDark
+                              ? const Color(0x33B6DCFF)
+                              : Colors.white.withValues(alpha: .75)),
+                      width: selected ? 1.4 : 1.0,
+                    ),
+                    boxShadow: selected
+                        ? [
+                            BoxShadow(
+                              color: activeColor.withValues(alpha: 0.18),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        value == 'male' ? Icons.male_rounded : Icons.female_rounded,
+                        color: selected ? activeColor : colors.textMuted,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        label,
+                        style: KineticTypography.bodyMedium.copyWith(
+                          color: selected ? colors.textPrimary : colors.textMuted,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            : AnimatedContainer(
+                duration: KineticTokens.motionTab,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: KineticTokens.spaceSM,
+                  vertical: KineticTokens.spaceSM,
+                ),
+                decoration: BoxDecoration(
+                  color: selected
+                      ? activeColor.withValues(alpha: 0.15)
+                      : colors.surface2,
+                  borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
+                  border: Border.all(
+                    color: selected ? activeColor : colors.borderSubtle,
+                    width: selected ? 1.4 : 1.0,
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      value == 'male' ? Icons.male_rounded : Icons.female_rounded,
+                      color: selected ? activeColor : colors.textMuted,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      label,
+                      style: KineticTypography.bodyMedium.copyWith(
+                        color: selected ? colors.textPrimary : colors.textMuted,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -810,18 +1066,10 @@ class _GlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.kinetic;
-
-    return Container(
+    return KineticCard(
+      useLiquidGlass: true,
+      borderRadius: 21,
       padding: const EdgeInsets.all(KineticTokens.spaceLG),
-      decoration: BoxDecoration(
-        color: colors.surface1,
-        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
-        border: Border.all(
-          color: colors.borderSubtle,
-          width: 1.0,
-        ),
-      ),
       child: child,
     );
   }

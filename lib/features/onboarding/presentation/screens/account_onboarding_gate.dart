@@ -1,5 +1,5 @@
 import 'package:fitness_exercise_application/features/onboarding/presentation/screens/welcome_screen.dart';
-import 'package:fitness_exercise_application/shared/aetron/aetron_globe_orbit_screen.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -59,8 +59,12 @@ class _AccountOnboardingGateState extends State<AccountOnboardingGate> {
       future: _shouldShowWelcome,
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
-          return const AetronGlobeOrbitScreen(
-            customTitle: 'Aetron',
+          final colors = context.kinetic;
+          return Scaffold(
+            backgroundColor: colors.background,
+            body: Center(
+              child: CircularProgressIndicator(color: colors.primary),
+            ),
           );
         }
         return snapshot.data!

@@ -29,19 +29,22 @@ class WorkoutMetricsCalculator {
     required String activityType,
     required double distanceMeters,
     required int durationSec,
+    int? movingDurationSec,
   }) {
     final distanceKm = distanceMetersToKm(distanceMeters);
-    final avgSpeedKmh = computeAverageSpeedKmh(
+    final effectiveMovingSec = movingDurationSec ?? durationSec;
+    final avgMovingSpeedKmh = computeAverageSpeedKmh(
       distanceKm: distanceKm,
-      durationSec: durationSec,
+      durationSec: effectiveMovingSec,
     );
 
     return profile
         .calculateCalories(
           activityType: activityType,
           distanceKm: distanceKm,
-          speedKmh: avgSpeedKmh,
+          speedKmh: avgMovingSpeedKmh,
           durationSec: durationSec,
+          movingDurationSec: movingDurationSec,
         )
         .round();
   }

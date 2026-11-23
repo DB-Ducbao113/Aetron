@@ -73,17 +73,10 @@ class KineticRecoveryGuidanceCard extends ConsumerWidget {
           : 'Low physical strain. Your body is well-rested and fully primed for your next endurance workout.';
     }
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(KineticTokens.spaceLG),
-      decoration: BoxDecoration(
-        color: colors.surface1,
-        borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
-        border: Border.all(
-          color: colors.borderSubtle,
-          width: 1,
-        ),
-      ),
+    return KineticCard(
+      useLiquidGlass: true,
+      padding: const EdgeInsets.all(17),
+      borderRadius: 21,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -110,14 +103,15 @@ class KineticRecoveryGuidanceCard extends ConsumerWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          isVi ? 'CHỈ DẪN HỒI PHỤC' : 'RECOVERY GUIDANCE',
-                          style: KineticTypography.unitLabel.copyWith(
-                            color: colors.primary,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1.2,
+                        Expanded(
+                          child: Text(
+                            isVi ? 'CHỈ DẪN HỒI PHỤC' : 'RECOVERY GUIDANCE',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: KineticTypography.cardEyebrowOf(colors),
                           ),
                         ),
+                        const SizedBox(width: KineticTokens.spaceXS),
                         Text(
                           isVi
                               ? 'Tải vận động: $strainPercent'
@@ -146,15 +140,17 @@ class KineticRecoveryGuidanceCard extends ConsumerWidget {
           const SizedBox(height: 14),
           Row(
             children: [
-              KineticButton(
-                label: isVi ? 'Lên lịch đi bộ nhẹ' : 'Schedule light walk',
-                icon: Icons.directions_walk_rounded,
-                variant: KineticButtonVariant.secondary,
-                isFullWidth: false,
-                onPressed: () {
-                  ref.read(mainTabControllerProvider.notifier).state =
-                      activityTabIndex;
-                },
+              Flexible(
+                child: KineticButton(
+                  label: isVi ? 'Lên lịch đi bộ nhẹ' : 'Schedule light walk',
+                  icon: Icons.directions_walk_rounded,
+                  variant: KineticButtonVariant.secondary,
+                  isFullWidth: false,
+                  onPressed: () {
+                    ref.read(mainTabControllerProvider.notifier).state =
+                        activityTabIndex;
+                  },
+                ),
               ),
             ],
           ),

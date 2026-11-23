@@ -107,45 +107,49 @@ class _ActivityQuickSwitchCard extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
-          child: AnimatedContainer(
-            duration: KineticTokens.motionTab,
-            curve: KineticTokens.animCurve,
-            padding: const EdgeInsets.symmetric(
-              vertical: KineticTokens.spaceSM,
-              horizontal: KineticTokens.spaceXS,
-            ),
-            decoration: BoxDecoration(
-              color: bg,
-              borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
-              border: Border.all(
-                color: borderColor,
-                width: isSelected ? 1.5 : 1.0,
+          child: KineticTouchFinish(
+            radius: KineticTokens.radiusMD,
+            emphasis: isSelected,
+            child: AnimatedContainer(
+              duration: KineticTokens.motionTab,
+              curve: KineticTokens.animCurve,
+              padding: const EdgeInsets.symmetric(
+                vertical: KineticTokens.spaceSM,
+                horizontal: KineticTokens.spaceXS,
               ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                BladeIcon(
-                  icon,
-                  size: 20,
-                  color: contentColor,
+              decoration: BoxDecoration(
+                color: bg,
+                borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
+                border: Border.all(
+                  color: borderColor,
+                  width: isSelected ? 1.5 : 1.0,
                 ),
-                const SizedBox(width: KineticTokens.spaceXS),
-                Flexible(
-                  child: Text(
-                    label,
-                    style: KineticTypography.label.copyWith(
-                      color: isSelected ? colors.textPrimary : colors.textSecondary,
-                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                      fontSize: 13,
-                      letterSpacing: 0.2,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  BladeIcon(icon, size: 20, color: contentColor),
+                  const SizedBox(width: KineticTokens.spaceXS),
+                  Flexible(
+                    child: Text(
+                      label,
+                      style: KineticTypography.label.copyWith(
+                        color: isSelected
+                            ? colors.textPrimary
+                            : colors.textSecondary,
+                        fontWeight: isSelected
+                            ? FontWeight.w800
+                            : FontWeight.w600,
+                        fontSize: 13,
+                        letterSpacing: 0.2,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

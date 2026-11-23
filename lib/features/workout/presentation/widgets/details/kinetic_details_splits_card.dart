@@ -2,9 +2,7 @@ import 'dart:math' as math;
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 
 class KineticDetailsSplitsCard extends StatelessWidget {
@@ -46,15 +44,10 @@ class KineticDetailsSplitsCard extends StatelessWidget {
 
     final unitLabel = WorkoutFormatters.distanceUnitLabel(useMetric: useMetricUnits).toUpperCase();
 
-    // V4: flat section — hairline frame, rows already hairline-divided.
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(color: colors.borderSubtle),
-          bottom: BorderSide(color: colors.borderSubtle),
-        ),
-      ),
+    return KineticCard(
+      useLiquidGlass: true,
+      borderRadius: 21,
+      padding: const EdgeInsets.all(17),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -145,7 +138,9 @@ class _SplitRow extends StatelessWidget {
     }
     barRatio = math.max(0.2, math.min(1.0, barRatio));
 
-    final barColor = isFastest ? colors.primary : colors.secondary;
+    final barColor = isFastest
+        ? colors.primary
+        : colors.primary.withValues(alpha: 0.45);
 
     return Row(
       children: [
@@ -155,7 +150,7 @@ class _SplitRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
           decoration: BoxDecoration(
             color: isFastest
-                ? colors.primary.withValues(alpha: 0.15)
+                ? colors.primaryTint
                 : colors.surface2,
             borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
           ),
@@ -177,19 +172,19 @@ class _SplitRow extends StatelessWidget {
               return Stack(
                 children: [
                   Container(
-                    height: 5,
+                    height: 6,
                     width: constraints.maxWidth,
                     decoration: BoxDecoration(
-                      color: colors.surface2,
-                      borderRadius: BorderRadius.circular(2.5),
+                      color: colors.primaryTint,
+                      borderRadius: BorderRadius.circular(3),
                     ),
                   ),
                   Container(
-                    height: 5,
+                    height: 6,
                     width: constraints.maxWidth * barRatio,
                     decoration: BoxDecoration(
                       color: barColor,
-                      borderRadius: BorderRadius.circular(2.5),
+                      borderRadius: BorderRadius.circular(3),
                     ),
                   ),
                 ],

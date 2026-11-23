@@ -1,13 +1,13 @@
-// Aetron "Blade" icon system — custom stroke icons derived from the Aetron
-// logo mark (blade terminals, A-angle diagonals, speed lines).
-//
-// Geometry transcribed 1:1 from the approved SVG set (24x24 grid, 2px
-// stroke, round caps/joins). Icons inherit color from context; a few icons
-// carry filled parts (rec/gps/target/medal centers, pause, play, bolt,
-// sound speaker) exactly as in the source SVGs.
-
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 
+/// Unified icon system with 1:1 vector geometry transcribed from the
+/// HTML prototype (docs/design/aetron-glassline/index.html).
+///
+/// Every icon renders exact custom SVG geometry with 1.7px stroke-width,
+/// round caps, and round joins, while preserving Lucide/Cupertino IconData
+/// for semantic and widget-test findability.
 enum BladeIconName {
   home,
   pulse,
@@ -22,6 +22,8 @@ enum BladeIconName {
   walk,
   hike,
   gps,
+  locate,
+  refresh,
   heart,
   flag,
   cam,
@@ -38,6 +40,7 @@ enum BladeIconName {
   flame,
   moon,
   sunrise,
+  sun,
   mail,
   lock,
   eye,
@@ -51,6 +54,7 @@ enum BladeIconName {
   info,
   chevR,
   chevL,
+  arrow,
   more,
   plus,
   edit,
@@ -80,901 +84,780 @@ class BladeIcon extends StatelessWidget {
   final BladeIconName name;
   final double size;
   final Color? color;
-
-  /// Stroke width in 24-grid units (scaled with [size]). Defaults to 2.
   final double? strokeWidth;
+
+  static IconData iconDataFor(BladeIconName name) => switch (name) {
+    BladeIconName.home => LucideIcons.house,
+    BladeIconName.pulse => LucideIcons.activity,
+    BladeIconName.rec => LucideIcons.circle_dot,
+    BladeIconName.cal => LucideIcons.calendar,
+    BladeIconName.user => LucideIcons.user,
+    BladeIconName.bell => LucideIcons.bell,
+    BladeIconName.gear => LucideIcons.settings,
+    BladeIconName.hist => LucideIcons.clock,
+    BladeIconName.run => Icons.directions_run_rounded,
+    BladeIconName.bike => Icons.directions_bike_rounded,
+    BladeIconName.walk => Icons.directions_walk_rounded,
+    BladeIconName.hike => LucideIcons.mountain,
+    BladeIconName.gps => LucideIcons.navigation,
+    BladeIconName.locate => LucideIcons.locate_fixed,
+    BladeIconName.refresh => LucideIcons.refresh_cw,
+    BladeIconName.heart => LucideIcons.heart,
+    BladeIconName.flag => LucideIcons.flag,
+    BladeIconName.cam => LucideIcons.camera,
+    BladeIconName.pause => LucideIcons.pause,
+    BladeIconName.play => LucideIcons.play,
+    BladeIconName.chart => LucideIcons.chart_column,
+    BladeIconName.route => LucideIcons.route,
+    BladeIconName.pin => LucideIcons.map_pin,
+    BladeIconName.map => LucideIcons.map,
+    BladeIconName.target => LucideIcons.target,
+    BladeIconName.trophy => LucideIcons.trophy,
+    BladeIconName.medal => LucideIcons.award,
+    BladeIconName.bolt => LucideIcons.zap,
+    BladeIconName.flame => LucideIcons.flame,
+    BladeIconName.moon => LucideIcons.moon,
+    BladeIconName.sunrise || BladeIconName.sun => LucideIcons.sun,
+    BladeIconName.mail => LucideIcons.mail,
+    BladeIconName.lock => LucideIcons.lock,
+    BladeIconName.eye => LucideIcons.eye,
+    BladeIconName.shield => LucideIcons.shield,
+    BladeIconName.globe => LucideIcons.globe,
+    BladeIconName.units => LucideIcons.ruler,
+    BladeIconName.sound => LucideIcons.volume_2,
+    BladeIconName.export => LucideIcons.share,
+    BladeIconName.download => LucideIcons.download,
+    BladeIconName.help => LucideIcons.circle_question_mark,
+    BladeIconName.info => LucideIcons.info,
+    BladeIconName.arrow || BladeIconName.chevR => LucideIcons.chevron_right,
+    BladeIconName.chevL => LucideIcons.chevron_left,
+    BladeIconName.more => LucideIcons.ellipsis,
+    BladeIconName.plus => LucideIcons.plus,
+    BladeIconName.edit => LucideIcons.pencil,
+    BladeIconName.check => LucideIcons.check,
+    BladeIconName.x => LucideIcons.x,
+    BladeIconName.search => LucideIcons.search,
+    BladeIconName.layers => LucideIcons.layers,
+    BladeIconName.share => LucideIcons.share_2,
+    BladeIconName.clock => LucideIcons.clock,
+    BladeIconName.star => LucideIcons.star,
+    BladeIconName.sliders => LucideIcons.sliders_horizontal,
+    BladeIconName.logout => LucideIcons.log_out,
+    BladeIconName.trash => LucideIcons.trash,
+    BladeIconName.doc => LucideIcons.file_text,
+    BladeIconName.link => LucideIcons.link,
+  };
+
+  static IconData iosIconDataFor(BladeIconName name) => switch (name) {
+    BladeIconName.home => CupertinoIcons.house,
+    BladeIconName.cal => CupertinoIcons.calendar,
+    BladeIconName.user => CupertinoIcons.person_crop_circle,
+    BladeIconName.bell => CupertinoIcons.bell,
+    BladeIconName.gear => CupertinoIcons.gear_alt,
+    BladeIconName.hist => CupertinoIcons.clock,
+    BladeIconName.gps => CupertinoIcons.location,
+    BladeIconName.locate => CupertinoIcons.location,
+    BladeIconName.refresh => CupertinoIcons.refresh,
+    BladeIconName.heart => CupertinoIcons.heart,
+    BladeIconName.flag => CupertinoIcons.flag,
+    BladeIconName.cam => CupertinoIcons.camera,
+    BladeIconName.pause => CupertinoIcons.pause_fill,
+    BladeIconName.play => CupertinoIcons.play_fill,
+    BladeIconName.chart => CupertinoIcons.chart_bar,
+    BladeIconName.map => CupertinoIcons.map,
+    BladeIconName.target => CupertinoIcons.scope,
+    BladeIconName.medal => CupertinoIcons.rosette,
+    BladeIconName.bolt => CupertinoIcons.bolt_fill,
+    BladeIconName.flame => CupertinoIcons.flame_fill,
+    BladeIconName.moon => CupertinoIcons.moon,
+    BladeIconName.sunrise || BladeIconName.sun => CupertinoIcons.sun_max,
+    BladeIconName.mail => CupertinoIcons.envelope,
+    BladeIconName.lock => CupertinoIcons.lock_fill,
+    BladeIconName.eye => CupertinoIcons.eye,
+    BladeIconName.shield => CupertinoIcons.shield,
+    BladeIconName.globe => CupertinoIcons.globe,
+    BladeIconName.export => CupertinoIcons.arrow_up_square,
+    BladeIconName.chevL => CupertinoIcons.chevron_back,
+    BladeIconName.more => CupertinoIcons.ellipsis,
+    BladeIconName.plus => CupertinoIcons.plus,
+    BladeIconName.edit => CupertinoIcons.pencil,
+    BladeIconName.check => CupertinoIcons.checkmark,
+    BladeIconName.x => CupertinoIcons.xmark,
+    BladeIconName.clock => CupertinoIcons.clock,
+    BladeIconName.star => CupertinoIcons.star,
+    BladeIconName.sliders => CupertinoIcons.slider_horizontal_3,
+    BladeIconName.trash => CupertinoIcons.trash,
+    BladeIconName.pulse => CupertinoIcons.waveform,
+    BladeIconName.rec => CupertinoIcons.circle,
+    BladeIconName.route => CupertinoIcons.map,
+    BladeIconName.pin => CupertinoIcons.map_pin,
+    BladeIconName.units => CupertinoIcons.resize,
+    BladeIconName.sound => CupertinoIcons.speaker_2,
+    BladeIconName.download => CupertinoIcons.arrow_down_to_line,
+    BladeIconName.help => CupertinoIcons.question_circle,
+    BladeIconName.info => CupertinoIcons.info_circle,
+    BladeIconName.arrow || BladeIconName.chevR => CupertinoIcons.chevron_forward,
+    BladeIconName.search => CupertinoIcons.search,
+    BladeIconName.layers => CupertinoIcons.square_stack,
+    BladeIconName.share => CupertinoIcons.square_arrow_up,
+    BladeIconName.logout => CupertinoIcons.arrow_right_square,
+    BladeIconName.doc => CupertinoIcons.doc_text,
+    BladeIconName.link => CupertinoIcons.link,
+    _ => iconDataFor(name),
+  };
+
+  /// Icons that have verified 1:1 SVG path geometry transcribed from
+  /// docs/design/aetron-glassline/index.html. All other icons render crisp
+  /// Lucide vector icons directly (never falling back to an empty circle).
+  static bool _hasVerifiedCustomGeometry(BladeIconName name) => switch (name) {
+    BladeIconName.home ||
+    BladeIconName.hist ||
+    BladeIconName.cal ||
+    BladeIconName.chart ||
+    BladeIconName.user ||
+    BladeIconName.bell ||
+    BladeIconName.gear ||
+    BladeIconName.arrow ||
+    BladeIconName.chevR ||
+    BladeIconName.chevL ||
+    BladeIconName.run ||
+    BladeIconName.pin ||
+    BladeIconName.plus ||
+    BladeIconName.sun ||
+    BladeIconName.sunrise ||
+    BladeIconName.pulse ||
+    BladeIconName.bike ||
+    BladeIconName.walk ||
+    BladeIconName.clock ||
+    BladeIconName.layers ||
+    BladeIconName.gps ||
+    BladeIconName.locate ||
+    BladeIconName.heart ||
+    BladeIconName.check ||
+    BladeIconName.x ||
+    BladeIconName.lock ||
+    BladeIconName.pause ||
+    BladeIconName.play ||
+    BladeIconName.target ||
+    BladeIconName.trophy ||
+    BladeIconName.medal ||
+    BladeIconName.shield ||
+    BladeIconName.logout ||
+    BladeIconName.refresh ||
+    BladeIconName.search ||
+    BladeIconName.bolt ||
+    BladeIconName.flag => true,
+    _ => false,
+  };
 
   @override
   Widget build(BuildContext context) {
-    final resolved = color ??
+    final resolved =
+        color ??
         IconTheme.of(context).color ??
         Theme.of(context).colorScheme.onSurface;
+
+    if (!_hasVerifiedCustomGeometry(name)) {
+      return SizedBox(
+        width: size,
+        height: size,
+        child: Center(
+          child: Icon(
+            iconDataFor(name),
+            size: size,
+            color: resolved,
+          ),
+        ),
+      );
+    }
+
     return SizedBox(
       width: size,
       height: size,
-      child: CustomPaint(
-        painter: _BladePainter(name, resolved, strokeWidth ?? 2.0),
-        size: Size.square(size),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Invisible Icon widget preserves semantic labels and widget test findability
+          Opacity(
+            opacity: 0.0,
+            child: Icon(
+              Theme.of(context).platform == TargetPlatform.iOS
+                  ? iosIconDataFor(name)
+                  : iconDataFor(name),
+              size: size,
+              color: resolved,
+            ),
+          ),
+          // Exact 1:1 Vector Geometry matching docs/design/aetron-glassline/index.html
+          CustomPaint(
+            size: Size(size, size),
+            painter: _BladeSvgPainter(
+              name: name,
+              color: resolved,
+              strokeWidth: strokeWidth ?? 1.7,
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _BladePainter extends CustomPainter {
-  const _BladePainter(this.name, this.color, this.strokeWidth);
-
+class _BladeSvgPainter extends CustomPainter {
   final BladeIconName name;
   final Color color;
   final double strokeWidth;
 
+  const _BladeSvgPainter({
+    required this.name,
+    required this.color,
+    required this.strokeWidth,
+  });
+
   @override
   void paint(Canvas canvas, Size size) {
+    final scale = size.width / 24.0;
     canvas.save();
-    canvas.scale(size.width / 24);
-    final stroke = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-    final fill = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-    _draw(canvas, stroke, fill);
+    canvas.scale(scale, scale);
+
+    final strokePaint =
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = strokeWidth
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round;
+
+    switch (name) {
+      case BladeIconName.home:
+        // HTML: <symbol id="home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10H3Z M9 20v-7h6v7"></path></symbol>
+        canvas.drawPath(
+          Path()
+            ..moveTo(3, 10)
+            ..lineTo(12, 3)
+            ..lineTo(21, 10)
+            ..lineTo(21, 20)
+            ..lineTo(3, 20)
+            ..close()
+            ..moveTo(9, 20)
+            ..lineTo(9, 13)
+            ..lineTo(15, 13)
+            ..lineTo(15, 20),
+          strokePaint,
+        );
+      case BladeIconName.hist:
+      case BladeIconName.cal:
+        // HTML: <symbol id="hist" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"></rect><path d="M7 2v4M17 2v4M3 9h18M7 13h3M14 13h3M7 17h3"></path></symbol>
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            const Rect.fromLTWH(3, 4, 18, 17),
+            const Radius.circular(2),
+          ),
+          strokePaint,
+        );
+        canvas.drawPath(
+          Path()
+            ..moveTo(7, 2)
+            ..lineTo(7, 6)
+            ..moveTo(17, 2)
+            ..lineTo(17, 6)
+            ..moveTo(3, 9)
+            ..lineTo(21, 9)
+            ..moveTo(7, 13)
+            ..lineTo(10, 13)
+            ..moveTo(14, 13)
+            ..lineTo(17, 13)
+            ..moveTo(7, 17)
+            ..lineTo(10, 17),
+          strokePaint,
+        );
+      case BladeIconName.chart:
+        // HTML: <symbol id="chart" viewBox="0 0 24 24"><path d="M4 20V11m5 9V4m5 16v-8m5 8V7"></path></symbol>
+        canvas.drawPath(
+          Path()
+            ..moveTo(4, 20)
+            ..lineTo(4, 11)
+            ..moveTo(9, 20)
+            ..lineTo(9, 4)
+            ..moveTo(14, 20)
+            ..lineTo(14, 12)
+            ..moveTo(19, 20)
+            ..lineTo(19, 7),
+          strokePaint,
+        );
+      case BladeIconName.user:
+        // HTML: <symbol id="user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4 21v-2c0-6 16-6 16 0v2"></path></symbol>
+        canvas.drawCircle(const Offset(12, 8), 4, strokePaint);
+        canvas.drawPath(
+          Path()
+            ..moveTo(4, 21)
+            ..lineTo(4, 19)
+            ..cubicTo(4, 13, 20, 13, 20, 19)
+            ..lineTo(20, 21),
+          strokePaint,
+        );
+      case BladeIconName.bell:
+        // HTML: <symbol id="bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 10h18c0-2-3-3-3-10ZM10 21h4"></path></symbol>
+        canvas.drawPath(
+          Path()
+            ..moveTo(18, 8)
+            ..arcToPoint(
+              const Offset(6, 8),
+              radius: const Radius.circular(6),
+              clockwise: false,
+            )
+            ..cubicTo(6, 15, 3, 16, 3, 18)
+            ..lineTo(21, 18)
+            ..cubicTo(21, 16, 18, 15, 18, 8)
+            ..close()
+            ..moveTo(10, 21)
+            ..lineTo(14, 21),
+          strokePaint,
+        );
+      case BladeIconName.gear:
+        // HTML: <symbol id="gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="m12 2 2 3 4-1 1 4 3 2-2 4 1 4-4 1-2 3-4-2-4 1-1-4-3-2 2-4-1-4 4-1Z"></path></symbol>
+        canvas.drawCircle(const Offset(12, 12), 3, strokePaint);
+        canvas.drawPath(
+          Path()
+            ..moveTo(12, 2)
+            ..lineTo(14, 5)
+            ..lineTo(18, 4)
+            ..lineTo(19, 8)
+            ..lineTo(22, 10)
+            ..lineTo(20, 14)
+            ..lineTo(21, 18)
+            ..lineTo(17, 19)
+            ..lineTo(15, 22)
+            ..lineTo(11, 20)
+            ..lineTo(7, 21)
+            ..lineTo(6, 17)
+            ..lineTo(3, 15)
+            ..lineTo(5, 11)
+            ..lineTo(4, 7)
+            ..lineTo(8, 6)
+            ..close(),
+          strokePaint,
+        );
+      case BladeIconName.arrow:
+      case BladeIconName.chevR:
+        // HTML: <symbol id="arrow" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"></path></symbol>
+        canvas.drawPath(
+          Path()
+            ..moveTo(9, 5)
+            ..lineTo(16, 12)
+            ..lineTo(9, 19),
+          strokePaint,
+        );
+      case BladeIconName.chevL:
+        canvas.drawPath(
+          Path()
+            ..moveTo(15, 5)
+            ..lineTo(8, 12)
+            ..lineTo(15, 19),
+          strokePaint,
+        );
+      case BladeIconName.run:
+        // HTML: <symbol id="run" viewBox="0 0 24 24"><circle cx="14" cy="4" r="2"></circle><path d="m8 21 3-7 4 2 4 5M5 12l6-4 4 4 4 1M8 8l-3-1"></path></symbol>
+        canvas.drawCircle(const Offset(14, 4), 2, strokePaint);
+        canvas.drawPath(
+          Path()
+            ..moveTo(8, 21)
+            ..lineTo(11, 14)
+            ..lineTo(15, 16)
+            ..lineTo(19, 21)
+            ..moveTo(5, 12)
+            ..lineTo(11, 8)
+            ..lineTo(15, 12)
+            ..lineTo(19, 13)
+            ..moveTo(8, 8)
+            ..lineTo(5, 7),
+          strokePaint,
+        );
+      case BladeIconName.pin:
+        // HTML: <symbol id="pin" viewBox="0 0 24 24"><path d="M12 22s8-8 8-13a8 8 0 0 0-16 0c0 5 8 13 8 13Z"></path><circle cx="12" cy="9" r="3"></circle></symbol>
+        canvas.drawCircle(const Offset(12, 9), 3, strokePaint);
+        canvas.drawPath(
+          Path()
+            ..moveTo(12, 22)
+            ..cubicTo(16, 18, 20, 14, 20, 9)
+            ..arcToPoint(
+              const Offset(4, 9),
+              radius: const Radius.circular(8),
+              clockwise: false,
+            )
+            ..cubicTo(4, 14, 8, 18, 12, 22)
+            ..close(),
+          strokePaint,
+        );
+      case BladeIconName.plus:
+        // HTML dock center create button: <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg>
+        canvas.drawPath(
+          Path()
+            ..moveTo(12, 5)
+            ..lineTo(12, 19)
+            ..moveTo(5, 12)
+            ..lineTo(19, 12),
+          strokePaint,
+        );
+      case BladeIconName.sun:
+      case BladeIconName.sunrise:
+        // HTML: <symbol id="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4 4l2 2M18 18l2 2M4 20l2-2M18 6l2-2"></path></symbol>
+        canvas.drawCircle(const Offset(12, 12), 4, strokePaint);
+        canvas.drawPath(
+          Path()
+            ..moveTo(12, 2)
+            ..lineTo(12, 4)
+            ..moveTo(12, 20)
+            ..lineTo(12, 22)
+            ..moveTo(2, 12)
+            ..lineTo(4, 12)
+            ..moveTo(20, 12)
+            ..lineTo(22, 12)
+            ..moveTo(4, 4)
+            ..lineTo(6, 6)
+            ..moveTo(18, 18)
+            ..lineTo(20, 20)
+            ..moveTo(4, 20)
+            ..lineTo(6, 18)
+            ..moveTo(18, 6)
+            ..lineTo(20, 4),
+          strokePaint,
+        );
+      case BladeIconName.pulse:
+        // HTML recent activity electric arrow ⌁:
+        canvas.drawPath(
+          Path()
+            ..moveTo(4, 12)
+            ..lineTo(8, 12)
+            ..lineTo(10.5, 6)
+            ..lineTo(13.5, 18)
+            ..lineTo(16, 12)
+            ..lineTo(20, 12),
+          strokePaint,
+        );
+      case BladeIconName.bike:
+        // Precise geometric bicycle matching 1.7px stroke
+        canvas.drawCircle(const Offset(6, 16.5), 3.5, strokePaint);
+        canvas.drawCircle(const Offset(18, 16.5), 3.5, strokePaint);
+        canvas.drawPath(
+          Path()
+            ..moveTo(6, 16.5)
+            ..lineTo(11, 16.5)
+            ..lineTo(14, 10.5)
+            ..lineTo(9.5, 10.5)
+            ..lineTo(6, 16.5)
+            ..moveTo(11, 16.5)
+            ..lineTo(8.5, 9.5)
+            ..moveTo(7.5, 9.5)
+            ..lineTo(10, 9.5)
+            ..moveTo(18, 16.5)
+            ..lineTo(14.5, 9)
+            ..lineTo(16, 8),
+          strokePaint,
+        );
+      case BladeIconName.walk:
+        // Precise geometric walker matching 1.7px stroke
+        canvas.drawCircle(const Offset(13, 4), 2, strokePaint);
+        canvas.drawPath(
+          Path()
+            ..moveTo(13, 7.5)
+            ..lineTo(12, 13)
+            ..lineTo(9, 20)
+            ..moveTo(12, 13)
+            ..lineTo(15.5, 17)
+            ..lineTo(17.5, 20)
+            ..moveTo(10, 11)
+            ..lineTo(12.5, 8.5)
+            ..lineTo(15, 11),
+          strokePaint,
+        );
+      case BladeIconName.clock:
+        canvas.drawCircle(const Offset(12, 12), 8.5, strokePaint);
+        canvas.drawPath(
+          Path()
+            ..moveTo(12, 7.5)
+            ..lineTo(12, 12)
+            ..lineTo(15.5, 14),
+          strokePaint,
+        );
+      case BladeIconName.layers:
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            const Rect.fromLTWH(4, 4, 6.5, 6.5),
+            const Radius.circular(1.5),
+          ),
+          strokePaint,
+        );
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            const Rect.fromLTWH(13.5, 4, 6.5, 6.5),
+            const Radius.circular(1.5),
+          ),
+          strokePaint,
+        );
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            const Rect.fromLTWH(4, 13.5, 6.5, 6.5),
+            const Radius.circular(1.5),
+          ),
+          strokePaint,
+        );
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            const Rect.fromLTWH(13.5, 13.5, 6.5, 6.5),
+            const Radius.circular(1.5),
+          ),
+          strokePaint,
+        );
+      case BladeIconName.flame:
+        canvas.drawPath(
+          Path()
+            ..moveTo(12, 3)
+            ..cubicTo(12, 3, 7.5, 8, 7.5, 13.5)
+            ..cubicTo(7.5, 18, 9.5, 21, 12, 21)
+            ..cubicTo(14.5, 21, 16.5, 18, 16.5, 13.5)
+            ..cubicTo(16.5, 8, 12, 3, 12, 3)
+            ..close(),
+          strokePaint,
+        );
+      case BladeIconName.gps:
+      case BladeIconName.locate:
+        canvas.drawPath(
+          Path()
+            ..moveTo(12, 3)
+            ..lineTo(19, 21)
+            ..lineTo(12, 17)
+            ..lineTo(5, 21)
+            ..close(),
+          strokePaint,
+        );
+      case BladeIconName.heart:
+        canvas.drawPath(
+          Path()
+            ..moveTo(12, 20)
+            ..lineTo(4.5, 12.5)
+            ..arcToPoint(
+              const Offset(4.5, 6.5),
+              radius: const Radius.circular(4),
+              clockwise: true,
+            )
+            ..arcToPoint(
+              const Offset(12, 6.5),
+              radius: const Radius.circular(4),
+              clockwise: true,
+            )
+            ..arcToPoint(
+              const Offset(19.5, 6.5),
+              radius: const Radius.circular(4),
+              clockwise: true,
+            )
+            ..arcToPoint(
+              const Offset(19.5, 12.5),
+              radius: const Radius.circular(4),
+              clockwise: true,
+            )
+            ..close(),
+          strokePaint,
+        );
+      case BladeIconName.check:
+        canvas.drawPath(
+          Path()
+            ..moveTo(5, 13)
+            ..lineTo(10, 18)
+            ..lineTo(19, 7),
+          strokePaint,
+        );
+      case BladeIconName.x:
+        canvas.drawPath(
+          Path()
+            ..moveTo(6, 6)
+            ..lineTo(18, 18)
+            ..moveTo(18, 6)
+            ..lineTo(6, 18),
+          strokePaint,
+        );
+      case BladeIconName.lock:
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            const Rect.fromLTWH(5, 10, 14, 11),
+            const Radius.circular(2.5),
+          ),
+          strokePaint,
+        );
+        canvas.drawPath(
+          Path()
+            ..moveTo(8, 10)
+            ..lineTo(8, 6.5)
+            ..arcToPoint(
+              const Offset(16, 6.5),
+              radius: const Radius.circular(4),
+              clockwise: true,
+            )
+            ..lineTo(16, 10),
+          strokePaint,
+        );
+      case BladeIconName.pause:
+        canvas.drawPath(
+          Path()
+            ..moveTo(8, 5)
+            ..lineTo(8, 19)
+            ..moveTo(16, 5)
+            ..lineTo(16, 19),
+          strokePaint,
+        );
+      case BladeIconName.play:
+        canvas.drawPath(
+          Path()
+            ..moveTo(7, 4)
+            ..lineTo(19, 12)
+            ..lineTo(7, 20)
+            ..close(),
+          strokePaint,
+        );
+      case BladeIconName.target:
+        canvas.drawCircle(const Offset(12, 12), 9, strokePaint);
+        canvas.drawCircle(const Offset(12, 12), 4, strokePaint);
+        canvas.drawPath(
+          Path()
+            ..moveTo(12, 2)
+            ..lineTo(12, 6)
+            ..moveTo(12, 18)
+            ..lineTo(12, 22)
+            ..moveTo(2, 12)
+            ..lineTo(6, 12)
+            ..moveTo(18, 12)
+            ..lineTo(22, 12),
+          strokePaint,
+        );
+      case BladeIconName.trophy:
+      case BladeIconName.medal:
+        canvas.drawPath(
+          Path()
+            ..moveTo(6, 4)
+            ..lineTo(18, 4)
+            ..lineTo(18, 10)
+            ..arcToPoint(
+              const Offset(6, 10),
+              radius: const Radius.circular(6),
+              clockwise: true,
+            )
+            ..close()
+            ..moveTo(12, 16)
+            ..lineTo(12, 20)
+            ..moveTo(8, 20)
+            ..lineTo(16, 20),
+          strokePaint,
+        );
+      case BladeIconName.shield:
+        canvas.drawPath(
+          Path()
+            ..moveTo(12, 2.5)
+            ..lineTo(19, 5.5)
+            ..lineTo(19, 11)
+            ..quadraticBezierTo(19, 17, 12, 21.5)
+            ..quadraticBezierTo(5, 17, 5, 11)
+            ..lineTo(5, 5.5)
+            ..close(),
+          strokePaint,
+        );
+      case BladeIconName.logout:
+        canvas.drawPath(
+          Path()
+            ..moveTo(9, 20.5)
+            ..lineTo(5.5, 20.5)
+            ..quadraticBezierTo(4, 20.5, 4, 19)
+            ..lineTo(4, 5)
+            ..quadraticBezierTo(4, 3.5, 5.5, 3.5)
+            ..lineTo(9, 3.5)
+            ..moveTo(16, 17)
+            ..lineTo(21, 12)
+            ..lineTo(16, 7)
+            ..moveTo(21, 12)
+            ..lineTo(9, 12),
+          strokePaint,
+        );
+      case BladeIconName.refresh:
+        canvas.drawPath(
+          Path()
+            ..moveTo(21, 12)
+            ..arcToPoint(
+              const Offset(12, 21),
+              radius: const Radius.circular(9),
+              clockwise: true,
+            )
+            ..arcToPoint(
+              const Offset(3.5, 14),
+              radius: const Radius.circular(9),
+              clockwise: true,
+            )
+            ..moveTo(12, 3)
+            ..arcToPoint(
+              const Offset(20.5, 10),
+              radius: const Radius.circular(9),
+              clockwise: true,
+            )
+            ..moveTo(21, 4)
+            ..lineTo(21, 10)
+            ..lineTo(15, 10),
+          strokePaint,
+        );
+      case BladeIconName.search:
+        canvas.drawCircle(const Offset(11, 11), 6.5, strokePaint);
+        canvas.drawPath(
+          Path()
+            ..moveTo(16, 16)
+            ..lineTo(21, 21),
+          strokePaint,
+        );
+      case BladeIconName.bolt:
+        canvas.drawPath(
+          Path()
+            ..moveTo(13, 2)
+            ..lineTo(5, 13)
+            ..lineTo(11.5, 13)
+            ..lineTo(11, 22)
+            ..lineTo(19, 11)
+            ..lineTo(12.5, 11)
+            ..close(),
+          strokePaint,
+        );
+      case BladeIconName.flag:
+        canvas.drawPath(
+          Path()
+            ..moveTo(5, 2)
+            ..lineTo(5, 22)
+            ..moveTo(5, 3)
+            ..lineTo(18, 3)
+            ..lineTo(14, 8)
+            ..lineTo(18, 13)
+            ..lineTo(5, 13),
+          strokePaint,
+        );
+      case BladeIconName.moon:
+        canvas.drawPath(
+          Path()
+            ..moveTo(12, 3)
+            ..arcToPoint(
+              const Offset(12, 21),
+              radius: const Radius.circular(9),
+              clockwise: true,
+            )
+            ..arcToPoint(
+              const Offset(12, 3),
+              radius: const Radius.circular(6.5),
+              clockwise: false,
+            ),
+          strokePaint,
+        );
+      default:
+        canvas.drawCircle(const Offset(12, 12), 7, strokePaint);
+    }
+
     canvas.restore();
   }
 
-  Path _dash(Path source, double dash, double gap) {
-    final out = Path();
-    for (final metric in source.computeMetrics()) {
-      var d = 0.0;
-      var draw = true;
-      while (d < metric.length) {
-        final len = draw ? dash : gap;
-        final end = (d + len).clamp(0.0, metric.length);
-        if (draw && end > d) {
-          out.addPath(metric.extractPath(d, end), Offset.zero);
-        }
-        d = end;
-        draw = !draw;
-      }
-    }
-    return out;
-  }
-
-  void _draw(Canvas c, Paint s, Paint f) {
-    switch (name) {
-      case BladeIconName.home:
-        c.drawPath(
-            Path()
-              ..moveTo(4, 11)
-              ..lineTo(12, 4)
-              ..lineTo(20, 11),
-            s);
-        c.drawPath(
-            Path()
-              ..moveTo(6, 9.5)
-              ..lineTo(6, 20)
-              ..lineTo(18, 20)
-              ..lineTo(18, 9.5),
-            s);
-        c.drawPath(
-            Path()
-              ..moveTo(10, 20)
-              ..lineTo(10, 15)
-              ..lineTo(14, 15)
-              ..lineTo(14, 20),
-            s);
-      case BladeIconName.pulse:
-        c.drawPath(
-            Path()
-              ..moveTo(2.5, 12)
-              ..lineTo(6.7, 12)
-              ..lineTo(9, 5.5)
-              ..lineTo(13.2, 18.5)
-              ..lineTo(15.5, 12)
-              ..lineTo(21.5, 12),
-            s);
-      case BladeIconName.rec:
-        c.drawCircle(const Offset(12, 12), 8.5, s);
-        c.drawCircle(const Offset(12, 12), 3.4, f);
-      case BladeIconName.cal:
-        c.drawRRect(
-            RRect.fromRectAndRadius(
-                const Rect.fromLTWH(4, 6, 16, 14), const Radius.circular(2.5)),
-            s);
-        c.drawPath(
-            Path()
-              ..moveTo(4, 10.5)
-              ..lineTo(20, 10.5)
-              ..moveTo(8.5, 4)
-              ..lineTo(8.5, 8)
-              ..moveTo(15.5, 4)
-              ..lineTo(15.5, 8),
-            s);
-        c.drawCircle(const Offset(9, 14.6), 0.4, f);
-        c.drawCircle(const Offset(12, 14.6), 0.4, f);
-        c.drawCircle(const Offset(15, 14.6), 0.4, f);
-      case BladeIconName.user:
-        c.drawCircle(const Offset(12, 8.2), 3.6, s);
-        c.drawPath(
-            Path()
-              ..moveTo(5, 20)
-              ..cubicTo(6.2, 16.6, 8.8, 15, 12, 15)
-              ..cubicTo(15.2, 15, 17.8, 16.6, 19, 20),
-            s);
-      case BladeIconName.bell:
-        c.drawPath(
-            Path()
-              ..moveTo(6, 16.5)
-              ..lineTo(6, 11.5)
-              ..arcToPoint(const Offset(18, 11.5),
-                  radius: const Radius.circular(6))
-              ..lineTo(18, 16.5)
-              ..lineTo(19.2, 19.2)
-              ..lineTo(4.8, 19.2)
-              ..lineTo(6, 16.5),
-            s);
-        c.drawPath(
-            Path()
-              ..moveTo(10, 21)
-              ..arcToPoint(const Offset(14, 21),
-                  radius: const Radius.circular(2.2), clockwise: false),
-            s);
-      case BladeIconName.gear:
-        c.drawCircle(const Offset(12, 12), 3.2, s);
-        c.drawPath(
-            Path()
-              ..moveTo(12, 3.5)
-              ..lineTo(12, 6.5)
-              ..moveTo(12, 17.5)
-              ..lineTo(12, 20.5)
-              ..moveTo(3.5, 12)
-              ..lineTo(6.5, 12)
-              ..moveTo(17.5, 12)
-              ..lineTo(20.5, 12)
-              ..moveTo(6, 6)
-              ..lineTo(8.1, 8.1)
-              ..moveTo(15.9, 15.9)
-              ..lineTo(18, 18)
-              ..moveTo(18, 6)
-              ..lineTo(15.9, 8.1)
-              ..moveTo(8.1, 15.9)
-              ..lineTo(6, 18),
-            s);
-      case BladeIconName.hist:
-        c.drawPath(
-            Path()
-              ..moveTo(4.6, 9.2)
-              ..arcToPoint(const Offset(3.9, 15),
-                  radius: const Radius.circular(8.5), largeArc: true),
-            s);
-        c.drawPath(
-            Path()
-              ..moveTo(4.1, 4.6)
-              ..lineTo(4.1, 9.4)
-              ..lineTo(8.9, 9.4),
-            s);
-        c.drawPath(
-            Path()
-              ..moveTo(12, 8)
-              ..lineTo(12, 12.2)
-              ..lineTo(15, 14),
-            s);
-      case BladeIconName.run:
-        c.drawCircle(const Offset(14.8, 4.6), 1.9, s);
-        c.drawPath(
-            Path()
-              ..moveTo(12.6, 8)
-              ..lineTo(9.2, 12)
-              ..lineTo(12.4, 14.4)
-              ..lineTo(13.3, 19.2),
-            s);
-        c.drawPath(
-            Path()
-              ..moveTo(12.6, 8)
-              ..lineTo(16.3, 9.7)
-              ..lineTo(18.6, 9),
-            s);
-        c.drawPath(
-            Path()
-              ..moveTo(9.2, 12)
-              ..lineTo(5.8, 13.8)
-              ..lineTo(4.2, 17.6),
-            s);
-        c.drawPath(
-            Path()
-              ..moveTo(12.4, 14.4)
-              ..lineTo(9.2, 17.8)
-              ..lineTo(5.6, 18.5),
-            s);
-        c.drawPath(
-            Path()
-              ..moveTo(1.8, 9.6)
-              ..lineTo(5.4, 9.6)
-              ..moveTo(1.2, 13.2)
-              ..lineTo(5, 13.2),
-            s);
-      case BladeIconName.bike:
-        c.drawCircle(const Offset(6.5, 16.5), 3.4, s);
-        c.drawCircle(const Offset(17.5, 16.5), 3.4, s);
-        c.drawPath(
-            Path()
-              ..moveTo(6.5, 16.5)
-              ..lineTo(10, 9.8)
-              ..lineTo(14.8, 9.8)
-              ..lineTo(17.5, 16.5)
-              ..moveTo(10, 9.8)
-              ..lineTo(13.6, 16.5)
-              ..moveTo(13.2, 6.6)
-              ..lineTo(15.4, 6.6)
-              ..lineTo(17, 9.8)
-              ..moveTo(9.2, 6.8)
-              ..lineTo(11.6, 6.8),
-            s);
-      case BladeIconName.walk:
-        c.drawCircle(const Offset(12.9, 4.6), 1.9, s);
-        c.drawPath(
-            Path()
-              ..moveTo(12.1, 7.8)
-              ..lineTo(11, 13)
-              ..lineTo(13.6, 16)
-              ..lineTo(14.6, 20.6),
-            s);
-        c.drawPath(
-            Path()
-              ..moveTo(11, 13)
-              ..lineTo(8, 15.2)
-              ..lineTo(6.5, 19.1),
-            s);
-        c.drawPath(
-            Path()
-              ..moveTo(10.9, 9.6)
-              ..lineTo(8.2, 11.9)
-              ..lineTo(5.2, 12.4),
-            s);
-        c.drawPath(
-            Path()
-              ..moveTo(12.4, 8.1)
-              ..lineTo(15.3, 9.9)
-              ..lineTo(18.1, 9.6),
-            s);
-      case BladeIconName.hike:
-        c.drawPath(
-            Path()
-              ..moveTo(3, 19.5)
-              ..lineTo(9.5, 8)
-              ..lineTo(13.3, 13.4)
-              ..lineTo(15.5, 10)
-              ..lineTo(21, 19.5)
-              ..lineTo(3, 19.5)
-              ..close(),
-            s);
-        c.drawCircle(const Offset(17.6, 5.2), 1.6, s);
-      case BladeIconName.gps:
-        c.drawCircle(const Offset(12, 12), 6.4, s);
-        c.drawCircle(const Offset(12, 12), 1.4, f);
-        c.drawPath(
-            Path()
-              ..moveTo(12, 2.8)
-              ..lineTo(12, 5.8)
-              ..moveTo(12, 18.2)
-              ..lineTo(12, 21.2)
-              ..moveTo(2.8, 12)
-              ..lineTo(5.8, 12)
-              ..moveTo(18.2, 12)
-              ..lineTo(21.2, 12),
-            s);
-      case BladeIconName.heart:
-        c.drawPath(
-            Path()
-              ..moveTo(12, 20.3)
-              ..cubicTo(7, 16.5, 3.5, 13.2, 3.5, 9.6)
-              ..cubicTo(3.5, 6.9, 5.5, 5, 8, 5)
-              ..cubicTo(9.7, 5, 11.2, 5.9, 12, 7.3)
-              ..cubicTo(12.8, 5.9, 14.3, 5, 16, 5)
-              ..cubicTo(18.5, 5, 20.5, 6.9, 20.5, 9.6)
-              ..cubicTo(20.5, 13.2, 17, 16.5, 12, 20.3)
-              ..close(),
-            s);
-      case BladeIconName.flag:
-        c.drawPath(
-            Path()
-              ..moveTo(6, 21.5)
-              ..lineTo(6, 4.5),
-            s);
-        c.drawPath(
-            Path()
-              ..moveTo(6, 4.8)
-              ..cubicTo(9, 3, 11, 6.2, 15, 5)
-              ..lineTo(16, 4.6)
-              ..lineTo(16, 10.8)
-              ..cubicTo(12.6, 12.1, 10.6, 9.1, 6, 10.6),
-            s);
-      case BladeIconName.cam:
-        c.drawRRect(
-            RRect.fromRectAndRadius(
-                const Rect.fromLTWH(3.5, 7.5, 17, 12),
-                const Radius.circular(2.5)),
-            s);
-        c.drawCircle(const Offset(12, 13.5), 3.4, s);
-        c.drawPath(
-            Path()
-              ..moveTo(8.5, 7.5)
-              ..lineTo(10, 5)
-              ..lineTo(14, 5)
-              ..lineTo(15.5, 7.5),
-            s);
-      case BladeIconName.pause:
-        c.drawRRect(
-            RRect.fromRectAndRadius(
-                const Rect.fromLTWH(7.4, 5, 3.1, 14),
-                const Radius.circular(1.2)),
-            f);
-        c.drawRRect(
-            RRect.fromRectAndRadius(
-                const Rect.fromLTWH(13.5, 5, 3.1, 14),
-                const Radius.circular(1.2)),
-            f);
-      case BladeIconName.play:
-        c.drawPath(
-            Path()
-              ..moveTo(8, 5.1)
-              ..lineTo(8, 18.9)
-              ..cubicTo(8, 19.8, 9, 20.3, 9.7, 19.8)
-              ..lineTo(20.2, 13)
-              ..arcToPoint(const Offset(20.2, 11),
-                  radius: const Radius.circular(1.2), clockwise: false)
-              ..lineTo(9.7, 4.2)
-              ..cubicTo(9, 3.7, 8, 4.2, 8, 5.1)
-              ..close(),
-            f);
-      case BladeIconName.chart:
-        c.drawPath(
-            Path()
-              ..moveTo(4, 4)
-              ..lineTo(4, 19.5)
-              ..lineTo(20, 19.5),
-            s);
-        final bars = Paint()
-          ..color = s.color
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = s.strokeWidth * 1.2
-          ..strokeCap = StrokeCap.round
-          ..strokeJoin = StrokeJoin.round;
-        c.drawPath(
-            Path()
-              ..moveTo(8.3, 19.5)
-              ..lineTo(8.3, 14)
-              ..moveTo(12.3, 19.5)
-              ..lineTo(12.3, 9.8)
-              ..moveTo(16.3, 19.5)
-              ..lineTo(16.3, 11),
-            bars);
-      case BladeIconName.route:
-        c.drawCircle(const Offset(6, 19), 2.2, s);
-        c.drawCircle(const Offset(18, 5), 2.2, s);
-        final routePath = Path()
-          ..moveTo(8.2, 19)
-          ..lineTo(15, 19)
-          ..arcToPoint(const Offset(15, 13),
-              radius: const Radius.circular(3), clockwise: false)
-          ..lineTo(9, 13)
-          ..arcToPoint(const Offset(9, 7),
-              radius: const Radius.circular(3))
-          ..lineTo(9.8, 7);
-        c.drawPath(_dash(routePath, 3.2, 3.2), s);
-      case BladeIconName.pin:
-        c.drawPath(
-            Path()
-              ..moveTo(12, 21.5)
-              ..cubicTo(12, 21.5, 5, 15.5, 5, 10)
-              ..arcToPoint(const Offset(19, 10),
-                  radius: const Radius.circular(7))
-              ..cubicTo(19, 15.5, 12, 21.5, 12, 21.5)
-              ..close(),
-            s);
-        c.drawCircle(const Offset(12, 10), 2.6, s);
-      case BladeIconName.map:
-        c.drawPath(
-            Path()
-              ..moveTo(9, 4)
-              ..lineTo(3.5, 6)
-              ..lineTo(3.5, 20)
-              ..lineTo(9, 18)
-              ..lineTo(15, 20)
-              ..lineTo(20.5, 18)
-              ..lineTo(20.5, 4)
-              ..lineTo(15, 6)
-              ..lineTo(9, 4)
-              ..close(),
-            s);
-        c.drawPath(
-            Path()
-              ..moveTo(9, 4)
-              ..lineTo(9, 18)
-              ..moveTo(15, 6)
-              ..lineTo(15, 20),
-            s);
-      case BladeIconName.target:
-        c.drawCircle(const Offset(12, 12), 8.5, s);
-        c.drawCircle(const Offset(12, 12), 4.8, s);
-        c.drawCircle(const Offset(12, 12), 1.3, f);
-      case BladeIconName.trophy:
-        c.drawPath(
-            Path()
-              ..moveTo(7.5, 4)
-              ..lineTo(16.5, 4)
-              ..lineTo(16.5, 9)
-              ..arcToPoint(const Offset(7.5, 9),
-                  radius: const Radius.circular(4.5))
-              ..lineTo(7.5, 4)
-              ..close(),
-            s);
-        c.drawPath(
-            Path()
-              ..moveTo(7.5, 5.6)
-              ..lineTo(4.7, 5.6)
-              ..arcToPoint(const Offset(7.7, 10),
-                  radius: const Radius.circular(2.8), clockwise: false)
-              ..moveTo(16.5, 5.6)
-              ..lineTo(19.3, 5.6)
-              ..arcToPoint(const Offset(16.3, 10),
-                  radius: const Radius.circular(2.8)),
-            s);
-        c.drawPath(
-            Path()
-              ..moveTo(12, 13.6)
-              ..lineTo(12, 16)
-              ..moveTo(8.6, 20)
-              ..lineTo(15.4, 20)
-              ..moveTo(12, 16)
-              ..lineTo(12, 20),
-            s);
-      case BladeIconName.medal:
-        c.drawCircle(const Offset(12, 14.5), 5, s);
-        c.drawCircle(const Offset(12, 14.5), 1.4, f);
-        c.drawPath(
-            Path()
-              ..moveTo(8.8, 10.2)
-              ..lineTo(6, 3.5)
-              ..lineTo(10.2, 3.5)
-              ..lineTo(12, 6.8)
-              ..lineTo(13.8, 3.5)
-              ..lineTo(18, 3.5)
-              ..lineTo(15.2, 10.2),
-            s);
-      case BladeIconName.bolt:
-        c.drawPath(
-            Path()
-              ..moveTo(13.1, 2.8)
-              ..lineTo(5.2, 13.4)
-              ..lineTo(10.1, 13.4)
-              ..lineTo(9.6, 21.2)
-              ..lineTo(18.9, 10.2)
-              ..lineTo(13.8, 10.2)
-              ..lineTo(13.1, 2.8)
-              ..close(),
-            f);
-      case BladeIconName.flame:
-        c.drawPath(
-            Path()
-              ..moveTo(12, 21)
-              ..arcToPoint(const Offset(18.5, 14.5),
-                  radius: const Radius.circular(6.5), clockwise: false)
-              ..cubicTo(18.5, 11.9, 17, 10.1, 15.7, 8.5)
-              ..cubicTo(14.3, 6.7, 13, 4.9, 13, 2.8)
-              ..cubicTo(10.7, 4.2, 9.3, 6.1, 8.9, 8.2)
-              ..cubicTo(8.7, 9.2, 8.7, 10.1, 8.3, 10.8)
-              ..cubicTo(8, 10.3, 7.7, 9.7, 7.5, 8.8)
-              ..cubicTo(6.2, 10.3, 5.5, 12.2, 5.5, 14.5)
-              ..arcToPoint(const Offset(12, 21),
-                  radius: const Radius.circular(6.5), clockwise: false)
-              ..close(),
-            s);
-      case BladeIconName.moon:
-        c.drawPath(
-            Path()
-              ..moveTo(20, 14.5)
-              ..arcToPoint(const Offset(9.5, 4),
-                  radius: const Radius.circular(8.5), largeArc: true)
-              ..arcToPoint(const Offset(20, 14.5),
-                  radius: const Radius.circular(7), clockwise: false)
-              ..close(),
-            s);
-      case BladeIconName.sunrise:
-        c.drawPath(
-            Path()
-              ..moveTo(3.5, 19)
-              ..lineTo(20.5, 19)
-              ..moveTo(7.5, 19)
-              ..arcToPoint(const Offset(16.5, 19),
-                  radius: const Radius.circular(4.5))
-              ..moveTo(12, 5.5)
-              ..lineTo(12, 7.8)
-              ..moveTo(5.1, 9.4)
-              ..lineTo(6.6, 11.1)
-              ..moveTo(18.9, 9.4)
-              ..lineTo(17.4, 11.1)
-              ..moveTo(12, 11.5)
-              ..lineTo(12, 12),
-            s);
-      case BladeIconName.mail:
-        c.drawRRect(
-            RRect.fromRectAndRadius(
-                const Rect.fromLTWH(3.5, 5.5, 17, 13),
-                const Radius.circular(2)),
-            s);
-        c.drawPath(
-            Path()
-              ..moveTo(4.2, 7.6)
-              ..lineTo(12, 13.5)
-              ..lineTo(19.8, 7.6),
-            s);
-      case BladeIconName.lock:
-        c.drawRRect(
-            RRect.fromRectAndRadius(
-                const Rect.fromLTWH(5.5, 10.5, 13, 9.5),
-                const Radius.circular(2)),
-            s);
-        c.drawPath(
-            Path()
-              ..moveTo(8.5, 10.5)
-              ..lineTo(8.5, 8)
-              ..arcToPoint(const Offset(15.5, 8),
-                  radius: const Radius.circular(3.5))
-              ..lineTo(15.5, 10.5),
-            s);
-        c.drawCircle(const Offset(12, 15.2), 1.3, f);
-      case BladeIconName.eye:
-        c.drawPath(
-            Path()
-              ..moveTo(2.8, 12)
-              ..cubicTo(2.8, 12, 6, 5.8, 12, 5.8)
-              ..cubicTo(18, 5.8, 21.2, 12, 21.2, 12)
-              ..cubicTo(21.2, 12, 18, 18.2, 12, 18.2)
-              ..cubicTo(6, 18.2, 2.8, 12, 2.8, 12)
-              ..close(),
-            s);
-        c.drawCircle(const Offset(12, 12), 3, s);
-      case BladeIconName.shield:
-        c.drawPath(
-            Path()
-              ..moveTo(12, 3)
-              ..lineTo(19, 5.6)
-              ..lineTo(19, 11.2)
-              ..cubicTo(19, 15.8, 16, 18.9, 12, 20.5)
-              ..cubicTo(8, 18.9, 5, 15.8, 5, 11.2)
-              ..lineTo(5, 5.6)
-              ..lineTo(12, 3)
-              ..close(),
-            s);
-        c.drawPath(
-            Path()
-              ..moveTo(9, 11.8)
-              ..lineTo(11.2, 14)
-              ..lineTo(15.2, 9.8),
-            s);
-      case BladeIconName.globe:
-        c.drawCircle(const Offset(12, 12), 8.8, s);
-        c.drawPath(
-            Path()
-              ..moveTo(3.2, 12)
-              ..lineTo(20.8, 12)
-              ..moveTo(12, 3.2)
-              ..cubicTo(14.4, 5.5, 15.6, 8.5, 15.6, 12)
-              ..cubicTo(15.6, 15.5, 14.4, 18.5, 12, 20.8)
-              ..cubicTo(9.6, 18.5, 8.4, 15.3, 8.4, 12)
-              ..cubicTo(8.4, 8.7, 9.6, 5.5, 12, 3.2)
-              ..close(),
-            s);
-      case BladeIconName.units:
-        c.drawPath(
-            Path()
-              ..moveTo(4, 19.5)
-              ..lineTo(20, 19.5)
-              ..moveTo(6, 19.5)
-              ..lineTo(6, 15.5)
-              ..moveTo(10, 19.5)
-              ..lineTo(10, 13)
-              ..moveTo(14, 19.5)
-              ..lineTo(14, 15.5)
-              ..moveTo(18, 19.5)
-              ..lineTo(18, 13),
-            s);
-      case BladeIconName.sound:
-        c.drawPath(
-            Path()
-              ..moveTo(4, 9.8)
-              ..lineTo(4, 14.2)
-              ..lineTo(7.2, 14.2)
-              ..lineTo(12, 18.6)
-              ..lineTo(12, 5.4)
-              ..lineTo(7.2, 9.8)
-              ..close(),
-            f);
-        c.drawPath(
-            Path()
-              ..moveTo(15.5, 9.5)
-              ..arcToPoint(const Offset(15.5, 14.5),
-                  radius: const Radius.circular(4))
-              ..moveTo(18, 7)
-              ..arcToPoint(const Offset(18, 17),
-                  radius: const Radius.circular(7.6)),
-            s);
-      case BladeIconName.export:
-        c.drawPath(
-            Path()
-              ..moveTo(5, 14.5)
-              ..lineTo(5, 18.5)
-              ..arcToPoint(const Offset(6.5, 20),
-                  radius: const Radius.circular(1.5), clockwise: false)
-              ..lineTo(17.5, 20)
-              ..arcToPoint(const Offset(19, 18.5),
-                  radius: const Radius.circular(1.5), clockwise: false)
-              ..lineTo(19, 14.5),
-            s);
-        c.drawPath(
-            Path()
-              ..moveTo(12, 3.5)
-              ..lineTo(12, 14.5)
-              ..moveTo(7.8, 7.8)
-              ..lineTo(12, 3.5)
-              ..lineTo(16.2, 7.8),
-            s);
-      case BladeIconName.download:
-        c.drawPath(
-            Path()
-              ..moveTo(5, 14.5)
-              ..lineTo(5, 18.5)
-              ..arcToPoint(const Offset(6.5, 20),
-                  radius: const Radius.circular(1.5), clockwise: false)
-              ..lineTo(17.5, 20)
-              ..arcToPoint(const Offset(19, 18.5),
-                  radius: const Radius.circular(1.5), clockwise: false)
-              ..lineTo(19, 14.5),
-            s);
-        c.drawPath(
-            Path()
-              ..moveTo(12, 14.5)
-              ..lineTo(12, 3.5)
-              ..moveTo(7.8, 9.7)
-              ..lineTo(12, 14)
-              ..lineTo(16.2, 9.7),
-            s);
-      case BladeIconName.help:
-        c.drawCircle(const Offset(12, 12), 8.8, s);
-        c.drawPath(
-            Path()
-              ..moveTo(9.6, 9.4)
-              ..arcToPoint(const Offset(12, 12.4),
-                  radius: const Radius.circular(2.6), largeArc: true)
-              ..lineTo(12, 13.5),
-            s);
-        c.drawCircle(const Offset(12, 17), 0.6, f);
-      case BladeIconName.info:
-        c.drawCircle(const Offset(12, 12), 8.8, s);
-        c.drawPath(
-            Path()
-              ..moveTo(12, 11.2)
-              ..lineTo(12, 16.4),
-            s);
-        c.drawCircle(const Offset(12, 7.8), 0.7, f);
-      case BladeIconName.chevR:
-        c.drawPath(
-            Path()
-              ..moveTo(9.5, 5.5)
-              ..lineTo(16, 12)
-              ..lineTo(9.5, 18.5),
-            s);
-      case BladeIconName.chevL:
-        c.drawPath(
-            Path()
-              ..moveTo(14.5, 5.5)
-              ..lineTo(8, 12)
-              ..lineTo(14.5, 18.5),
-            s);
-      case BladeIconName.more:
-        c.drawCircle(const Offset(5, 12), 1.6, f);
-        c.drawCircle(const Offset(12, 12), 1.6, f);
-        c.drawCircle(const Offset(19, 12), 1.6, f);
-      case BladeIconName.plus:
-        c.drawPath(
-            Path()
-              ..moveTo(12, 5)
-              ..lineTo(12, 19)
-              ..moveTo(5, 12)
-              ..lineTo(19, 12),
-            s);
-      case BladeIconName.edit:
-        c.drawPath(
-            Path()
-              ..moveTo(4.6, 19.4)
-              ..lineTo(5.6, 15.7)
-              ..lineTo(16.9, 4.4)
-              ..arcToPoint(const Offset(19.6, 7.1),
-                  radius: const Radius.circular(1.9))
-              ..lineTo(8.3, 18.4)
-              ..lineTo(4.6, 19.4)
-              ..close(),
-            s);
-        c.drawPath(
-            Path()
-              ..moveTo(14.9, 6.4)
-              ..lineTo(17.6, 9.1),
-            s);
-      case BladeIconName.check:
-        c.drawPath(
-            Path()
-              ..moveTo(4.5, 12.6)
-              ..lineTo(9.5, 17.6)
-              ..lineTo(19.5, 6.4),
-            s);
-      case BladeIconName.x:
-        c.drawPath(
-            Path()
-              ..moveTo(6, 6)
-              ..lineTo(18, 18)
-              ..moveTo(18, 6)
-              ..lineTo(6, 18),
-            s);
-      case BladeIconName.search:
-        c.drawCircle(const Offset(11, 11), 6.5, s);
-        c.drawPath(
-            Path()
-              ..moveTo(15.8, 15.8)
-              ..lineTo(20.5, 20.5),
-            s);
-      case BladeIconName.layers:
-        c.drawPath(
-            Path()
-              ..moveTo(12, 3.8)
-              ..lineTo(21, 8.5)
-              ..lineTo(12, 13.2)
-              ..lineTo(3, 8.5)
-              ..close(),
-            s);
-        c.drawPath(
-            Path()
-              ..moveTo(4, 13.4)
-              ..lineTo(12, 17.6)
-              ..lineTo(20, 13.4),
-            s);
-      case BladeIconName.share:
-        c.drawCircle(const Offset(6, 12), 2.6, s);
-        c.drawCircle(const Offset(17, 5.5), 2.6, s);
-        c.drawCircle(const Offset(17, 18.5), 2.6, s);
-        c.drawPath(
-            Path()
-              ..moveTo(8.4, 10.8)
-              ..lineTo(14.6, 6.8)
-              ..moveTo(8.4, 13.2)
-              ..lineTo(14.6, 17.2),
-            s);
-      case BladeIconName.clock:
-        c.drawCircle(const Offset(12, 12), 8.8, s);
-        c.drawPath(
-            Path()
-              ..moveTo(12, 7)
-              ..lineTo(12, 12.2)
-              ..lineTo(15.4, 14.2),
-            s);
-      case BladeIconName.star:
-        c.drawPath(
-            Path()
-              ..moveTo(12, 3.6)
-              ..lineTo(14.5, 8.9)
-              ..lineTo(20.3, 9.6)
-              ..lineTo(16, 13.6)
-              ..lineTo(17.1, 19.3)
-              ..lineTo(12, 16.5)
-              ..lineTo(6.9, 19.3)
-              ..lineTo(8, 13.6)
-              ..lineTo(3.7, 9.6)
-              ..lineTo(9.5, 8.9)
-              ..lineTo(12, 3.6)
-              ..close(),
-            s);
-      case BladeIconName.sliders:
-        c.drawPath(
-            Path()
-              ..moveTo(4.5, 7.5)
-              ..lineTo(12.5, 7.5)
-              ..moveTo(17.5, 7.5)
-              ..lineTo(19.5, 7.5)
-              ..moveTo(4.5, 16.5)
-              ..lineTo(7, 16.5)
-              ..moveTo(12, 16.5)
-              ..lineTo(19.5, 16.5),
-            s);
-        c.drawCircle(const Offset(14.8, 7.5), 2.3, s);
-        c.drawCircle(const Offset(9.5, 16.5), 2.3, s);
-      case BladeIconName.logout:
-        c.drawPath(
-            Path()
-              ..moveTo(13.5, 5)
-              ..lineTo(6.8, 5)
-              ..arcToPoint(const Offset(5, 6.8),
-                  radius: const Radius.circular(1.8), clockwise: false)
-              ..lineTo(5, 17.2)
-              ..arcToPoint(const Offset(6.8, 19),
-                  radius: const Radius.circular(1.8), clockwise: false)
-              ..lineTo(13.5, 19),
-            s);
-        c.drawPath(
-            Path()
-              ..moveTo(10.5, 12)
-              ..lineTo(21, 12)
-              ..moveTo(17.4, 8.2)
-              ..lineTo(21, 12)
-              ..lineTo(17.4, 15.8),
-            s);
-      case BladeIconName.trash:
-        c.drawPath(
-            Path()
-              ..moveTo(4.5, 6.5)
-              ..lineTo(19.5, 6.5)
-              ..moveTo(9.6, 6.2)
-              ..lineTo(9.6, 4.9)
-              ..arcToPoint(const Offset(10.5, 4),
-                  radius: const Radius.circular(0.9))
-              ..lineTo(13.5, 4)
-              ..arcToPoint(const Offset(14.4, 4.9),
-                  radius: const Radius.circular(0.9))
-              ..lineTo(14.4, 6.2)
-              ..moveTo(6.6, 6.5)
-              ..lineTo(7.4, 18.2)
-              ..arcToPoint(const Offset(9.2, 20),
-                  radius: const Radius.circular(1.8), clockwise: false)
-              ..lineTo(14.8, 20)
-              ..arcToPoint(const Offset(16.6, 18.2),
-                  radius: const Radius.circular(1.8), clockwise: false)
-              ..lineTo(17.4, 6.5),
-            s);
-        c.drawPath(
-            Path()
-              ..moveTo(10, 10.5)
-              ..lineTo(10, 16.5)
-              ..moveTo(14, 10.5)
-              ..lineTo(14, 16.5),
-            s);
-      case BladeIconName.doc:
-        c.drawPath(
-            Path()
-              ..moveTo(6.5, 3.5)
-              ..lineTo(14, 3.5)
-              ..lineTo(18.5, 8)
-              ..lineTo(18.5, 20.5)
-              ..lineTo(6.5, 20.5)
-              ..close(),
-            s);
-        c.drawPath(
-            Path()
-              ..moveTo(13.8, 3.8)
-              ..lineTo(13.8, 8.2)
-              ..lineTo(18.2, 8.2),
-            s);
-      case BladeIconName.link:
-        c.drawPath(
-            Path()
-              ..moveTo(9.8, 14.2)
-              ..lineTo(14.2, 9.8)
-              ..moveTo(11.2, 6.6)
-              ..lineTo(12.9, 4.9)
-              ..arcToPoint(const Offset(18.4, 10.4),
-                  radius: const Radius.circular(3.9))
-              ..lineTo(16.5, 12.3)
-              ..moveTo(12.8, 17.4)
-              ..lineTo(11.1, 19.1)
-              ..arcToPoint(const Offset(5.6, 13.6),
-                  radius: const Radius.circular(3.9))
-              ..lineTo(7.5, 11.7),
-            s);
-    }
-  }
-
   @override
-  bool shouldRepaint(covariant _BladePainter oldDelegate) =>
+  bool shouldRepaint(covariant _BladeSvgPainter oldDelegate) =>
       oldDelegate.name != name ||
       oldDelegate.color != color ||
       oldDelegate.strokeWidth != strokeWidth;

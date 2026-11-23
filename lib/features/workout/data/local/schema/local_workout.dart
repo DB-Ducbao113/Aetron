@@ -44,8 +44,8 @@ class LocalWorkout {
       id: sessionId,
       userId: userId,
       activityType: activityType,
-      startedAt: startedAt,
-      endedAt: endedAt,
+      startedAt: startedAt.toUtc(),
+      endedAt: endedAt.toUtc(),
       durationSec: durationSec,
       movingTimeSec: movingTimeSec,
       distanceKm: distanceKm,
@@ -53,7 +53,7 @@ class LocalWorkout {
       avgSpeedKmh: avgSpeedKmh,
       caloriesKcal: caloriesKcal,
       mode: mode,
-      createdAt: createdAt,
+      createdAt: createdAt.toUtc(),
       lapSplits: _decodeLapSplits(lapSplitsJson),
       gpsAnalysis: _decodeGpsAnalysis(gpsAnalysisJson),
       filteredRouteJson: filteredRouteJson,
@@ -66,7 +66,10 @@ class LocalWorkout {
     );
   }
 
-  static LocalWorkout fromEntity(WorkoutSession session, {bool isSynced = false}) {
+  static LocalWorkout fromEntity(
+    WorkoutSession session, {
+    bool isSynced = false,
+  }) {
     return LocalWorkout()
       ..sessionId = session.id
       ..userId = session.userId
@@ -94,6 +97,32 @@ class LocalWorkout {
       ..routeMatchMetricsJson = session.routeMatchMetricsJson
       ..isSynced = isSynced;
   }
+
+  /// Compare persisted payload values, not Dart object identity. Isar returns
+  /// local-zone DateTimes and GPS analysis/laps are reconstructed instances.
+  bool sameSnapshot(LocalWorkout other) =>
+      sessionId == other.sessionId &&
+      userId == other.userId &&
+      activityType == other.activityType &&
+      startedAt.isAtSameMomentAs(other.startedAt) &&
+      endedAt.isAtSameMomentAs(other.endedAt) &&
+      createdAt.isAtSameMomentAs(other.createdAt) &&
+      durationSec == other.durationSec &&
+      movingTimeSec == other.movingTimeSec &&
+      distanceKm == other.distanceKm &&
+      steps == other.steps &&
+      avgSpeedKmh == other.avgSpeedKmh &&
+      caloriesKcal == other.caloriesKcal &&
+      mode == other.mode &&
+      lapSplitsJson == other.lapSplitsJson &&
+      gpsAnalysisJson == other.gpsAnalysisJson &&
+      filteredRouteJson == other.filteredRouteJson &&
+      matchedRouteJson == other.matchedRouteJson &&
+      routeMatchStatus == other.routeMatchStatus &&
+      routeMatchConfidence == other.routeMatchConfidence &&
+      routeDistanceSource == other.routeDistanceSource &&
+      matchedDistanceKm == other.matchedDistanceKm &&
+      routeMatchMetricsJson == other.routeMatchMetricsJson;
 
   static List<WorkoutLapSplit> _decodeLapSplits(String raw) {
     try {

@@ -1,7 +1,10 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:fitness_exercise_application/core/constants/debug_config.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/ekf/matrix_math_4x4.dart';
+import 'package:fitness_exercise_application/features/workout/domain/services/gnss_correction/gnss_correction_interface.dart';
+import 'package:fitness_exercise_application/features/workout/domain/services/gnss_correction/gnss_correction_models.dart';
 import 'package:latlong2/latlong.dart';
 
 /// Output estimation from an EKF update cycle
@@ -10,12 +13,18 @@ class EkfEstimate {
   final double speedMs;
   final double headingDeg;
   final double positionVariance;
+  final GnssCorrectionQuality? correctionQuality;
+  final double? mahalanobisDistanceSq;
+  final bool isMeasurementApplied;
 
   const EkfEstimate({
     required this.position,
     required this.speedMs,
     required this.headingDeg,
     required this.positionVariance,
+    this.correctionQuality,
+    this.mahalanobisDistanceSq,
+    this.isMeasurementApplied = true,
   });
 }
 
@@ -40,6 +49,12 @@ class ExtendedKalmanFilter {
   final double processSpeedStd; // m/s^2
   final double processHeadingStd; // rad/s
 
+  // Phase 2 (P02) GNSS correction coupling
+  final IGnssCorrectionEngine? gnssCorrectionEngine;
+  final bool enableGnssCorrection;
+  final bool enableShadowMode;
+  final String activityType;
+
   bool _initialized = false;
   bool get isInitialized => _initialized;
 
@@ -47,6 +62,10 @@ class ExtendedKalmanFilter {
     this.processPosStd = 0.5,
     this.processSpeedStd = 1.2,
     this.processHeadingStd = 0.35,
+    this.gnssCorrectionEngine,
+    this.enableGnssCorrection = kEnableGnssCorrection,
+    this.enableShadowMode = kEnableGnssCorrectionShadowMode,
+    this.activityType = 'running',
   });
 
   /// Re-seeds or initializes the filter with an initial anchor point.
@@ -73,6 +92,7 @@ class ExtendedKalmanFilter {
       4.0, // initial speed variance (2 m/s std)
       1.0, // initial heading variance (~57 deg std)
     );
+    gnssCorrectionEngine?.reset();
     _initialized = true;
   }
 
@@ -82,6 +102,38 @@ class ExtendedKalmanFilter {
     _projection = null;
     _x.fillRange(0, 4, 0.0);
     _p = Matrix4x4.identity();
+    gnssCorrectionEngine?.reset();
+  }
+
+  /// Performs Predict-only cycle when GPS measurement is unavailable, rejected, or invalid.
+  EkfEstimate predictOnly({required double timeDeltaSec}) {
+    if (!_initialized || _projection == null) {
+      throw StateError('Cannot predict without initialization');
+    }
+    final dt = (timeDeltaSec.isFinite && timeDeltaSec > 0.0)
+        ? timeDeltaSec.clamp(0.05, 5.0)
+        : 1.0;
+
+    _predict(dt);
+
+    if (_x[2] < 0.0) _x[2] = 0.0;
+    _x[3] = EquirectangularProjection.normalizeAngleRad(_x[3]);
+
+    final estimatedLatLng = _projection!.unproject(_x[0], _x[1]);
+    final estimatedHeadingDeg = EquirectangularProjection.normalizeAngleDeg(
+      _x[3] * EquirectangularProjection.radToDeg,
+    );
+    final posVariance = (_p.get(0, 0) + _p.get(1, 1)) / 2.0;
+
+    return EkfEstimate(
+      position: estimatedLatLng,
+      speedMs: _x[2],
+      headingDeg: estimatedHeadingDeg,
+      positionVariance: posVariance,
+      correctionQuality: GnssCorrectionQuality.nominal,
+      mahalanobisDistanceSq: null,
+      isMeasurementApplied: false,
+    );
   }
 
   /// Performs Predict-Update cycle for a new accepted GPS measurement.
@@ -91,13 +143,33 @@ class ExtendedKalmanFilter {
   /// - [timeDeltaSec]: elapsed seconds since last update
   /// - [speedMs]: device measured GPS speed (optional)
   /// - [headingDeg]: device measured GPS heading in degrees (optional)
+  /// - [activityType]: athletic sport modality for kinematic thresholds (optional)
   EkfEstimate update({
     required LatLng measurementPoint,
     required double accuracyMeters,
     required double timeDeltaSec,
     double? speedMs,
     double? headingDeg,
+    String? activityType,
   }) {
+    // Robust input validation and sanitization
+    if (!measurementPoint.latitude.isFinite ||
+        !measurementPoint.longitude.isFinite ||
+        !accuracyMeters.isFinite ||
+        accuracyMeters <= 0.0) {
+      if (!_initialized) {
+        return EkfEstimate(
+          position: measurementPoint,
+          speedMs: 0.0,
+          headingDeg: 0.0,
+          positionVariance: 50.0,
+          correctionQuality: GnssCorrectionQuality.multipathRejected,
+          isMeasurementApplied: false,
+        );
+      }
+      return predictOnly(timeDeltaSec: timeDeltaSec);
+    }
+
     if (!_initialized || _projection == null) {
       init(
         initialPoint: measurementPoint,
@@ -112,22 +184,81 @@ class ExtendedKalmanFilter {
           _x[3] * EquirectangularProjection.radToDeg,
         ),
         positionVariance: accuracyMeters * accuracyMeters,
+        correctionQuality: GnssCorrectionQuality.nominal,
+        mahalanobisDistanceSq: 0.0,
+        isMeasurementApplied: true,
       );
     }
 
-    final dt = timeDeltaSec.clamp(0.05, 5.0);
+    final dt = (timeDeltaSec.isFinite && timeDeltaSec > 0.0)
+        ? timeDeltaSec.clamp(0.05, 5.0)
+        : 1.0;
 
     // 1. PREDICT STEP: x_k|k-1 = f(x_k-1, dt)
     _predict(dt);
 
-    // 2. UPDATE STEP: calculate Kalman gain K and update with GPS measurement
-    _updateMeasurement(
-      measurementPoint: measurementPoint,
-      accuracyMeters: accuracyMeters,
-      speedMs: speedMs,
-      headingDeg: headingDeg,
-      dt: dt,
-    );
+    var effectiveAccuracy = accuracyMeters;
+    var effectiveHeading = headingDeg;
+    var shouldApplyMeasurement = true;
+    GnssCorrectionQuality? correctionQuality;
+    double? mahalanobisDistanceSq;
+
+    // P02 Innovation Testing & Adaptive Correction against filter prior state (x_k|k-1, P_k|k-1)
+    if ((enableGnssCorrection || enableShadowMode) && gnssCorrectionEngine != null) {
+      final predLatLng = _projection!.unproject(_x[0], _x[1]);
+      final predHeadingDeg = EquirectangularProjection.normalizeAngleDeg(
+        _x[3] * EquirectangularProjection.radToDeg,
+      );
+      final p00 = _p.get(0, 0); // East variance
+      final p11 = _p.get(1, 1); // North variance
+      final p01 = _p.get(0, 1); // EN covariance
+
+      final corr = gnssCorrectionEngine!.correctMeasurement(
+        measurementPoint: measurementPoint,
+        reportedAccuracyMeters: accuracyMeters,
+        timeDeltaSec: dt,
+        reportedSpeedMs: speedMs ?? _x[2],
+        reportedHeadingDeg: headingDeg,
+        predictedPosition: predLatLng,
+        predictedHeadingDeg: predHeadingDeg,
+        predictedPosVariance: (p00 + p11) * 0.5,
+        predictedPosVarianceEast: p00,
+        predictedPosVarianceNorth: p11,
+        predictedPosCovarianceEN: p01,
+        activityType: activityType ?? this.activityType,
+      );
+
+      correctionQuality = corr.quality;
+      mahalanobisDistanceSq = corr.mahalanobisDistanceSq;
+
+      if (enableGnssCorrection) {
+        if (!corr.isAccepted) {
+          // Critical multipath jump rejected (d_M^2 > 13.816)
+          shouldApplyMeasurement = false;
+        } else {
+          effectiveAccuracy = corr.effectiveAccuracyMeters;
+          effectiveHeading = corr.effectiveHeadingDeg;
+          if (corr.headingProcessNoiseMultiplier > 1.0) {
+            // Add extra maneuver heading process noise delta Q_theta linearly [Li & Jilkov 2003; Groves 2013]
+            // rather than geometrically multiplying posterior covariance P33 across consecutive epochs.
+            final extraHeadingQ = (processHeadingStd * processHeadingStd * dt) *
+                (corr.headingProcessNoiseMultiplier - 1.0);
+            _p.set(3, 3, _p.get(3, 3) + extraHeadingQ);
+          }
+        }
+      }
+    }
+
+    // 2. UPDATE STEP: calculate Kalman gain K and update with GPS measurement (if accepted)
+    if (shouldApplyMeasurement) {
+      _updateMeasurement(
+        measurementPoint: measurementPoint,
+        accuracyMeters: effectiveAccuracy,
+        speedMs: speedMs,
+        headingDeg: effectiveHeading,
+        dt: dt,
+      );
+    }
 
     // Ensure speed non-negative
     if (_x[2] < 0.0) _x[2] = 0.0;
@@ -144,6 +275,9 @@ class ExtendedKalmanFilter {
       speedMs: _x[2],
       headingDeg: estimatedHeadingDeg,
       positionVariance: posVariance,
+      correctionQuality: correctionQuality,
+      mahalanobisDistanceSq: mahalanobisDistanceSq,
+      isMeasurementApplied: shouldApplyMeasurement,
     );
   }
 
@@ -177,6 +311,7 @@ class ExtendedKalmanFilter {
     // P = F * P * F^T + Q
     final fTranspose = f.transpose();
     _p = (f * _p * fTranspose) + q;
+    _p.symmetrizeAndClamp();
   }
 
   void _updateMeasurement({
@@ -235,9 +370,10 @@ class ExtendedKalmanFilter {
       _x[2] += ky[2];
       _x[3] += ky[3];
 
-      // Joseph form covariance update: P = (I - K) * P
+      // Covariance update: P = (I - K) * P
       final iMinusK = Matrix4x4.identity() - k;
       _p = iMinusK * _p;
+      _p.symmetrizeAndClamp();
     } else {
       // Position-only 2x2 update: H = [1 0 0 0; 0 1 0 0]
       _updatePositionOnly(zx, zy, rPos);
@@ -295,5 +431,6 @@ class ExtendedKalmanFilter {
     ]);
     final iMinusKh = Matrix4x4.identity() - kh;
     _p = iMinusKh * _p;
+    _p.symmetrizeAndClamp();
   }
 }

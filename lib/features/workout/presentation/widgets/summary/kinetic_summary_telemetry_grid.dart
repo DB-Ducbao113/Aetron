@@ -1,9 +1,7 @@
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
 import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 
 class KineticSummaryTelemetryGrid extends StatelessWidget {
@@ -62,7 +60,7 @@ class KineticSummaryTelemetryGrid extends StatelessWidget {
               useMetric: useMetricUnits,
             );
       primaryPaceSpeedValue = formattedPace;
-      primaryPaceSpeedUnit = useMetricUnits ? '/km' : '/mi';
+      primaryPaceSpeedUnit = '';
     }
 
     // Fourth Tile: Steps (for Run/Walk) or Cadence/Speed max
@@ -101,13 +99,10 @@ class KineticSummaryTelemetryGrid extends StatelessWidget {
     Widget vDivider() => Container(width: 1, color: hairline);
     Widget hDivider() => Container(height: 1, color: hairline);
 
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(color: hairline),
-          bottom: BorderSide(color: hairline),
-        ),
-      ),
+    return KineticCard(
+      useLiquidGlass: true,
+      borderRadius: 21,
+      padding: EdgeInsets.zero,
       child: Column(
         children: [
           IntrinsicHeight(
@@ -211,15 +206,20 @@ class _TelemetryCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Flexible(
-                child: Text(
-                  label,
-                  style: KineticTypography.unitLabel.copyWith(
-                    color: colors.textMuted,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    style: KineticTypography.unitLabel.copyWith(
+                      color: colors.textMuted,
+                      letterSpacing: 0.6,
+                    ),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
+              const SizedBox(width: 6),
               BladeIcon(icon, size: 14, color: colors.textSecondary),
             ],
           ),

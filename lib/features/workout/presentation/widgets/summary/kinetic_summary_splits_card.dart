@@ -3,9 +3,7 @@ import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 
 class KineticSummarySplitsCard extends StatelessWidget {
@@ -45,15 +43,10 @@ class KineticSummarySplitsCard extends StatelessWidget {
       }
     }
 
-    // V4: flat section — hairline frame + hairline row separators.
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(color: colors.borderSubtle),
-          bottom: BorderSide(color: colors.borderSubtle),
-        ),
-      ),
+    return KineticCard(
+      useLiquidGlass: true,
+      borderRadius: 21,
+      padding: const EdgeInsets.all(17),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -136,7 +129,7 @@ class KineticSummarySplitsCard extends StatelessWidget {
                           Container(
                             height: 6,
                             decoration: BoxDecoration(
-                              color: colors.surface2,
+                              color: colors.primaryTint,
                               borderRadius: BorderRadius.circular(3),
                             ),
                           ),
@@ -145,7 +138,9 @@ class KineticSummarySplitsCard extends StatelessWidget {
                             child: Container(
                               height: 6,
                               decoration: BoxDecoration(
-                                color: isFastest ? colors.primary : colors.textMuted,
+                                color: isFastest
+                                    ? colors.primary
+                                    : colors.primary.withValues(alpha: 0.45),
                                 borderRadius: BorderRadius.circular(3),
                               ),
                             ),

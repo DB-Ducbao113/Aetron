@@ -12,3 +12,7 @@ export 'kinetic_metric_tile.dart';
 export 'kinetic_chip.dart';
 export 'kinetic_offline_banner.dart';
 export 'kinetic_scroll_behavior.dart';
+export 'kinetic_surface_finish.dart';
+export 'kinetic_sliding_selection.dart';
+export 'kinetic_glassline_scaffold.dart';
+export 'kinetic_glass_modal.dart';

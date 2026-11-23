@@ -1,3 +1,5 @@
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_glass_icon_button.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
@@ -23,27 +25,16 @@ class KineticDetailsTopBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          // Back Button
-          Semantics(
-            button: true,
+          KineticGlassIconButton(
+            size: 37,
+            visualSize: 37,
             label: currentLang == AppLanguage.vi ? 'Quay lại' : 'Back',
-            child: InkWell(
-              onTap: onBack,
-              borderRadius: BorderRadius.circular(20),
-              child: Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: colors.surface1,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: colors.borderSubtle),
-                ),
-                child: Icon(
-                  Icons.arrow_back_rounded,
-                  color: colors.textPrimary,
-                  size: 20,
-                ),
-              ),
+            onPressed: onBack,
+            icon: BladeIcon(
+              BladeIconName.chevL,
+              size: 18,
+              color: colors.textSecondary,
+              strokeWidth: 1.7,
             ),
           ),
           const SizedBox(width: 12),
@@ -61,29 +52,18 @@ class KineticDetailsTopBar extends StatelessWidget {
             ),
           ),
 
-          // Delete Button
-          Semantics(
-            button: true,
-            label: currentLang == AppLanguage.vi ? 'Xóa buổi tập' : 'Delete workout',
-            child: InkWell(
-              onTap: onDelete,
-              borderRadius: BorderRadius.circular(20),
-              child: Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: colors.error.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: colors.error.withValues(alpha: 0.35),
-                  ),
-                ),
-                child: Icon(
-                  Icons.delete_outline_rounded,
-                  color: colors.error,
-                  size: 20,
-                ),
-              ),
+          KineticGlassIconButton(
+            size: 37,
+            visualSize: 37,
+            label: currentLang == AppLanguage.vi
+                ? 'Xóa buổi tập'
+                : 'Delete workout',
+            onPressed: onDelete,
+            icon: BladeIcon(
+              BladeIconName.trash,
+              size: 18,
+              color: colors.error,
+              strokeWidth: 1.7,
             ),
           ),
         ],
