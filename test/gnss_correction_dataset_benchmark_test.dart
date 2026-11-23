@@ -408,7 +408,7 @@ void main() {
         expect(distKm, lessThan(4.5));
       }
       print('========================================================================================================================\n');
-    });
+    }, tags: 'external-data');
 
     test('DATASET 3: Historical Extended Cycling Dataset (10,779 Raw Fixes) - 6-Pipeline Ablation Matrix', () {
       final file = File('exports/aetron_raw_gps_combined.csv');
@@ -518,7 +518,7 @@ void main() {
         expect(distKm, lessThan(65.0));
       }
       print('========================================================================================================================\n');
-    });
+    }, tags: 'external-data');
 
     test('DATASET 4: Synthetic Multipath Stress Test (30 Epochs) - 6-Pipeline Ablation Matrix', () {
       const p0 = LatLng(10.776889, 106.700806);

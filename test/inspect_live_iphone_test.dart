@@ -81,6 +81,6 @@ void main() {
         tempDir.deleteSync(recursive: true);
       }
     }
-  });
+  }, tags: 'external-data');
 }
 

@@ -635,7 +635,7 @@ void main() {
       expect(totalDriftRemovedM, equals(70.0));
       expect(totalExecutionUs / totalRawPoints, lessThan(50.0),
           reason: 'Throughput must exceed 20,000 points/second on mobile CPU');
-    });
+    }, tags: 'external-data');
 
     test('BENCH-03: Historical Large-Scale Field Dataset Benchmark (10,779 Raw Fixes)', () {
       print('\n========================================================================================================');
@@ -764,6 +764,6 @@ void main() {
       expect(totalLowAcc, greaterThanOrEqualTo(0));
       expect(totalStayPoints, greaterThan(50));
       expect(latencyPerPtUs, lessThan(20.0), reason: 'Must sustain > 50,000 points/sec');
-    });
+    }, tags: 'external-data');
   });
 }

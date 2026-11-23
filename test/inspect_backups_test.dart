@@ -109,5 +109,5 @@ void main() {
       print('  Session $tag ($sid): $count raw GPS points');
     });
     print('==============================================');
-  });
+  }, tags: 'external-data');
 }

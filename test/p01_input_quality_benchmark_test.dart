@@ -792,7 +792,7 @@ void main() {
 
       expect(totalRawPoints, equals(595));
       expect(totalAccepted + totalDownweighted + totalRejected + 3, equals(595));
-    });
+    }, tags: 'external-data');
 
     // -------------------------------------------------------------------------
     // BENCH-03: Historical Large-Scale Dataset (10,779 Fixes)
@@ -873,7 +873,7 @@ void main() {
       expect(totalIntraSessionRawDistKm, closeTo(61.98, 0.05));
       expect(totalCleanDistKm, closeTo(56.08, 0.05));
       expect(totalDriftRemovedM, closeTo(1707.0, 5.0));
-    });
+    }, tags: 'external-data');
 
     // -------------------------------------------------------------------------
     // BENCH-04: Static Geodetic Monument Benchmark (Tomaštík et al., 2025)

@@ -443,7 +443,7 @@ void main() {
 
       expect(totalReconstructedDistKm, greaterThan(4.0));
       expect(totalReconstructedDistKm, lessThan(4.5));
-    });
+    }, tags: 'external-data');
 
     test('BENCHMARK 3: Historical Cycling Dataset (10,779 Raw Fixes across 7 Sessions)', () {
       final file = File('exports/aetron_raw_gps_combined.csv');
@@ -524,7 +524,7 @@ void main() {
       expect(totalInputPoints, equals(10779));
       expect(totalReconstructedPoints, greaterThan(totalInputPoints));
       expect(totalElapsedMs, lessThan(3000)); // Under 3 seconds on host
-    });
+    }, tags: 'external-data');
 
     test('BENCHMARK 4: Non-OSM Off-Road / Athletic Stadium Track (Network-Agnostic Recovery)', () {
       // 400m Olympic standard athletic running track:

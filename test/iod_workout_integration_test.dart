@@ -19,6 +19,9 @@ import '../tooling/benchmark/ciod_dataset_adapter.dart';
 
 class _NoStorageCoordinator implements WorkoutRecordingCoordinator {
   @override
+  Future<void> drainLocalWrites() async {}
+
+  @override
   void dispose() {}
 
   @override

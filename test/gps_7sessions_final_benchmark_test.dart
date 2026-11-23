@@ -535,5 +535,5 @@ void main() {
     print(
       'Processing Times: Baseline=${baseTotalTime}us, EKF=${ekfTotalTime}us, EKF+DBSCAN=${dbscanTotalTime}us',
     );
-  });
+  }, tags: 'external-data');
 }
