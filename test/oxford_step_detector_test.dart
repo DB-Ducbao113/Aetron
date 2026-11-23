@@ -11,6 +11,21 @@ void main() {
     }
   });
 
+  test('stationary input with sensor noise and hand tremor does not generate steps', () {
+    final detector = OxfordStepDetector();
+    final rng = math.Random(42);
+    final peaks = <int>[];
+    // 60 seconds at 100 Hz with realistic MEMS accelerometer noise + hand tremor (sigma = 0.05 m/s²)
+    for (var i = 0; i < 6000; i++) {
+      final u1 = rng.nextDouble().clamp(1e-7, 1.0);
+      final u2 = rng.nextDouble();
+      final noise = 0.05 * math.sqrt(-2.0 * math.log(u1)) * math.cos(2.0 * math.pi * u2);
+      final events = detector.addSample(i * 10000, 0, 0, 9.80665 + noise);
+      peaks.addAll(events);
+    }
+    expect(peaks, isEmpty);
+  });
+
   test('periodic acceleration yields events in timestamp order', () {
     final detector = OxfordStepDetector();
     final peaks = <int>[];

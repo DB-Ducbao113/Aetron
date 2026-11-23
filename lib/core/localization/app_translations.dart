@@ -37,7 +37,7 @@ class AppTranslations {
   static const Map<String, Map<AppLanguage, String>> _keys = {
     // Navigation Shell
     'nav_home': {AppLanguage.vi: 'Trang chủ', AppLanguage.en: 'Home'},
-    'nav_activity': {AppLanguage.vi: 'Ghi lại', AppLanguage.en: 'Record'},
+    'nav_activity': {AppLanguage.vi: 'Tập luyện', AppLanguage.en: 'Record'},
     'nav_history': {AppLanguage.vi: 'Lịch sử', AppLanguage.en: 'History'},
     'nav_analytics': {AppLanguage.vi: 'Phân tích', AppLanguage.en: 'Analytics'},
     'nav_profile': {AppLanguage.vi: 'Hồ sơ', AppLanguage.en: 'Profile'},
@@ -626,6 +626,24 @@ class AppTranslations {
     'saving': {
       AppLanguage.vi: 'ĐANG LƯU...',
       AppLanguage.en: 'SAVING...',
+    },
+    'recording_save_failed': {
+      AppLanguage.vi: 'Chưa lưu được buổi tập',
+      AppLanguage.en: 'Workout not saved',
+    },
+    'recording_save_retry_message': {
+      AppLanguage.vi:
+          'Buổi tập đã dừng nhưng chưa được xác nhận lưu. Dữ liệu cuối vẫn còn trong bộ nhớ ứng dụng. Hãy thử lưu lại và không đóng ứng dụng.',
+      AppLanguage.en:
+          'Recording has stopped, but the save has not been confirmed. The final workout is still in app memory. Retry and do not close the app.',
+    },
+    'recording_retry_save': {
+      AppLanguage.vi: 'Thử lưu lại',
+      AppLanguage.en: 'Retry save',
+    },
+    'recording_other_owner': {
+      AppLanguage.vi: 'Có buổi tập chưa lưu của tài khoản khác. Đăng nhập lại tài khoản đó để thử lưu.',
+      AppLanguage.en: 'An unsaved workout belongs to another account. Sign back into that account to retry.',
     },
     'auto_pause': {
       AppLanguage.vi: 'TỰ ĐỘNG TẠM DỪNG',

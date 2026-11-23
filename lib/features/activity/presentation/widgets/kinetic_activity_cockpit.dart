@@ -1,6 +1,7 @@
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_target.dart';
 import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_glass_icon_button.dart';
 import 'package:flutter/material.dart';
 
 class KineticActivityCockpit extends StatelessWidget {
@@ -49,9 +50,7 @@ class KineticActivityCockpit extends StatelessWidget {
       decoration: BoxDecoration(
         color: colors.surface1,
         borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
-        border: Border.all(
-          color: colors.borderSubtle,
-        ),
+        border: Border.all(color: colors.borderSubtle),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -69,8 +68,9 @@ class KineticActivityCockpit extends StatelessWidget {
                       height: 34,
                       decoration: BoxDecoration(
                         color: colors.surface2,
-                        borderRadius:
-                            BorderRadius.circular(KineticTokens.radiusSM),
+                        borderRadius: BorderRadius.circular(
+                          KineticTokens.radiusSM,
+                        ),
                         border: Border.all(
                           color: colors.borderSubtle.withValues(alpha: 0.5),
                         ),
@@ -97,8 +97,8 @@ class KineticActivityCockpit extends StatelessWidget {
                               isGpsReady
                                   ? (isVi ? 'GPS sẵn sàng' : 'GPS Ready')
                                   : (isVi
-                                      ? 'Chờ tín hiệu GPS'
-                                      : 'Waiting for GPS'),
+                                        ? 'Chờ tín hiệu GPS'
+                                        : 'Waiting for GPS'),
                               style: KineticTypography.label.copyWith(
                                 fontWeight: FontWeight.w700,
                                 color: colors.textPrimary,
@@ -119,22 +119,24 @@ class KineticActivityCockpit extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (onMapPreviewTap != null) ...[
-                    IconButton(
-                      tooltip: isVi ? 'Xem bản đồ' : 'Map Preview',
+                    KineticGlassIconButton(
+                      size: 37,
+                      visualSize: 37,
+                      label: isVi ? 'Xem bản đồ' : 'Map Preview',
                       icon: BladeIcon(
                         BladeIconName.map,
-                        size: 19,
+                        size: 18,
                         color: colors.textSecondary,
+                        strokeWidth: 1.7,
                       ),
-                      onPressed: onMapPreviewTap,
-                      style: IconButton.styleFrom(
-                        minimumSize: const Size(40, 40),
-                        padding: EdgeInsets.zero,
-                      ),
+                      onPressed: onMapPreviewTap!,
                     ),
+                    const SizedBox(width: 8),
                   ],
-                  IconButton(
-                    tooltip: isVi ? 'Làm mới tín hiệu' : 'Refresh signal',
+                  KineticGlassIconButton(
+                    size: 37,
+                    visualSize: 37,
+                    label: isVi ? 'Làm mới tín hiệu' : 'Refresh signal',
                     icon: checkingLocation
                         ? SizedBox(
                             width: 16,
@@ -144,16 +146,13 @@ class KineticActivityCockpit extends StatelessWidget {
                               color: colors.primary,
                             ),
                           )
-                        : Icon(
-                            Icons.refresh_rounded,
-                            size: 19,
+                        : BladeIcon(
+                            BladeIconName.refresh,
+                            size: 18,
                             color: colors.textSecondary,
+                            strokeWidth: 1.7,
                           ),
-                    onPressed: checkingLocation ? null : onRefreshGps,
-                    style: IconButton.styleFrom(
-                      minimumSize: const Size(40, 40),
-                      padding: EdgeInsets.zero,
-                    ),
+                    onPressed: checkingLocation ? () {} : onRefreshGps,
                   ),
                 ],
               ),

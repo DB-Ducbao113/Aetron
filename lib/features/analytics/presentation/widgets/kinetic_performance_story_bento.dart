@@ -112,17 +112,10 @@ class KineticPerformanceStoryBento extends StatelessWidget {
           : 'Accumulated ${displayDistance.toStringAsFixed(1)} $distanceUnit across $sessionCount structured sessions.';
     }
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(KineticTokens.spaceLG),
-      decoration: BoxDecoration(
-        color: colors.surface1,
-        borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
-        boxShadow: colors.isDark ? null : KineticTokens.shadowCardLight(),
-        border: colors.isDark
-            ? Border.all(color: colors.borderSubtle, width: 1)
-            : null,
-      ),
+    return KineticCard(
+      useLiquidGlass: true,
+      padding: const EdgeInsets.all(17),
+      borderRadius: 21,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

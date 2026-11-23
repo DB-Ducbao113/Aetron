@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/auth/presentation/screens/auth_wrapper.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_glass_icon_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -41,9 +43,9 @@ class _WelcomeGateState extends State<WelcomeGate> {
   }
 
   void _openAuth() {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const AuthWrapper()),
-    );
+    Navigator.of(
+      context,
+    ).pushReplacement(MaterialPageRoute(builder: (_) => const AuthWrapper()));
   }
 
   @override
@@ -91,9 +93,7 @@ class _ResourceLoadingScreenState extends State<ResourceLoadingScreen> {
     final colors = context.kinetic;
     return Scaffold(
       backgroundColor: colors.background,
-      body: Center(
-        child: CircularProgressIndicator(color: colors.primary),
-      ),
+      body: Center(child: CircularProgressIndicator(color: colors.primary)),
     );
   }
 }
@@ -178,46 +178,10 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
 
     return Scaffold(
       backgroundColor: colors.background,
-      body: Stack(
-        children: [
-          // ── Soft Ambient Azure Wash ──
-          Positioned(
-            top: -60,
-            right: -60,
-            child: Container(
-              width: 240,
-              height: 240,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    colors.primary.withValues(alpha: 0.12),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: 100,
-            left: -80,
-            child: Container(
-              width: 260,
-              height: 260,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    colors.secondary.withValues(alpha: 0.08),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          SafeArea(
-            child: Column(
+      body: KineticGlasslineScaffoldBody(
+        showBottomScrim: false,
+        child: SafeArea(
+          child: Column(
               children: [
                 // ── Top Navigation Bar ──
                 _WelcomeTopBar(
@@ -277,7 +241,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
               ],
             ),
           ),
-        ],
       ),
     );
   }
@@ -457,11 +420,7 @@ class _OnboardingPageItem extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // ── Hero Graphic Area ──
-          _OnboardingHero(
-            data: data,
-            height: heroHeight,
-            animation: animation,
-          ),
+          _OnboardingHero(data: data, height: heroHeight, animation: animation),
 
           // ── Glassmorphic Cyber Content Card ──
           Padding(
@@ -508,25 +467,21 @@ class _WelcomeTopBar extends ConsumerWidget {
           children: [
             // Left Action / Back Button
             SizedBox(
-              width: 44,
-              height: 44,
+              width: 37,
+              height: 37,
               child: canGoBack
-                  ? InkWell(
-                      onTap: onBack,
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: colors.surface1,
-                          borderRadius: BorderRadius.circular(
-                            KineticTokens.radiusMD,
-                          ),
-                          border: Border.all(color: colors.borderAccent),
-                        ),
-                        child: Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          color: colors.primary,
-                          size: 16,
-                        ),
+                  ? KineticGlassIconButton(
+                      size: 37,
+                      visualSize: 37,
+                      label: currentLang == AppLanguage.vi
+                          ? 'Quay lại'
+                          : 'Back',
+                      onPressed: onBack,
+                      icon: BladeIcon(
+                        BladeIconName.chevL,
+                        color: colors.textSecondary,
+                        size: 18,
+                        strokeWidth: 1.7,
                       ),
                     )
                   : Center(
@@ -569,22 +524,27 @@ class _WelcomeTopBar extends ConsumerWidget {
                 HapticFeedback.selectionClick();
               },
               borderRadius: BorderRadius.circular(20),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 5,
-                ),
-                decoration: BoxDecoration(
-                  color: colors.surface1,
-                  borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
-                  border: Border.all(color: colors.borderAccent),
-                ),
-                child: Text(
-                  currentLang == AppLanguage.vi ? 'VI' : 'EN',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    color: colors.primary,
+              child: KineticTouchFinish(
+                radius: KineticTokens.radiusPill,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colors.surface1,
+                    borderRadius: BorderRadius.circular(
+                      KineticTokens.radiusPill,
+                    ),
+                    border: Border.all(color: colors.borderAccent),
+                  ),
+                  child: Text(
+                    currentLang == AppLanguage.vi ? 'VI' : 'EN',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: colors.primary,
+                    ),
                   ),
                 ),
               ),
@@ -674,16 +634,10 @@ class _WelcomeCopyCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.kinetic;
 
-    return Container(
+    return KineticCard(
+      useLiquidGlass: true,
+      borderRadius: 21,
       padding: const EdgeInsets.all(KineticTokens.spaceLG),
-      decoration: BoxDecoration(
-        color: colors.surface1.withValues(alpha: 0.92),
-        borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
-        border: Border.all(
-          color: colors.borderAccent,
-          width: 1.2,
-        ),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -692,10 +646,7 @@ class _WelcomeCopyCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 9,
-                  vertical: 4,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                 decoration: BoxDecoration(
                   color: colors.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(KineticTokens.radiusSM),

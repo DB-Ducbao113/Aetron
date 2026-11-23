@@ -2,6 +2,7 @@ import 'package:fitness_exercise_application/core/localization/app_translations.
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/screens/details/workout_details_screen.dart';
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_card.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
@@ -95,8 +96,9 @@ class KineticWorkoutHistoryCard extends StatelessWidget {
     }
 
     return KineticCard(
-      padding: const EdgeInsets.all(KineticTokens.spaceMD),
-      borderRadius: KineticTokens.radiusLG,
+      useLiquidGlass: true,
+      padding: const EdgeInsets.all(17),
+      borderRadius: 21,
       onTap: () {
         HapticFeedback.lightImpact();
         Navigator.of(context).push(
@@ -112,13 +114,13 @@ class KineticWorkoutHistoryCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: KineticTokens.spaceXXS, vertical: KineticTokens.spaceXXS),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
-                  color: colors.primary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
-                  border: Border.all(
-                    color: colors.primary.withValues(alpha: 0.3),
-                  ),
+                  color: colors.primary.withValues(alpha: 0.11),
+                  borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -130,19 +132,20 @@ class KineticWorkoutHistoryCard extends StatelessWidget {
                       style: KineticTypography.unitLabel.copyWith(
                         color: colors.primary,
                         fontSize: 10,
-                        letterSpacing: 0.5,
+                        letterSpacing: 0.4,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: KineticTokens.spaceXXS),
+              const SizedBox(width: KineticTokens.spaceXS),
 
               Text(
                 timeStr,
                 style: KineticTypography.bodySmall.copyWith(
                   color: colors.textMuted,
                   fontSize: 11,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
 
@@ -150,11 +153,13 @@ class KineticWorkoutHistoryCard extends StatelessWidget {
 
               // Validity chip
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: KineticTokens.spaceXXS, vertical: KineticTokens.spaceXXS),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
-                  color: validityColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
-                  border: Border.all(color: validityColor.withValues(alpha: 0.3)),
+                  color: validityColor.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
                 ),
                 child: Text(
                   validityText,
@@ -166,7 +171,7 @@ class KineticWorkoutHistoryCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 4),
-              Icon(Icons.chevron_right_rounded, size: 16, color: colors.textMuted),
+              BladeIcon(BladeIconName.chevR, size: 16, color: colors.textMuted),
             ],
           ),
           const SizedBox(height: KineticTokens.spaceSM),

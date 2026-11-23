@@ -26,7 +26,7 @@ void main() {
       );
 
       expect(find.text('KHỞI ĐỘNG LUYỆN TẬP'), findsNothing);
-      expect(find.text('Chọn bộ môn'), findsOneWidget);
+      expect(find.text('Bắt đầu.'), findsOneWidget);
       expect(find.text('GPS SẴN SÀNG'), findsOneWidget);
       expect(
         find.byIcon(BladeIcon.iconDataFor(BladeIconName.gps)),
@@ -102,7 +102,7 @@ void main() {
       );
 
       expect(find.text('START WORKOUT'), findsNothing);
-      expect(find.text('Select Activity'), findsOneWidget);
+      expect(find.text('Start.'), findsOneWidget);
       expect(find.text('GPS READY'), findsOneWidget);
     });
   });

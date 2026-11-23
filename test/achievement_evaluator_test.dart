@@ -52,6 +52,45 @@ void main() {
       expect(pioneer5k.isUnlocked, isFalse);
     });
 
+    test(
+      'Cycling does not unlock running-specific pace or half marathon achievements',
+      () {
+        final now = DateTime(2026, 8, 20);
+        final workout = WorkoutSession(
+          id: 'cycling',
+          userId: 'u1',
+          activityType: 'cycling',
+          startedAt: now,
+          endedAt: now.add(const Duration(hours: 1)),
+          durationSec: 3600,
+          distanceKm: 25,
+          steps: 0,
+          avgSpeedKmh: 25,
+          caloriesKcal: 250,
+          mode: 'gps',
+          createdAt: now,
+        );
+        final badges = AchievementEvaluator.evaluateAchievements(
+          workouts: [workout],
+          currentStreak: 1,
+          longestStreak: 1,
+          totalDistanceKm: 25,
+        );
+        expect(
+          badges.firstWhere((b) => b.id == 'half_marathon_21k').isUnlocked,
+          isFalse,
+        );
+        expect(
+          badges.firstWhere((b) => b.id == 'pace_breaker').isUnlocked,
+          isFalse,
+        );
+        expect(
+          badges.firstWhere((b) => b.id == 'distance_25k').isUnlocked,
+          isTrue,
+        );
+      },
+    );
+
     test('7-day streak unlocks 3-Day Spark and Weekly Ignite', () {
       final badges = AchievementEvaluator.evaluateAchievements(
         workouts: [],

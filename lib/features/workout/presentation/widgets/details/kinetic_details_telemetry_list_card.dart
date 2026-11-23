@@ -71,6 +71,8 @@ class KineticDetailsTelemetryListCard extends StatelessWidget {
     final showSteps = _hasSteps(workout.activityType) && workout.steps > 0;
 
     return KineticCard(
+      useLiquidGlass: true,
+      borderRadius: 21,
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

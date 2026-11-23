@@ -74,17 +74,10 @@ class KineticActivityMixBento extends StatelessWidget {
         ? WorkoutFormatters.formatDurationFromSeconds(totalActiveSeconds)
         : '00:00';
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(KineticTokens.spaceLG),
-      decoration: BoxDecoration(
-        color: colors.surface1,
-        borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
-        border: Border.all(
-          color: colors.borderSubtle,
-          width: 1,
-        ),
-      ),
+    return KineticCard(
+      useLiquidGlass: true,
+      padding: const EdgeInsets.all(17),
+      borderRadius: 21,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -100,10 +93,7 @@ class KineticActivityMixBento extends StatelessWidget {
                       isVi ? 'CƠ CẤU MÔN TẬP' : 'DISCIPLINE BREAKDOWN',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: KineticTypography.headlineSmall.copyWith(
-                        color: colors.textPrimary,
-                        fontWeight: FontWeight.w800,
-                      ),
+                      style: KineticTypography.cardEyebrowOf(colors),
                     ),
                     const SizedBox(height: 2),
                     Text(

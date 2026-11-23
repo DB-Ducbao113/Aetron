@@ -6,12 +6,8 @@ import 'package:fitness_exercise_application/features/shell/presentation/provide
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/providers/workout_providers.dart';
 import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_button.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_card.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_gradients.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_glass_icon_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -80,116 +76,112 @@ class KineticStreakDetailsSheet extends ConsumerWidget {
 
     final (tierColor, tierTitle) = getStreakTierInfo(days, isVi, colors);
 
-    return SafeArea(
-      top: false,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.sizeOf(context).height * 0.88,
-        ),
-        child: Container(
-          decoration: BoxDecoration(
-            color: colors.surface1,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(KineticTokens.radiusXXL),
-            ),
-            border: Border(
-              top: BorderSide(
-                color: tierColor.withValues(alpha: 0.4),
-                width: 1.5,
+    return KineticGlassBottomSheet(
+      floating: true,
+      borderRadius: 28,
+      borderColor: tierColor.withValues(alpha: 0.35),
+      showHandle: false,
+      padding: EdgeInsets.zero,
+      maxHeightFactor: 0.88,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Top Drag Handle & Navigation Header
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: KineticGradients.heroMesh(colors),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(28),
               ),
             ),
-            boxShadow: KineticTokens.shadowPanel(colors.background),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Top Drag Handle & Navigation Header — V4: heroMesh zone
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: KineticGradients.heroMesh(colors),
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(KineticTokens.radiusXXL),
-                  ),
-                ),
                 child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  KineticTokens.page,
-                  KineticTokens.spaceSM,
-                  KineticTokens.spaceMD,
-                  KineticTokens.spaceSM,
-                ),
-                child: Column(
-                  children: [
-                    // Handle Pill
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: colors.borderSubtle,
-                          borderRadius: BorderRadius.circular(2),
+                  padding: const EdgeInsets.fromLTRB(
+                    KineticTokens.page,
+                    KineticTokens.spaceSM,
+                    KineticTokens.spaceMD,
+                    KineticTokens.spaceSM,
+                  ),
+                  child: Column(
+                    children: [
+                      // Handle Pill
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: colors.borderSubtle,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: KineticTokens.spaceSM),
-                    // Header Bar
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(KineticTokens.spaceXS),
-                          decoration: BoxDecoration(
-                            color: tierColor.withValues(alpha: 0.15),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: tierColor.withValues(alpha: 0.35),
+                      const SizedBox(height: KineticTokens.spaceSM),
+                      // Header Bar
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(
+                              KineticTokens.spaceXS,
+                            ),
+                            decoration: BoxDecoration(
+                              color: tierColor.withValues(alpha: 0.15),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: tierColor.withValues(alpha: 0.35),
+                              ),
+                            ),
+                            child: BladeIcon(
+                              BladeIconName.flame,
+                              color: tierColor,
+                              size: 18,
                             ),
                           ),
-                          child: BladeIcon(
-                            BladeIconName.flame,
-                            color: tierColor,
-                            size: 18,
-                          ),
-                        ),
-                        const SizedBox(width: KineticTokens.spaceXS),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                AppTranslations.get(
-                                  'aetron_streak',
-                                  currentLang,
+                          const SizedBox(width: KineticTokens.spaceXS),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  AppTranslations.get(
+                                    'aetron_streak',
+                                    currentLang,
+                                  ),
+                                  style: KineticTypography.headlineSmall
+                                      .copyWith(
+                                        color: colors.textPrimary,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 0.8,
+                                      ),
                                 ),
-                                style: KineticTypography.headlineSmall.copyWith(
-                                  color: colors.textPrimary,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 0.8,
+                                Text(
+                                  tierTitle.toUpperCase(),
+                                  style: KineticTypography.unitLabel.copyWith(
+                                    color: tierColor,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 1.1,
+                                  ),
                                 ),
-                              ),
-                              Text(
-                                tierTitle.toUpperCase(),
-                                style: KineticTypography.unitLabel.copyWith(
-                                  color: tierColor,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 1.1,
-                                ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                        IconButton(
-                          icon: BladeIcon(
-                            BladeIconName.x,
-                            color: colors.textSecondary,
-                            size: 22,
+                          KineticGlassIconButton(
+                            size: 37,
+                            visualSize: 37,
+                            label: currentLang == AppLanguage.vi
+                                ? 'Đóng'
+                                : 'Close',
+                            icon: BladeIcon(
+                              BladeIconName.x,
+                              color: colors.textSecondary,
+                              size: 18,
+                              strokeWidth: 1.7,
+                            ),
+                            onPressed: () => Navigator.of(context).pop(),
                           ),
-                          onPressed: () => Navigator.of(context).pop(),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
 
@@ -236,7 +228,11 @@ class KineticStreakDetailsSheet extends ConsumerWidget {
                       // 4. Lời nhắc giữ chuỗi tinh tế
                       Row(
                         children: [
-                          BladeIcon(BladeIconName.bolt, size: 15, color: tierColor),
+                          BladeIcon(
+                            BladeIconName.bolt,
+                            size: 15,
+                            color: tierColor,
+                          ),
                           const SizedBox(width: KineticTokens.spaceXXS),
                           Expanded(
                             child: Text(
@@ -276,8 +272,6 @@ class KineticStreakDetailsSheet extends ConsumerWidget {
               ),
             ],
           ),
-        ),
-      ),
     );
   }
 }
@@ -308,6 +302,13 @@ class _StreakHeroCard extends StatelessWidget {
     final activeStatusColor = isTodayCompleted ? greenColor : warningColor;
 
     return KineticCard(
+      backgroundColor: isDark
+          ? Colors.white.withValues(alpha: 0.06)
+          : Colors.white.withValues(alpha: 0.72),
+      borderColor: isDark
+          ? Colors.white.withValues(alpha: 0.12)
+          : Colors.white.withValues(alpha: 0.88),
+      borderRadius: 20,
       padding: const EdgeInsets.symmetric(
         vertical: KineticTokens.spaceLG,
         horizontal: KineticTokens.spaceMD,
@@ -386,9 +387,7 @@ class _StreakHeroCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 BladeIcon(
-                  isTodayCompleted
-                      ? BladeIconName.check
-                      : BladeIconName.bolt,
+                  isTodayCompleted ? BladeIconName.check : BladeIconName.bolt,
                   size: 14,
                   color: activeStatusColor,
                 ),
@@ -446,17 +445,20 @@ class _StreakWeekStrip extends StatelessWidget {
     }
 
     return KineticCard(
+      backgroundColor: colors.isDark
+          ? Colors.white.withValues(alpha: 0.06)
+          : Colors.white.withValues(alpha: 0.72),
+      borderColor: colors.isDark
+          ? Colors.white.withValues(alpha: 0.12)
+          : Colors.white.withValues(alpha: 0.88),
+      borderRadius: 20,
       padding: const EdgeInsets.all(KineticTokens.spaceMD),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              BladeIcon(
-                BladeIconName.cal,
-                color: colors.primary,
-                size: 15,
-              ),
+              BladeIcon(BladeIconName.cal, color: colors.primary, size: 15),
               const SizedBox(width: KineticTokens.spaceXXS),
               Text(
                 isVi ? 'TUẦN NÀY' : 'THIS WEEK',
@@ -591,11 +593,7 @@ class _StreakDayCapsule extends StatelessWidget {
                   : Colors.transparent,
             ),
             child: isActive
-                ? BladeIcon(
-                    BladeIconName.flame,
-                    color: Colors.white,
-                    size: 12,
-                  )
+                ? BladeIcon(BladeIconName.flame, color: Colors.white, size: 12)
                 : isToday
                 ? Container(
                     width: 5,

@@ -1,3 +1,4 @@
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_surface_finish.dart';
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
@@ -60,22 +61,27 @@ class KineticSummaryHeader extends StatelessWidget {
           children: [
             Semantics(
               button: true,
-              label: currentLang == AppLanguage.vi ? 'Quay về trang chủ' : 'Return to home',
+              label: currentLang == AppLanguage.vi
+                  ? 'Quay về trang chủ'
+                  : 'Return to home',
               child: InkWell(
                 onTap: onBackToHome,
                 borderRadius: BorderRadius.circular(20),
-                child: Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: colors.surface1,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: colors.borderSubtle),
-                  ),
-                  child: BladeIcon(
-                    BladeIconName.chevL,
-                    color: colors.textPrimary,
-                    size: 20,
+                child: KineticTouchFinish(
+                  radius: 999,
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: colors.surface1,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: colors.borderSubtle),
+                    ),
+                    child: BladeIcon(
+                      BladeIconName.chevL,
+                      color: colors.textPrimary,
+                      size: 20,
+                    ),
                   ),
                 ),
               ),
@@ -95,22 +101,27 @@ class KineticSummaryHeader extends StatelessWidget {
             if (onShare != null)
               Semantics(
                 button: true,
-                label: currentLang == AppLanguage.vi ? 'Chia sẻ buổi tập' : 'Share workout',
-                child: InkWell(
-                  onTap: onShare,
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: colors.surface1,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: colors.borderSubtle),
-                    ),
-                    child: BladeIcon(
-                      BladeIconName.share,
-                      color: colors.primary,
-                      size: 19,
+                label: currentLang == AppLanguage.vi
+                    ? 'Chia sẻ buổi tập'
+                    : 'Share workout',
+                child: KineticTouchFinish(
+                  radius: 999,
+                  child: InkWell(
+                    onTap: onShare,
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: colors.surface1,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: colors.borderSubtle),
+                      ),
+                      child: BladeIcon(
+                        BladeIconName.share,
+                        color: colors.primary,
+                        size: 19,
+                      ),
                     ),
                   ),
                 ),

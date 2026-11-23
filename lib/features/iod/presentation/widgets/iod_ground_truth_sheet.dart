@@ -1,3 +1,4 @@
+import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
@@ -35,35 +36,16 @@ class _IodGroundTruthSheetState extends ConsumerState<IodGroundTruthSheet> {
     final prediction = iodState.currentPrediction;
     final activeGt = iodState.activeGroundTruth;
 
-    return Container(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-        left: 20,
-        right: 20,
-        top: 16,
-      ),
-      decoration: const BoxDecoration(
-        color: Color(0xFF14161D),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Drag handle
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Title
+    return KineticGlassBottomSheet(
+      floating: true,
+      borderRadius: 26,
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Title
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -271,6 +253,7 @@ class _IodGroundTruthSheetState extends ConsumerState<IodGroundTruthSheet> {
           ),
         ],
       ),
+    ),
     );
   }
 

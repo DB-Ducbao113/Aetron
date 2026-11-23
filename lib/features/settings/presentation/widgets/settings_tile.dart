@@ -1,7 +1,6 @@
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-
-const _muted = Color(0xFF8A96A9);
-const _cyan = Color(0xFF19E2FF);
 
 class SettingsTile extends StatelessWidget {
   final IconData icon;
@@ -21,6 +20,9 @@ class SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.kinetic;
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+
     return Material(
       color: Colors.transparent,
       child: ListTile(
@@ -30,16 +32,19 @@ class SettingsTile extends StatelessWidget {
           width: 36,
           height: 36,
           decoration: BoxDecoration(
-            color: _cyan.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: _cyan.withValues(alpha: 0.18)),
+            shape: BoxShape.circle,
+            color: colors.primary.withValues(alpha: isIOS ? 0.16 : 0.12),
+            border: Border.all(
+              color: colors.primary.withValues(alpha: isIOS ? 0.35 : 0.20),
+              width: 1.0,
+            ),
           ),
-          child: Icon(icon, color: _cyan, size: 18),
+          child: Icon(icon, color: colors.primary, size: 18),
         ),
         title: Text(
           title,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: colors.textPrimary,
             fontSize: 14,
             fontWeight: FontWeight.w800,
           ),
@@ -47,9 +52,9 @@ class SettingsTile extends StatelessWidget {
         subtitle: subtitle != null
             ? Text(
                 subtitle!,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
-                  color: _muted,
+                  color: colors.textSecondary,
                   fontWeight: FontWeight.w600,
                   height: 1.35,
                 ),
@@ -58,8 +63,9 @@ class SettingsTile extends StatelessWidget {
         trailing:
             trailing ??
             Icon(
-              Icons.chevron_right_rounded,
-              color: Colors.white.withValues(alpha: 0.4),
+              isIOS ? CupertinoIcons.chevron_forward : Icons.chevron_right_rounded,
+              color: colors.textMuted,
+              size: 16,
             ),
         onTap: onTap,
       ),

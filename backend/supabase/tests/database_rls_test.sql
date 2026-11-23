@@ -117,6 +117,21 @@ begin
     raise exception 'RLS failure: user A sees % workouts', visible_count;
   end if;
 
+  if (select count(*) from public.v_user_stats) <> 1
+    or (select count(*) from public.v_weekly_stats) <> 1
+    or (select count(*) from public.v_monthly_sessions) <> 1
+    or exists (select 1 from public.v_user_stats where user_id <> auth.uid())
+    or exists (select 1 from public.v_weekly_stats where user_id <> auth.uid())
+    or exists (select 1 from public.v_monthly_sessions where user_id <> auth.uid()) then
+    raise exception 'Reporting views must expose only the owner rows';
+  end if;
+
+  if has_table_privilege('anon', 'public.v_user_stats', 'SELECT')
+    or has_table_privilege('anon', 'public.v_weekly_stats', 'SELECT')
+    or has_table_privilege('anon', 'public.v_monthly_sessions', 'SELECT') then
+    raise exception 'Anonymous reporting access must be denied';
+  end if;
+
   select count(*) into visible_count from public.raw_gps_points;
   if visible_count <> 1 then
     raise exception 'RLS failure: user A sees % GPS points', visible_count;

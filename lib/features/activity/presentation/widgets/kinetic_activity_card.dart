@@ -56,7 +56,9 @@ class KineticActivityCard extends StatelessWidget {
     String? statLeft;
     String? statRight;
 
-    final validWorkouts = activityWorkouts.where((w) => w.distanceKm >= 0.1).toList();
+    final validWorkouts = activityWorkouts
+        .where((w) => w.distanceKm >= 0.1)
+        .toList();
 
     if (validWorkouts.isNotEmpty) {
       final totalDist = validWorkouts.fold<double>(
@@ -71,7 +73,8 @@ class KineticActivityCard extends StatelessWidget {
       final avgSec = (totalSec / validWorkouts.length).round();
 
       if (avgDist >= 0.1) {
-        statLeft = '${avgDist.toStringAsFixed(1)} ${isVi ? 'km / buổi' : 'km / session'}';
+        statLeft =
+            '${avgDist.toStringAsFixed(1)} ${isVi ? 'km / buổi' : 'km / session'}';
         if (option.type == 'cycling') {
           final totalSpeed = validWorkouts.fold<double>(
             0.0,
@@ -83,7 +86,8 @@ class KineticActivityCard extends StatelessWidget {
           }
         } else {
           if (avgSec > 0 && avgDist > 0) {
-            statRight = 'Pace ${WorkoutFormatters.formatPaceFromDistanceAndDuration(distanceKm: avgDist, durationSec: avgSec)}';
+            statRight =
+                'Pace ${WorkoutFormatters.formatPaceFromDistanceAndDuration(distanceKm: avgDist, durationSec: avgSec)}';
           }
         }
       }
@@ -112,136 +116,141 @@ class KineticActivityCard extends StatelessWidget {
           HapticFeedback.selectionClick();
           onSelect();
         },
-        child: AnimatedContainer(
-          duration: KineticTokens.motionTab,
-          curve: Curves.easeOutCubic,
-          decoration: BoxDecoration(
-            color: colors.surface1,
-            borderRadius: BorderRadius.circular(KineticTokens.radiusXL),
-            border: Border.all(
-              color: isSelected
-                  ? colors.primary
-                  : colors.borderSubtle.withValues(alpha: 0.6),
-              width: isSelected ? 2.0 : 1.0,
+        child: KineticTouchFinish(
+          radius: KineticTokens.radiusXL,
+          contentSurface: true,
+          emphasis: isSelected,
+          child: AnimatedContainer(
+            duration: KineticTokens.motionTab,
+            curve: Curves.easeOutCubic,
+            decoration: BoxDecoration(
+              color: colors.surface1,
+              borderRadius: BorderRadius.circular(KineticTokens.radiusXL),
+              border: Border.all(
+                color: isSelected
+                    ? colors.primary
+                    : colors.borderSubtle.withValues(alpha: 0.6),
+                width: isSelected ? 2.0 : 1.0,
+              ),
             ),
-          ),
-          child: ClipRRect(
-            // 1px less than card radius to sit inside the 1px border
-            borderRadius: BorderRadius.circular(KineticTokens.radiusXL - 1),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Main duotone scene body (V4: rich background, clean front)
-                SizedBox(
-                  height: 140,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      // Duotone scene backdrop in the sport's tint
-                      SceneBackdrop(tint: sceneTint),
-
-                      // Legibility scrim for the title
-                      DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: KineticGradients.scrimBottom(colors),
-                        ),
-                      ),
-
-                      // Sport glyph as part of the scene, bottom-right
-                      Positioned(
-                        right: 14,
-                        bottom: 10,
-                        child: BladeIcon(
-                          option.icon,
-                          size: 56,
-                          color: sceneTint.withValues(alpha: 0.4),
-                        ),
-                      ),
-
-                      // Check badge — the only selection marker besides the
-                      // primary border
-                      if (isSelected)
-                        Positioned(
-                          top: 10,
-                          right: 12,
-                          child: Container(
-                            width: 26,
-                            height: 26,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: colors.primary,
-                            ),
-                            child: BladeIcon(
-                              BladeIconName.check,
-                              size: 16,
-                              color: colors.onPrimary,
-                            ),
-                          ),
-                        ),
-
-                      // Bottom Content: Title
-                      Positioned(
-                        bottom: 12,
-                        left: 14,
-                        right: 14,
-                        child: Text(
-                          name,
-                          style: KineticTypography.cardTitle.copyWith(
-                            color: colors.textPrimary,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Telemetry Specification Strip at Bottom (rendered only when stats exist)
-                if (statLeft != null && statRight != null)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 9,
-                    ),
-                    decoration: BoxDecoration(
-                      color: colors.surface1,
-                      border: Border(
-                        top: BorderSide(
-                          color: colors.borderSubtle.withValues(alpha: 0.3),
-                        ),
-                      ),
-                    ),
-                    child: Row(
+            child: ClipRRect(
+              // 1px less than card radius to sit inside the 1px border
+              borderRadius: BorderRadius.circular(KineticTokens.radiusXL - 1),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Main duotone scene body (V4: rich background, clean front)
+                  SizedBox(
+                    height: 140,
+                    child: Stack(
+                      fit: StackFit.expand,
                       children: [
-                        Text(
-                          statLeft,
-                          style: KineticTypography.bodySmall.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: colors.textPrimary,
-                            fontFeatures: KineticTypography.tabularFigures,
+                        // Duotone scene backdrop in the sport's tint
+                        SceneBackdrop(tint: sceneTint),
+
+                        // Legibility scrim for the title
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: KineticGradients.scrimBottom(colors),
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 6),
-                          child: Text(
-                            '·',
-                            style: TextStyle(
-                              color: colors.textSecondary,
-                              fontWeight: FontWeight.bold,
+
+                        // Sport glyph as part of the scene, bottom-right
+                        Positioned(
+                          right: 14,
+                          bottom: 10,
+                          child: BladeIcon(
+                            option.icon,
+                            size: 56,
+                            color: sceneTint.withValues(alpha: 0.4),
+                          ),
+                        ),
+
+                        // Check badge — the only selection marker besides the
+                        // primary border
+                        if (isSelected)
+                          Positioned(
+                            top: 10,
+                            right: 12,
+                            child: Container(
+                              width: 26,
+                              height: 26,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: colors.primary,
+                              ),
+                              child: BladeIcon(
+                                BladeIconName.check,
+                                size: 16,
+                                color: colors.onPrimary,
+                              ),
                             ),
                           ),
-                        ),
-                        Text(
-                          statRight,
-                          style: KineticTypography.bodySmall.copyWith(
-                            fontWeight: FontWeight.w500,
-                            color: colors.textSecondary,
-                            fontFeatures: KineticTypography.tabularFigures,
+
+                        // Bottom Content: Title
+                        Positioned(
+                          bottom: 12,
+                          left: 14,
+                          right: 14,
+                          child: Text(
+                            name,
+                            style: KineticTypography.cardTitle.copyWith(
+                              color: colors.textPrimary,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
-              ],
+
+                  // Telemetry Specification Strip at Bottom (rendered only when stats exist)
+                  if (statLeft != null && statRight != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 9,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colors.surface1,
+                        border: Border(
+                          top: BorderSide(
+                            color: colors.borderSubtle.withValues(alpha: 0.3),
+                          ),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Text(
+                            statLeft,
+                            style: KineticTypography.bodySmall.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: colors.textPrimary,
+                              fontFeatures: KineticTypography.tabularFigures,
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 6),
+                            child: Text(
+                              '·',
+                              style: TextStyle(
+                                color: colors.textSecondary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            statRight,
+                            style: KineticTypography.bodySmall.copyWith(
+                              fontWeight: FontWeight.w500,
+                              color: colors.textSecondary,
+                              fontFeatures: KineticTypography.tabularFigures,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ),

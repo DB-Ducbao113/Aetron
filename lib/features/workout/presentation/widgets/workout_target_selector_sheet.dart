@@ -1,6 +1,9 @@
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_target.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_glass_icon_button.dart';
+import 'package:fitness_exercise_application/shared/kinetic/native_liquid_glass.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -71,35 +74,15 @@ class _WorkoutTargetSelectorSheetState
     final isVi = widget.currentLang == AppLanguage.vi;
     final accent = widget.accentColor;
 
-    return SafeArea(
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: colors.surface1,
-          borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
-          border: Border.all(
-            color: colors.borderSubtle,
-            width: 1,
-          ),
-        ),
+    return KineticGlassBottomSheet(
+      floating: true,
+      borderRadius: 28,
+      padding: const EdgeInsets.all(20),
+      child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Drag Indicator Handle
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: colors.textMuted.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
             // Header Title
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -134,7 +117,9 @@ class _WorkoutTargetSelectorSheetState
                           ),
                         ),
                         Text(
-                          isVi ? 'Chọn mục tiêu buổi tập' : 'Select Session Goal',
+                          isVi
+                              ? 'Chọn mục tiêu buổi tập'
+                              : 'Select Session Goal',
                           style: KineticTypography.headlineSmall.copyWith(
                             fontWeight: FontWeight.w900,
                             color: colors.textPrimary,
@@ -144,56 +129,100 @@ class _WorkoutTargetSelectorSheetState
                     ),
                   ],
                 ),
-                IconButton(
+                KineticGlassIconButton(
+                  size: 37,
+                  visualSize: 37,
+                  label: isVi ? 'Đóng' : 'Close',
                   onPressed: () => Navigator.of(context).pop(),
-                  icon: Icon(Icons.close_rounded,
-                      color: colors.textSecondary, size: 20),
+                  icon: BladeIcon(
+                    BladeIconName.x,
+                    color: colors.textSecondary,
+                    size: 18,
+                    strokeWidth: 1.7,
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 20),
 
             // Mode Selector Segment Tabs
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: colors.background,
-                borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
-                border: Border.all(color: colors.borderSubtle),
+            if (NativeLiquidGlass.enabledOf(context))
+              SizedBox(
+                height: KineticTokens.segmentedControlHeight,
+                child: NativeGlassSegmentedControl(
+                  labels: [
+                    isVi ? 'Tự do' : 'Free',
+                    isVi ? 'Cự ly' : 'Distance',
+                    isVi ? 'Thời gian' : 'Time',
+                    isVi ? 'Calo' : 'Calories',
+                  ],
+                  symbols: const ['infinity', 'location', 'timer', 'flame'],
+                  selectedIndex: WorkoutTargetType.values.indexOf(
+                    _selectedType,
+                  ),
+                  onChanged: (index) {
+                    if (index < 0 || index >= WorkoutTargetType.values.length) {
+                      return;
+                    }
+                    final type = WorkoutTargetType.values[index];
+                    HapticFeedback.selectionClick();
+                    setState(() {
+                      _selectedType = type;
+                      if (type == WorkoutTargetType.distance &&
+                          _selectedValue <= 0) {
+                        _selectedValue = 5.0;
+                      } else if (type == WorkoutTargetType.duration &&
+                          _selectedValue <= 0) {
+                        _selectedValue = 30.0;
+                      } else if (type == WorkoutTargetType.calories &&
+                          _selectedValue <= 0) {
+                        _selectedValue = 300.0;
+                      }
+                    });
+                  },
+                ),
+              )
+            else
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: colors.background,
+                  borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
+                  border: Border.all(color: colors.borderSubtle),
+                ),
+                child: Row(
+                  children: [
+                    _buildTab(
+                      type: WorkoutTargetType.none,
+                      label: isVi ? 'Tự do' : 'Free',
+                      icon: Icons.all_inclusive_rounded,
+                      accent: accent,
+                      colors: colors,
+                    ),
+                    _buildTab(
+                      type: WorkoutTargetType.distance,
+                      label: isVi ? 'Cự ly' : 'Distance',
+                      icon: Icons.place_rounded,
+                      accent: accent,
+                      colors: colors,
+                    ),
+                    _buildTab(
+                      type: WorkoutTargetType.duration,
+                      label: isVi ? 'Thời gian' : 'Time',
+                      icon: Icons.timer_rounded,
+                      accent: accent,
+                      colors: colors,
+                    ),
+                    _buildTab(
+                      type: WorkoutTargetType.calories,
+                      label: isVi ? 'Calo' : 'Calories',
+                      icon: Icons.local_fire_department_rounded,
+                      accent: accent,
+                      colors: colors,
+                    ),
+                  ],
+                ),
               ),
-              child: Row(
-                children: [
-                  _buildTab(
-                    type: WorkoutTargetType.none,
-                    label: isVi ? 'Tự do' : 'Free',
-                    icon: Icons.all_inclusive_rounded,
-                    accent: accent,
-                    colors: colors,
-                  ),
-                  _buildTab(
-                    type: WorkoutTargetType.distance,
-                    label: isVi ? 'Cự ly' : 'Distance',
-                    icon: Icons.place_rounded,
-                    accent: accent,
-                    colors: colors,
-                  ),
-                  _buildTab(
-                    type: WorkoutTargetType.duration,
-                    label: isVi ? 'Thời gian' : 'Time',
-                    icon: Icons.timer_rounded,
-                    accent: accent,
-                    colors: colors,
-                  ),
-                  _buildTab(
-                    type: WorkoutTargetType.calories,
-                    label: isVi ? 'Calo' : 'Calories',
-                    icon: Icons.local_fire_department_rounded,
-                    accent: accent,
-                    colors: colors,
-                  ),
-                ],
-              ),
-            ),
             const SizedBox(height: 20),
 
             // Content Area based on Selected Mode
@@ -209,37 +238,21 @@ class _WorkoutTargetSelectorSheetState
             const SizedBox(height: 24),
 
             // Apply Target Button
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton(
-                onPressed: () {
-                  HapticFeedback.mediumImpact();
-                  Navigator.of(context).pop(
-                    WorkoutTarget(
-                      type: _selectedType,
-                      value: _selectedType == WorkoutTargetType.none
-                          ? 0.0
-                          : _selectedValue,
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: accent,
-                  foregroundColor: Colors.black,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
+            KineticButton(
+              label: isVi ? 'XÁC NHẬN MỤC TIÊU' : 'CONFIRM TARGET',
+              icon: Icons.check_rounded,
+              height: KineticTokens.buttonHeightPrimary,
+              onPressed: () {
+                HapticFeedback.mediumImpact();
+                Navigator.of(context).pop(
+                  WorkoutTarget(
+                    type: _selectedType,
+                    value: _selectedType == WorkoutTargetType.none
+                        ? 0.0
+                        : _selectedValue,
                   ),
-                ),
-                child: Text(
-                  isVi ? 'XÁC NHẬN MỤC TIÊU' : 'CONFIRM TARGET',
-                  style: KineticTypography.label.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.0,
-                  ),
-                ),
-              ),
+                );
+              },
             ),
           ],
         ),
@@ -297,8 +310,7 @@ class _WorkoutTargetSelectorSheetState
               Text(
                 label,
                 style: KineticTypography.unitLabel.copyWith(
-                  fontWeight:
-                      isSelected ? FontWeight.w900 : FontWeight.w700,
+                  fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
                   color: isSelected ? colors.textPrimary : colors.textSecondary,
                 ),
               ),
@@ -439,7 +451,9 @@ class _WorkoutTargetSelectorSheetState
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? accent.withValues(alpha: 0.22) : colors.background,
+          color: isSelected
+              ? accent.withValues(alpha: 0.22)
+              : colors.background,
           borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
           border: Border.all(
             color: isSelected ? accent : colors.borderSubtle,

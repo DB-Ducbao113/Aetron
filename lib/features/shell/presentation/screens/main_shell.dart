@@ -1,3 +1,7 @@
+import 'dart:async';
+import 'dart:io';
+
+import 'package:fitness_exercise_application/core/constants/debug_config.dart';
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/activity/presentation/screens/activity_screen.dart';
 import 'package:fitness_exercise_application/features/analytics/presentation/screens/analytics_screen.dart';
@@ -5,12 +9,15 @@ import 'package:fitness_exercise_application/features/history/presentation/scree
 import 'package:fitness_exercise_application/features/home/presentation/screens/home_screen.dart';
 import 'package:fitness_exercise_application/features/profile/presentation/screens/profile_screen.dart';
 import 'package:fitness_exercise_application/features/shell/presentation/providers/main_tab_controller_provider.dart';
+import 'package:fitness_exercise_application/features/shell/presentation/widgets/aetron_bottom_bar.dart';
+import 'package:fitness_exercise_application/features/workout/presentation/providers/workout_providers.dart';
+import 'package:fitness_exercise_application/features/workout/presentation/widgets/record/tracking_map_widget.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_theme_provider.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class MainShell extends ConsumerStatefulWidget {
@@ -32,6 +39,8 @@ class _MainShellState extends ConsumerState<MainShell> {
     StatsScreen(),
     ProfileScreen(),
   ];
+  final Set<int> _visitedTabs = {};
+  HttpServer? _debugServer;
 
   @override
   void initState() {
@@ -42,6 +51,83 @@ class _MainShellState extends ConsumerState<MainShell> {
             widget.initialIndex;
       }
     });
+    if (kDebugMode && kDebugBypassAuth) {
+      _startDebugServer();
+    }
+  }
+
+  void _startDebugServer() async {
+    try {
+      _debugServer = await HttpServer.bind(InternetAddress.anyIPv4, 8888);
+      _debugServer!.listen((request) async {
+        final path = request.uri.path;
+        if (path == '/tab') {
+          final indexStr = request.uri.queryParameters['index'];
+          final idx = int.tryParse(indexStr ?? '');
+          if (idx != null && idx >= 0 && idx < 5 && mounted) {
+            ref.read(mainTabControllerProvider.notifier).state = idx;
+            request.response.statusCode = HttpStatus.ok;
+            request.response.write('OK: switched to tab $idx');
+            await request.response.close();
+            return;
+          }
+        } else if (path == '/theme') {
+          final modeStr = request.uri.queryParameters['mode'];
+          if (modeStr == 'dark') {
+            await ref
+                .read(themeModeProvider.notifier)
+                .setThemeMode(ThemeMode.dark);
+            request.response.statusCode = HttpStatus.ok;
+            request.response.write('OK: switched to dark mode');
+            await request.response.close();
+            return;
+          } else if (modeStr == 'light') {
+            await ref
+                .read(themeModeProvider.notifier)
+                .setThemeMode(ThemeMode.light);
+            request.response.statusCode = HttpStatus.ok;
+            request.response.write('OK: switched to light mode');
+            await request.response.close();
+            return;
+          }
+        } else if (path == '/lang') {
+          final code = request.uri.queryParameters['code'];
+          if (code == 'vi' || code == 'en') {
+            await ref
+                .read(appLanguageProvider.notifier)
+                .setLanguage(code == 'vi' ? AppLanguage.vi : AppLanguage.en);
+            request.response.statusCode = HttpStatus.ok;
+            request.response.write('OK: switched to lang $code');
+            await request.response.close();
+            return;
+          }
+        } else if (path == '/map') {
+          final type = request.uri.queryParameters['type'];
+          if (type == 'streets' || type == 'satellite') {
+            await ref
+                .read(appMapTypeProvider.notifier)
+                .setMapType(
+                  type == 'streets' ? AppMapType.streets : AppMapType.satellite,
+                );
+            request.response.statusCode = HttpStatus.ok;
+            request.response.write('OK: switched map to $type');
+            await request.response.close();
+            return;
+          }
+        }
+        request.response.statusCode = HttpStatus.badRequest;
+        request.response.write('Bad request');
+        await request.response.close();
+      });
+    } catch (e) {
+      debugPrint('[MainShell] Debug server failed: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    _debugServer?.close(force: true);
+    super.dispose();
   }
 
   void _onTabSelected(int index) {
@@ -56,6 +142,16 @@ class _MainShellState extends ConsumerState<MainShell> {
   @override
   Widget build(BuildContext context) {
     final currentIndex = ref.watch(mainTabControllerProvider);
+    _visitedTabs.add(currentIndex);
+    // History and Analytics refresh on activation. On the first visit their
+    // own listeners are not mounted yet, so preserve that refresh here.
+    ref.listen<int>(mainTabControllerProvider, (previous, next) {
+      if (previous != next &&
+          !_visitedTabs.contains(next) &&
+          (next == historyTabIndex || next == analyticsTabIndex)) {
+        unawaited(ref.read(workoutListProvider.notifier).refresh());
+      }
+    });
     final colors = context.kinetic;
     final currentLang = ref.watch(appLanguageProvider);
 
@@ -93,197 +189,22 @@ class _MainShellState extends ConsumerState<MainShell> {
       },
       child: Scaffold(
         backgroundColor: colors.background,
-        body: IndexedStack(index: currentIndex, children: _screens),
-        bottomNavigationBar: _AetronBottomBar(
+        extendBody: true,
+        body: IndexedStack(
+          index: currentIndex,
+          children: [
+            for (var i = 0; i < _screens.length; i++)
+              TickerMode(
+                enabled: i == currentIndex,
+                child: _visitedTabs.contains(i)
+                    ? _screens[i]
+                    : const SizedBox.expand(),
+              ),
+          ],
+        ),
+        bottomNavigationBar: AetronBottomBar(
           currentIndex: currentIndex,
           onChanged: _onTabSelected,
-        ),
-      ),
-    );
-  }
-}
-
-class _AetronBottomBar extends ConsumerWidget {
-  const _AetronBottomBar({
-    required this.currentIndex,
-    required this.onChanged,
-  });
-
-  final int currentIndex;
-  final ValueChanged<int> onChanged;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final currentLang = ref.watch(appLanguageProvider);
-    final colors = context.kinetic;
-
-    return RepaintBoundary(
-      child: Container(
-        decoration: BoxDecoration(
-          color: colors.surface1,
-          border: Border(
-            top: BorderSide(color: colors.borderSubtle, width: 0.6),
-          ),
-        ),
-        child: SafeArea(
-          top: false,
-          child: SizedBox(
-            height: 60,
-            child: Row(
-              children: [
-                Expanded(
-                  child: _NavTabItem(
-                    icon: LucideIcons.house,
-                    label: AppTranslations.get('nav_home', currentLang),
-                    selected: currentIndex == 0,
-                    onTap: () => onChanged(0),
-                  ),
-                ),
-                Expanded(
-                  child: _NavTabItem(
-                    icon: LucideIcons.calendar,
-                    label: AppTranslations.get('nav_history', currentLang),
-                    selected: currentIndex == 2,
-                    onTap: () => onChanged(2),
-                  ),
-                ),
-                Expanded(
-                  child: _CenterRecordButton(
-                    selected: currentIndex == 1,
-                    semanticLabel:
-                        AppTranslations.get('nav_activity', currentLang),
-                    onTap: () => onChanged(1),
-                  ),
-                ),
-                Expanded(
-                  child: _NavTabItem(
-                    icon: LucideIcons.chart_column,
-                    label: AppTranslations.get('nav_analytics', currentLang),
-                    selected: currentIndex == 3,
-                    onTap: () => onChanged(3),
-                  ),
-                ),
-                Expanded(
-                  child: _NavTabItem(
-                    icon: LucideIcons.user,
-                    label: AppTranslations.get('nav_profile', currentLang),
-                    selected: currentIndex == 4,
-                    onTap: () => onChanged(4),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _NavTabItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _NavTabItem({
-    required this.icon,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.kinetic;
-    final itemColor = selected ? colors.primary : colors.textMuted;
-
-    return Semantics(
-      selected: selected,
-      button: true,
-      label: label,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          child: SizedBox(
-            height: 60,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  icon,
-                  size: 21,
-                  color: itemColor,
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: KineticTypography.caption.copyWith(
-                    color: itemColor,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                    fontSize: 10.5,
-                    letterSpacing: 0,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CenterRecordButton extends StatelessWidget {
-  final bool selected;
-  final String semanticLabel;
-  final VoidCallback onTap;
-
-  const _CenterRecordButton({
-    required this.selected,
-    required this.semanticLabel,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.kinetic;
-
-    return Semantics(
-      selected: selected,
-      button: true,
-      label: semanticLabel,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          customBorder: const CircleBorder(),
-          child: Center(
-            child: AnimatedContainer(
-              duration: KineticTokens.motionTab,
-              curve: KineticTokens.animCurve,
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: colors.accentFill,
-                shape: BoxShape.circle,
-                border: selected
-                    ? Border.all(
-                        color: colors.primaryTint,
-                        width: 3,
-                      )
-                    : null,
-              ),
-              child: const Icon(
-                LucideIcons.plus,
-                color: Colors.white,
-                size: 22,
-              ),
-            ),
-          ),
         ),
       ),
     );

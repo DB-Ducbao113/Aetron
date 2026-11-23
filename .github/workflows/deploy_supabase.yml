@@ -11,7 +11,12 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  quality:
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/ekf'
+    uses: ./.github/workflows/ci.yml
+
   deploy:
+    needs: quality
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment: production
@@ -38,25 +43,75 @@ jobs:
           npx --yes supabase@2.120.0 link
           --project-ref "$SUPABASE_PROJECT_REF"
           --password "$SUPABASE_DB_PASSWORD"
+      - name: Check worker configuration before deploying
+        working-directory: backend
+        run: |
+          set -euo pipefail
+          [[ "$SUPABASE_PROJECT_REF" =~ ^[a-z0-9]{20}$ ]]
+          npx --yes supabase@2.120.0 db query --linked -o json \
+            "select exists(select 1 from vault.decrypted_secrets where name='workout_dispatch_secret' and length(decrypted_secret)>=32) and exists(select 1 from vault.decrypted_secrets where name='project_url' and regexp_replace(decrypted_secret,'/+$','')='https://$SUPABASE_PROJECT_REF.supabase.co') as configured;" \
+            | jq -e '.rows[0].configured == true' >/dev/null
+          npx --yes supabase@2.120.0 secrets list --project-ref "$SUPABASE_PROJECT_REF" -o json \
+            | jq -e 'any(.[]; .name == "AETRON_WORKER_DISPATCH_SECRET")' >/dev/null
+          npx --yes supabase@2.120.0 db push --dry-run --linked --include-all --skip-vault
+      - name: Pause dispatcher and drain requests
+        id: dispatcher
+        working-directory: backend
+        run: |
+          set -euo pipefail
+          result=$(npx --yes supabase@2.120.0 db query --linked -o json \
+            "select active from cron.job where jobname='dispatch-workout-processing-jobs';")
+          active=$(jq -er 'if (.rows|length)==1 then .rows[0].active|tostring else error("missing dispatcher") end' <<< "$result")
+          echo "was_active=$active" >> "$GITHUB_OUTPUT"
+          npx --yes supabase@2.120.0 db query --linked \
+            "select cron.alter_job(jobid,active:=false) from cron.job where jobname='dispatch-workout-processing-jobs';" >/dev/null
+          for i in $(seq 1 12); do
+            if npx --yes supabase@2.120.0 db query --linked -o json \
+              "select not exists(select 1 from cron.job where jobname='dispatch-workout-processing-jobs' and active) and not exists(select 1 from public.workout_processing_jobs where status='running') and not exists(select 1 from net.http_request_queue) and not exists(select 1 from cron.job_run_details d join cron.job j on j.jobid=d.jobid where j.jobname='dispatch-workout-processing-jobs' and d.end_time is null and d.start_time>now()-interval '2 minutes') as drained;" \
+              | jq -e '.rows[0].drained == true' >/dev/null; then exit 0; fi
+            sleep 5
+          done
+          echo "::error::Dispatcher did not drain; left paused"
+          exit 1
       - name: Apply database migrations
         working-directory: backend
-        run: npx --yes supabase@2.120.0 db push --linked --include-all
+        run: npx --yes supabase@2.120.0 db push --linked --include-all --skip-vault
       - name: Deploy Edge Functions
         working-directory: backend
         run: npx --yes supabase@2.120.0 functions deploy --project-ref "$SUPABASE_PROJECT_REF"
-      - name: Verify public preflight and auth health
+      - name: Verify protected endpoints and auth health
         run: |
           curl --fail --silent --show-error --max-time 20 \
             --header "apikey: $SUPABASE_ANON_KEY" \
             "https://$SUPABASE_PROJECT_REF.supabase.co/auth/v1/health" >/dev/null
-          for function_name in workouts-start workouts-end gps-track generate-workout-insight; do
+          for function_name in workouts-start workouts-end gps-track generate-workout-insight deterministic-finalize-worker route-correction-worker; do
             status=$(curl --silent --output /dev/null --write-out '%{http_code}' \
-              --max-time 20 --request OPTIONS \
-              --header 'Origin: https://aetrongps.vercel.app' \
-              --header 'Access-Control-Request-Method: POST' \
+              --max-time 20 --request POST \
+              --header 'Content-Type: application/json' --data '{}' \
               "https://$SUPABASE_PROJECT_REF.supabase.co/functions/v1/$function_name")
-            if [ "$status" != "204" ]; then
+            if [ "$status" != "401" ]; then
               echo "::error title=Edge Function smoke failure::$function_name returned $status"
               exit 1
             fi
           done
+      - name: Verify signed requests to both deployed workers
+        working-directory: backend
+        run: |
+          set -euo pipefail
+          result=$(npx --yes supabase@2.120.0 db query --linked -o json --file tests/workout_dispatch/signed_noop_canary.sql)
+          ids=$(jq -er 'if (.rows|length)==2 and ([.rows[].request_id]|unique|length)==2 then [.rows[].request_id|numbers|tostring]|join(",") else error("missing canaries") end' <<< "$result")
+          [[ "$ids" =~ ^[0-9]+,[0-9]+$ ]]
+          for i in $(seq 1 12); do
+            if npx --yes supabase@2.120.0 db query --linked -o json \
+              "select count(*)=2 and coalesce(bool_and(case when status_code=200 and not coalesce(timed_out,false) then coalesce(content::jsonb->>'status'='noop' and content::jsonb->>'reason'='job_not_found',false) else false end),false) as healthy from net._http_response where id in ($ids);" \
+              | jq -e '.rows[0].healthy == true' >/dev/null; then exit 0; fi
+            sleep 5
+          done
+          echo "::error::Signed canary failed; dispatcher remains paused"
+          exit 1
+      - name: Restore previously active dispatcher
+        if: steps.dispatcher.outputs.was_active == 'true'
+        working-directory: backend
+        run: |
+          npx --yes supabase@2.120.0 db query --linked \
+            "select cron.alter_job(jobid,active:=true) from cron.job where jobname='dispatch-workout-processing-jobs' and not active;"

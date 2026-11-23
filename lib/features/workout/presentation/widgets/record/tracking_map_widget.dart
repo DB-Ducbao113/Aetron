@@ -15,10 +15,7 @@ import "package:shared_preferences/shared_preferences.dart";
 
 const String kAetronMapTypePrefKey = "aetron_preferred_map_type";
 
-enum AppMapType {
-  satellite,
-  streets,
-}
+enum AppMapType { satellite, streets }
 
 /// Manages the persisted map basemap style across all Aetron map views.
 class AppMapTypeNotifier extends StateNotifier<AppMapType> {
@@ -57,8 +54,8 @@ class AppMapTypeNotifier extends StateNotifier<AppMapType> {
 
 final appMapTypeProvider =
     StateNotifierProvider<AppMapTypeNotifier, AppMapType>((ref) {
-  return AppMapTypeNotifier();
-});
+      return AppMapTypeNotifier();
+    });
 
 /// Returns whether a Riverpod [ProviderScope] is available in [context].
 bool hasAetronProviderScope(BuildContext context) {
@@ -112,9 +109,10 @@ Future<void> showAetronMapStylePicker({
       currentLang: currentLang,
       onSelectType: (type) async {
         if (hasScope) {
-          await ProviderScope.containerOf(context, listen: false)
-              .read(appMapTypeProvider.notifier)
-              .setMapType(type);
+          await ProviderScope.containerOf(
+            context,
+            listen: false,
+          ).read(appMapTypeProvider.notifier).setMapType(type);
         }
         onFallbackSelect?.call(type);
         if (sheetContext.mounted) {
@@ -398,13 +396,7 @@ class _TrackingMapWidgetState extends State<TrackingMapWidget>
     if (points.length <= 2) return points;
     final sqTolerance = tolerance * tolerance;
     final result = <LatLng>[points.first];
-    _douglasPeucker(
-      points,
-      0,
-      points.length - 1,
-      sqTolerance,
-      result,
-    );
+    _douglasPeucker(points, 0, points.length - 1, sqTolerance, result);
     result.add(points.last);
     return result;
   }
@@ -486,7 +478,8 @@ class _TrackingMapWidgetState extends State<TrackingMapWidget>
 
   @override
   Widget build(BuildContext context) {
-    final center = widget.currentLocation ??
+    final center =
+        widget.currentLocation ??
         widget.initialPosition ??
         (widget.routePoints.isNotEmpty
             ? widget.routePoints.last
@@ -496,8 +489,8 @@ class _TrackingMapWidgetState extends State<TrackingMapWidget>
     final displaySegments = _cachedDisplaySegments.isNotEmpty
         ? _cachedDisplaySegments
         : (displayRoute.isNotEmpty
-            ? <List<LatLng>>[displayRoute]
-            : const <List<LatLng>>[]);
+              ? <List<LatLng>>[displayRoute]
+              : const <List<LatLng>>[]);
 
     final markerPos = widget.currentLocation ?? widget.initialPosition;
     final useLitePolyline =
@@ -727,8 +720,12 @@ class _Map3DPerspectiveOrb extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.kinetic;
     final tooltipMsg = isVi
-        ? (is3D ? "Đang xem 3D (Chạm để về 2D)" : "Đang xem 2D (Chạm để bật 3D)")
-        : (is3D ? "3D perspective on (Tap for 2D)" : "2D top-down on (Tap for 3D)");
+        ? (is3D
+              ? "Đang xem 3D (Chạm để về 2D)"
+              : "Đang xem 2D (Chạm để bật 3D)")
+        : (is3D
+              ? "3D perspective on (Tap for 2D)"
+              : "2D top-down on (Tap for 3D)");
 
     return Tooltip(
       message: tooltipMsg,
@@ -737,40 +734,43 @@ class _Map3DPerspectiveOrb extends StatelessWidget {
         child: InkWell(
           key: const Key('map-3d-toggle-btn'),
           onTap: onTap,
-          borderRadius: BorderRadius.circular(24),
-          child: Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: colors.surface1.withValues(alpha: 0.94),
-              border: Border.all(
-                color: is3D ? colors.primary : colors.borderSubtle,
-                width: 1.5,
-              ),
-              boxShadow: colors.isDark
-                  ? [
-                      if (is3D)
-                        BoxShadow(
-                          color: colors.primary.withValues(alpha: 0.35),
-                          blurRadius: 12,
-                          spreadRadius: 1,
-                        ),
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.5),
-                        blurRadius: 6,
-                        offset: const Offset(0, 3),
-                      ),
-                    ]
-                  : KineticTokens.shadowCardLight(),
-            ),
+          customBorder: const CircleBorder(),
+          child: SizedBox.square(
+            dimension: KineticTokens.minTouchTarget,
             child: Center(
-              child: Text(
-                is3D ? "3D" : "2D",
-                style: KineticTypography.unitLabel.copyWith(
-                  fontWeight: FontWeight.w900,
-                  color: is3D ? colors.primary : colors.textSecondary,
-                  letterSpacing: 0.8,
+              child: KineticTouchFinish(
+                radius: KineticTokens.iconControlVisualSize / 2,
+                emphasis: is3D,
+                child: Container(
+                  width: KineticTokens.iconControlVisualSize,
+                  height: KineticTokens.iconControlVisualSize,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: colors.surface1.withValues(alpha: 0.94),
+                    border: Border.all(
+                      color: is3D ? colors.primary : colors.borderSubtle,
+                      width: 1,
+                    ),
+                    boxShadow: colors.isDark && is3D
+                        ? [
+                            BoxShadow(
+                              color: colors.primary.withValues(alpha: 0.22),
+                              blurRadius: 8,
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Center(
+                    child: Text(
+                      is3D ? "3D" : "2D",
+                      style: KineticTypography.unitLabel.copyWith(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: is3D ? colors.primary : colors.textSecondary,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -803,39 +803,36 @@ class _MapLayerPickerOrb extends StatelessWidget {
         child: InkWell(
           key: const Key('map-layer-picker-btn'),
           onTap: onTap,
-          borderRadius: BorderRadius.circular(24),
-          child: Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: colors.surface1.withValues(alpha: 0.94),
-              border: Border.all(
-                color: isSatellite
-                    ? colors.primary.withValues(alpha: colors.isDark ? 0.75 : 0.55)
-                    : colors.borderSubtle,
-                width: 1.5,
-              ),
-              boxShadow: colors.isDark
-                  ? [
-                      BoxShadow(
-                        color: colors.primary.withValues(alpha: 0.25),
-                        blurRadius: 10,
-                        spreadRadius: 1,
-                      ),
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.5),
-                        blurRadius: 6,
-                        offset: const Offset(0, 3),
-                      ),
-                    ]
-                  : KineticTokens.shadowCardLight(),
-            ),
+          customBorder: const CircleBorder(),
+          child: SizedBox.square(
+            dimension: KineticTokens.minTouchTarget,
             child: Center(
-              child: BladeIcon(
-                BladeIconName.layers,
-                color: isSatellite ? colors.primary : colors.textPrimary,
-                size: 22,
+              child: KineticTouchFinish(
+                radius: KineticTokens.iconControlVisualSize / 2,
+                emphasis: isSatellite,
+                child: Container(
+                  width: KineticTokens.iconControlVisualSize,
+                  height: KineticTokens.iconControlVisualSize,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: colors.surface1.withValues(alpha: 0.94),
+                    border: Border.all(
+                      color: isSatellite
+                          ? colors.primary.withValues(
+                              alpha: colors.isDark ? 0.7 : 0.5,
+                            )
+                          : colors.borderSubtle,
+                      width: 1,
+                    ),
+                  ),
+                  child: Center(
+                    child: BladeIcon(
+                      BladeIconName.layers,
+                      color: isSatellite ? colors.primary : colors.textPrimary,
+                      size: 17,
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
@@ -863,40 +860,16 @@ class _MapStylePickerSheet extends StatelessWidget {
 
     Widget buildSheet(AppLanguage activeLang, AppMapType activeType) {
       final isVi = activeLang == AppLanguage.vi;
-      return Container(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.sizeOf(context).height * 0.8,
-        ),
-        padding: EdgeInsets.fromLTRB(
-          20,
-          16,
-          20,
-          24 + MediaQuery.paddingOf(context).bottom,
-        ),
-        decoration: BoxDecoration(
-          color: colors.surface1,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          border: Border(
-            top: BorderSide(color: colors.borderAccent, width: 1.5),
-          ),
-          boxShadow: KineticTokens.shadowPanel(Colors.black),
-        ),
+      return KineticGlassBottomSheet(
+        floating: true,
+        borderRadius: 28,
+        maxHeightFactor: 0.80,
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: colors.borderSubtle,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 18),
               Row(
                 children: [
                   Container(
@@ -1098,11 +1071,7 @@ class _MapStylePickerSheet extends StatelessWidget {
                 ),
               ),
               if (isSelected)
-                BladeIcon(
-                  BladeIconName.check,
-                  color: colors.primary,
-                  size: 22,
-                ),
+                BladeIcon(BladeIconName.check, color: colors.primary, size: 22),
             ],
           ),
         ),
@@ -1158,10 +1127,7 @@ class _Aetron3DUserAvatarMarkerState extends State<_Aetron3DUserAvatarMarker>
           height: 38,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(
-              color: Colors.white,
-              width: 2.5,
-            ),
+            border: Border.all(color: Colors.white, width: 2.5),
             boxShadow: [
               BoxShadow(
                 color: colors.primary.withValues(alpha: 0.65),
@@ -1245,10 +1211,7 @@ class _Aetron3DUserAvatarMarkerState extends State<_Aetron3DUserAvatarMarker>
             },
           ),
           // Upright avatar pin pointing directly down at coordinate
-          Positioned(
-            bottom: 0,
-            child: standingPin,
-          ),
+          Positioned(bottom: 0, child: standingPin),
         ],
       ),
     );
@@ -1309,11 +1272,7 @@ class _Start3DPinMarker extends StatelessWidget {
               ),
             ],
           ),
-          child: const Icon(
-            Icons.flag_rounded,
-            color: Colors.white,
-            size: 16,
-          ),
+          child: const Icon(Icons.flag_rounded, color: Colors.white, size: 16),
         ),
         CustomPaint(
           size: const Size(10, 6),
@@ -1355,10 +1314,7 @@ class _Start3DPinMarker extends StatelessWidget {
               ),
             ),
           ),
-          Positioned(
-            bottom: 0,
-            child: pin,
-          ),
+          Positioned(bottom: 0, child: pin),
         ],
       ),
     );
@@ -1388,11 +1344,7 @@ class _GpsGapMarker extends StatelessWidget {
           ),
         ],
       ),
-      child: Icon(
-        Icons.sensors_rounded,
-        color: colors.primary,
-        size: 18,
-      ),
+      child: Icon(Icons.sensors_rounded, color: colors.primary, size: 18),
     );
   }
 }
@@ -1421,7 +1373,11 @@ class _GpsWeakBadge extends ConsumerWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.gps_off_rounded, size: 14, color: Color(0xFFFFB85C)),
+            const Icon(
+              Icons.gps_off_rounded,
+              size: 14,
+              color: Color(0xFFFFB85C),
+            ),
             const SizedBox(width: 6),
             Text(
               isVi ? "Tín hiệu GPS yếu" : "Weak GPS",

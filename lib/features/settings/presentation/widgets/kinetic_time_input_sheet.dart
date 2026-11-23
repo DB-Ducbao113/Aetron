@@ -14,10 +14,8 @@ Future<String?> showKineticTimeInputSheet(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (ctx) => KineticTimeInputSheet(
-      initialTime: initialTime,
-      isVi: isVi,
-    ),
+    builder: (ctx) =>
+        KineticTimeInputSheet(initialTime: initialTime, isVi: isVi),
   );
 }
 
@@ -141,52 +139,22 @@ class _KineticTimeInputSheetState extends State<KineticTimeInputSheet> {
   @override
   Widget build(BuildContext context) {
     final colors = context.kinetic;
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final isVi = widget.isVi;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-      padding: EdgeInsets.fromLTRB(
+    return KineticGlassBottomSheet(
+      floating: true,
+      borderRadius: 26,
+      padding: const EdgeInsets.fromLTRB(
         KineticTokens.spaceLG,
         KineticTokens.spaceMD,
         KineticTokens.spaceLG,
-        KineticTokens.spaceXL + bottomInset,
+        KineticTokens.spaceXL,
       ),
-      decoration: BoxDecoration(
-        color: colors.surface1,
-        borderRadius: BorderRadius.circular(KineticTokens.radiusXXL),
-        border: Border.all(
-          color: colors.borderStrong,
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.55),
-            blurRadius: 36,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
+      child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Grab Handle
-            Align(
-              alignment: Alignment.center,
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: colors.borderSubtle,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
             // Header Row with Clock Icon
             Row(
               children: [
@@ -305,19 +273,23 @@ class _KineticTimeInputSheetState extends State<KineticTimeInputSheet> {
                       child: ActionChip(
                         label: Text(preset),
                         labelStyle: KineticTypography.label.copyWith(
-                          color: (_hourController.text == preset.split(':')[0] &&
-                                  _minuteController.text == preset.split(':')[1])
+                          color:
+                              (_hourController.text == preset.split(':')[0] &&
+                                  _minuteController.text ==
+                                      preset.split(':')[1])
                               ? colors.onPrimary
                               : colors.textSecondary,
                         ),
                         backgroundColor:
                             (_hourController.text == preset.split(':')[0] &&
-                                    _minuteController.text == preset.split(':')[1])
-                                ? colors.primary
-                                : colors.surface2,
+                                _minuteController.text == preset.split(':')[1])
+                            ? colors.primary
+                            : colors.surface2,
                         side: BorderSide(
-                          color: (_hourController.text == preset.split(':')[0] &&
-                                  _minuteController.text == preset.split(':')[1])
+                          color:
+                              (_hourController.text == preset.split(':')[0] &&
+                                  _minuteController.text ==
+                                      preset.split(':')[1])
                               ? colors.primary
                               : colors.borderSubtle,
                         ),
@@ -341,54 +313,21 @@ class _KineticTimeInputSheetState extends State<KineticTimeInputSheet> {
             Row(
               children: [
                 Expanded(
-                  child: SizedBox(
-                    height: 48,
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: colors.textSecondary,
-                        side: BorderSide(color: colors.borderSubtle),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            KineticTokens.radiusMD,
-                          ),
-                        ),
-                      ),
-                      child: Text(
-                        isVi ? 'HỦY' : 'CANCEL',
-                        style: KineticTypography.label.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
+                  child: KineticButton(
+                    label: isVi ? 'HỦY' : 'CANCEL',
+                    height: KineticTokens.buttonHeight,
+                    variant: KineticButtonVariant.secondary,
+                    onPressed: () => Navigator.of(context).pop(),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   flex: 2,
-                  child: SizedBox(
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: _confirm,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: colors.primary,
-                        foregroundColor: colors.onPrimary,
-                        elevation: 4,
-                        shadowColor: colors.primary.withValues(alpha: 0.4),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            KineticTokens.radiusMD,
-                          ),
-                        ),
-                      ),
-                      child: Text(
-                        isVi ? 'XÁC NHẬN' : 'CONFIRM',
-                        style: KineticTypography.label.copyWith(
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ),
+                  child: KineticButton(
+                    label: isVi ? 'XÁC NHẬN' : 'CONFIRM',
+                    icon: Icons.check_rounded,
+                    height: KineticTokens.buttonHeight,
+                    onPressed: _confirm,
                   ),
                 ),
               ],

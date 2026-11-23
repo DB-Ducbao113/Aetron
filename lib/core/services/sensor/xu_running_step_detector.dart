@@ -9,6 +9,9 @@ class XuRunningStepDetector {
   static const periodUs = 20000;
   static const _maxGapUs = 250000;
   static const _window = 50;
+  /// Minimum peak-to-peak dynamic range (m/s²) in a 1-second window required
+  /// to distinguish active running motion from resting sensor noise and hand tremor.
+  static const _minDynamicRange = 0.25;
   static final _fir = _coefficients();
   final _raw = ListQueue<double>(15);
   final _spectrum = ListQueue<double>(256);
@@ -92,6 +95,16 @@ class XuRunningStepDetector {
     // One neighbour at each edge; the next window starts just after its
     // final eligible peak, or two samples forward when none is present.
     if (_points.length < _window + 2) return;
+
+    var minFir = _points[0].fir;
+    var maxFir = _points[0].fir;
+    for (var i = 1; i <= _window; i++) {
+      final f = _points[i].fir;
+      if (f < minFir) minFir = f;
+      if (f > maxFir) maxFir = f;
+    }
+    final isStationary = (maxFir - minFir) < _minDynamicRange;
+
     final frequency = _frequency;
     final interference = frequency != null && frequency > 3.5;
     final interval = frequency != null && frequency < 1.8 ? 333000 : 286000;
@@ -110,7 +123,8 @@ class XuRunningStepDetector {
     var last = 0;
     for (var i = 1; i <= _window; i++) {
       final p = _points[i];
-      if (!interference &&
+      if (!isStationary &&
+          !interference &&
           p.fir > threshold + 1e-6 &&
           p.fir > _points[i - 1].fir &&
           p.fir >= _points[i + 1].fir) {

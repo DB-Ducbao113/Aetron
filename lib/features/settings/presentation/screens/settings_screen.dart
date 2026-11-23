@@ -13,13 +13,11 @@ import 'package:fitness_exercise_application/features/settings/presentation/prov
 import 'package:fitness_exercise_application/features/settings/presentation/providers/settings_preferences_providers.dart';
 import 'package:fitness_exercise_application/features/settings/presentation/widgets/kinetic_settings_section.dart';
 import 'package:fitness_exercise_application/features/settings/presentation/widgets/kinetic_settings_top_bar.dart';
+import 'package:fitness_exercise_application/features/shell/presentation/widgets/aetron_bottom_bar.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/providers/workout_providers.dart';
 import 'package:fitness_exercise_application/shared/aetron/aetron_skeleton.dart';
 import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_theme_provider.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 
 import 'dart:io';
 
@@ -101,49 +99,38 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => SafeArea(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.85,
-          ),
-          child: Container(
-            margin: const EdgeInsets.all(KineticTokens.spaceMD),
-            padding: const EdgeInsets.all(KineticTokens.spaceLG),
-            decoration: BoxDecoration(
-              color: colors.surface2,
-              borderRadius: BorderRadius.circular(KineticTokens.radiusXL),
-              border: Border.all(color: colors.borderAccent, width: 1.2),
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    AppTranslations.get('select_language', currentLang),
-                    style: KineticTypography.headlineMedium.copyWith(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: colors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _LanguageOptionTile(
-                    flag: '🇻🇳',
-                    name: 'Tiếng Việt',
-                    isSelected: currentLang == AppLanguage.vi,
-                    onTap: () => Navigator.of(context).pop(AppLanguage.vi),
-                  ),
-                  const SizedBox(height: 10),
-                  _LanguageOptionTile(
-                    flag: '🇬🇧',
-                    name: 'English',
-                    isSelected: currentLang == AppLanguage.en,
-                    onTap: () => Navigator.of(context).pop(AppLanguage.en),
-                  ),
-                ],
+      builder: (context) => KineticGlassBottomSheet(
+        floating: true,
+        borderRadius: 26,
+        padding: const EdgeInsets.all(KineticTokens.spaceLG),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                AppTranslations.get('select_language', currentLang),
+                style: KineticTypography.headlineMedium.copyWith(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: colors.textPrimary,
+                ),
               ),
-            ),
+              const SizedBox(height: 16),
+              _LanguageOptionTile(
+                flag: '🇻🇳',
+                name: 'Tiếng Việt',
+                isSelected: currentLang == AppLanguage.vi,
+                onTap: () => Navigator.of(context).pop(AppLanguage.vi),
+              ),
+              const SizedBox(height: 10),
+              _LanguageOptionTile(
+                flag: '🇬🇧',
+                name: 'English',
+                isSelected: currentLang == AppLanguage.en,
+                onTap: () => Navigator.of(context).pop(AppLanguage.en),
+              ),
+            ],
           ),
         ),
       ),
@@ -171,55 +158,46 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => SafeArea(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.85,
-          ),
-          child: Container(
-            margin: const EdgeInsets.all(KineticTokens.spaceMD),
-            padding: const EdgeInsets.all(KineticTokens.spaceLG),
-            decoration: BoxDecoration(
-              color: colors.surface2,
-              borderRadius: BorderRadius.circular(KineticTokens.radiusXL),
-              border: Border.all(color: colors.borderAccent, width: 1.2),
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isVi ? 'Chọn hệ đơn vị đo lường' : 'Select Measurement Unit',
-                    style: KineticTypography.headlineMedium.copyWith(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: colors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _UnitOptionTile(
-                    icon: Icons.straighten_rounded,
-                    title: isVi ? 'Hệ mét (Metric)' : 'Metric System',
-                    subtitle: isVi
-                        ? 'Kilômét (km), Mét (m), Vận tốc (km/h), Pace (min/km)'
-                        : 'Kilometers (km), Meters (m), Speed (km/h), Pace (min/km)',
-                    isSelected: _useMetricUnits,
-                    onTap: () => Navigator.of(context).pop(true),
-                  ),
-                  const SizedBox(height: 10),
-                  _UnitOptionTile(
-                    icon: Icons.speed_rounded,
-                    title: isVi ? 'Hệ Anh (Imperial)' : 'Imperial System',
-                    subtitle: isVi
-                        ? 'Dặm (mi), Feet (ft), Vận tốc (mph), Pace (min/mi)'
-                        : 'Miles (mi), Feet (ft), Speed (mph), Pace (min/mi)',
-                    isSelected: !_useMetricUnits,
-                    onTap: () => Navigator.of(context).pop(false),
-                  ),
-                ],
+      builder: (context) => KineticGlassBottomSheet(
+        floating: true,
+        borderRadius: 26,
+        padding: const EdgeInsets.all(KineticTokens.spaceLG),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                isVi
+                    ? 'Chọn hệ đơn vị đo lường'
+                    : 'Select Measurement Unit',
+                style: KineticTypography.headlineMedium.copyWith(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: colors.textPrimary,
+                ),
               ),
-            ),
+              const SizedBox(height: 16),
+              _UnitOptionTile(
+                icon: Icons.straighten_rounded,
+                title: isVi ? 'Hệ mét (Metric)' : 'Metric System',
+                subtitle: isVi
+                    ? 'Kilômét (km), Mét (m), Vận tốc (km/h), Pace (min/km)'
+                    : 'Kilometers (km), Meters (m), Speed (km/h), Pace (min/km)',
+                isSelected: _useMetricUnits,
+                onTap: () => Navigator.of(context).pop(true),
+              ),
+              const SizedBox(height: 10),
+              _UnitOptionTile(
+                icon: Icons.speed_rounded,
+                title: isVi ? 'Hệ Anh (Imperial)' : 'Imperial System',
+                subtitle: isVi
+                    ? 'Dặm (mi), Feet (ft), Vận tốc (mph), Pace (min/mi)'
+                    : 'Miles (mi), Feet (ft), Speed (mph), Pace (min/mi)',
+                isSelected: !_useMetricUnits,
+                onTap: () => Navigator.of(context).pop(false),
+              ),
+            ],
           ),
         ),
       ),
@@ -232,8 +210,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
           SnackBar(
             content: Text(
               selected
-                  ? (isVi ? 'Đã chuyển sang Hệ mét (km, km/h)' : 'Switched to Metric units (km, km/h)')
-                  : (isVi ? 'Đã chuyển sang Hệ dặm (mi, mph)' : 'Switched to Imperial units (mi, mph)'),
+                  ? (isVi
+                        ? 'Đã chuyển sang Hệ mét (km, km/h)'
+                        : 'Switched to Metric units (km, km/h)')
+                  : (isVi
+                        ? 'Đã chuyển sang Hệ dặm (mi, mph)'
+                        : 'Switched to Imperial units (mi, mph)'),
             ),
           ),
         );
@@ -250,68 +232,56 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => SafeArea(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.85,
-          ),
-          child: Container(
-            margin: const EdgeInsets.all(KineticTokens.spaceMD),
-            padding: const EdgeInsets.all(KineticTokens.spaceLG),
-            decoration: BoxDecoration(
-              color: colors.surface2,
-              borderRadius: BorderRadius.circular(KineticTokens.radiusXL),
-              border: Border.all(
-                color: colors.borderAccent,
-                width: 1.2,
+      builder: (context) => KineticGlassBottomSheet(
+        floating: true,
+        borderRadius: 26,
+        padding: const EdgeInsets.all(KineticTokens.spaceLG),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                isVi
+                    ? 'Chọn giao diện hiển thị'
+                    : 'Select Appearance Theme',
+                style: KineticTypography.headlineMedium.copyWith(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: colors.textPrimary,
+                ),
               ),
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isVi ? 'Chọn giao diện hiển thị' : 'Select Appearance Theme',
-                    style: KineticTypography.headlineMedium.copyWith(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: colors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _UnitOptionTile(
-                    icon: Icons.dark_mode_rounded,
-                    title: isVi ? 'Tối (Nền tối)' : 'Dark Mode',
-                    subtitle: isVi
-                        ? 'Nền tối sẫm, độ tương phản cao, dịu mắt ban đêm'
-                        : 'Deep obsidian canvas with azure accents',
-                    isSelected: currentMode == ThemeMode.dark,
-                    onTap: () => Navigator.of(context).pop(ThemeMode.dark),
-                  ),
-                  const SizedBox(height: 10),
-                  _UnitOptionTile(
-                    icon: Icons.light_mode_rounded,
-                    title: isVi ? 'Sáng (Trắng xanh)' : 'Light Mode',
-                    subtitle: isVi
-                        ? 'Nền sáng trắng xanh rõ nét ngoài trời'
-                        : 'Crisp white & athletic blue daylight interface',
-                    isSelected: currentMode == ThemeMode.light,
-                    onTap: () => Navigator.of(context).pop(ThemeMode.light),
-                  ),
-                  const SizedBox(height: 10),
-                  _UnitOptionTile(
-                    icon: Icons.brightness_auto_rounded,
-                    title: isVi ? 'Tự động theo hệ thống' : 'System Default',
-                    subtitle: isVi
-                        ? 'Tự động đổi theo chế độ sáng/tối của thiết bị'
-                        : 'Follow device OS light/dark schedule',
-                    isSelected: currentMode == ThemeMode.system,
-                    onTap: () => Navigator.of(context).pop(ThemeMode.system),
-                  ),
-                ],
+              const SizedBox(height: 16),
+              _UnitOptionTile(
+                icon: Icons.dark_mode_rounded,
+                title: isVi ? 'Tối (Nền tối)' : 'Dark Mode',
+                subtitle: isVi
+                    ? 'Nền tối sẫm, độ tương phản cao, dịu mắt ban đêm'
+                    : 'Deep obsidian canvas with azure accents',
+                isSelected: currentMode == ThemeMode.dark,
+                onTap: () => Navigator.of(context).pop(ThemeMode.dark),
               ),
-            ),
+              const SizedBox(height: 10),
+              _UnitOptionTile(
+                icon: Icons.light_mode_rounded,
+                title: isVi ? 'Sáng (Trắng xanh)' : 'Light Mode',
+                subtitle: isVi
+                    ? 'Nền sáng trắng xanh rõ nét ngoài trời'
+                    : 'Crisp white & athletic blue daylight interface',
+                isSelected: currentMode == ThemeMode.light,
+                onTap: () => Navigator.of(context).pop(ThemeMode.light),
+              ),
+              const SizedBox(height: 10),
+              _UnitOptionTile(
+                icon: Icons.brightness_auto_rounded,
+                title: isVi ? 'Tự động theo hệ thống' : 'System Default',
+                subtitle: isVi
+                    ? 'Tự động đổi theo chế độ sáng/tối của thiết bị'
+                    : 'Follow device OS light/dark schedule',
+                isSelected: currentMode == ThemeMode.system,
+                onTap: () => Navigator.of(context).pop(ThemeMode.system),
+              ),
+            ],
           ),
         ),
       ),
@@ -323,7 +293,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              isVi ? 'Đã cập nhật giao diện ứng dụng' : 'Appearance theme updated',
+              isVi
+                  ? 'Đã cập nhật giao diện ứng dụng'
+                  : 'Appearance theme updated',
             ),
           ),
         );
@@ -332,7 +304,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   }
 
   Future<void> _loadVersion() async {
-    final isMobile = defaultTargetPlatform == TargetPlatform.iOS ||
+    final isMobile =
+        defaultTargetPlatform == TargetPlatform.iOS ||
         defaultTargetPlatform == TargetPlatform.android;
     if (kIsWeb || !isMobile) {
       if (!mounted) return;
@@ -377,7 +350,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     final eveningTime = prefs.getString(kEveningTimePrefKey) ?? '20:00';
     final achievement = prefs.getBool(kAchievementPrefKey) ?? true;
     final streakReminders = prefs.getBool(kStreakRemindersPrefKey) ?? true;
-    final inactivityReminders = prefs.getBool(kInactivityRemindersPrefKey) ?? true;
+    final inactivityReminders =
+        prefs.getBool(kInactivityRemindersPrefKey) ?? true;
     final quietHours = prefs.getBool(kQuietHoursPrefKey) ?? true;
     final quietStart = prefs.getString(kQuietHoursStartPrefKey) ?? '22:00';
     final quietEnd = prefs.getString(kQuietHoursEndPrefKey) ?? '07:00';
@@ -428,8 +402,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       // 1. Notification Permission Check
       PermissionStatus notifStatus = PermissionStatus.denied;
       try {
-        final notifAllowed =
-            await NotificationService.instance.areNotificationsAllowed();
+        final notifAllowed = await NotificationService.instance
+            .areNotificationsAllowed();
         if (notifAllowed) {
           notifStatus = PermissionStatus.granted;
         } else {
@@ -515,7 +489,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     }
   }
 
-
   bool get _isNotificationGranted =>
       _notificationStatus.isGranted || _notificationStatus.isLimited;
 
@@ -539,69 +512,80 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     final isVi = lang == AppLanguage.vi;
     final shouldOpen = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: colors.surface2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(KineticTokens.radiusXL),
-          side: BorderSide(
-            color: colors.borderAccent,
-            width: 1.2,
-          ),
-        ),
-        title: Row(
+      builder: (ctx) => KineticGlassDialog(
+        padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: colors.primary.withValues(alpha: 0.15),
-              ),
-              child: Icon(Icons.settings_outlined, color: colors.primary, size: 22),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                isVi ? 'Quản lý quyền $permissionName' : 'Manage $permissionName Access',
-                style: KineticTypography.headlineSmall.copyWith(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: colors.textPrimary,
+            Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: colors.primary.withValues(alpha: 0.14),
+                    border: Border.all(
+                      color: colors.primary.withValues(alpha: 0.30),
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.settings_outlined,
+                    color: colors.primary,
+                    size: 20,
+                  ),
                 ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    isVi
+                        ? 'Quản lý quyền $permissionName'
+                        : 'Manage $permissionName Access',
+                    style: KineticTypography.headlineSmall.copyWith(
+                      fontSize: 16.5,
+                      fontWeight: FontWeight.w800,
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              isVi
+                  ? 'Để cấp quyền hoặc thay đổi quyền $permissionName, bạn vui lòng chuyển nút gạt trong phần Cài đặt của thiết bị.'
+                  : 'To grant or update $permissionName access, please toggle it in your device Settings.',
+              style: KineticTypography.bodyMedium.copyWith(
+                fontSize: 13.5,
+                color: colors.textSecondary,
+                height: 1.45,
               ),
+            ),
+            const SizedBox(height: 22),
+            Row(
+              children: [
+                Expanded(
+                  child: KineticButton(
+                    label: isVi ? 'Đóng' : 'Cancel',
+                    variant: KineticButtonVariant.secondary,
+                    height: 46,
+                    onPressed: () => Navigator.of(ctx).pop(false),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: KineticButton(
+                    label: isVi ? 'Mở Cài Đặt' : 'Open Settings',
+                    variant: KineticButtonVariant.primary,
+                    height: 46,
+                    onPressed: () => Navigator.of(ctx).pop(true),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
-        content: Text(
-          isVi
-              ? 'Để cấp quyền hoặc thay đổi quyền $permissionName, bạn vui lòng chuyển nút gạt trong phần Cài đặt của thiết bị.'
-              : 'To grant or update $permissionName access, please toggle it in your device Settings.',
-          style: KineticTypography.bodyMedium.copyWith(
-            fontSize: 13,
-            color: colors.textSecondary,
-            height: 1.4,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(
-              isVi ? 'Đóng' : 'Cancel',
-              style: KineticTypography.label.copyWith(
-                fontWeight: FontWeight.w700,
-                color: colors.textSecondary,
-              ),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(
-              isVi ? 'Mở Cài Đặt' : 'Open Settings',
-              style: KineticTypography.label.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
-        ],
       ),
     );
 
@@ -610,7 +594,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     }
   }
 
-  Future<void> _toggleNotificationPermission(bool value, AppLanguage lang) async {
+  Future<void> _toggleNotificationPermission(
+    bool value,
+    AppLanguage lang,
+  ) async {
     if (value) {
       final allowed = await NotificationService.instance.requestPermissions();
       await _refreshPermissions();
@@ -766,7 +753,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            isVi ? 'Đã xóa bộ nhớ đệm thành công' : 'Cache cleared successfully',
+            isVi
+                ? 'Đã xóa bộ nhớ đệm thành công'
+                : 'Cache cleared successfully',
           ),
         ),
       );
@@ -786,20 +775,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     }
   }
 
-  Future<void> _confirmDeleteAccount(BuildContext context, AppLanguage lang) async {
+  Future<void> _confirmDeleteAccount(
+    BuildContext context,
+    AppLanguage lang,
+  ) async {
     final colors = context.kinetic;
     final isVi = lang == AppLanguage.vi;
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: colors.surface2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(KineticTokens.radiusXL),
-          side: BorderSide(
-            color: colors.error.withValues(alpha: 0.5),
-            width: 1.2,
-          ),
-        ),
+      builder: (ctx) => KineticGlassDialog(
+        borderColor: colors.error.withValues(alpha: 0.45),
         title: Row(
           children: [
             Container(
@@ -808,7 +793,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                 shape: BoxShape.circle,
                 color: colors.error.withValues(alpha: 0.15),
               ),
-              child: Icon(Icons.warning_amber_rounded, color: colors.error, size: 22),
+              child: Icon(
+                Icons.warning_amber_rounded,
+                color: colors.error,
+                size: 22,
+              ),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -844,16 +833,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
               ),
             ),
           ),
-          ElevatedButton(
+          TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: colors.error,
-              foregroundColor: Colors.white,
-            ),
             child: Text(
               isVi ? 'Xác nhận xóa' : 'Confirm Delete',
               style: KineticTypography.label.copyWith(
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
+                color: colors.error,
               ),
             ),
           ),
@@ -870,30 +856,31 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
           builder: (ctx) => PopScope(
             canPop: false,
             child: Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
-                decoration: BoxDecoration(
-                  color: colors.surface2,
-                  borderRadius: BorderRadius.circular(KineticTokens.radiusXL),
-                  border: Border.all(
-                    color: colors.error.withValues(alpha: 0.4),
-                    width: 1.2,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: KineticCard(
+                  useLiquidGlass: true,
+                  borderRadius: 21,
+                  borderColor: colors.error.withValues(alpha: 0.4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 28,
+                    vertical: 24,
                   ),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(color: colors.error),
-                    const SizedBox(height: KineticTokens.spaceLG),
-                    Text(
-                      isVi ? 'Đang xóa tài khoản...' : 'Deleting account...',
-                      style: KineticTypography.bodyLarge.copyWith(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: colors.textPrimary,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(color: colors.error),
+                      const SizedBox(height: KineticTokens.spaceLG),
+                      Text(
+                        isVi ? 'Đang xóa tài khoản...' : 'Deleting account...',
+                        style: KineticTypography.bodyLarge.copyWith(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: colors.textPrimary,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -949,23 +936,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     final currentLang = ref.watch(appLanguageProvider);
     final user = _getSafeUser();
 
+    final hPad = AetronBottomBar.horizontalPagePaddingOf(context);
+
     return Scaffold(
       backgroundColor: colors.background,
-      body: SafeArea(
+      body: KineticGlasslineScaffoldBody(
+        showBottomScrim: false,
         child: Column(
           children: [
             // Top Bar
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-              child: KineticSettingsTopBar(
-                currentLang: currentLang,
-              ),
+              padding: EdgeInsets.fromLTRB(hPad, 12, hPad, 8),
+              child: KineticSettingsTopBar(currentLang: currentLang),
             ),
 
             Expanded(
               child: RefreshIndicator(
                 color: colors.primary,
-                backgroundColor: colors.surface2,
+                backgroundColor: colors.surface1,
                 onRefresh: () async {
                   setState(() => _isRefreshing = true);
                   try {
@@ -977,294 +965,462 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                 child: _isRefreshing
                     ? const SettingsSkeletonView()
                     : ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
-                  children: [
-                    // SECTION 0: PROFILE HERO CARD
-                    _ProfileHeroCard(
-                      displayName: _settingsDisplayName(user),
-                      email: user?.email,
-                      nameLabel: AppTranslations.get('display_name', currentLang),
-                      editLabel: currentLang == AppLanguage.vi ? 'Đổi tên' : 'Edit',
-                      onTap: () async {
-                        final updated = await showEditDisplayNameSheet(
-                          context,
-                          currentName: _settingsDisplayName(user),
-                        );
-                        if (updated == true && mounted) {
-                          setState(() {});
-                        }
-                      },
-                    ),
-                    const SizedBox(height: KineticTokens.spaceLG),
-
-                    // SECTION 1: APP PREFERENCES
-                    KineticSettingsSectionGroup(
-                      title: AppTranslations.get('app_preferences', currentLang),
-                      children: [
-                        KineticSettingsTile(
-                          icon: Icons.language_rounded,
-                          bladeIcon: BladeIconName.globe,
-                          title: AppTranslations.get('app_language', currentLang),
-                          subtitle: currentLang == AppLanguage.vi ? '🇻🇳 Tiếng Việt' : '🇬🇧 English',
-                          accentColor: colors.primary,
-                          trailing: Icon(Icons.chevron_right_rounded, color: colors.textSecondary),
-                          onTap: () => _showLanguageSelector(currentLang),
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: EdgeInsets.fromLTRB(
+                          hPad,
+                          8,
+                          hPad,
+                          MediaQuery.viewPaddingOf(context).bottom + 24,
                         ),
-                        KineticSettingsTile(
-                          icon: Icons.straighten_rounded,
-                          bladeIcon: BladeIconName.units,
-                          title: AppTranslations.get('units', currentLang),
-                          subtitle: _useMetricUnits
-                              ? (currentLang == AppLanguage.vi ? 'Hệ mét (km, m, km/h)' : 'Metric (km, m, km/h)')
-                              : (currentLang == AppLanguage.vi ? 'Hệ Anh (mi, ft, mph)' : 'Imperial (mi, ft, mph)'),
-                          accentColor: colors.secondary,
-                          trailing: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: colors.surface2,
-                              borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
-                              border: Border.all(color: colors.borderSubtle),
+                        children: [
+                          // SECTION 0: PROFILE HERO CARD
+                          _ProfileHeroCard(
+                            displayName: _settingsDisplayName(user),
+                            email: user?.email,
+                            nameLabel: AppTranslations.get(
+                              'display_name',
+                              currentLang,
                             ),
-                            child: Text(
-                              _useMetricUnits ? 'KM / H' : 'MI / H',
-                              style: KineticTypography.unitLabel.copyWith(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w800,
-                                color: colors.secondary,
-                                letterSpacing: 0.8,
+                            editLabel: currentLang == AppLanguage.vi
+                                ? 'Đổi tên'
+                                : 'Edit',
+                            onTap: () async {
+                              final updated = await showEditDisplayNameSheet(
+                                context,
+                                currentName: _settingsDisplayName(user),
+                              );
+                              if (updated == true && mounted) {
+                                setState(() {});
+                              }
+                            },
+                          ),
+                          const SizedBox(height: KineticTokens.spaceLG),
+
+                          // SECTION 1: APP PREFERENCES
+                          KineticSettingsSectionGroup(
+                            title: AppTranslations.get(
+                              'app_preferences',
+                              currentLang,
+                            ),
+                            children: [
+                              KineticSettingsTile(
+                                icon: Icons.language_rounded,
+                                bladeIcon: BladeIconName.globe,
+                                title: AppTranslations.get(
+                                  'app_language',
+                                  currentLang,
+                                ),
+                                subtitle: currentLang == AppLanguage.vi
+                                    ? '🇻🇳 Tiếng Việt'
+                                    : '🇬🇧 English',
+                                accentColor: colors.primary,
+                                trailing: Icon(
+                                  Icons.chevron_right_rounded,
+                                  color: colors.textSecondary,
+                                ),
+                                onTap: () => _showLanguageSelector(currentLang),
                               ),
-                            ),
-                          ),
-                          onTap: () => _showUnitSelector(currentLang),
-                        ),
-                        KineticSettingsTile(
-                          icon: Icons.palette_outlined,
-                          bladeIcon: BladeIconName.moon,
-                          title: currentLang == AppLanguage.vi ? 'Giao diện' : 'Appearance',
-                          subtitle: switch (ref.watch(themeModeProvider)) {
-                            ThemeMode.dark => currentLang == AppLanguage.vi
-                                ? 'Tối (Nền tối)'
-                                : 'Dark',
-                            ThemeMode.light => currentLang == AppLanguage.vi
-                                ? 'Sáng (Trắng xanh)'
-                                : 'Light',
-                            ThemeMode.system => currentLang == AppLanguage.vi
-                                ? 'Theo hệ thống'
-                                : 'System default',
-                          },
-                          accentColor: colors.primary,
-                          trailing: Icon(Icons.chevron_right_rounded, color: colors.textSecondary),
-                          onTap: () => _showThemeSelector(currentLang),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: KineticTokens.spaceLG),
-
-                    // SECTION 2: PRIVACY & PERMISSIONS ACCESS
-                    KineticSettingsSectionGroup(
-                      title: AppTranslations.get('privacy_access', currentLang),
-                      children: [
-                        KineticSettingsTile(
-                          icon: Icons.notifications_active_rounded,
-                          bladeIcon: BladeIconName.bell,
-                          title: currentLang == AppLanguage.vi ? 'Thông báo' : 'Notifications',
-                          subtitle: _loadingPermissions
-                              ? AppTranslations.get('checking_access', currentLang)
-                              : _isNotificationGranted
-                                  ? (currentLang == AppLanguage.vi
-                                      ? 'Đã cho phép • Nhắc nhở tập & chuỗi Streak'
-                                      : 'Allowed • Workout & streak alerts')
-                                  : (currentLang == AppLanguage.vi
-                                      ? 'Chưa cho phép • Bật để nhận thông báo từ iPhone'
-                                      : 'Denied • Tap to allow alerts'),
-                          accentColor: colors.secondary,
-                          trailing: CupertinoSwitch(
-                            value: _isNotificationGranted,
-                            onChanged: (val) => _toggleNotificationPermission(val, currentLang),
-                            activeTrackColor: const Color(0xFF34C759),
-                            inactiveTrackColor: colors.surface3,
-                            thumbColor: Colors.white,
-                          ),
-                          onTap: () => _toggleNotificationPermission(!_isNotificationGranted, currentLang),
-                        ),
-                        KineticSettingsTile(
-                          icon: Icons.camera_alt_rounded,
-                          bladeIcon: BladeIconName.cam,
-                          title: AppTranslations.get('camera_access', currentLang),
-                          subtitle: _loadingPermissions
-                              ? AppTranslations.get('checking_access', currentLang)
-                              : _permissionDescription(
-                                  _cameraStatus,
-                                  allowed: AppTranslations.get('camera_ready', currentLang),
-                                  denied: AppTranslations.get('camera_denied', currentLang),
-                                  lang: currentLang,
+                              KineticSettingsTile(
+                                icon: Icons.straighten_rounded,
+                                bladeIcon: BladeIconName.units,
+                                title: AppTranslations.get(
+                                  'units',
+                                  currentLang,
                                 ),
-                          accentColor: colors.primary,
-                          trailing: CupertinoSwitch(
-                            value: _isCameraGranted,
-                            onChanged: (val) => _toggleCameraPermission(val, currentLang),
-                            activeTrackColor: const Color(0xFF34C759),
-                            inactiveTrackColor: colors.surface3,
-                            thumbColor: Colors.white,
-                          ),
-                          onTap: () => _toggleCameraPermission(!_isCameraGranted, currentLang),
-                        ),
-                        KineticSettingsTile(
-                          icon: Icons.photo_library_rounded,
-                          title: AppTranslations.get('photo_access', currentLang),
-                          subtitle: _loadingPermissions
-                              ? AppTranslations.get('checking_access', currentLang)
-                              : _photoPermissionDescription(
-                                  _photosStatus,
-                                  full: AppTranslations.get('photos_ready', currentLang),
-                                  denied: AppTranslations.get('photos_denied', currentLang),
-                                  limited: AppTranslations.get('photos_limited', currentLang),
-                                  lang: currentLang,
-                                ),
-                          accentColor: colors.secondary,
-                          trailing: CupertinoSwitch(
-                            value: _isPhotosGranted,
-                            onChanged: (val) => _togglePhotoPermission(val, currentLang),
-                            activeTrackColor: const Color(0xFF34C759),
-                            inactiveTrackColor: colors.surface3,
-                            thumbColor: Colors.white,
-                          ),
-                          onTap: () => _togglePhotoPermission(!_isPhotosGranted, currentLang),
-                        ),
-                        KineticSettingsTile(
-                          icon: Icons.location_on_rounded,
-                          bladeIcon: BladeIconName.gps,
-                          title: AppTranslations.get('location_access', currentLang),
-                          subtitle: _loadingPermissions
-                              ? AppTranslations.get('checking_access', currentLang)
-                              : _permissionDescription(
-                                  _locationStatus,
-                                  allowed: AppTranslations.get('location_ready', currentLang),
-                                  denied: AppTranslations.get('location_denied', currentLang),
-                                  lang: currentLang,
-                                ),
-                          accentColor: colors.tertiary,
-                          trailing: CupertinoSwitch(
-                            value: _isLocationGranted,
-                            onChanged: (val) => _toggleLocationPermission(val, currentLang),
-                            activeTrackColor: const Color(0xFF34C759),
-                            inactiveTrackColor: colors.surface3,
-                            thumbColor: Colors.white,
-                          ),
-                          onTap: () => _toggleLocationPermission(!_isLocationGranted, currentLang),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: KineticTokens.spaceLG),
-
-                    // SECTION 3: DATA & STORAGE
-                    KineticSettingsSectionGroup(
-                      title: AppTranslations.get('data', currentLang),
-                      children: [
-                        KineticSettingsTile(
-                          icon: Icons.delete_sweep_rounded,
-                          bladeIcon: BladeIconName.trash,
-                          title: AppTranslations.get('clear_cache', currentLang),
-                          subtitle: _isClearingCache
-                              ? AppTranslations.get('clearing_cache', currentLang)
-                              : (currentLang == AppLanguage.vi ? 'Xóa tệp tạm và bộ nhớ đệm hình ảnh' : 'Clear temporary files and cached images'),
-                          accentColor: colors.tertiary,
-                          trailing: _isClearingCache
-                              ? SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: colors.primary,
+                                subtitle: _useMetricUnits
+                                    ? (currentLang == AppLanguage.vi
+                                          ? 'Hệ mét (km, m, km/h)'
+                                          : 'Metric (km, m, km/h)')
+                                    : (currentLang == AppLanguage.vi
+                                          ? 'Hệ Anh (mi, ft, mph)'
+                                          : 'Imperial (mi, ft, mph)'),
+                                accentColor: colors.secondary,
+                                trailing: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
                                   ),
-                                )
-                              : Icon(Icons.chevron_right_rounded, color: colors.textSecondary),
-                          onTap: _clearCache,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: KineticTokens.spaceLG),
-
-                    // SECTION 4: LEGAL & SUPPORT
-                    KineticSettingsSectionGroup(
-                      title: AppTranslations.get('legal_and_support', currentLang),
-                      children: [
-                        KineticSettingsTile(
-                          icon: Icons.privacy_tip_outlined,
-                          bladeIcon: BladeIconName.shield,
-                          title: AppTranslations.get('privacy_policy', currentLang),
-                          subtitle: AppTranslations.get('privacy_sub', currentLang),
-                          accentColor: colors.primary,
-                          trailing: Icon(Icons.chevron_right_rounded, color: colors.textSecondary),
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
-                            );
-                          },
-                        ),
-                        KineticSettingsTile(
-                          icon: Icons.description_outlined,
-                          bladeIcon: BladeIconName.doc,
-                          title: AppTranslations.get('terms_of_service', currentLang),
-                          subtitle: AppTranslations.get('terms_sub', currentLang),
-                          accentColor: colors.secondary,
-                          trailing: Icon(Icons.chevron_right_rounded, color: colors.textSecondary),
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(builder: (_) => const TermsOfServiceScreen()),
-                            );
-                          },
-                        ),
-                        KineticSettingsTile(
-                          icon: Icons.info_outline_rounded,
-                          bladeIcon: BladeIconName.info,
-                          title: currentLang == AppLanguage.vi ? 'Phiên bản ứng dụng' : 'App Version',
-                          subtitle: _appVersion,
-                          accentColor: colors.secondary,
-                          onTap: () {},
-                          trailing: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: colors.surface2,
-                              borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
-                              border: Border.all(color: colors.borderSubtle),
-                            ),
-                            child: Text(
-                              'AETRON',
-                              style: KineticTypography.unitLabel.copyWith(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w800,
-                                color: colors.secondary,
-                                letterSpacing: 1.0,
+                                  decoration: BoxDecoration(
+                                    color: colors.surface2,
+                                    borderRadius: BorderRadius.circular(
+                                      KineticTokens.radiusSM,
+                                    ),
+                                    border: Border.all(
+                                      color: colors.borderSubtle,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    _useMetricUnits ? 'KM / H' : 'MI / H',
+                                    style: KineticTypography.unitLabel.copyWith(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w800,
+                                      color: colors.secondary,
+                                      letterSpacing: 0.8,
+                                    ),
+                                  ),
+                                ),
+                                onTap: () => _showUnitSelector(currentLang),
                               ),
-                            ),
+                              KineticSettingsTile(
+                                icon: Icons.palette_outlined,
+                                bladeIcon: BladeIconName.moon,
+                                title: currentLang == AppLanguage.vi
+                                    ? 'Giao diện'
+                                    : 'Appearance',
+                                subtitle: switch (ref.watch(
+                                  themeModeProvider,
+                                )) {
+                                  ThemeMode.dark =>
+                                    currentLang == AppLanguage.vi
+                                        ? 'Tối (Nền tối)'
+                                        : 'Dark',
+                                  ThemeMode.light =>
+                                    currentLang == AppLanguage.vi
+                                        ? 'Sáng (Trắng xanh)'
+                                        : 'Light',
+                                  ThemeMode.system =>
+                                    currentLang == AppLanguage.vi
+                                        ? 'Theo hệ thống'
+                                        : 'System default',
+                                },
+                                accentColor: colors.primary,
+                                trailing: Icon(
+                                  Icons.chevron_right_rounded,
+                                  color: colors.textSecondary,
+                                ),
+                                onTap: () => _showThemeSelector(currentLang),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: KineticTokens.spaceLG),
+                          const SizedBox(height: KineticTokens.spaceLG),
 
-                    // SECTION 5: ACCOUNT DELETION
-                    KineticSettingsSectionGroup(
-                      title: currentLang == AppLanguage.vi ? 'QUẢN LÝ TÀI KHOẢN' : 'ACCOUNT MANAGEMENT',
-                      children: [
-                        KineticSettingsTile(
-                          icon: Icons.person_remove_rounded,
-                          bladeIcon: BladeIconName.trash,
-                          title: currentLang == AppLanguage.vi ? 'Xóa tài khoản' : 'Delete Account',
-                          subtitle: currentLang == AppLanguage.vi
-                              ? 'Xóa vĩnh viễn tài khoản và toàn bộ dữ liệu'
-                              : 'Permanently remove your account and all data',
-                          accentColor: colors.error,
-                          danger: true,
-                          trailing: Icon(Icons.chevron_right_rounded, color: colors.error),
-                          onTap: () => _confirmDeleteAccount(context, currentLang),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                          // SECTION 2: PRIVACY & PERMISSIONS ACCESS
+                          KineticSettingsSectionGroup(
+                            title: AppTranslations.get(
+                              'privacy_access',
+                              currentLang,
+                            ),
+                            children: [
+                              KineticSettingsTile(
+                                icon: Icons.notifications_active_rounded,
+                                bladeIcon: BladeIconName.bell,
+                                title: currentLang == AppLanguage.vi
+                                    ? 'Thông báo'
+                                    : 'Notifications',
+                                subtitle: _loadingPermissions
+                                    ? AppTranslations.get(
+                                        'checking_access',
+                                        currentLang,
+                                      )
+                                    : _isNotificationGranted
+                                    ? (currentLang == AppLanguage.vi
+                                          ? 'Đã cho phép • Nhắc nhở tập & chuỗi Streak'
+                                          : 'Allowed • Workout & streak alerts')
+                                    : (currentLang == AppLanguage.vi
+                                          ? 'Chưa cho phép • Bật để nhận thông báo từ iPhone'
+                                          : 'Denied • Tap to allow alerts'),
+                                accentColor: colors.secondary,
+                                trailing: CupertinoSwitch(
+                                  value: _isNotificationGranted,
+                                  onChanged: (val) =>
+                                      _toggleNotificationPermission(
+                                        val,
+                                        currentLang,
+                                      ),
+                                  activeTrackColor: const Color(0xFF34C759),
+                                  inactiveTrackColor: colors.surface3,
+                                  thumbColor: Colors.white,
+                                ),
+                                onTap: () => _toggleNotificationPermission(
+                                  !_isNotificationGranted,
+                                  currentLang,
+                                ),
+                              ),
+                              KineticSettingsTile(
+                                icon: Icons.camera_alt_rounded,
+                                bladeIcon: BladeIconName.cam,
+                                title: AppTranslations.get(
+                                  'camera_access',
+                                  currentLang,
+                                ),
+                                subtitle: _loadingPermissions
+                                    ? AppTranslations.get(
+                                        'checking_access',
+                                        currentLang,
+                                      )
+                                    : _permissionDescription(
+                                        _cameraStatus,
+                                        allowed: AppTranslations.get(
+                                          'camera_ready',
+                                          currentLang,
+                                        ),
+                                        denied: AppTranslations.get(
+                                          'camera_denied',
+                                          currentLang,
+                                        ),
+                                        lang: currentLang,
+                                      ),
+                                accentColor: colors.primary,
+                                trailing: CupertinoSwitch(
+                                  value: _isCameraGranted,
+                                  onChanged: (val) =>
+                                      _toggleCameraPermission(val, currentLang),
+                                  activeTrackColor: const Color(0xFF34C759),
+                                  inactiveTrackColor: colors.surface3,
+                                  thumbColor: Colors.white,
+                                ),
+                                onTap: () => _toggleCameraPermission(
+                                  !_isCameraGranted,
+                                  currentLang,
+                                ),
+                              ),
+                              KineticSettingsTile(
+                                icon: Icons.photo_library_rounded,
+                                title: AppTranslations.get(
+                                  'photo_access',
+                                  currentLang,
+                                ),
+                                subtitle: _loadingPermissions
+                                    ? AppTranslations.get(
+                                        'checking_access',
+                                        currentLang,
+                                      )
+                                    : _photoPermissionDescription(
+                                        _photosStatus,
+                                        full: AppTranslations.get(
+                                          'photos_ready',
+                                          currentLang,
+                                        ),
+                                        denied: AppTranslations.get(
+                                          'photos_denied',
+                                          currentLang,
+                                        ),
+                                        limited: AppTranslations.get(
+                                          'photos_limited',
+                                          currentLang,
+                                        ),
+                                        lang: currentLang,
+                                      ),
+                                accentColor: colors.secondary,
+                                trailing: CupertinoSwitch(
+                                  value: _isPhotosGranted,
+                                  onChanged: (val) =>
+                                      _togglePhotoPermission(val, currentLang),
+                                  activeTrackColor: const Color(0xFF34C759),
+                                  inactiveTrackColor: colors.surface3,
+                                  thumbColor: Colors.white,
+                                ),
+                                onTap: () => _togglePhotoPermission(
+                                  !_isPhotosGranted,
+                                  currentLang,
+                                ),
+                              ),
+                              KineticSettingsTile(
+                                icon: Icons.location_on_rounded,
+                                bladeIcon: BladeIconName.gps,
+                                title: AppTranslations.get(
+                                  'location_access',
+                                  currentLang,
+                                ),
+                                subtitle: _loadingPermissions
+                                    ? AppTranslations.get(
+                                        'checking_access',
+                                        currentLang,
+                                      )
+                                    : _permissionDescription(
+                                        _locationStatus,
+                                        allowed: AppTranslations.get(
+                                          'location_ready',
+                                          currentLang,
+                                        ),
+                                        denied: AppTranslations.get(
+                                          'location_denied',
+                                          currentLang,
+                                        ),
+                                        lang: currentLang,
+                                      ),
+                                accentColor: colors.tertiary,
+                                trailing: CupertinoSwitch(
+                                  value: _isLocationGranted,
+                                  onChanged: (val) => _toggleLocationPermission(
+                                    val,
+                                    currentLang,
+                                  ),
+                                  activeTrackColor: const Color(0xFF34C759),
+                                  inactiveTrackColor: colors.surface3,
+                                  thumbColor: Colors.white,
+                                ),
+                                onTap: () => _toggleLocationPermission(
+                                  !_isLocationGranted,
+                                  currentLang,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: KineticTokens.spaceLG),
+
+                          // SECTION 3: DATA & STORAGE
+                          KineticSettingsSectionGroup(
+                            title: AppTranslations.get('data', currentLang),
+                            children: [
+                              KineticSettingsTile(
+                                icon: Icons.delete_sweep_rounded,
+                                bladeIcon: BladeIconName.trash,
+                                title: AppTranslations.get(
+                                  'clear_cache',
+                                  currentLang,
+                                ),
+                                subtitle: _isClearingCache
+                                    ? AppTranslations.get(
+                                        'clearing_cache',
+                                        currentLang,
+                                      )
+                                    : (currentLang == AppLanguage.vi
+                                          ? 'Xóa tệp tạm và bộ nhớ đệm hình ảnh'
+                                          : 'Clear temporary files and cached images'),
+                                accentColor: colors.tertiary,
+                                trailing: _isClearingCache
+                                    ? SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: colors.primary,
+                                        ),
+                                      )
+                                    : Icon(
+                                        Icons.chevron_right_rounded,
+                                        color: colors.textSecondary,
+                                      ),
+                                onTap: _clearCache,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: KineticTokens.spaceLG),
+
+                          // SECTION 4: LEGAL & SUPPORT
+                          KineticSettingsSectionGroup(
+                            title: AppTranslations.get(
+                              'legal_and_support',
+                              currentLang,
+                            ),
+                            children: [
+                              KineticSettingsTile(
+                                icon: Icons.privacy_tip_outlined,
+                                bladeIcon: BladeIconName.shield,
+                                title: AppTranslations.get(
+                                  'privacy_policy',
+                                  currentLang,
+                                ),
+                                subtitle: AppTranslations.get(
+                                  'privacy_sub',
+                                  currentLang,
+                                ),
+                                accentColor: colors.primary,
+                                trailing: Icon(
+                                  Icons.chevron_right_rounded,
+                                  color: colors.textSecondary,
+                                ),
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const PrivacyPolicyScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              KineticSettingsTile(
+                                icon: Icons.description_outlined,
+                                bladeIcon: BladeIconName.doc,
+                                title: AppTranslations.get(
+                                  'terms_of_service',
+                                  currentLang,
+                                ),
+                                subtitle: AppTranslations.get(
+                                  'terms_sub',
+                                  currentLang,
+                                ),
+                                accentColor: colors.secondary,
+                                trailing: Icon(
+                                  Icons.chevron_right_rounded,
+                                  color: colors.textSecondary,
+                                ),
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const TermsOfServiceScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              KineticSettingsTile(
+                                icon: Icons.info_outline_rounded,
+                                bladeIcon: BladeIconName.info,
+                                title: currentLang == AppLanguage.vi
+                                    ? 'Phiên bản ứng dụng'
+                                    : 'App Version',
+                                subtitle: _appVersion,
+                                accentColor: colors.secondary,
+                                onTap: () {},
+                                trailing: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: colors.surface2,
+                                    borderRadius: BorderRadius.circular(
+                                      KineticTokens.radiusSM,
+                                    ),
+                                    border: Border.all(
+                                      color: colors.borderSubtle,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'AETRON',
+                                    style: KineticTypography.unitLabel.copyWith(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w800,
+                                      color: colors.secondary,
+                                      letterSpacing: 1.0,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: KineticTokens.spaceLG),
+
+                          // SECTION 5: ACCOUNT DELETION
+                          KineticSettingsSectionGroup(
+                            title: currentLang == AppLanguage.vi
+                                ? 'QUẢN LÝ TÀI KHOẢN'
+                                : 'ACCOUNT MANAGEMENT',
+                            children: [
+                              KineticSettingsTile(
+                                icon: Icons.person_remove_rounded,
+                                bladeIcon: BladeIconName.trash,
+                                title: currentLang == AppLanguage.vi
+                                    ? 'Xóa tài khoản'
+                                    : 'Delete Account',
+                                subtitle: currentLang == AppLanguage.vi
+                                    ? 'Xóa vĩnh viễn tài khoản và toàn bộ dữ liệu'
+                                    : 'Permanently remove your account and all data',
+                                accentColor: colors.error,
+                                danger: true,
+                                trailing: Icon(
+                                  Icons.chevron_right_rounded,
+                                  color: colors.error,
+                                ),
+                                onTap: () =>
+                                    _confirmDeleteAccount(context, currentLang),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
               ),
             ),
           ],
@@ -1281,7 +1437,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   }) {
     if (status.isGranted) return allowed;
     if (status.isLimited) return AppTranslations.get('photos_limited', lang);
-    if (status.isRestricted) return AppTranslations.get('location_blocked', lang);
+    if (status.isRestricted) {
+      return AppTranslations.get('location_blocked', lang);
+    }
     return denied;
   }
 
@@ -1313,48 +1471,16 @@ class _LanguageOptionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.kinetic;
-
     return Semantics(
       button: true,
       selected: isSelected,
       label: name,
-      child: InkWell(
+      child: KineticGlassOptionTile(
+        leading: Text(flag, style: const TextStyle(fontSize: 22)),
+        title: name,
+        isSelected: isSelected,
+        showChevron: false,
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: isSelected ? colors.surface1 : colors.surface2,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected ? colors.primary : colors.borderSubtle,
-              width: isSelected ? 1.2 : 1.0,
-            ),
-          ),
-          child: Row(
-            children: [
-              Text(flag, style: const TextStyle(fontSize: 22)),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Text(
-                  name,
-                  style: KineticTypography.headlineSmall.copyWith(
-                    fontSize: 14,
-                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                    color: colors.textPrimary,
-                  ),
-                ),
-              ),
-              if (isSelected)
-                Icon(
-                  Icons.check_circle_rounded,
-                  color: colors.primary,
-                  size: 20,
-                ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -1377,61 +1503,17 @@ class _UnitOptionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.kinetic;
-
     return Semantics(
       button: true,
       selected: isSelected,
       label: '$title, $subtitle',
-      child: InkWell(
+      child: KineticGlassOptionTile(
+        icon: icon,
+        title: title,
+        subtitle: subtitle,
+        isSelected: isSelected,
+        showChevron: false,
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: isSelected ? colors.surface1 : colors.surface2,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected ? colors.primary : colors.borderSubtle,
-              width: isSelected ? 1.2 : 1.0,
-            ),
-          ),
-          child: Row(
-            children: [
-              Icon(icon, size: 22, color: isSelected ? colors.primary : colors.textSecondary),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: KineticTypography.headlineSmall.copyWith(
-                        fontSize: 14,
-                        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                        color: colors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: KineticTypography.bodySmall.copyWith(
-                        fontSize: 11,
-                        color: colors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (isSelected)
-                Icon(
-                  Icons.check_circle_rounded,
-                  color: colors.primary,
-                  size: 20,
-                ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -1472,128 +1554,160 @@ class _ProfileHeroCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.kinetic;
     final hasEmail = email != null && email!.isNotEmpty;
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    final isDark = colors.isDark;
 
     return Semantics(
       button: true,
-      label: hasEmail ? '$nameLabel, $displayName, $email' : '$nameLabel, $displayName',
-      child: Container(
-        foregroundDecoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
-          border: Border.all(color: colors.borderStrong, width: 1.5),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
-          child: Material(
-            color: colors.surface1,
-            child: InkWell(
-              onTap: onTap,
-              child: Padding(
-                padding: const EdgeInsets.all(KineticTokens.spaceMD),
-                child: Row(
-                  children: [
-                        Container(
-                          width: 56,
-                          height: 56,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: colors.primary.withValues(alpha: 0.16),
-                            border: Border.all(
-                              color: colors.borderStrong,
-                              width: 1.5,
-                            ),
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            _initials,
-                            style: KineticTypography.headlineMedium.copyWith(
-                              color: colors.primary,
-                              fontWeight: FontWeight.w800,
-                            ),
+      label: hasEmail
+          ? '$nameLabel, $displayName, $email'
+          : '$nameLabel, $displayName',
+      child: KineticCard(
+        useLiquidGlass: true,
+        borderRadius: 21,
+        padding: EdgeInsets.zero,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(21),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.all(KineticTokens.spaceMD),
+              child: Row(
+                    children: [
+                      Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: colors.primary.withValues(alpha: isIOS ? 0.18 : 0.16),
+                          border: Border.all(
+                            color: colors.primary.withValues(alpha: isIOS ? 0.35 : 0.25),
+                            width: 1.2,
                           ),
                         ),
-                        const SizedBox(width: KineticTokens.spaceSM),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                nameLabel.toUpperCase(),
-                                style: KineticTypography.sectionEyebrow.copyWith(
-                                  color: colors.textMuted,
-                                ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          _initials,
+                          style: KineticTypography.headlineMedium.copyWith(
+                            color: colors.primary,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: KineticTokens.spaceSM),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              nameLabel.toUpperCase(),
+                              style: KineticTypography.sectionEyebrow.copyWith(
+                                color: colors.textMuted,
                               ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              displayName,
+                              style: KineticTypography.headlineSmall.copyWith(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: colors.textPrimary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (hasEmail) ...[
                               const SizedBox(height: 2),
                               Text(
-                                displayName,
-                                style: KineticTypography.headlineSmall.copyWith(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w800,
-                                  color: colors.textPrimary,
+                                email!,
+                                style: KineticTypography.bodySmall.copyWith(
+                                  color: colors.textSecondary,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              if (hasEmail) ...[
-                                const SizedBox(height: 2),
-                                Text(
-                                  email!,
-                                  style: KineticTypography.bodySmall.copyWith(
-                                    color: colors.textSecondary,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
                             ],
-                          ),
+                          ],
                         ),
-                        const SizedBox(width: KineticTokens.spaceSM),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: colors.surface1,
-                            borderRadius: BorderRadius.circular(
-                              KineticTokens.radiusSM,
-                            ),
-                            border: Border.all(color: colors.borderStrong),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                editLabel,
-                                style: KineticTypography.label.copyWith(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w800,
-                                  color: colors.primary,
+                      ),
+                      const SizedBox(width: KineticTokens.spaceSM),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: isDark
+                              ? const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Color(0x2ECAE9FF),
+                                    Color(0x21314B6B),
+                                  ],
+                                )
+                              : const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Color(0xCCFFFFFF),
+                                    Color(0x404EABE7),
+                                  ],
                                 ),
-                              ),
-                              const SizedBox(width: 4),
-                              BladeIcon(
-                                BladeIconName.edit,
-                                size: 12,
+                          borderRadius: BorderRadius.circular(
+                            KineticTokens.radiusPill,
+                          ),
+                          border: Border.all(
+                            color: isDark
+                                ? const Color(0x4DB6DCFF)
+                                : Colors.white.withValues(alpha: .90),
+                            width: 1.0,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: isDark
+                                  ? Colors.black.withValues(alpha: 0.20)
+                                  : const Color(0xFF1F406E).withValues(alpha: 0.08),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              editLabel,
+                              style: KineticTypography.label.copyWith(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
                                 color: colors.primary,
                               ),
-                            ],
-                          ),
+                            ),
+                            const SizedBox(width: 4),
+                            BladeIcon(
+                              BladeIconName.edit,
+                              size: 13,
+                              color: colors.primary,
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
+                ),
+              ),
             ),
           ),
-        ),
-      ),
-    );
+        );
   }
 }
 
 String _settingsDisplayName(User? user) {
   final meta = user?.userMetadata;
-  final displayName = (meta?['display_name'] ?? meta?['full_name'] ?? meta?['name']) as String?;
+  final displayName =
+      (meta?['display_name'] ?? meta?['full_name'] ?? meta?['name']) as String?;
   if (displayName != null && displayName.trim().isNotEmpty) {
     return displayName.trim();
   }
@@ -1603,4 +1717,3 @@ String _settingsDisplayName(User? user) {
   }
   return 'Athlete';
 }
-

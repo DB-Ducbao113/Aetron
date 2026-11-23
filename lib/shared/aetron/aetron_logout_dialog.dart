@@ -20,129 +20,79 @@ class AetronLogoutDialog extends ConsumerWidget {
     final colors = context.kinetic;
     final currentLang = ref.watch(appLanguageProvider);
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-      decoration: BoxDecoration(
-        color: colors.surface1,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        border: Border(
-          top: BorderSide(color: colors.borderSubtle, width: 1.5),
-        ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Handle bar
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: colors.borderSubtle,
-                borderRadius: BorderRadius.circular(2),
+    return KineticGlassBottomSheet(
+      floating: true,
+      borderRadius: 28,
+      borderColor: colors.error.withValues(alpha: 0.28),
+      padding: const EdgeInsets.fromLTRB(24, 14, 24, 26),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Red Danger Icon Container
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: colors.error.withValues(alpha: 0.14),
+              border: Border.all(
+                color: colors.error.withValues(alpha: 0.38),
+                width: 1.4,
               ),
             ),
-            const SizedBox(height: 24),
+            child: Icon(
+              Icons.logout_rounded,
+              color: colors.error,
+              size: 26,
+            ),
+          ),
+          const SizedBox(height: 18),
 
-            // Red Danger Icon Container
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: colors.error.withValues(alpha: 0.12),
-                border: Border.all(
-                  color: colors.error.withValues(alpha: 0.35),
-                  width: 1.5,
+          // Title
+          Text(
+            AppTranslations.get('logout_title', currentLang),
+            style: KineticTypography.headlineSmall.copyWith(
+              fontWeight: FontWeight.w800,
+              color: colors.textPrimary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+
+          // Description
+          Text(
+            AppTranslations.get('logout_sub', currentLang),
+            style: KineticTypography.bodyMedium.copyWith(
+              color: colors.textSecondary,
+              height: 1.45,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 26),
+
+          // Action Buttons (Unified KineticButton pills — avoids ElevatedButton double-surface artifact)
+          Row(
+            children: [
+              Expanded(
+                child: KineticButton(
+                  label: AppTranslations.get('cancel', currentLang),
+                  variant: KineticButtonVariant.secondary,
+                  height: 48,
+                  onPressed: () => Navigator.of(context).pop(false),
                 ),
               ),
-              child: Icon(
-                Icons.logout_rounded,
-                color: colors.error,
-                size: 26,
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Title
-            Text(
-              AppTranslations.get('logout_title', currentLang),
-              style: KineticTypography.headlineSmall.copyWith(
-                fontWeight: FontWeight.w800,
-                color: colors.textPrimary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-
-            // Description
-            Text(
-              AppTranslations.get('logout_sub', currentLang),
-              style: KineticTypography.bodyMedium.copyWith(
-                color: colors.textSecondary,
-                height: 1.45,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 28),
-
-            // Action Buttons
-            Row(
-              children: [
-                // Cancel
-                Expanded(
-                  child: SizedBox(
-                    height: 50,
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.of(context).pop(false),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: colors.textPrimary,
-                        side: BorderSide(color: colors.borderSubtle),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      child: Text(
-                        AppTranslations.get('cancel', currentLang),
-                        style: KineticTypography.bodyMedium.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: colors.textPrimary,
-                        ),
-                      ),
-                    ),
-                  ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: KineticButton(
+                  label: AppTranslations.get('logout', currentLang),
+                  variant: KineticButtonVariant.danger,
+                  height: 48,
+                  onPressed: () => Navigator.of(context).pop(true),
                 ),
-                const SizedBox(width: 12),
-
-                // Logout CTA (KineticButton Danger / Error)
-                Expanded(
-                  child: SizedBox(
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.of(context).pop(true),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: colors.error,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      child: Text(
-                        AppTranslations.get('logout', currentLang),
-                        style: KineticTypography.bodyMedium.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

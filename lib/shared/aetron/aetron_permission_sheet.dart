@@ -90,38 +90,15 @@ class _AetronPermissionSheet extends StatelessWidget {
       ),
     };
 
-    return SafeArea(
-      top: false,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 22),
-        decoration: BoxDecoration(
-          color: colors.surface1,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          border: Border(top: BorderSide(color: colors.borderAccent, width: 1.2)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.55),
-              blurRadius: 28,
-              offset: const Offset(0, -10),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 42,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: colors.textMuted.withValues(alpha: 0.35),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Container(
+    return KineticGlassBottomSheet(
+      floating: true,
+      borderRadius: 26,
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 22),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
               width: 52,
               height: 52,
               decoration: BoxDecoration(
@@ -132,82 +109,56 @@ class _AetronPermissionSheet extends StatelessWidget {
               child: Icon(content.$1, color: colors.primary, size: 26),
             ),
             const SizedBox(height: 16),
-            Text(
-              content.$2,
-              style: TextStyle(
-                color: colors.primary,
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.0,
-              ),
+          Text(
+            content.$2,
+            style: KineticTypography.cardEyebrowOf(colors),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            content.$3,
+            style: KineticTypography.headlineSmall.copyWith(
+              color: colors.textPrimary,
+              fontSize: 15.5,
+              height: 1.38,
+              fontWeight: FontWeight.w700,
             ),
-            const SizedBox(height: 10),
-            Text(
-              content.$3,
-              style: TextStyle(
-                color: colors.textPrimary,
-                fontSize: 15,
-                height: 1.35,
-                fontWeight: FontWeight.w700,
-              ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            content.$4,
+            style: KineticTypography.bodySmall.copyWith(
+              color: colors.textSecondary,
+              height: 1.4,
+              fontWeight: FontWeight.w500,
             ),
-            const SizedBox(height: 8),
-            Text(
-              content.$4,
-              style: TextStyle(
-                color: colors.textSecondary,
-                fontSize: 12,
-                height: 1.35,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 22),
-            Row(
-              children: [
-                Expanded(
-                  child: TextButton(
-                    onPressed: onCancel,
-                    style: TextButton.styleFrom(
-                      minimumSize: const Size.fromHeight(50),
-                      foregroundColor: colors.textSecondary,
-                    ),
-                    child: Text(
-                      notNowLabel.toUpperCase(),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
+          ),
+          const SizedBox(height: 22),
+          Row(
+            children: [
+              Expanded(
+                flex: 4,
+                child: KineticButton(
+                  label: notNowLabel,
+                  variant: KineticButtonVariant.secondary,
+                  height: 48,
+                  onPressed: onCancel,
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  flex: 2,
-                  child: ElevatedButton.icon(
-                    onPressed: onContinue,
-                    icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                    label: Text(
-                      actionLabel,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 14,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(50),
-                      backgroundColor: colors.primary,
-                      foregroundColor: colors.background,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                  ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                flex: 5,
+                child: KineticButton(
+                  label: actionLabel,
+                  icon: Icons.arrow_forward_rounded,
+                  variant: KineticButtonVariant.primary,
+                  height: 48,
+                  onPressed: onContinue,
                 ),
-              ],
-            ),
+              ),
+            ],
+          ),
           ],
         ),
-      ),
     );
   }
 }

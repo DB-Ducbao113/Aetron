@@ -15,7 +15,9 @@ import 'package:fitness_exercise_application/features/profile/presentation/provi
 import 'package:fitness_exercise_application/features/profile/presentation/screens/goal_screen.dart';
 import 'package:fitness_exercise_application/features/settings/presentation/providers/settings_preferences_providers.dart';
 import 'package:fitness_exercise_application/features/shell/presentation/providers/main_tab_controller_provider.dart';
+import 'package:fitness_exercise_application/features/shell/presentation/widgets/aetron_bottom_bar.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/providers/workout_providers.dart';
 import 'package:fitness_exercise_application/shared/aetron/aetron_state_panel.dart';
 import 'package:fitness_exercise_application/shared/aetron/aetron_ui.dart';
@@ -70,12 +72,15 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
       }
     });
 
+    final hPad = AetronBottomBar.horizontalPagePaddingOf(context);
+    final bottomPad = AetronBottomBar.scrollBottomPaddingOf(context);
+
     return Scaffold(
       backgroundColor: colors.background,
-      body: SafeArea(
+      body: KineticGlasslineScaffoldBody(
         child: RefreshIndicator(
           color: colors.primary,
-          backgroundColor: colors.surface2,
+          backgroundColor: colors.surface1,
           onRefresh: _handleRefresh,
           child: _isRefreshing
               ? const AnalyticsSkeletonView()
@@ -89,11 +94,11 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
 
                     return ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(
-                        KineticTokens.page,
+                      padding: EdgeInsets.fromLTRB(
+                        hPad,
                         KineticTokens.spaceSM,
-                        KineticTokens.page,
-                        112,
+                        hPad,
+                        bottomPad,
                       ),
                       children: [
                         KineticAnalyticsHeader(
@@ -222,17 +227,10 @@ class _GoalProgressCard extends ConsumerWidget {
     final isVi = currentLang == AppLanguage.vi;
 
     if (progress == null) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(KineticTokens.spaceLG),
-        decoration: BoxDecoration(
-          color: colors.surface1,
-          borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
-          border: Border.all(
-            color: colors.borderSubtle,
-            width: 1,
-          ),
-        ),
+      return KineticCard(
+        useLiquidGlass: true,
+        padding: const EdgeInsets.all(17),
+        borderRadius: 21,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -285,19 +283,13 @@ class _GoalProgressCard extends ConsumerWidget {
         ? (isVi ? 'Đã hoàn thành mục tiêu!' : 'Goal achieved! Great job!')
         : '${goal.unit == 'km' || goal.unit == 'mi' ? remaining.toStringAsFixed(1) : remaining.toInt()} ${goal.unit} ${isVi ? 'còn lại' : 'remaining'}';
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(KineticTokens.spaceLG),
-      decoration: BoxDecoration(
-        color: colors.surface1,
-        borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
-        border: Border.all(
-          color: goal.isAchieved
-              ? colors.primary.withValues(alpha: 0.8)
-              : colors.borderSubtle,
-          width: 1,
-        ),
-      ),
+    return KineticCard(
+      useLiquidGlass: true,
+      padding: const EdgeInsets.all(17),
+      borderRadius: 21,
+      borderColor: goal.isAchieved
+          ? colors.primary.withValues(alpha: 0.72)
+          : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -316,11 +308,7 @@ class _GoalProgressCard extends ConsumerWidget {
                         ).toUpperCase(),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: KineticTypography.unitLabel.copyWith(
-                          color: colors.primary,
-                          letterSpacing: 1.2,
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: KineticTypography.cardEyebrowOf(colors),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -375,8 +363,8 @@ class _GoalProgressCard extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(width: 2),
-                      Icon(
-                        Icons.chevron_right_rounded,
+                      BladeIcon(
+                        BladeIconName.chevR,
                         size: 16,
                         color: colors.primary,
                       ),

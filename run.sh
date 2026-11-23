@@ -11,11 +11,14 @@ echo "   - Clean Build  : ./run.sh --clean --release"
 echo "=================================================="
 
 CLEAN_BUILD=false
+BUILD_IOS_ONLY=false
 ARGS=()
 
 for arg in "$@"; do
   if [ "$arg" = "--clean" ]; then
     CLEAN_BUILD=true
+  elif [ "$arg" = "--build-ios-only" ]; then
+    BUILD_IOS_ONLY=true
   else
     ARGS+=("$arg")
   fi
@@ -31,7 +34,13 @@ GIT_COMMIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 GIT_DIRTY=$(git diff-index --quiet HEAD -- 2>/dev/null && echo "" || echo "-dirty")
 GIT_PROVENANCE="${GIT_COMMIT_SHA}${GIT_DIRTY}"
 
-flutter run \
+if [ "$BUILD_IOS_ONLY" = true ]; then
+  FLUTTER_COMMAND=(build ios)
+else
+  FLUTTER_COMMAND=(run)
+fi
+
+flutter "${FLUTTER_COMMAND[@]}" \
   --dart-define=SUPABASE_URL=https://xsqptdzselqyefpmdozz.supabase.co \
   --dart-define=SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzcXB0ZHpzZWxxeWVmcG1kb3p6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyNjU4MjEsImV4cCI6MjA4NTg0MTgyMX0.MfdUQpEDB4m5d7xv4wmjKf52sRmapewG-r1ecW6Hndk \
   --dart-define=GOOGLE_WEB_CLIENT_ID=741155040974-vj5atqn3ev6ehnnd15k1a93hi2thkj0o.apps.googleusercontent.com \

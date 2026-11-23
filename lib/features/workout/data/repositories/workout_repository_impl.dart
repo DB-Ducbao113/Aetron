@@ -35,9 +35,41 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
   }) : _pendingSyncStore =
            pendingSyncStore ?? PendingWorkoutSyncStore(DatabaseHelper.instance);
 
+  String? get _activeUserId => _supabase.auth.currentUser?.id;
+
+  bool _isActive(String userId) => _activeUserId == userId;
+
+  void _requireActive(String userId) {
+    if (!_isActive(userId)) {
+      throw StateError('Workout operation requires the active account');
+    }
+  }
+
   @override
   Future<void> saveSessionRemote(WorkoutSession session) async {
+    if (ScientificResultMetadata.decode(
+          session.routeMatchMetricsJson,
+        )['recording_checkpoint'] ==
+        true) {
+      throw StateError(
+        'Recording checkpoint must be recovered or finalized before upload',
+      );
+    }
+    _requireActive(session.userId);
+    if (!kIsWeb) {
+      final existing = await LocalDB.getSessionById(session.id);
+      _requireActive(session.userId);
+      if (existing != null && existing.userId != session.userId) {
+        throw StateError('Workout id belongs to another account');
+      }
+      final pending = await _pendingSyncStore.listForUser(session.userId);
+      _requireActive(session.userId);
+      if (_isHiddenByPendingDeletion(pending, session.id)) {
+        throw StateError('Workout has a pending deletion');
+      }
+    }
     await _remoteDataSource.saveSession(session);
+    _requireActive(session.userId);
   }
 
   @override
@@ -45,25 +77,62 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
     WorkoutSession session, {
     bool isSynced = false,
   }) async {
+    if (kIsWeb) return;
+    // An offline finalization may belong to a signed-out guest.
+    final owner = session.userId;
+    void requireCacheOwner() {
+      if (owner == 'local_user' && _activeUserId == null && !isSynced) return;
+      _requireActive(owner);
+    }
+
+    requireCacheOwner();
+    final existing = await LocalDB.getSessionById(session.id);
+    requireCacheOwner();
+    if (existing != null && existing.userId != owner) {
+      throw StateError('Workout id belongs to another account');
+    }
     final localWorkout = LocalWorkout.fromEntity(session, isSynced: isSynced);
+    if (owner != 'local_user') {
+      final pending = await _pendingSyncStore.listForUser(owner);
+      requireCacheOwner();
+      if (_isHiddenByPendingDeletion(pending, session.id)) {
+        throw StateError('Workout has a pending deletion');
+      }
+    }
+    // A completed request must not replace a newer offline edit.
+    if (isSynced &&
+        existing != null &&
+        !existing.isSynced &&
+        !existing.sameSnapshot(localWorkout)) {
+      return;
+    }
     await LocalDB.saveSession(localWorkout);
   }
 
   @override
   Future<List<WorkoutSession>> fetchSessionsRemote(String userId) async {
+    _requireActive(userId);
     final remoteWorkouts = await _remoteDataSource.getSessionsByUser(userId);
-    return _withoutPendingDeletions(userId, remoteWorkouts);
+    _requireActive(userId);
+    if (remoteWorkouts.any((session) => session.userId != userId)) {
+      throw StateError('Remote workout owner mismatch');
+    }
+    final visible = await _withoutPendingDeletions(userId, remoteWorkouts);
+    _requireActive(userId);
+    return visible;
   }
 
   @override
   Future<List<WorkoutSession>> getSessionsLocal(String userId) async {
+    if (!_isActive(userId)) return const [];
     if (kIsWeb) {
       return await fetchSessionsRemote(userId);
     }
     try {
       final localWorkouts = await LocalDB.getSessionsByUser(userId);
       final sessions = localWorkouts.map((w) => w.toEntity()).toList();
-      return await _withoutPendingDeletions(userId, sessions);
+      final visible = await _withoutPendingDeletions(userId, sessions);
+      return _isActive(userId) ? visible : const [];
     } catch (e) {
       debugPrint('[WorkoutRepository] LocalDB getSessionsByUser error: $e');
     }
@@ -76,20 +145,14 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
     List<WorkoutSession> sessions,
   ) async {
     if (kIsWeb) return;
-    // Do NOT wipe the cache first. `sessions` is the *filtered* server list
-    // (`getSessionsByUser` hides `client_recording` shells and zero-metric
-    // rows), so a blind `clearAllForUser` destroys local rows the server query
-    // simply chose not to return — including a workout whose background save is
-    // still in flight. The Details screen reads the local cache first, which is
-    // how a finished workout ended up showing on Summary but "not found" in
-    // History.
-    //
-    // `syncRemoteSessions` already reconciles correctly: it updates/inserts the
-    // server rows, preserves unsynced local work, and applies remote deletions
-    // to rows that were previously confirmed as synced. Remote fetch failures
-    // throw before this method is called, so an offline request cannot masquerade
-    // as a successful empty result and wipe the cache.
+    _requireActive(userId);
+    // The history query deliberately hides shells and zero-metric rows.
+    // A paginated history response is not a deletion manifest or snapshot.
+    if (sessions.any((session) => session.userId != userId)) {
+      throw StateError('Cannot cache workouts owned by another account');
+    }
     final filtered = await _withoutPendingDeletions(userId, sessions);
+    _requireActive(userId);
     await LocalDB.syncRemoteSessions(filtered, forUserId: userId);
   }
 
@@ -105,157 +168,111 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
             (w) => w.activityType.toLowerCase() == activityType.toLowerCase(),
           )
           .toList();
+      if (!_isActive(userId)) return [];
       if (filtered.isNotEmpty) return filtered;
     } catch (_) {}
 
-    if (kIsWeb) return [];
+    if (kIsWeb || !_isActive(userId)) return [];
 
     final localWorkouts = await LocalDB.getSessionsByUserByType(
       userId,
       activityType,
     );
-    return await _withoutPendingDeletions(
+    final visible = await _withoutPendingDeletions(
       userId,
       localWorkouts.map((w) => w.toEntity()).toList(),
     );
+    return _isActive(userId) ? visible : const [];
   }
 
   @override
   Future<WorkoutSession?> getSessionById(String sessionId) async {
-    // Diagnostics: a "Workout not found" screen is ambiguous unless we know
-    // WHICH stage returned null. Each branch below logs its outcome so a single
-    // run identifies the failing layer.
-    var localHit = false;
+    final userId = _activeUserId;
+    if (userId == null) return null;
     if (!kIsWeb) {
-      final userId = _supabase.auth.currentUser?.id;
-      if (userId != null) {
-        final pending = await _pendingSyncStore.listForUser(userId);
-        if (_isHiddenByPendingDeletion(pending, sessionId)) return null;
+      final pending = await _pendingSyncStore.listForUser(userId);
+      if (!_isActive(userId) ||
+          _isHiddenByPendingDeletion(pending, sessionId)) {
+        return null;
       }
       try {
-        final w = await LocalDB.getSessionById(sessionId);
-        if (w != null) {
-          localHit = true;
-          debugPrint(
-            '[WorkoutRepository][getSessionById] local HIT $sessionId',
-          );
-          return w.toEntity();
+        final local = await LocalDB.getSessionById(sessionId);
+        if (!_isActive(userId)) return null;
+        if (local != null) {
+          return local.userId == userId ? local.toEntity() : null;
         }
-        debugPrint('[WorkoutRepository][getSessionById] local MISS $sessionId');
       } catch (e) {
-        debugPrint('[WorkoutRepository] LocalDB.getSessionById error: $e');
+        debugPrint('[WorkoutRepository] Local session lookup failed: $e');
       }
     }
 
     try {
+      _requireActive(userId);
       final remote = await _remoteDataSource.getSessionById(sessionId);
-      if (remote != null) {
-        debugPrint(
-          '[WorkoutRepository][getSessionById] remote HIT $sessionId '
-          '(localHit=$localHit)',
-        );
-        if (!kIsWeb) {
-          await cacheSessionLocal(remote, isSynced: true);
-        }
-        return remote;
+      if (!_isActive(userId) ||
+          remote == null ||
+          remote.userId != userId ||
+          remote.id != sessionId) {
+        return null;
       }
-      debugPrint(
-        '[WorkoutRepository][getSessionById] remote MISS $sessionId — '
-        'the row is absent from workout_sessions or RLS blocked the SELECT',
-      );
+      if (!kIsWeb) {
+        final pending = await _pendingSyncStore.listForUser(userId);
+        if (!_isActive(userId) ||
+            _isHiddenByPendingDeletion(pending, sessionId)) {
+          return null;
+        }
+        // A detail response is never an authoritative history snapshot.
+        // Re-read because a local save may have landed during the fetch.
+        final local = await LocalDB.getSessionById(sessionId);
+        if (!_isActive(userId)) return null;
+        if (local != null) {
+          return local.userId == userId ? local.toEntity() : null;
+        }
+        await cacheSessionLocal(remote, isSynced: true);
+        if (!_isActive(userId)) return null;
+      }
+      return remote;
     } catch (e) {
       debugPrint('[WorkoutRepository] Failed to fetch remote session: $e');
+      return null;
     }
-    return null;
   }
 
   @override
   Future<void> deleteSession(String sessionId) async {
-    final userId = _supabase.auth.currentUser?.id;
+    final userId = _activeUserId;
+    if (userId == null) return;
     if (kIsWeb) {
       await _remoteDataSource.deleteSession(sessionId);
       return;
     }
 
-    if (userId != null) {
-      await _pendingSyncStore.enqueueDeleteSession(
-        userId: userId,
-        sessionId: sessionId,
-      );
+    // Never enqueue or delete a local workout owned by a different account.
+    final local = await LocalDB.getSessionById(sessionId);
+    _requireActive(userId);
+    if (local != null && local.userId != userId) {
+      throw StateError('Workout id belongs to another account');
     }
-
-    var localDeleted = true;
-    try {
-      final w = await LocalDB.getSessionById(sessionId);
-      if (w != null) {
-        localDeleted = await LocalDB.deleteWorkout(w.id);
-      }
-    } catch (e) {
-      localDeleted = false;
-      debugPrint('[WorkoutRepository] Failed to delete local session: $e');
-    }
-
-    if (userId == null) return;
-    final pending = (await _pendingSyncStore.listForUser(
-      userId,
-    )).where((operation) => operation.sessionId == sessionId).firstOrNull;
-    try {
-      await _remoteDataSource.deleteSession(sessionId);
-      if (pending != null) {
-        if (localDeleted) {
-          await _pendingSyncStore.complete(pending.key);
-        } else {
-          await _pendingSyncStore.recordFailure(
-            pending,
-            StateError('Local workout deletion failed'),
-          );
-        }
-      }
-    } catch (e) {
-      if (pending != null) await _pendingSyncStore.recordFailure(pending, e);
-      debugPrint('[WorkoutRepository] Failed to delete remote session: $e');
-    }
+    await _pendingSyncStore.enqueueDeleteSession(
+      userId: userId,
+      sessionId: sessionId,
+    );
+    _requireActive(userId);
+    await _flushPendingDeletions(userId);
   }
 
   @override
   Future<void> deleteAllSessions(String userId) async {
+    _requireActive(userId);
     if (kIsWeb) {
       await _remoteDataSource.deleteAllSessions(userId);
       return;
     }
 
-    await LocalDB.claimGuestWorkouts(userId);
+    // Deleting this account's workouts must not claim/delete guest workouts.
     await _pendingSyncStore.enqueueDeleteAll(userId);
-    var localCleared = false;
-    try {
-      localCleared = await LocalDB.clearAllForUser(userId);
-    } catch (e) {
-      debugPrint('[WorkoutRepository] Failed to clear local sessions: $e');
-    }
-
-    final pending = (await _pendingSyncStore.listForUser(userId))
-        .where(
-          (operation) => operation.type == PendingWorkoutSyncType.deleteAll,
-        )
-        .firstOrNull;
-    try {
-      await _remoteDataSource.deleteAllSessions(userId);
-      if (pending != null) {
-        if (localCleared) {
-          await _pendingSyncStore.complete(pending.key);
-        } else {
-          await _pendingSyncStore.recordFailure(
-            pending,
-            StateError('Local workout cache deletion failed'),
-          );
-        }
-      }
-    } catch (e) {
-      if (pending != null) await _pendingSyncStore.recordFailure(pending, e);
-      debugPrint(
-        '[WorkoutRepository] Failed to delete all remote sessions: $e',
-      );
-    }
+    _requireActive(userId);
+    await _flushPendingDeletions(userId);
   }
 
   @override
@@ -268,23 +285,29 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
     try {
       if (!kIsWeb) {
         await _flushPendingDeletions(currentUserId);
+        _requireActive(currentUserId);
         final remainingDeletes = await _pendingSyncStore.listForUser(
           currentUserId,
         );
+        _requireActive(currentUserId);
         if (PendingWorkoutSyncStore.deletesAll(remainingDeletes)) {
           return;
         }
         final sessionsPendingDeletion =
             PendingWorkoutSyncStore.hiddenSessionIds(remainingDeletes);
         await LocalDB.claimGuestWorkouts(currentUserId);
+        _requireActive(currentUserId);
         final unsyncedWorkouts = await LocalDB.getUnsyncedWorkoutsForUser(
           currentUserId,
         );
+        _requireActive(currentUserId);
         await _uploadPendingWorkouts(
+          currentUserId,
           unsyncedWorkouts.where(
             (workout) => !sessionsPendingDeletion.contains(workout.sessionId),
           ),
         );
+        _requireActive(currentUserId);
         await _syncAllUnsyncedRawTracking(
           currentUserId,
           sessionsPendingDeletion: sessionsPendingDeletion,
@@ -294,7 +317,8 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
       final unsyncedWorkouts = await LocalDB.getUnsyncedWorkoutsForUser(
         currentUserId,
       );
-      await _uploadPendingWorkouts(unsyncedWorkouts);
+      _requireActive(currentUserId);
+      await _uploadPendingWorkouts(currentUserId, unsyncedWorkouts);
     } catch (e) {
       debugPrint('[Sync] syncPendingData error: $e');
     } finally {
@@ -302,25 +326,50 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
     }
   }
 
-  Future<void> _uploadPendingWorkouts(Iterable<LocalWorkout> workouts) async {
-    final currentUserId = _supabase.auth.currentUser?.id;
-    if (currentUserId == null) return;
+  Future<void> _uploadPendingWorkouts(
+    String currentUserId,
+    Iterable<LocalWorkout> workouts,
+  ) async {
     for (final workout in workouts) {
+      _requireActive(currentUserId);
       if (workout.userId != currentUserId) continue;
-      if (workout.durationSec <= 0 &&
-          workout.distanceKm <= 0 &&
-          workout.steps <= 0) {
-        await LocalDB.deleteWorkout(workout.id);
+      final current = await LocalDB.getSessionById(workout.sessionId);
+      _requireActive(currentUserId);
+      if (current == null ||
+          current.userId != currentUserId ||
+          current.isSynced ||
+          LocalDB.isRecordingCheckpoint(current) ||
+          LocalDB.isRecordingActive(current.sessionId)) {
+        continue;
+      }
+      final pending = await _pendingSyncStore.listForUser(currentUserId);
+      _requireActive(currentUserId);
+      if (_isHiddenByPendingDeletion(pending, current.sessionId)) continue;
+      if (current.durationSec <= 0 &&
+          current.distanceKm <= 0 &&
+          current.steps <= 0) {
+        // Legacy interrupted recordings may have raw evidence despite an
+        // empty summary. Keep the row and its raw samples until an explicit
+        // recovery or discard; routine sync must neither delete nor finalize it.
         continue;
       }
       try {
-        final session = workout.toEntity();
-        await _remoteDataSource.saveSession(session);
-        await _syncRawTrackingForSession(workout.sessionId);
+        final session = current.toEntity();
+        await saveSessionRemote(session);
+        await _syncRawTrackingForSession(currentUserId, workout.sessionId);
+        await _requireOwnedWorkout(currentUserId, session.id);
         await _enqueueDeterministicProcessing(session);
+        await _requireOwnedWorkout(currentUserId, session.id);
         await _enqueueRouteCorrectionIfNeeded(session);
-        workout.isSynced = true;
-        await LocalDB.saveSession(workout);
+        await _requireOwnedWorkout(currentUserId, session.id);
+        final latest = await LocalDB.getSessionById(session.id);
+        _requireActive(currentUserId);
+        if (latest != null &&
+            latest.userId == currentUserId &&
+            latest.sameSnapshot(current)) {
+          latest.isSynced = true;
+          await LocalDB.saveSession(latest);
+        }
       } catch (e) {
         debugPrint(
           '[WorkoutRepository] Failed to sync pending session ${workout.sessionId}: $e',
@@ -330,24 +379,35 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
   }
 
   Future<void> _flushPendingDeletions(String userId) async {
+    _requireActive(userId);
     final due = await _pendingSyncStore.listDue(userId);
     for (final operation in due) {
+      _requireActive(userId);
+      if (operation.userId != userId) continue;
       try {
         if (operation.type == PendingWorkoutSyncType.deleteAll) {
           final localCleared = await LocalDB.clearAllForUser(userId);
           if (!localCleared) {
             throw StateError('Local workout cache deletion failed');
           }
+          _requireActive(userId);
           await _remoteDataSource.deleteAllSessions(userId);
         } else if (operation.sessionId != null) {
           final local = await LocalDB.getSessionById(operation.sessionId!);
+          _requireActive(userId);
+          if (local != null && local.userId != userId) {
+            throw StateError('Workout id belongs to another account');
+          }
           if (local != null && !await LocalDB.deleteWorkout(local.id)) {
             throw StateError('Local workout deletion failed');
           }
+          _requireActive(userId);
           await _remoteDataSource.deleteSession(operation.sessionId!);
         }
+        _requireActive(userId);
         await _pendingSyncStore.complete(operation.key);
       } catch (error) {
+        if (!_isActive(userId)) return;
         await _pendingSyncStore.recordFailure(operation, error);
       }
     }
@@ -357,13 +417,16 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
     String userId,
     List<WorkoutSession> sessions,
   ) async {
-    if (kIsWeb) return sessions;
+    _requireActive(userId);
+    final owned = sessions.where((session) => session.userId == userId);
+    if (kIsWeb) return owned.toList(growable: false);
     final pending = await _pendingSyncStore.listForUser(userId);
+    _requireActive(userId);
     if (PendingWorkoutSyncStore.deletesAll(pending)) {
       return const [];
     }
     final deletedSessionIds = PendingWorkoutSyncStore.hiddenSessionIds(pending);
-    return sessions
+    return owned
         .where((session) => !deletedSessionIds.contains(session.id))
         .toList(growable: false);
   }
@@ -379,27 +442,55 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
     );
   }
 
-  Future<void> _syncRawTrackingForSession(String sessionId) async {
+  Future<void> _requireOwnedWorkout(String userId, String sessionId) async {
+    _requireActive(userId);
+    final workout = await LocalDB.getSessionById(sessionId);
+    _requireActive(userId);
+    if (workout == null || workout.userId != userId) {
+      throw StateError('Raw tracking requires an owned local workout');
+    }
+    final pending = await _pendingSyncStore.listForUser(userId);
+    _requireActive(userId);
+    if (_isHiddenByPendingDeletion(pending, sessionId)) {
+      throw StateError('Workout has a pending deletion');
+    }
+  }
+
+  Future<void> _syncRawTrackingForSession(
+    String userId,
+    String sessionId,
+  ) async {
+    await _requireOwnedWorkout(userId, sessionId);
     final unsyncedGpsPoints = await LocalDB.getUnsyncedGpsPointsForSession(
       sessionId,
     );
-    if (unsyncedGpsPoints.isNotEmpty) {
+    const chunkSize = 250;
+    for (var i = 0; i < unsyncedGpsPoints.length; i += chunkSize) {
+      await _requireOwnedWorkout(userId, sessionId);
+      final end = (i + chunkSize).clamp(0, unsyncedGpsPoints.length);
+      final chunk = unsyncedGpsPoints.sublist(i, end);
       await _rawTrackingRemoteDataSource.saveRawGpsPoints(
-        unsyncedGpsPoints.map(LocalDB.rawGpsPointToPayload).toList(),
+        chunk.map(LocalDB.rawGpsPointToPayload).toList(),
       );
+      await _requireOwnedWorkout(userId, sessionId);
       await LocalDB.markGpsPointsAsSynced(
-        unsyncedGpsPoints.map((point) => point.id).toList(),
+        chunk.map((point) => point.id).toList(),
       );
     }
 
+    await _requireOwnedWorkout(userId, sessionId);
     final unsyncedStepIntervals =
         await LocalDB.getUnsyncedStepIntervalsForSession(sessionId);
-    if (unsyncedStepIntervals.isNotEmpty) {
+    for (var i = 0; i < unsyncedStepIntervals.length; i += chunkSize) {
+      await _requireOwnedWorkout(userId, sessionId);
+      final end = (i + chunkSize).clamp(0, unsyncedStepIntervals.length);
+      final chunk = unsyncedStepIntervals.sublist(i, end);
       await _rawTrackingRemoteDataSource.saveRawStepIntervals(
-        unsyncedStepIntervals.map((interval) => interval.toPayload()).toList(),
+        chunk.map((interval) => interval.toPayload()).toList(),
       );
+      await _requireOwnedWorkout(userId, sessionId);
       await LocalDB.markStepIntervalsAsSynced(
-        unsyncedStepIntervals.map((interval) => interval.id).toList(),
+        chunk.map((interval) => interval.id).toList(),
       );
     }
   }
@@ -408,15 +499,21 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
     String userId, {
     Set<String> sessionsPendingDeletion = const {},
   }) async {
+    _requireActive(userId);
     final sessionIds = await LocalDB.getSessionIdsWithUnsyncedRawTracking();
     for (final sessionId in sessionIds) {
+      _requireActive(userId);
       if (sessionsPendingDeletion.contains(sessionId)) continue;
       final localWorkout = await LocalDB.getSessionById(sessionId);
-      if (localWorkout != null && localWorkout.userId != userId) {
+      _requireActive(userId);
+      // Failed workout uploads remain pending; never send orphan raw records.
+      if (localWorkout == null ||
+          localWorkout.userId != userId ||
+          !localWorkout.isSynced) {
         continue;
       }
       try {
-        await _syncRawTrackingForSession(sessionId);
+        await _syncRawTrackingForSession(userId, sessionId);
       } catch (e) {
         debugPrint(
           '[WorkoutRepository] Failed to sync raw tracking for $sessionId: $e',
@@ -503,9 +600,17 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
 
   @override
   Future<bool> syncRouteMatchResult(String sessionId) async {
+    final userId = _activeUserId;
+    if (userId == null || kIsWeb) return false;
     try {
+      await _requireOwnedWorkout(userId, sessionId);
       final payload = await _remoteDataSource.getRouteMatchPayload(sessionId);
-      if (payload == null) return false;
+      if (!_isActive(userId) ||
+          payload == null ||
+          payload['user_id'] != userId ||
+          payload['id'] != sessionId) {
+        return false;
+      }
       final metadata = ScientificResultMetadata.fromRemote(payload);
       if (ScientificResultMetadata.hasResearchSummary(metadata) &&
           !ScientificResultMetadata.hasFinalServerVerdict(metadata)) {
@@ -526,8 +631,9 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
       );
 
       final normalized = _routeMatchQualityService.normalize(rawResult);
+      await _requireOwnedWorkout(userId, sessionId);
       await LocalDB.updateRouteMatchResult(normalized);
-      return true;
+      return _isActive(userId);
     } catch (e) {
       debugPrint('[WorkoutRepository] syncRouteMatchResult error: $e');
       return false;
@@ -541,6 +647,7 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
 
     try {
       await syncPendingData();
+      _requireActive(userId);
       final remoteWorkouts = await fetchSessionsRemote(userId);
       await replaceLocalCache(userId, remoteWorkouts);
     } catch (e) {

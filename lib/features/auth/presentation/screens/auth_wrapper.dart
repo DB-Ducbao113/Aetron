@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:fitness_exercise_application/core/constants/debug_config.dart';
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/app/bootstrap.dart';
 import 'package:fitness_exercise_application/features/auth/presentation/screens/force_password_upgrade_screen.dart';
@@ -12,7 +13,6 @@ import 'package:fitness_exercise_application/features/profile/presentation/scree
 import 'package:fitness_exercise_application/features/onboarding/presentation/screens/welcome_screen.dart';
 import 'package:fitness_exercise_application/features/profile/presentation/providers/user_profile_providers.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/providers/workout_providers.dart';
-import 'package:fitness_exercise_application/features/workout/data/local/local_db.dart';
 import 'package:fitness_exercise_application/core/services/notification_service.dart';
 import 'package:fitness_exercise_application/shared/aetron/aetron_globe_orbit_screen.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
@@ -48,9 +48,7 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
   }
 
   void _resetAccountScopedState({String? previousUserId}) {
-    if (previousUserId != null) {
-      unawaited(LocalDB.clearAllForUser(previousUserId));
-    }
+    // Logout is not deletion. Keep offline workouts until their owner syncs.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       ref.invalidate(workoutListProvider);
@@ -77,6 +75,10 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
     return StreamBuilder<AuthState>(
       stream: _authStream,
       builder: (context, snapshot) {
+        if (kDebugBypassAuth) {
+          return const MainShell();
+        }
+
         if (_startupGlobeGate.shouldShow) {
           return AetronGlobeOrbitScreen(
             duration: const Duration(milliseconds: 1200),

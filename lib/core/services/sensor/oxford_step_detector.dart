@@ -13,6 +13,10 @@ class OxfordStepDetector {
   static const _periodUs = 10000;
   static const _mergeUs = 200000;
   static const _maxGapUs = 250000;
+  /// Minimum peak score floor (m/s²) to reject accelerometer sensor noise
+  /// and resting tremor while stationary. Human walking dynamic score typically
+  /// exceeds 0.25 m/s²; resting sensor noise and hand tremor is < 0.08 m/s².
+  static const _minPeakThreshold = 0.10;
   static final _weights = List<double>.generate(
     13,
     (i) => math.exp(-0.5 * math.pow((i - 6) / (0.35 * 6), 2)),
@@ -119,8 +123,8 @@ class OxfordStepDetector {
       events.add(pending);
       _pendingTime = null;
     }
-    // Suppress floating-point roundoff on an exactly constant signal.
-    if (n > 15 && score - _mean > math.max(1.2 * _std, 1e-9)) {
+    // Suppress sensor noise and resting hand tremor when stationary.
+    if (n > 15 && score - _mean > math.max(1.2 * _std, _minPeakThreshold)) {
       if (_pendingTime == null || score > _pendingScore) {
         _pendingTime = peakTime;
         _pendingScore = score;

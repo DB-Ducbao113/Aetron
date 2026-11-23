@@ -1,11 +1,15 @@
 import 'dart:math' as math;
+import 'dart:ui' show ImageFilter;
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/profile/domain/entities/user_goal.dart';
 import 'package:fitness_exercise_application/features/profile/presentation/providers/goal_providers.dart';
 import 'package:fitness_exercise_application/features/settings/presentation/providers/settings_preferences_providers.dart';
+import 'package:fitness_exercise_application/features/shell/presentation/widgets/aetron_bottom_bar.dart';
 import 'package:fitness_exercise_application/shared/aetron/aetron_feedback.dart';
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_glass_icon_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -50,7 +54,11 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
           ? WorkoutFormatters.kmToMi(existing.targetValue)
           : existing.targetValue;
     } else {
-      _targetValue = _defaultTargetFor(_selectedType, _selectedPeriod, useMetricUnits);
+      _targetValue = _defaultTargetFor(
+        _selectedType,
+        _selectedPeriod,
+        useMetricUnits,
+      );
     }
   }
 
@@ -66,7 +74,11 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
               ? existing.targetValue
               : WorkoutFormatters.kmToMi(existing.targetValue);
         } else {
-          _targetValue = _defaultTargetFor(_selectedType, _selectedPeriod, isMetric);
+          _targetValue = _defaultTargetFor(
+            _selectedType,
+            _selectedPeriod,
+            isMetric,
+          );
         }
       } else {
         final converted = isMetric
@@ -93,7 +105,9 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
     switch (type) {
       case GoalType.distance:
         final km = isWeekly ? 35.0 : 150.0;
-        return useMetricUnits ? km : WorkoutFormatters.kmToMi(km).roundToDouble();
+        return useMetricUnits
+            ? km
+            : WorkoutFormatters.kmToMi(km).roundToDouble();
       case GoalType.workouts:
         return isWeekly ? 4.0 : 16.0;
       case GoalType.calories:
@@ -107,7 +121,9 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
     switch (type) {
       case GoalType.distance:
         final km = isWeekly ? 5.0 : 20.0;
-        return useMetricUnits ? km : WorkoutFormatters.kmToMi(km).roundToDouble();
+        return useMetricUnits
+            ? km
+            : WorkoutFormatters.kmToMi(km).roundToDouble();
       case GoalType.workouts:
         return isWeekly ? 1.0 : 4.0;
       case GoalType.calories:
@@ -121,7 +137,9 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
     switch (type) {
       case GoalType.distance:
         final km = isWeekly ? 150.0 : 600.0;
-        return useMetricUnits ? km : WorkoutFormatters.kmToMi(km).roundToDouble();
+        return useMetricUnits
+            ? km
+            : WorkoutFormatters.kmToMi(km).roundToDouble();
       case GoalType.workouts:
         return isWeekly ? 14.0 : 45.0;
       case GoalType.calories:
@@ -182,17 +200,24 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
   String _formatTargetValue(double value, GoalType type) {
     if (type == GoalType.calories) {
       return value.toInt().toString().replaceAllMapped(
-            RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-            (Match m) => '${m[1]},',
-          );
+        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+        (Match m) => '${m[1]},',
+      );
     }
     return value % 1 == 0 ? value.toInt().toString() : value.toStringAsFixed(1);
   }
 
   // ── Intensity & Benchmark Calculation ──────────────────────────────────────
 
-  ({String titleVi, String titleEn, String descVi, String descEn, Color color, IconData icon})
-      _getIntensityInfo(KineticColors colors) {
+  ({
+    String titleVi,
+    String titleEn,
+    String descVi,
+    String descEn,
+    Color color,
+    IconData icon,
+  })
+  _getIntensityInfo(KineticColors colors) {
     final minVal = _minTargetFor(_selectedType, _selectedPeriod);
     final maxVal = _maxTargetFor(_selectedType, _selectedPeriod);
     final ratio = ((_targetValue - minVal) / (maxVal - minVal)).clamp(0.0, 1.0);
@@ -201,8 +226,10 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
       return (
         titleVi: 'Khởi động nhẹ nhàng',
         titleEn: 'Base & Recovery',
-        descVi: 'Mục tiêu duy trì thể lực nền tảng, phù hợp để phục hồi và bắt đầu.',
-        descEn: 'Focus on active recovery, light aerobic conditioning and habit forming.',
+        descVi:
+            'Mục tiêu duy trì thể lực nền tảng, phù hợp để phục hồi và bắt đầu.',
+        descEn:
+            'Focus on active recovery, light aerobic conditioning and habit forming.',
         color: const Color(0xFF4EBE9E),
         icon: Icons.spa_rounded,
       );
@@ -210,8 +237,10 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
       return (
         titleVi: 'Vừa sức & Đều đặn',
         titleEn: 'Steady Progression',
-        descVi: 'Tần suất tối ưu cho sức khỏe tim mạch và nâng cao độ bền vững chắc.',
-        descEn: 'Optimal cadence for cardiovascular health and sustainable fitness gains.',
+        descVi:
+            'Tần suất tối ưu cho sức khỏe tim mạch và nâng cao độ bền vững chắc.',
+        descEn:
+            'Optimal cadence for cardiovascular health and sustainable fitness gains.',
         color: const Color(0xFF39B5F2),
         icon: Icons.trending_up_rounded,
       );
@@ -219,7 +248,8 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
       return (
         titleVi: 'Thử thách bứt phá',
         titleEn: 'Challenger Tier',
-        descVi: 'Đốt mỡ tăng tốc, đòi hỏi ý chí kiên định và lộ trình dinh dưỡng tốt.',
+        descVi:
+            'Đốt mỡ tăng tốc, đòi hỏi ý chí kiên định và lộ trình dinh dưỡng tốt.',
         descEn: 'Accelerated metabolic burn and aerobic capacity enhancement.',
         color: const Color(0xFFA55EEA),
         icon: Icons.bolt_rounded,
@@ -228,16 +258,25 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
       return (
         titleVi: 'Chiến binh vô cực',
         titleEn: 'Elite Beast Mode',
-        descVi: 'Cường độ khắc nghiệt của vận động viên bán chuyên và chuyên nghiệp.',
-        descEn: 'High-volume endurance demands elite discipline and dedication.',
+        descVi:
+            'Cường độ khắc nghiệt của vận động viên bán chuyên và chuyên nghiệp.',
+        descEn:
+            'High-volume endurance demands elite discipline and dedication.',
         color: const Color(0xFFFF5252),
         icon: Icons.whatshot_rounded,
       );
     }
   }
 
-  ({String landmarkVi, String landmarkEn, String calorieImpactVi, String calorieImpactEn, String scheduleVi, String scheduleEn})
-      _getRealWorldBenchmark(bool useMetricUnits) {
+  ({
+    String landmarkVi,
+    String landmarkEn,
+    String calorieImpactVi,
+    String calorieImpactEn,
+    String scheduleVi,
+    String scheduleEn,
+  })
+  _getRealWorldBenchmark(bool useMetricUnits) {
     final isWeekly = _selectedPeriod == GoalPeriod.weekly;
 
     switch (_selectedType) {
@@ -357,7 +396,8 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
     }
 
     final existing = ref.read(userGoalProvider).valueOrNull;
-    final normalizedTarget = _selectedType == GoalType.distance && !useMetricUnits
+    final normalizedTarget =
+        _selectedType == GoalType.distance && !useMetricUnits
         ? _targetValue / 0.621371
         : _targetValue;
 
@@ -397,15 +437,8 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
 
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: colors.surface1,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(KineticTokens.radiusXL),
-          side: BorderSide(
-            color: colors.isDark ? colors.borderAccent : colors.borderSubtle,
-            width: 1.0,
-          ),
-        ),
+      builder: (ctx) => KineticGlassDialog(
+        borderColor: colors.error.withValues(alpha: 0.4),
         title: Row(
           children: [
             Container(
@@ -414,7 +447,11 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                 shape: BoxShape.circle,
                 color: colors.error.withValues(alpha: 0.15),
               ),
-              child: Icon(Icons.delete_outline_rounded, color: colors.error, size: 20),
+              child: Icon(
+                Icons.delete_outline_rounded,
+                color: colors.error,
+                size: 20,
+              ),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -432,25 +469,28 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
           isVi
               ? 'Bạn có chắc chắn muốn xóa mục tiêu hiện tại? Dữ liệu tiến độ mục tiêu sẽ được đặt lại.'
               : 'Are you sure you want to delete your active goal? All progress tracking will be reset.',
-          style: KineticTypography.bodyMedium.copyWith(color: colors.textSecondary),
+          style: KineticTypography.bodyMedium.copyWith(
+            color: colors.textSecondary,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
             child: Text(
               isVi ? 'Hủy' : 'Cancel',
-              style: KineticTypography.label.copyWith(color: colors.textSecondary),
+              style: KineticTypography.label.copyWith(
+                color: colors.textSecondary,
+              ),
             ),
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: colors.isDark ? const Color(0xFFDC2626) : colors.error,
-              foregroundColor: Colors.white,
-            ),
+          TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             child: Text(
               isVi ? 'Xóa mục tiêu' : 'Delete Goal',
-              style: KineticTypography.label.copyWith(fontWeight: FontWeight.w700),
+              style: KineticTypography.label.copyWith(
+                fontWeight: FontWeight.w600,
+                color: colors.error,
+              ),
             ),
           ),
         ],
@@ -465,7 +505,9 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
         if (mounted) {
           showAetronNotice(
             context,
-            message: isVi ? 'Không thể xóa mục tiêu.' : 'Could not delete goal.',
+            message: isVi
+                ? 'Không thể xóa mục tiêu.'
+                : 'Could not delete goal.',
             tone: AetronNoticeTone.error,
           );
         }
@@ -508,7 +550,10 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<AsyncValue<bool>>(metricUnitsPreferenceProvider, (previous, next) {
+    ref.listen<AsyncValue<bool>>(metricUnitsPreferenceProvider, (
+      previous,
+      next,
+    ) {
       final isMetric = next.valueOrNull;
       if (isMetric != null) {
         _reconcileMetricUnits(isMetric);
@@ -519,17 +564,32 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
     final currentLang = ref.watch(appLanguageProvider);
     final isVi = currentLang == AppLanguage.vi;
     final hasGoal = ref.watch(userGoalProvider).valueOrNull != null;
-    final useMetricUnits = ref.watch(metricUnitsPreferenceProvider).value ?? true;
-    final unit = _unitLabel(_selectedType, useMetricUnits: useMetricUnits, isVi: isVi);
-    final minVal = _minTargetFor(_selectedType, _selectedPeriod, useMetricUnits);
-    final maxVal = _maxTargetFor(_selectedType, _selectedPeriod, useMetricUnits);
+    final useMetricUnits =
+        ref.watch(metricUnitsPreferenceProvider).value ?? true;
+    final unit = _unitLabel(
+      _selectedType,
+      useMetricUnits: useMetricUnits,
+      isVi: isVi,
+    );
+    final minVal = _minTargetFor(
+      _selectedType,
+      _selectedPeriod,
+      useMetricUnits,
+    );
+    final maxVal = _maxTargetFor(
+      _selectedType,
+      _selectedPeriod,
+      useMetricUnits,
+    );
     final step = _stepSizeFor(_selectedType);
     final accent = _accentColorFor(_selectedType, colors);
 
+    final hPad = AetronBottomBar.horizontalPagePaddingOf(context);
+
     return Scaffold(
       backgroundColor: colors.background,
-      body: SafeArea(
-        bottom: false,
+      body: KineticGlasslineScaffoldBody(
+        showBottomScrim: false,
         child: Column(
           children: [
             // 1. Sleek Motivational Top Bar
@@ -539,10 +599,10 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
             Expanded(
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(
-                  KineticTokens.page,
+                padding: EdgeInsets.fromLTRB(
+                  hPad,
                   KineticTokens.spaceXXS,
-                  KineticTokens.page,
+                  hPad,
                   24,
                 ),
                 children: [
@@ -568,11 +628,21 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                   const SizedBox(height: KineticTokens.spaceSM),
 
                   // 2.4 Athletic Goal Presets (Starter, Pro, Elite, Beast)
-                  _buildAthleticPresets(colors, currentLang, useMetricUnits, accent),
+                  _buildAthleticPresets(
+                    colors,
+                    currentLang,
+                    useMetricUnits,
+                    accent,
+                  ),
                   const SizedBox(height: KineticTokens.spaceSM),
 
                   // 2.5 Real-World Impact & Benchmark Projection
-                  _buildRealWorldImpactCard(colors, currentLang, useMetricUnits, accent),
+                  _buildRealWorldImpactCard(
+                    colors,
+                    currentLang,
+                    useMetricUnits,
+                    accent,
+                  ),
                   const SizedBox(height: KineticTokens.spaceXS),
 
                   // 2.6 Target Reward / Badge Unlock Spotlight
@@ -598,7 +668,11 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
 
   // ── Top Bar ─────────────────────────────────────────────────────────────────
 
-  Widget _buildTopBar(BuildContext context, AppLanguage currentLang, bool hasGoal) {
+  Widget _buildTopBar(
+    BuildContext context,
+    AppLanguage currentLang,
+    bool hasGoal,
+  ) {
     final colors = context.kinetic;
     final isVi = currentLang == AppLanguage.vi;
 
@@ -612,25 +686,17 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () => Navigator.of(context).maybePop(),
-              borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
-              child: Container(
-                padding: const EdgeInsets.all(KineticTokens.spaceXS),
-                decoration: BoxDecoration(
-                  color: colors.surface1,
-                  borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
-                  border: Border.all(color: colors.borderSubtle),
-                ),
-                child: Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  size: 15,
-                  color: colors.textPrimary,
-                ),
-              ),
+          KineticGlassIconButton(
+            size: 37,
+            visualSize: 37,
+            label: isVi ? 'Quay lại' : 'Back',
+            icon: BladeIcon(
+              BladeIconName.chevL,
+              size: 18,
+              color: colors.textSecondary,
+              strokeWidth: 1.7,
             ),
+            onPressed: () => Navigator.of(context).maybePop(),
           ),
           const SizedBox(width: KineticTokens.spaceSM),
           Expanded(
@@ -652,25 +718,17 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
             ),
           ),
           if (hasGoal)
-            Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () => _confirmDeleteGoal(currentLang),
-                borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
-                child: Container(
-                  padding: const EdgeInsets.all(KineticTokens.spaceXS),
-                  decoration: BoxDecoration(
-                    color: colors.error.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
-                    border: Border.all(color: colors.error.withValues(alpha: 0.35)),
-                  ),
-                  child: Icon(
-                    Icons.delete_outline_rounded,
-                    size: 18,
-                    color: colors.error,
-                  ),
-                ),
+            KineticGlassIconButton(
+              size: 37,
+              visualSize: 37,
+              label: isVi ? 'Xóa mục tiêu' : 'Delete goal',
+              icon: BladeIcon(
+                BladeIconName.trash,
+                size: 18,
+                color: colors.error,
+                strokeWidth: 1.7,
               ),
+              onPressed: () => _confirmDeleteGoal(currentLang),
             ),
         ],
       ),
@@ -679,7 +737,10 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
 
   // ── 2.1 Athletic Discipline Selector ────────────────────────────────────────
 
-  Widget _buildDisciplineSelector(KineticColors colors, AppLanguage currentLang) {
+  Widget _buildDisciplineSelector(
+    KineticColors colors,
+    AppLanguage currentLang,
+  ) {
     final isVi = currentLang == AppLanguage.vi;
 
     final items = [
@@ -687,7 +748,11 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
         GoalType.distance,
         Icons.directions_run_rounded,
         isVi ? 'Cự ly' : 'Distance',
-        _unitLabel(GoalType.distance, useMetricUnits: _useMetricUnits, isVi: isVi).toUpperCase(),
+        _unitLabel(
+          GoalType.distance,
+          useMetricUnits: _useMetricUnits,
+          isVi: isVi,
+        ).toUpperCase(),
         colors.primary,
       ),
       (
@@ -769,9 +834,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
           borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
           child: AnimatedContainer(
             duration: KineticTokens.motionTab,
-            constraints: const BoxConstraints(
-              minHeight: 40,
-            ),
+            constraints: const BoxConstraints(minHeight: 40),
             padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 5),
             alignment: Alignment.center,
             decoration: BoxDecoration(
@@ -780,7 +843,10 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
               border: isSelected && colors.isDark
-                  ? Border.all(color: accent.withValues(alpha: 0.45), width: 1.0)
+                  ? Border.all(
+                      color: accent.withValues(alpha: 0.45),
+                      width: 1.0,
+                    )
                   : null,
               boxShadow: isSelected && !colors.isDark
                   ? KineticTokens.shadowCardLight()
@@ -800,8 +866,12 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                         title,
                         style: KineticTypography.label.copyWith(
                           fontSize: 12.5,
-                          fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                          color: isSelected ? colors.textPrimary : colors.textSecondary,
+                          fontWeight: isSelected
+                              ? FontWeight.w800
+                              : FontWeight.w600,
+                          color: isSelected
+                              ? colors.textPrimary
+                              : colors.textSecondary,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -855,7 +925,10 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                 setState(() {
                   _hasUserEditedTarget = true;
                   _selectedPeriod = GoalPeriod.weekly;
-                  _targetValue = _defaultTargetFor(_selectedType, GoalPeriod.weekly);
+                  _targetValue = _defaultTargetFor(
+                    _selectedType,
+                    GoalPeriod.weekly,
+                  );
                 });
               },
             ),
@@ -874,7 +947,10 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                 setState(() {
                   _hasUserEditedTarget = true;
                   _selectedPeriod = GoalPeriod.monthly;
-                  _targetValue = _defaultTargetFor(_selectedType, GoalPeriod.monthly);
+                  _targetValue = _defaultTargetFor(
+                    _selectedType,
+                    GoalPeriod.monthly,
+                  );
                 });
               },
             ),
@@ -903,7 +979,9 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
           borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
           child: AnimatedContainer(
             duration: KineticTokens.motionTab,
-            constraints: const BoxConstraints(minHeight: KineticTokens.minTouchTarget),
+            constraints: const BoxConstraints(
+              minHeight: KineticTokens.minTouchTarget,
+            ),
             padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
             alignment: Alignment.center,
             decoration: BoxDecoration(
@@ -935,8 +1013,12 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: KineticTypography.label.copyWith(
-                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                      color: isSelected ? colors.textPrimary : colors.textSecondary,
+                      fontWeight: isSelected
+                          ? FontWeight.w800
+                          : FontWeight.w600,
+                      color: isSelected
+                          ? colors.textPrimary
+                          : colors.textSecondary,
                     ),
                   ),
                   const SizedBox(width: 5),
@@ -945,7 +1027,9 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: KineticTypography.caption.copyWith(
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : FontWeight.w500,
                       color: isSelected ? colors.primary : colors.textMuted,
                     ),
                   ),
@@ -975,17 +1059,11 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
     final accentText = _readableAccentForText(accent, colors);
     final intensity = _getIntensityInfo(colors);
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: colors.surface1,
-        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
-        border: Border.all(
-          color: accent.withValues(alpha: 0.25),
-          width: 1.0,
-        ),
-        boxShadow: colors.isDark ? null : KineticTokens.shadowCardLight(),
-      ),
+    return KineticCard(
+      useLiquidGlass: true,
+      borderRadius: 21,
+      borderColor: accent.withValues(alpha: 0.28),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       child: Column(
         children: [
           // 1. Top Bar: Period Label & Quick Direct Input Action
@@ -1042,11 +1120,18 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                       },
                       borderRadius: BorderRadius.circular(10),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 3,
+                        ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.edit_note_rounded, size: 15, color: accentText),
+                            Icon(
+                              Icons.edit_note_rounded,
+                              size: 15,
+                              color: accentText,
+                            ),
                             const SizedBox(width: 3),
                             Text(
                               isVi ? 'Nhập số' : 'Enter value',
@@ -1091,7 +1176,10 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                     },
                     borderRadius: BorderRadius.circular(12),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 4,
+                      ),
                       child: FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Row(
@@ -1140,14 +1228,13 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
 
           // 3. Clean & Compact Athletic Intensity Tag
           Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 10,
-              vertical: 3,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
             decoration: BoxDecoration(
               color: intensity.color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
-              border: Border.all(color: intensity.color.withValues(alpha: 0.25)),
+              border: Border.all(
+                color: intensity.color.withValues(alpha: 0.25),
+              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -1193,7 +1280,9 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
           height: 38,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: enabled ? colors.surface2 : colors.surface2.withValues(alpha: 0.3),
+            color: enabled
+                ? colors.surface2
+                : colors.surface2.withValues(alpha: 0.3),
             border: Border.all(
               color: enabled
                   ? accentIcon.withValues(alpha: 0.35)
@@ -1204,7 +1293,9 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
           child: Icon(
             icon,
             size: 18,
-            color: enabled ? accentIcon : colors.textMuted.withValues(alpha: 0.4),
+            color: enabled
+                ? accentIcon
+                : colors.textMuted.withValues(alpha: 0.4),
           ),
         ),
       ),
@@ -1223,14 +1314,10 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
     final benchmark = _getRealWorldBenchmark(useMetricUnits);
     final accentText = _readableAccentForText(accent, colors);
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: colors.surface1,
-        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
-        border: Border.all(color: colors.borderSubtle, width: 1.0),
-        boxShadow: colors.isDark ? null : KineticTokens.shadowCardLight(),
-      ),
+    return KineticCard(
+      useLiquidGlass: true,
+      borderRadius: 21,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1242,12 +1329,18 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                   color: accent.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.auto_awesome_rounded, size: 13, color: accentText),
+                child: Icon(
+                  Icons.auto_awesome_rounded,
+                  size: 13,
+                  color: accentText,
+                ),
               ),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  isVi ? 'Ý NGHĨA & HIỆU QUẢ THỰC TẾ' : 'REAL-WORLD PERFORMANCE IMPACT',
+                  isVi
+                      ? 'Ý NGHĨA & HIỆU QUẢ THỰC TẾ'
+                      : 'REAL-WORLD PERFORMANCE IMPACT',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: KineticTypography.unitLabel.copyWith(
@@ -1272,7 +1365,9 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
           _buildImpactItem(
             colors: colors,
             icon: Icons.local_fire_department_rounded,
-            description: isVi ? benchmark.calorieImpactVi : benchmark.calorieImpactEn,
+            description: isVi
+                ? benchmark.calorieImpactVi
+                : benchmark.calorieImpactEn,
             accent: accent,
           ),
           const SizedBox(height: 4),
@@ -1336,62 +1431,130 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
 
     final presets = switch (_selectedType) {
       GoalType.distance => [
-          (
-            'Khởi Đầu',
-            'Starter',
-            useMetricUnits
-                ? (isWeekly ? 20.0 : 80.0)
-                : WorkoutFormatters.kmToMi(isWeekly ? 20.0 : 80.0).roundToDouble(),
-            Icons.spa_rounded,
-            const Color(0xFF4EBE9E),
-            isVi ? 'Làm quen' : 'Base',
-          ),
-          (
-            'Tiến Bộ',
-            'Pro',
-            useMetricUnits
-                ? (isWeekly ? 45.0 : 180.0)
-                : WorkoutFormatters.kmToMi(isWeekly ? 45.0 : 180.0).roundToDouble(),
-            Icons.trending_up_rounded,
-            const Color(0xFF39B5F2),
-            isVi ? 'Đều đặn' : 'Steady',
-          ),
-          (
-            'Bứt Phá',
-            'Elite',
-            useMetricUnits
-                ? (isWeekly ? 80.0 : 320.0)
-                : WorkoutFormatters.kmToMi(isWeekly ? 80.0 : 320.0).roundToDouble(),
-            Icons.bolt_rounded,
-            const Color(0xFFA55EEA),
-            isVi ? 'Nâng cao' : 'Challenge',
-          ),
-          (
-            'Vô Cực',
-            'Beast',
-            useMetricUnits
-                ? (isWeekly ? 120.0 : 480.0)
-                : WorkoutFormatters.kmToMi(isWeekly ? 120.0 : 480.0).roundToDouble(),
-            Icons.whatshot_rounded,
-            const Color(0xFFFF5252),
-            isVi ? 'Đỉnh cao' : 'Ultra',
-          ),
-        ],
+        (
+          'Khởi Đầu',
+          'Starter',
+          useMetricUnits
+              ? (isWeekly ? 20.0 : 80.0)
+              : WorkoutFormatters.kmToMi(
+                  isWeekly ? 20.0 : 80.0,
+                ).roundToDouble(),
+          Icons.spa_rounded,
+          const Color(0xFF4EBE9E),
+          isVi ? 'Làm quen' : 'Base',
+        ),
+        (
+          'Tiến Bộ',
+          'Pro',
+          useMetricUnits
+              ? (isWeekly ? 45.0 : 180.0)
+              : WorkoutFormatters.kmToMi(
+                  isWeekly ? 45.0 : 180.0,
+                ).roundToDouble(),
+          Icons.trending_up_rounded,
+          const Color(0xFF39B5F2),
+          isVi ? 'Đều đặn' : 'Steady',
+        ),
+        (
+          'Bứt Phá',
+          'Elite',
+          useMetricUnits
+              ? (isWeekly ? 80.0 : 320.0)
+              : WorkoutFormatters.kmToMi(
+                  isWeekly ? 80.0 : 320.0,
+                ).roundToDouble(),
+          Icons.bolt_rounded,
+          const Color(0xFFA55EEA),
+          isVi ? 'Nâng cao' : 'Challenge',
+        ),
+        (
+          'Vô Cực',
+          'Beast',
+          useMetricUnits
+              ? (isWeekly ? 120.0 : 480.0)
+              : WorkoutFormatters.kmToMi(
+                  isWeekly ? 120.0 : 480.0,
+                ).roundToDouble(),
+          Icons.whatshot_rounded,
+          const Color(0xFFFF5252),
+          isVi ? 'Đỉnh cao' : 'Ultra',
+        ),
+      ],
       GoalType.workouts => [
-          ('Khởi Đầu', 'Starter', isWeekly ? 3.0 : 12.0, Icons.spa_rounded, const Color(0xFF4EBE9E), isVi ? 'Làm quen' : 'Base'),
-          ('Tiến Bộ', 'Pro', isWeekly ? 5.0 : 20.0, Icons.trending_up_rounded, const Color(0xFF39B5F2), isVi ? 'Đều đặn' : 'Steady'),
-          ('Bứt Phá', 'Elite', isWeekly ? 7.0 : 28.0, Icons.bolt_rounded, const Color(0xFFA55EEA), isVi ? 'Nâng cao' : 'Challenge'),
-          ('Vô Cực', 'Beast', isWeekly ? 10.0 : 38.0, Icons.whatshot_rounded, const Color(0xFFFF5252), isVi ? 'Đỉnh cao' : 'Ultra'),
-        ],
+        (
+          'Khởi Đầu',
+          'Starter',
+          isWeekly ? 3.0 : 12.0,
+          Icons.spa_rounded,
+          const Color(0xFF4EBE9E),
+          isVi ? 'Làm quen' : 'Base',
+        ),
+        (
+          'Tiến Bộ',
+          'Pro',
+          isWeekly ? 5.0 : 20.0,
+          Icons.trending_up_rounded,
+          const Color(0xFF39B5F2),
+          isVi ? 'Đều đặn' : 'Steady',
+        ),
+        (
+          'Bứt Phá',
+          'Elite',
+          isWeekly ? 7.0 : 28.0,
+          Icons.bolt_rounded,
+          const Color(0xFFA55EEA),
+          isVi ? 'Nâng cao' : 'Challenge',
+        ),
+        (
+          'Vô Cực',
+          'Beast',
+          isWeekly ? 10.0 : 38.0,
+          Icons.whatshot_rounded,
+          const Color(0xFFFF5252),
+          isVi ? 'Đỉnh cao' : 'Ultra',
+        ),
+      ],
       GoalType.calories => [
-          ('Khởi Đầu', 'Starter', isWeekly ? 2000.0 : 8000.0, Icons.spa_rounded, const Color(0xFF4EBE9E), isVi ? 'Làm quen' : 'Base'),
-          ('Tiến Bộ', 'Pro', isWeekly ? 4500.0 : 18000.0, Icons.trending_up_rounded, const Color(0xFF39B5F2), isVi ? 'Đều đặn' : 'Steady'),
-          ('Bứt Phá', 'Elite', isWeekly ? 8000.0 : 32000.0, Icons.bolt_rounded, const Color(0xFFA55EEA), isVi ? 'Nâng cao' : 'Challenge'),
-          ('Vô Cực', 'Beast', isWeekly ? 12000.0 : 48000.0, Icons.whatshot_rounded, const Color(0xFFFF5252), isVi ? 'Đỉnh cao' : 'Ultra'),
-        ],
+        (
+          'Khởi Đầu',
+          'Starter',
+          isWeekly ? 2000.0 : 8000.0,
+          Icons.spa_rounded,
+          const Color(0xFF4EBE9E),
+          isVi ? 'Làm quen' : 'Base',
+        ),
+        (
+          'Tiến Bộ',
+          'Pro',
+          isWeekly ? 4500.0 : 18000.0,
+          Icons.trending_up_rounded,
+          const Color(0xFF39B5F2),
+          isVi ? 'Đều đặn' : 'Steady',
+        ),
+        (
+          'Bứt Phá',
+          'Elite',
+          isWeekly ? 8000.0 : 32000.0,
+          Icons.bolt_rounded,
+          const Color(0xFFA55EEA),
+          isVi ? 'Nâng cao' : 'Challenge',
+        ),
+        (
+          'Vô Cực',
+          'Beast',
+          isWeekly ? 12000.0 : 48000.0,
+          Icons.whatshot_rounded,
+          const Color(0xFFFF5252),
+          isVi ? 'Đỉnh cao' : 'Ultra',
+        ),
+      ],
     };
 
-    final unitLabel = _unitLabel(_selectedType, useMetricUnits: useMetricUnits, isVi: isVi);
+    final unitLabel = _unitLabel(
+      _selectedType,
+      useMetricUnits: useMetricUnits,
+      isVi: isVi,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1457,7 +1620,9 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
             horizontal: KineticTokens.spaceXXS,
           ),
           decoration: BoxDecoration(
-            color: isSelected ? presetColor.withValues(alpha: 0.16) : colors.surface1,
+            color: isSelected
+                ? presetColor.withValues(alpha: 0.16)
+                : colors.surface1,
             borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
             border: Border.all(
               color: isSelected ? presetColor : colors.borderSubtle,
@@ -1530,16 +1695,24 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
     switch (_selectedType) {
       case GoalType.distance:
         if (_targetValue >= 80) {
-          badgeName = isVi ? 'Huyền Thoại Vi Dã (Ultra 80K)' : 'Century Ultra 80K';
-          badgeDesc = isVi ? 'Mở khóa huy hiệu cự ly đỉnh cao của Aetron.' : 'Unlocks top-tier endurance trophy.';
+          badgeName = isVi
+              ? 'Huyền Thoại Vi Dã (Ultra 80K)'
+              : 'Century Ultra 80K';
+          badgeDesc = isVi
+              ? 'Mở khóa huy hiệu cự ly đỉnh cao của Aetron.'
+              : 'Unlocks top-tier endurance trophy.';
           badgeIcon = Icons.military_tech_rounded;
         } else if (_targetValue >= 42) {
           badgeName = isVi ? 'Bán Kỷ Lục Marathon' : 'Marathon Vanguard';
-          badgeDesc = isVi ? 'Đạt chuẩn cự ly thi đấu quốc tế.' : 'Meets international road race milestone.';
+          badgeDesc = isVi
+              ? 'Đạt chuẩn cự ly thi đấu quốc tế.'
+              : 'Meets international road race milestone.';
           badgeIcon = Icons.workspace_premium_rounded;
         } else {
           badgeName = isVi ? 'Ngọn Lửa Khởi Sắc' : 'Pacesetter 15K';
-          badgeDesc = isVi ? 'Xác lập nền tảng thể lực vững bền.' : 'Solidifies foundational endurance.';
+          badgeDesc = isVi
+              ? 'Xác lập nền tảng thể lực vững bền.'
+              : 'Solidifies foundational endurance.';
           badgeIcon = Icons.emoji_events_rounded;
         }
         break;
@@ -1547,18 +1720,24 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
       case GoalType.workouts:
         if (_targetValue >= 6) {
           badgeName = isVi ? 'Kỷ Luật Sắt Đá' : 'Relentless Orbit';
-          badgeDesc = isVi ? 'Bảo vệ và thăng hoa chuỗi ngày rèn luyện Streak.' : 'Shields and extends your daily streak.';
+          badgeDesc = isVi
+              ? 'Bảo vệ và thăng hoa chuỗi ngày rèn luyện Streak.'
+              : 'Shields and extends your daily streak.';
           badgeIcon = Icons.local_fire_department_rounded;
         } else {
           badgeName = isVi ? 'Nhịp Thể Lực Vàng' : 'Cadence Keeper';
-          badgeDesc = isVi ? 'Duy trì tần suất vận động cân đối theo tuần.' : 'Consistent workout frequency unlocked.';
+          badgeDesc = isVi
+              ? 'Duy trì tần suất vận động cân đối theo tuần.'
+              : 'Consistent workout frequency unlocked.';
           badgeIcon = Icons.fitness_center_rounded;
         }
         break;
 
       case GoalType.calories:
         badgeName = isVi ? 'Chiến Binh Đốt Calo' : 'Metabolic Fusion';
-        badgeDesc = isVi ? 'Tăng tốc giải phóng calo và chuyển hóa trao đổi chất.' : 'Maximizes active metabolic caloric output.';
+        badgeDesc = isVi
+            ? 'Tăng tốc giải phóng calo và chuyển hóa trao đổi chất.'
+            : 'Maximizes active metabolic caloric output.';
         badgeIcon = Icons.whatshot_rounded;
         break;
     }
@@ -1581,7 +1760,11 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
               color: accent.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
             ),
-            child: Icon(badgeIcon, size: 17, color: _readableAccentForIcon(accent, colors)),
+            child: Icon(
+              badgeIcon,
+              size: 17,
+              color: _readableAccentForIcon(accent, colors),
+            ),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -1638,20 +1821,41 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
         ? (isVi ? 'tuần' : 'wk')
         : (isVi ? 'tháng' : 'mo');
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(
-        KineticTokens.page,
-        8,
-        KineticTokens.page,
-        10,
-      ),
-      decoration: BoxDecoration(
-        color: colors.surface1.withValues(alpha: 0.95),
-        border: Border(top: BorderSide(color: colors.borderSubtle, width: 1.0)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Row(
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+        child: Container(
+          padding: EdgeInsets.fromLTRB(
+            AetronBottomBar.horizontalPagePaddingOf(context),
+            10,
+            AetronBottomBar.horizontalPagePaddingOf(context),
+            10,
+          ),
+          decoration: BoxDecoration(
+            gradient: colors.isDark
+                ? const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0xC81C2E45), Color(0xEC101B2B)],
+                  )
+                : const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0xE0F5F9FF), Color(0xF5EDF4FD)],
+                  ),
+            border: Border(
+              top: BorderSide(
+                color: colors.isDark
+                    ? const Color(0x4DB6DCFF)
+                    : Colors.white.withValues(alpha: 0.9),
+                width: 1.0,
+              ),
+            ),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Row(
           children: [
             // Quick Recap
             ConstrainedBox(
@@ -1708,7 +1912,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                     : (isVi ? 'KÍCH HOẠT MỤC TIÊU' : 'ACTIVATE GOAL'),
                 icon: Icons.bolt_rounded,
                 variant: KineticButtonVariant.primary,
-                height: 46,
+                height: KineticTokens.buttonHeight,
                 isLoading: _isSaving,
                 onPressed: _isSaving ? null : _save,
               ),
@@ -1716,12 +1920,20 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
           ],
         ),
       ),
+        ),
+      ),
     );
   }
 
-  String _unitLabel(GoalType type, {required bool useMetricUnits, bool isVi = true}) {
+  String _unitLabel(
+    GoalType type, {
+    required bool useMetricUnits,
+    bool isVi = true,
+  }) {
     return switch (type) {
-      GoalType.distance => WorkoutFormatters.distanceUnitLabel(useMetric: useMetricUnits),
+      GoalType.distance => WorkoutFormatters.distanceUnitLabel(
+        useMetric: useMetricUnits,
+      ),
       GoalType.workouts => isVi ? 'buổi' : 'sessions',
       GoalType.calories => 'kcal',
     };
@@ -1748,7 +1960,8 @@ class _DirectValueEditorSheet extends StatefulWidget {
   });
 
   @override
-  State<_DirectValueEditorSheet> createState() => _DirectValueEditorSheetState();
+  State<_DirectValueEditorSheet> createState() =>
+      _DirectValueEditorSheetState();
 }
 
 class _DirectValueEditorSheetState extends State<_DirectValueEditorSheet> {
@@ -1773,26 +1986,16 @@ class _DirectValueEditorSheetState extends State<_DirectValueEditorSheet> {
   @override
   Widget build(BuildContext context) {
     final colors = context.kinetic;
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
+    return KineticGlassBottomSheet(
+      floating: true,
+      borderRadius: 28,
+      borderColor: widget.accent.withValues(alpha: 0.35),
+      padding: const EdgeInsets.all(KineticTokens.spaceXL),
       child: SingleChildScrollView(
-        child: Container(
-          margin: const EdgeInsets.all(KineticTokens.spaceMD),
-          padding: const EdgeInsets.all(KineticTokens.spaceXL),
-          decoration: BoxDecoration(
-            color: colors.surface1,
-            borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
-            border: Border.all(
-              color: widget.accent.withValues(alpha: 0.3),
-              width: 1.2,
-            ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
               Row(
                 children: [
                   Container(
@@ -1810,7 +2013,9 @@ class _DirectValueEditorSheetState extends State<_DirectValueEditorSheet> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      widget.isVi ? 'NHẬP CHÍNH XÁC MỤC TIÊU' : 'ENTER EXACT TARGET',
+                      widget.isVi
+                          ? 'NHẬP CHÍNH XÁC MỤC TIÊU'
+                          : 'ENTER EXACT TARGET',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: KineticTypography.unitLabel.copyWith(
@@ -1825,7 +2030,9 @@ class _DirectValueEditorSheetState extends State<_DirectValueEditorSheet> {
               TextField(
                 controller: _controller,
                 autofocus: true,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 style: KineticTypography.displayLarge.copyWith(
                   color: colors.textPrimary,
                 ),
@@ -1847,7 +2054,10 @@ class _DirectValueEditorSheetState extends State<_DirectValueEditorSheet> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
-                    borderSide: BorderSide(color: widget.accentIcon, width: 1.6),
+                    borderSide: BorderSide(
+                      color: widget.accentIcon,
+                      width: 1.6,
+                    ),
                   ),
                 ),
               ),
@@ -1870,7 +2080,6 @@ class _DirectValueEditorSheetState extends State<_DirectValueEditorSheet> {
             ],
           ),
         ),
-      ),
     );
   }
 }

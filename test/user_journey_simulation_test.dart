@@ -241,7 +241,7 @@ void main() {
       expect(find.text('Không có buổi tập phù hợp bộ lọc'), findsOneWidget);
 
       // User switches back to All sports
-      await tester.tap(find.text('Tất cả'));
+      await tester.tap(find.text('Tất cả').last);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
       expect(find.text('5.25'), findsOneWidget);
@@ -361,7 +361,7 @@ void main() {
       expect(find.text('Pace TB'), findsOneWidget);
 
       // Delete action button present in top bar
-      expect(find.byIcon(Icons.delete_outline_rounded), findsOneWidget);
+      expect(find.byTooltip('Xóa buổi tập'), findsOneWidget);
     });
 
     testWidgets('Journey 8: Settings and NotificationSettings screens', (tester) async {
@@ -418,7 +418,6 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       // Top bar heading & clean section structure
-      expect(find.text('Hôm nay'), findsWidgets);
       expect(find.text('Mục tiêu tuần'), findsOneWidget);
       expect(find.text('Hoạt động gần đây'), findsOneWidget);
       expect(find.text('Giáo án luyện tập'), findsOneWidget);

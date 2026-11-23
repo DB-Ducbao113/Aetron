@@ -53,20 +53,36 @@ class KineticTokens {
   static const double radiusPill = 999;
 
   // ── Component Sizes ────────────────────────────────────────────────────────
-  /// 44px — minimum touch target (Material accessibility)
+  /// 44px — interaction target. Visual controls may be smaller and centered
+  /// inside this frame on iOS so the UI stays compact without losing usability.
   static const double minTouchTarget = 44;
 
-  /// 48px — standard button height
-  static const double buttonHeight = 48;
+  /// 36px — standard visible diameter for compact iOS icon controls.
+  static const double iconControlVisualSize = 36;
 
-  /// 52px — primary screen CTA (Activity start tray, live record controls)
-  static const double buttonHeightPrimary = 52;
+  /// 36px — one consistent segmented-control height across the app.
+  static const double segmentedControlHeight = 36;
 
-  /// 56px — large button height
-  static const double buttonHeightLarge = 56;
+  /// 44px — standard CTA height.
+  static const double buttonHeight = 44;
 
-  /// 64px — hero CTA button height
-  static const double buttonHeightHero = 64;
+  /// 44px — primary CTA. Same control rhythm as standard iOS actions.
+  static const double buttonHeightPrimary = 44;
+
+  /// 46px — large button height reserved for onboarding/hero-adjacent actions.
+  static const double buttonHeightLarge = 46;
+
+  /// 48px — exceptional hero CTA height.
+  static const double buttonHeightHero = 48;
+
+  /// 44px — live workout action row, aligned with all primary iOS actions.
+  static const double liveControlHeight = 44;
+
+  /// 58px — compact floating bottom dock matching HTML prototype.
+  static const double bottomDockHeight = 58;
+
+  /// 38px — visible center action inside the compact bottom dock.
+  static const double bottomDockCenterSize = 38;
 
   // ── Animation ─────────────────────────────────────────────────────────────
   /// 150ms — micro-interactions (hover, press feedback)
@@ -127,8 +143,7 @@ class KineticTokens {
   static Duration respectingReduceMotion(
     BuildContext context,
     Duration duration,
-  ) =>
-      reduceMotionOf(context) ? Duration.zero : duration;
+  ) => reduceMotionOf(context) ? Duration.zero : duration;
 
   // ── V4/V5 Elevation & Spacing ───────────────────────────────────────────
   /// 48px — hero band / major page rhythm spacing
@@ -139,21 +154,31 @@ class KineticTokens {
 
   /// Whisper shadow for borderless white cards in light mode.
   static List<BoxShadow> shadowCardLight() => [
-        BoxShadow(
-          color: const Color(0xFF0F172A).withValues(alpha: 0.045),
-          blurRadius: 16,
-          offset: const Offset(0, 4),
-          spreadRadius: -2,
-        ),
-      ];
+    BoxShadow(
+      color: const Color(0xFF143C6E).withValues(alpha: 0.035),
+      blurRadius: 22,
+      offset: const Offset(0, 6),
+      spreadRadius: 0,
+    ),
+  ];
+
+  /// Soft dark mode shadow for cards and controls matching Nightfall Glassline.
+  static List<BoxShadow> shadowCardDark() => [
+    BoxShadow(
+      color: Colors.black.withValues(alpha: 0.22),
+      blurRadius: 22,
+      offset: const Offset(0, 8),
+      spreadRadius: 0,
+    ),
+  ];
 
   /// Soft elevation for raised panels floating over maps/scenes.
   static List<BoxShadow> shadowPanel(Color tint) => [
-        BoxShadow(
-          color: tint.withValues(alpha: 0.14),
-          blurRadius: 20,
-          offset: const Offset(0, 6),
-          spreadRadius: -4,
-        ),
-      ];
+    BoxShadow(
+      color: tint.withValues(alpha: 0.14),
+      blurRadius: 20,
+      offset: const Offset(0, 6),
+      spreadRadius: -4,
+    ),
+  ];
 }

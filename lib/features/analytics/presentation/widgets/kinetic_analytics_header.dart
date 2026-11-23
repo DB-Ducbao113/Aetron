@@ -1,5 +1,6 @@
 import 'package:fitness_exercise_application/features/analytics/presentation/models/time_period.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
+import 'package:fitness_exercise_application/shared/kinetic/native_liquid_glass.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -31,6 +32,7 @@ class KineticAnalyticsHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.kinetic;
+    final useNativeGlass = NativeLiquidGlass.enabledOf(context);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: KineticTokens.spaceXS),
@@ -43,53 +45,22 @@ class KineticAnalyticsHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
-                child: Text(
-                  isVi ? 'Phân tích' : 'Analytics',
-                  style: KineticTypography.pageTitle.copyWith(
-                    color: colors.textPrimary,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: KineticTokens.spaceSM),
-
-              // Sync / Offline Status Badge Pill
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: KineticTokens.spaceSM,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: colors.surface1,
-                  borderRadius: BorderRadius.circular(
-                    KineticTokens.radiusPill,
-                  ),
-                  boxShadow:
-                      colors.isDark ? null : KineticTokens.shadowCardLight(),
-                  border: colors.isDark
-                      ? Border.all(color: colors.borderSubtle)
-                      : null,
-                ),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        color: isOffline ? colors.tertiary : colors.success,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
                     Text(
-                      isOffline
-                          ? (isVi ? 'Ngoại tuyến' : 'Offline')
-                          : (isVi ? 'Đã đồng bộ' : 'Synced'),
-                      style: KineticTypography.unitLabel.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: colors.textSecondary,
+                      isVi ? 'HIỆU SUẤT' : 'PERFORMANCE',
+                      style: KineticTypography.tabEyebrowOf(colors),
+                    ),
+                    const SizedBox(height: 3),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        isVi ? 'Phân tích' : 'Analytics',
+                        style: KineticTypography.tabTitleOf(colors),
+                        maxLines: 1,
                       ),
                     ),
                   ],
@@ -100,27 +71,49 @@ class KineticAnalyticsHeader extends StatelessWidget {
           const SizedBox(height: KineticTokens.spaceMD),
 
           // Period Filter — pill segmented control (Concept A)
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: colors.surface2,
-              borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
+          if (useNativeGlass)
+            SizedBox(
+              height: KineticTokens.segmentedControlHeight,
+              child: NativeGlassSegmentedControl(
+                labels: TimePeriod.values
+                    .map(_periodLabel)
+                    .toList(growable: false),
+                symbols: const [],
+                selectedIndex: TimePeriod.values.indexOf(selectedPeriod),
+                onChanged: (index) {
+                  if (index < 0 || index >= TimePeriod.values.length) return;
+                  HapticFeedback.selectionClick();
+                  onPeriodChanged(TimePeriod.values[index]);
+                },
+              ),
+            )
+          else
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: colors.surface2,
+                borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
+              ),
+              child: KineticSlidingSelection(
+                index: TimePeriod.values.indexOf(selectedPeriod),
+                count: TimePeriod.values.length,
+                gap: KineticTokens.spaceXXS,
+                child: Row(
+                  children: [
+                    for (int i = 0; i < TimePeriod.values.length; i++) ...[
+                      if (i > 0) const SizedBox(width: KineticTokens.spaceXXS),
+                      Expanded(
+                        child: _buildPeriodTab(
+                          context,
+                          colors,
+                          TimePeriod.values[i],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             ),
-            child: Row(
-              children: [
-                for (int i = 0; i < TimePeriod.values.length; i++) ...[
-                  if (i > 0) const SizedBox(width: KineticTokens.spaceXXS),
-                  Expanded(
-                    child: _buildPeriodTab(
-                      context,
-                      colors,
-                      TimePeriod.values[i],
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
         ],
       ),
     );
@@ -132,8 +125,13 @@ class KineticAnalyticsHeader extends StatelessWidget {
     TimePeriod period,
   ) {
     final isSelected = selectedPeriod == period;
-    final bg = isSelected ? const Color(0xFF006EE6) : Colors.transparent;
-    final textColor = isSelected ? Colors.white : colors.textSecondary;
+    final ios = Theme.of(context).platform == TargetPlatform.iOS;
+    final bg = isSelected && !ios
+        ? const Color(0xFF006EE6)
+        : Colors.transparent;
+    final textColor = isSelected
+        ? (ios ? colors.primary : Colors.white)
+        : colors.textSecondary;
     final label = _periodLabel(period);
 
     return Material(
@@ -145,8 +143,11 @@ class KineticAnalyticsHeader extends StatelessWidget {
         },
         borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
         child: AnimatedContainer(
-          duration: KineticTokens.motionTab,
-          height: 42,
+          duration: KineticTokens.respectingReduceMotion(
+            context,
+            KineticTokens.motionTab,
+          ),
+          height: 34,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: bg,
@@ -154,7 +155,7 @@ class KineticAnalyticsHeader extends StatelessWidget {
           ),
           child: Text(
             label,
-            style: KineticTypography.label.copyWith(
+            style: KineticTypography.segmentedLabel.copyWith(
               color: textColor,
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
             ),

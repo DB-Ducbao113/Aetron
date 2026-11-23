@@ -124,8 +124,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
 
-    // Verify all 4 programs are loaded and have SceneBackdrop banners
-    expect(find.byType(SceneBackdrop), findsWidgets);
+    // Verify all 4 programs are loaded inside Glassline KineticCard containers
+    expect(find.byType(KineticCard), findsWidgets);
     expect(find.text('Hướng dẫn'), findsWidgets);
     expect(find.text('Bắt đầu'), findsWidgets);
 

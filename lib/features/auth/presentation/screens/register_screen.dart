@@ -1,3 +1,5 @@
+import 'package:fitness_exercise_application/features/shell/presentation/widgets/aetron_bottom_bar.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_glass_icon_button.dart';
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/auth/presentation/helpers/password_validator.dart';
 import 'package:fitness_exercise_application/features/auth/presentation/helpers/username_auth.dart';
@@ -11,7 +13,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -152,32 +153,45 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final topPad = MediaQuery.of(context).padding.top;
     final colors = context.kinetic;
 
+    final hPad = AetronBottomBar.horizontalPagePaddingOf(context);
+    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
+
     return Scaffold(
       backgroundColor: colors.background,
-      body: Column(
-        children: [
-          // ── Flat header (V5): back + language row, then brand row ───────
-          Padding(
-            padding: EdgeInsets.fromLTRB(16, topPad + 8, 16, 0),
-            child: Row(
+      body: KineticGlasslineScaffoldBody(
+        showBottomScrim: false,
+        child: Column(
+          children: [
+            // ── Flat header (V5): back + language row, then brand row ───────
+            Padding(
+              padding: EdgeInsets.fromLTRB(hPad, topPad + 8, hPad, 0),
+              child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _AppBarIconButton(
-                  icon: Icons.arrow_back_rounded,
-                  onTap: () => Navigator.of(context).pop(),
+                KineticGlassIconButton(
+                  size: 37,
+                  visualSize: 37,
+                  label: isVi ? 'Quay lại' : 'Back',
+                  icon: BladeIcon(
+                    BladeIconName.chevL,
+                    size: 18,
+                    color: colors.textSecondary,
+                    strokeWidth: 1.7,
+                  ),
+                  onPressed: () => Navigator.of(context).pop(),
                 ),
                 const AuthLanguageToggle(),
               ],
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+            padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 12),
             child: Row(
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(11),
                   child: Image.asset(
-                    'assets/logo.png',
+                    'assets/logo_glassline.png',
                     width: 44,
                     height: 44,
                     fit: BoxFit.cover,
@@ -222,31 +236,23 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             child: _isSuccessSent
                 ? _buildSuccessVerification(context, isVi)
                 : SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+                    padding: EdgeInsets.fromLTRB(hPad, 24, hPad, bottomInset + 32),
                     child: Form(
                       key: _formKey,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Container(
-                              padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
-                              decoration: BoxDecoration(
-                                color: colors.surface1,
-                                borderRadius: BorderRadius.circular(
-                                  KineticTokens.radiusXXL,
-                                ),
-                                boxShadow: colors.isDark
-                                    ? null
-                                    : KineticTokens.shadowCardLight(),
-                                border: colors.isDark
-                                    ? Border.all(color: colors.borderSubtle)
-                                    : null,
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
+                          KineticCard(
+                            useLiquidGlass: true,
+                            borderRadius: 21,
+                            padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
                                 // ── Username field ──────────────────────────────────────
-                                _SectionLabel(isVi ? 'TÊN ĐĂNG NHẬP' : 'USERNAME'),
+                                _SectionLabel(
+                                  isVi ? 'TÊN ĐĂNG NHẬP' : 'USERNAME',
+                                ),
                                 const SizedBox(height: 6),
                                 _StitchTextField(
                                   controller: _usernameController,
@@ -265,21 +271,28 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 const SizedBox(height: 6),
                                 _StitchTextField(
                                   controller: _passwordController,
-                                  hintText: isVi ? 'Tạo mật khẩu' : 'Create password',
+                                  hintText: isVi
+                                      ? 'Tạo mật khẩu'
+                                      : 'Create password',
                                   prefixIcon: BladeIconName.lock,
                                   obscureText: _obscurePassword,
                                   suffixIcon: IconButton(
                                     onPressed: () => setState(
-                                      () => _obscurePassword = !_obscurePassword,
+                                      () =>
+                                          _obscurePassword = !_obscurePassword,
                                     ),
                                     icon: BladeIcon(
                                       BladeIconName.eye,
-                                      color: colors.primary.withValues(alpha: 0.7),
+                                      color: colors.primary.withValues(
+                                        alpha: 0.7,
+                                      ),
                                       size: 20,
                                     ),
                                   ),
-                                  validator: (value) =>
-                                      validatePasswordStrict(value, currentLang),
+                                  validator: (value) => validatePasswordStrict(
+                                    value,
+                                    currentLang,
+                                  ),
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
@@ -297,7 +310,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                                 // ── Confirm password field ──────────────────────────────
                                 _SectionLabel(
-                                  isVi ? 'XÁC NHẬN MẬT KHẨU' : 'CONFIRM PASSWORD',
+                                  isVi
+                                      ? 'XÁC NHẬN MẬT KHẨU'
+                                      : 'CONFIRM PASSWORD',
                                 ),
                                 const SizedBox(height: 6),
                                 _StitchTextField(
@@ -314,7 +329,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                     ),
                                     icon: BladeIcon(
                                       BladeIconName.eye,
-                                      color: colors.primary.withValues(alpha: 0.7),
+                                      color: colors.primary.withValues(
+                                        alpha: 0.7,
+                                      ),
                                       size: 20,
                                     ),
                                   ),
@@ -337,12 +354,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
                                       color: _acceptedTerms
-                                          ? colors.primary.withValues(alpha: 0.4)
+                                          ? colors.primary.withValues(
+                                              alpha: 0.4,
+                                            )
                                           : colors.borderSubtle,
                                     ),
                                   ),
                                   child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
                                     children: [
                                       SizedBox(
                                         width: 22,
@@ -356,7 +376,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                             width: 1.5,
                                           ),
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(5),
+                                            borderRadius: BorderRadius.circular(
+                                              5,
+                                            ),
                                           ),
                                           onChanged: (val) => setState(
                                             () => _acceptedTerms = val ?? false,
@@ -439,7 +461,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                                 // ── Primary CTA ─────────────────────────────────────────
                                 _PrimaryButton(
-                                  label: isVi ? 'Tạo Tài Khoản' : 'Create Account',
+                                  label: isVi
+                                      ? 'Tạo Tài Khoản'
+                                      : 'Create Account',
                                   isLoading: _isLoading,
                                   onPressed: _register,
                                 ),
@@ -471,15 +495,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                     ),
                                   ],
                                 ),
-                                ],
-                              ),
+                              ],
                             ),
+                          ),
                         ],
                       ),
                     ),
                   ),
           ),
         ],
+        ),
       ),
     );
   }
@@ -528,10 +553,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           ? 'Tài khoản của bạn đã được tạo với tên đăng nhập:'
                           : 'Your account was created with username:',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: colors.textMuted,
-                      ),
+                      style: TextStyle(fontSize: 14, color: colors.textMuted),
                     ),
                     const SizedBox(height: 8),
                     Container(
@@ -590,30 +612,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 }
 
 // ─── Shared widgets (same stitch token set) ──────────────────────────────────
-
-class _AppBarIconButton extends StatelessWidget {
-  const _AppBarIconButton({required this.icon, required this.onTap});
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.kinetic;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: colors.surface1,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: colors.borderSubtle),
-        ),
-        child: Icon(icon, color: colors.textMuted, size: 20),
-      ),
-    );
-  }
-}
 
 class _SectionLabel extends StatelessWidget {
   const _SectionLabel(this.text);

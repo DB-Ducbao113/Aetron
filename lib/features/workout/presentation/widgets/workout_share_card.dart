@@ -4,6 +4,8 @@ import 'dart:ui' as ui;
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_glass_icon_button.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -13,12 +15,7 @@ import 'package:photo_manager/photo_manager.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-enum ShareCardTheme {
-  aetronBlue,
-  cleanWhite,
-  obsidian,
-  arcticMist,
-}
+enum ShareCardTheme { aetronBlue, cleanWhite, obsidian, arcticMist }
 
 /// Renders a premium Social Share Card with 4 aesthetic themes,
 /// dedicated social app targets (Facebook, Zalo, Messenger, Instagram),
@@ -64,7 +61,10 @@ class _WorkoutShareCardSheetState extends State<WorkoutShareCardSheet>
       vsync: this,
       duration: const Duration(milliseconds: 400),
     );
-    _enterAnim = CurvedAnimation(parent: _enterCtrl, curve: Curves.easeOutCubic);
+    _enterAnim = CurvedAnimation(
+      parent: _enterCtrl,
+      curve: Curves.easeOutCubic,
+    );
     _enterCtrl.forward();
   }
 
@@ -76,12 +76,18 @@ class _WorkoutShareCardSheetState extends State<WorkoutShareCardSheet>
 
   String _buildCaption() {
     final isVi = widget.currentLang == AppLanguage.vi;
-    final distStr = WorkoutFormatters.formatDistance(widget.distanceKm,
-        useMetric: widget.useMetricUnits, decimals: 2);
-    final durationStr =
-        WorkoutFormatters.formatDurationFromSeconds(widget.durationSeconds);
-    final paceStr = WorkoutFormatters.formatPaceFromSpeedKmh(widget.avgSpeedKmh,
-        useMetric: widget.useMetricUnits);
+    final distStr = WorkoutFormatters.formatDistance(
+      widget.distanceKm,
+      useMetric: widget.useMetricUnits,
+      decimals: 2,
+    );
+    final durationStr = WorkoutFormatters.formatDurationFromSeconds(
+      widget.durationSeconds,
+    );
+    final paceStr = WorkoutFormatters.formatPaceFromSpeedKmh(
+      widget.avgSpeedKmh,
+      useMetric: widget.useMetricUnits,
+    );
 
     if (isVi) {
       return '🏃 Vừa hoàn thành $distStr trong $durationStr (Pace: $paceStr) cùng Aetron! 🔥 ${widget.calories} kcal\n\n#Aetron #Fitness #ChayBo #Workout';
@@ -92,8 +98,9 @@ class _WorkoutShareCardSheetState extends State<WorkoutShareCardSheet>
 
   Future<Uint8List?> _captureCardBytes() async {
     try {
-      final boundary = _captureKey.currentContext?.findRenderObject()
-          as RenderRepaintBoundary?;
+      final boundary =
+          _captureKey.currentContext?.findRenderObject()
+              as RenderRepaintBoundary?;
       if (boundary == null) return null;
 
       final image = await boundary.toImage(pixelRatio: 3.0);
@@ -122,10 +129,7 @@ class _WorkoutShareCardSheetState extends State<WorkoutShareCardSheet>
         final file = File('${tempDir.path}/aetron_workout_share.png');
         await file.writeAsBytes(bytes);
 
-        await Share.shareXFiles(
-          [XFile(file.path)],
-          text: _buildCaption(),
-        );
+        await Share.shareXFiles([XFile(file.path)], text: _buildCaption());
       }
     }
   }
@@ -169,16 +173,13 @@ class _WorkoutShareCardSheetState extends State<WorkoutShareCardSheet>
       if (bytes == null || !mounted) return;
 
       if (kIsWeb) {
-        await Share.shareXFiles(
-          [
-            XFile.fromData(
-              bytes,
-              mimeType: 'image/png',
-              name: 'aetron_workout.png',
-            ),
-          ],
-          text: _buildCaption(),
-        );
+        await Share.shareXFiles([
+          XFile.fromData(
+            bytes,
+            mimeType: 'image/png',
+            name: 'aetron_workout.png',
+          ),
+        ], text: _buildCaption());
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -186,14 +187,15 @@ class _WorkoutShareCardSheetState extends State<WorkoutShareCardSheet>
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
-                side: BorderSide(
-                  color: colors.primary.withValues(alpha: 0.6),
-                ),
+                side: BorderSide(color: colors.primary.withValues(alpha: 0.6)),
               ),
               content: Row(
                 children: [
-                  Icon(Icons.check_circle_rounded,
-                      color: colors.primary, size: 20),
+                  Icon(
+                    Icons.check_circle_rounded,
+                    color: colors.primary,
+                    size: 20,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
@@ -218,7 +220,8 @@ class _WorkoutShareCardSheetState extends State<WorkoutShareCardSheet>
       if (ps.isAuth || ps.hasAccess) {
         await PhotoManager.editor.saveImage(
           bytes,
-          filename: 'aetron_workout_${DateTime.now().millisecondsSinceEpoch}.png',
+          filename:
+              'aetron_workout_${DateTime.now().millisecondsSinceEpoch}.png',
         );
 
         if (mounted) {
@@ -228,14 +231,15 @@ class _WorkoutShareCardSheetState extends State<WorkoutShareCardSheet>
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
-                side: BorderSide(
-                  color: colors.primary.withValues(alpha: 0.6),
-                ),
+                side: BorderSide(color: colors.primary.withValues(alpha: 0.6)),
               ),
               content: Row(
                 children: [
-                  Icon(Icons.check_circle_rounded,
-                      color: colors.primary, size: 20),
+                  Icon(
+                    Icons.check_circle_rounded,
+                    color: colors.primary,
+                    size: 20,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
@@ -288,9 +292,7 @@ class _WorkoutShareCardSheetState extends State<WorkoutShareCardSheet>
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
-            side: BorderSide(
-              color: colors.primary.withValues(alpha: 0.6),
-            ),
+            side: BorderSide(color: colors.primary.withValues(alpha: 0.6)),
           ),
           content: Row(
             children: [
@@ -319,37 +321,15 @@ class _WorkoutShareCardSheetState extends State<WorkoutShareCardSheet>
     final colors = context.kinetic;
     final isVi = widget.currentLang == AppLanguage.vi;
 
-    return SafeArea(
-      top: false,
-      child: Container(
-        decoration: BoxDecoration(
-          color: colors.surface1,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          border: Border(
-            top: BorderSide(
-              color: colors.borderSubtle.withValues(alpha: 0.8),
-              width: 1.2,
-            ),
-          ),
-        ),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.only(bottom: 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Drag Handle
-              const SizedBox(height: 12),
-              Container(
-                width: 44,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: colors.borderSubtle.withValues(alpha: 0.9),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-              const SizedBox(height: 14),
-
-              // Title Row
+    return KineticGlassBottomSheet(
+      floating: false,
+      borderRadius: 28,
+      padding: const EdgeInsets.fromLTRB(0, 14, 0, 24),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Title Row
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
@@ -364,8 +344,11 @@ class _WorkoutShareCardSheetState extends State<WorkoutShareCardSheet>
                           color: colors.primary.withValues(alpha: 0.35),
                         ),
                       ),
-                      child: Icon(Icons.ios_share_rounded,
-                          color: colors.primary, size: 18),
+                      child: Icon(
+                        Icons.ios_share_rounded,
+                        color: colors.primary,
+                        size: 18,
+                      ),
                     ),
                     const SizedBox(width: 10),
                     Column(
@@ -380,7 +363,9 @@ class _WorkoutShareCardSheetState extends State<WorkoutShareCardSheet>
                           ),
                         ),
                         Text(
-                          isVi ? 'Thẻ Vinh Danh Thành Tích' : 'Achievement Card',
+                          isVi
+                              ? 'Thẻ Vinh Danh Thành Tích'
+                              : 'Achievement Card',
                           style: KineticTypography.headlineSmall.copyWith(
                             color: colors.textPrimary,
                             fontWeight: FontWeight.w900,
@@ -389,10 +374,17 @@ class _WorkoutShareCardSheetState extends State<WorkoutShareCardSheet>
                       ],
                     ),
                     const Spacer(),
-                    IconButton(
+                    KineticGlassIconButton(
+                      size: 37,
+                      visualSize: 37,
+                      label: isVi ? 'Đóng' : 'Close',
                       onPressed: () => Navigator.of(context).pop(),
-                      icon: Icon(Icons.close_rounded,
-                          color: colors.textSecondary),
+                      icon: BladeIcon(
+                        BladeIconName.x,
+                        color: colors.textSecondary,
+                        size: 18,
+                        strokeWidth: 1.7,
+                      ),
                     ),
                   ],
                 ),
@@ -411,7 +403,8 @@ class _WorkoutShareCardSheetState extends State<WorkoutShareCardSheet>
                       color: const Color(0xFF006EE6),
                       isSelected: _selectedTheme == ShareCardTheme.aetronBlue,
                       onTap: () => setState(
-                          () => _selectedTheme = ShareCardTheme.aetronBlue),
+                        () => _selectedTheme = ShareCardTheme.aetronBlue,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     _ThemePill(
@@ -419,7 +412,8 @@ class _WorkoutShareCardSheetState extends State<WorkoutShareCardSheet>
                       color: const Color(0xFFE2E8F0),
                       isSelected: _selectedTheme == ShareCardTheme.cleanWhite,
                       onTap: () => setState(
-                          () => _selectedTheme = ShareCardTheme.cleanWhite),
+                        () => _selectedTheme = ShareCardTheme.cleanWhite,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     _ThemePill(
@@ -427,16 +421,17 @@ class _WorkoutShareCardSheetState extends State<WorkoutShareCardSheet>
                       color: const Color(0xFF38BDF8),
                       isSelected: _selectedTheme == ShareCardTheme.obsidian,
                       onTap: () => setState(
-                          () => _selectedTheme = ShareCardTheme.obsidian),
+                        () => _selectedTheme = ShareCardTheme.obsidian,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     _ThemePill(
                       label: 'Arctic Mist',
                       color: const Color(0xFF0284C7),
-                      isSelected:
-                          _selectedTheme == ShareCardTheme.arcticMist,
+                      isSelected: _selectedTheme == ShareCardTheme.arcticMist,
                       onTap: () => setState(
-                          () => _selectedTheme = ShareCardTheme.arcticMist),
+                        () => _selectedTheme = ShareCardTheme.arcticMist,
+                      ),
                     ),
                   ],
                 ),
@@ -489,20 +484,16 @@ class _WorkoutShareCardSheetState extends State<WorkoutShareCardSheet>
                           label: 'Facebook',
                           color: const Color(0xFF1877F2),
                           icon: Icons.facebook_rounded,
-                          onTap: () => _shareToApp(
-                            scheme: 'fb://',
-                            appName: 'Facebook',
-                          ),
+                          onTap: () =>
+                              _shareToApp(scheme: 'fb://', appName: 'Facebook'),
                         ),
                         // Zalo
                         _SocialAppButton(
                           label: 'Zalo',
                           color: const Color(0xFF0068FF),
                           customText: 'Zalo',
-                          onTap: () => _shareToApp(
-                            scheme: 'zalo://',
-                            appName: 'Zalo',
-                          ),
+                          onTap: () =>
+                              _shareToApp(scheme: 'zalo://', appName: 'Zalo'),
                         ),
                         // Messenger
                         _SocialAppButton(
@@ -585,7 +576,6 @@ class _WorkoutShareCardSheetState extends State<WorkoutShareCardSheet>
             ],
           ),
         ),
-      ),
     );
   }
 }
@@ -663,14 +653,14 @@ class _SocialAppButton extends StatelessWidget {
       child: Column(
         children: [
           Container(
-            width: 56,
-            height: 56,
+            width: KineticTokens.minTouchTarget,
+            height: KineticTokens.minTouchTarget,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.16),
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(14),
               border: Border.all(
                 color: color.withValues(alpha: 0.45),
-                width: 1.2,
+                width: 1,
               ),
               boxShadow: [
                 BoxShadow(
@@ -689,7 +679,7 @@ class _SocialAppButton extends StatelessWidget {
                         color: color,
                       ),
                     )
-                  : Icon(icon, color: color, size: 26),
+                  : Icon(icon, color: color, size: 21),
             ),
           ),
           const SizedBox(height: 6),
@@ -726,12 +716,12 @@ class _ActionSquareButton extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 9),
           decoration: BoxDecoration(
             color: colors.surface2,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
             border: Border.all(
               color: colors.borderSubtle.withValues(alpha: 0.8),
               width: 1.0,
@@ -740,12 +730,12 @@ class _ActionSquareButton extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 17, color: color),
+              Icon(icon, size: 16, color: color),
               const SizedBox(width: 6),
               Text(
                 label,
                 style: KineticTypography.label.copyWith(
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w600,
                   color: colors.textPrimary,
                 ),
               ),
@@ -787,23 +777,33 @@ class _ShareCardContent extends StatelessWidget {
     final now = DateTime.now();
     final dateStr =
         '${now.day.toString().padLeft(2, '0')}.${now.month.toString().padLeft(2, '0')}.${now.year}';
-    final distStr = WorkoutFormatters.formatDistance(distanceKm,
-        useMetric: useMetricUnits, decimals: 2);
-    final paceStr = WorkoutFormatters.formatPaceFromSpeedKmh(avgSpeedKmh,
-        useMetric: useMetricUnits);
-    final durationStr =
-        WorkoutFormatters.formatDurationFromSeconds(durationSeconds);
-    final actLabel =
-        WorkoutFormatters.formatActivityType(activityType, currentLang)
-            .toUpperCase();
-    final hasSteps = (activityType.toLowerCase() == 'running' ||
+    final distStr = WorkoutFormatters.formatDistance(
+      distanceKm,
+      useMetric: useMetricUnits,
+      decimals: 2,
+    );
+    final paceStr = WorkoutFormatters.formatPaceFromSpeedKmh(
+      avgSpeedKmh,
+      useMetric: useMetricUnits,
+    );
+    final durationStr = WorkoutFormatters.formatDurationFromSeconds(
+      durationSeconds,
+    );
+    final actLabel = WorkoutFormatters.formatActivityType(
+      activityType,
+      currentLang,
+    ).toUpperCase();
+    final hasSteps =
+        (activityType.toLowerCase() == 'running' ||
             activityType.toLowerCase() == 'walking') &&
         steps > 0;
 
-    final isLightCard = theme == ShareCardTheme.cleanWhite ||
+    final isLightCard =
+        theme == ShareCardTheme.cleanWhite ||
         theme == ShareCardTheme.arcticMist;
-    final Color primaryInk =
-        isLightCard ? const Color(0xFF0F172A) : Colors.white;
+    final Color primaryInk = isLightCard
+        ? const Color(0xFF0F172A)
+        : Colors.white;
     final Color secondaryInk = isLightCard
         ? const Color(0xFF475569)
         : Colors.white.withValues(alpha: 0.78);
@@ -813,25 +813,25 @@ class _ShareCardContent extends StatelessWidget {
 
     final (accentColor, borderColor, bgColors) = switch (theme) {
       ShareCardTheme.aetronBlue => (
-          Colors.white,
-          const Color(0xFF0058BD),
-          const [Color(0xFF006EE6), Color(0xFF0055C4)],
-        ),
+        Colors.white,
+        const Color(0xFF0058BD),
+        const [Color(0xFF006EE6), Color(0xFF0055C4)],
+      ),
       ShareCardTheme.cleanWhite => (
-          const Color(0xFF006EE6),
-          const Color(0xFFE2E8F0),
-          const [Color(0xFFFFFFFF), Color(0xFFF7F7FA)],
-        ),
+        const Color(0xFF006EE6),
+        const Color(0xFFE2E8F0),
+        const [Color(0xFFFFFFFF), Color(0xFFF7F7FA)],
+      ),
       ShareCardTheme.obsidian => (
-          const Color(0xFF38BDF8),
-          const Color(0xFF27272A),
-          const [Color(0xFF0B0B0E), Color(0xFF16161A)],
-        ),
+        const Color(0xFF93BFFF),
+        const Color(0xFF213245),
+        const [Color(0xFF0C1420), Color(0xFF192736)],
+      ),
       ShareCardTheme.arcticMist => (
-          const Color(0xFF006EE6),
-          const Color(0xFFBFDBFE),
-          const [Color(0xFFEAF3FF), Color(0xFFF7FAFF)],
-        ),
+        const Color(0xFF006EE6),
+        const Color(0xFFBFDBFE),
+        const [Color(0xFFEAF3FF), Color(0xFFF7FAFF)],
+      ),
     };
 
     return ClipRRect(
@@ -845,10 +845,7 @@ class _ShareCardContent extends StatelessWidget {
             end: Alignment.bottomRight,
             colors: bgColors,
           ),
-          border: Border.all(
-            color: borderColor,
-            width: 1.0,
-          ),
+          border: Border.all(color: borderColor, width: 1.0),
         ),
         child: Stack(
           children: [
@@ -862,7 +859,9 @@ class _ShareCardContent extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: accentColor.withValues(alpha: isLightCard ? 0.12 : 0.14),
+                    color: accentColor.withValues(
+                      alpha: isLightCard ? 0.12 : 0.14,
+                    ),
                     width: 24,
                   ),
                 ),
@@ -920,14 +919,17 @@ class _ShareCardContent extends StatelessWidget {
 
                   // Activity Pill
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
                     decoration: BoxDecoration(
                       color: isLightCard
                           ? const Color(0xFFEAF3FF)
                           : Colors.white.withValues(alpha: 0.14),
-                      borderRadius:
-                          BorderRadius.circular(KineticTokens.radiusPill),
+                      borderRadius: BorderRadius.circular(
+                        KineticTokens.radiusPill,
+                      ),
                     ),
                     child: Text(
                       actLabel,

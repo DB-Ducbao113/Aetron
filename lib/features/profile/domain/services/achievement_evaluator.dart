@@ -16,14 +16,25 @@ class AchievementEvaluator {
     final totalWorkouts = workouts.length;
 
     // Helper calculations from workouts list
-    final hasGpsWorkout = workouts.any((w) =>
-        w.mode.toLowerCase() == 'gps' ||
-        w.gpsAnalysis.validDistanceKm > 0 ||
-        (w.filteredRouteJson.isNotEmpty && w.filteredRouteJson != '[]'));
+    final hasGpsWorkout = workouts.any(
+      (w) =>
+          w.mode.toLowerCase() == 'gps' ||
+          w.gpsAnalysis.validDistanceKm > 0 ||
+          (w.filteredRouteJson.isNotEmpty && w.filteredRouteJson != '[]'),
+    );
 
     final maxSingleDistance = workouts.isEmpty
         ? 0.0
         : workouts.map((w) => w.distanceKm).reduce(math.max);
+
+    final runningWorkouts = workouts.where((w) {
+      final type = w.activityType.toLowerCase();
+      return type == 'running' || type == 'run';
+    });
+    final maxRunningDistance = runningWorkouts.fold<double>(
+      0.0,
+      (maximum, w) => math.max(maximum, w.distanceKm),
+    );
 
     final maxSingleCalories = workouts.isEmpty
         ? 0.0
@@ -34,7 +45,7 @@ class AchievementEvaluator {
         : workouts.map((w) => w.durationSec).reduce(math.max);
 
     // Fast pace check: Pace <= 5:00 min/km (300s/km) or speed >= 12.0 km/h on at least 3km
-    final hasPaceBreaker = workouts.any((w) {
+    final hasPaceBreaker = runningWorkouts.any((w) {
       if (w.distanceKm < 3.0) return false;
       if (w.gpsAnalysis.effectivePaceSecPerKm != null &&
           w.gpsAnalysis.effectivePaceSecPerKm! <= 300) {
@@ -44,9 +55,12 @@ class AchievementEvaluator {
     });
 
     final hasDawnWorkout = workouts.any((w) => w.startedAt.toLocal().hour < 6);
-    final hasNightWorkout = workouts.any((w) => w.startedAt.toLocal().hour >= 20);
-    final hasAiSync = workouts.any((w) =>
-        w.lapSplits.isNotEmpty || w.gpsAnalysis.validDistanceKm > 0);
+    final hasNightWorkout = workouts.any(
+      (w) => w.startedAt.toLocal().hour >= 20,
+    );
+    final hasAiSync = workouts.any(
+      (w) => w.lapSplits.isNotEmpty || w.gpsAnalysis.validDistanceKm > 0,
+    );
 
     return [
       // 1. NHÓM CỘT MỐC ĐẦU TIÊN
@@ -73,8 +87,10 @@ class AchievementEvaluator {
         category: BadgeCategory.milestone,
         titleVi: 'Khóa Tọa Độ GPS',
         titleEn: 'GPS Locked',
-        descriptionVi: 'Ghi nhận buổi tập ngoài trời đầu tiên có dữ liệu vệ tinh GPS.',
-        descriptionEn: 'Record your first outdoor activity with GPS satellite tracking.',
+        descriptionVi:
+            'Ghi nhận buổi tập ngoài trời đầu tiên có dữ liệu vệ tinh GPS.',
+        descriptionEn:
+            'Record your first outdoor activity with GPS satellite tracking.',
         quoteVi: 'Vẽ nên những lộ trình rực sáng đầu tiên trên bản đồ Aetron.',
         quoteEn: 'Carving your first glowing telemetry route on the map.',
         icon: Icons.gps_fixed_rounded,
@@ -92,8 +108,10 @@ class AchievementEvaluator {
         titleEn: '5K Pioneer',
         descriptionVi: 'Chinh phục cự ly 5.0 km trong một buổi tập duy nhất.',
         descriptionEn: 'Conquer a 5.0 km distance in a single workout.',
-        quoteVi: 'Cột mốc 5.000 mét chính thức mở ra tiềm năng thể lực không giới hạn.',
-        quoteEn: '5,000 meters unlocked. Your limitless endurance journey begins.',
+        quoteVi:
+            'Cột mốc 5.000 mét chính thức mở ra tiềm năng thể lực không giới hạn.',
+        quoteEn:
+            '5,000 meters unlocked. Your limitless endurance journey begins.',
         icon: Icons.directions_run_rounded,
         currentValue: math.min(maxSingleDistance, 5.0),
         targetValue: 5.0,
@@ -126,7 +144,8 @@ class AchievementEvaluator {
         category: BadgeCategory.streak,
         titleVi: 'Chiến Binh Tuần Lễ',
         titleEn: 'Weekly Ignite',
-        descriptionVi: 'Giữ vững chuỗi tập luyện 7 ngày liên tiếp không ngắt quãng.',
+        descriptionVi:
+            'Giữ vững chuỗi tập luyện 7 ngày liên tiếp không ngắt quãng.',
         descriptionEn: 'Maintain an unbroken 7-day training streak.',
         quoteVi: '1 tuần kiên định — Bạn đã biến tập luyện thành nhịp thở.',
         quoteEn: '7 days of relentless focus — Training is now your rhythm.',
@@ -145,7 +164,8 @@ class AchievementEvaluator {
         titleEn: '14-Day Orbit',
         descriptionVi: 'Chinh phục chuỗi 14 ngày rèn luyện liên tục.',
         descriptionEn: 'Hold a 14-day training streak alive.',
-        quoteVi: 'Thói quen đã chuyển hóa thành sức mạnh ý chí không thể lay chuyển.',
+        quoteVi:
+            'Thói quen đã chuyển hóa thành sức mạnh ý chí không thể lay chuyển.',
         quoteEn: 'Habit has transformed into unbreakable willpower.',
         icon: Icons.military_tech_rounded,
         currentValue: math.min(effectiveStreak.toDouble(), 14.0),
@@ -162,8 +182,10 @@ class AchievementEvaluator {
         titleEn: 'Unstoppable Month',
         descriptionVi: 'Chinh phục chuỗi 30 ngày tập luyện không ngừng nghỉ.',
         descriptionEn: 'Achieve a phenomenal 30-day continuous streak.',
-        quoteVi: 'Kỷ luật tối thượng — Bạn là biểu tượng của tinh thần bất khả chiến bại.',
-        quoteEn: 'Supreme discipline — You are the embodiment of pure resilience.',
+        quoteVi:
+            'Kỷ luật tối thượng — Bạn là biểu tượng của tinh thần bất khả chiến bại.',
+        quoteEn:
+            'Supreme discipline — You are the embodiment of pure resilience.',
         icon: Icons.whatshot_rounded,
         currentValue: math.min(effectiveStreak.toDouble(), 30.0),
         targetValue: 30.0,
@@ -181,7 +203,8 @@ class AchievementEvaluator {
         titleEn: 'Distance Builder',
         descriptionVi: 'Tích lũy tổng cộng 25 km qua các buổi tập.',
         descriptionEn: 'Accumulate 25 km total across your workouts.',
-        quoteVi: 'Mỗi kilômét tích lũy là một bước tiến gần hơn đến phiên bản mạnh nhất.',
+        quoteVi:
+            'Mỗi kilômét tích lũy là một bước tiến gần hơn đến phiên bản mạnh nhất.',
         quoteEn: 'Every kilometer logged is a step closer to your peak self.',
         icon: Icons.route_rounded,
         currentValue: math.min(totalDistanceKm, 25.0),
@@ -215,7 +238,8 @@ class AchievementEvaluator {
         titleEn: 'Century Explorer',
         descriptionVi: 'Chinh phục tổng quãng đường tích lũy đạt mốc 100 km.',
         descriptionEn: 'Conquer a total accumulated distance of 100 km.',
-        quoteVi: 'Gia nhập câu lạc bộ 100km — Dấu ấn của những chiến binh thực thụ.',
+        quoteVi:
+            'Gia nhập câu lạc bộ 100km — Dấu ấn của những chiến binh thực thụ.',
         quoteEn: 'Joined the 100km club — The hallmark of a dedicated athlete.',
         icon: Icons.explore_rounded,
         currentValue: math.min(totalDistanceKm, 100.0),
@@ -230,16 +254,18 @@ class AchievementEvaluator {
         category: BadgeCategory.distance,
         titleVi: 'Bán Marathon 21K',
         titleEn: 'Half-Marathon Pilot',
-        descriptionVi: 'Hoàn thành cự ly Bán Marathon 21.1 km trong một buổi tập.',
-        descriptionEn: 'Finish a 21.1 km Half-Marathon distance in one session.',
-        quoteVi: '21.0975 km kiên cường — Đỉnh cao của sự bền bỉ cơ thể và tâm trí.',
-        quoteEn: '21.0975 km conquered — The triumph of endurance and willpower.',
+        descriptionVi: 'Chạy cự ly bán marathon 21,1 km trong một buổi.',
+        descriptionEn: 'Run a half-marathon distance (21.1 km) in one session.',
+        quoteVi:
+            '21.0975 km kiên cường — Đỉnh cao của sự bền bỉ cơ thể và tâm trí.',
+        quoteEn:
+            '21.0975 km conquered — The triumph of endurance and willpower.',
         icon: Icons.emoji_events_rounded,
-        currentValue: math.min(maxSingleDistance, 21.1),
-        targetValue: 21.1,
+        currentValue: math.min(maxRunningDistance, 21.0975),
+        targetValue: 21.0975,
         unitVi: 'km',
         unitEn: 'km',
-        isUnlocked: maxSingleDistance >= 21.0975,
+        isUnlocked: maxRunningDistance >= 21.0975,
       ),
       AchievementBadge(
         id: 'quantum_500k',
@@ -249,7 +275,8 @@ class AchievementEvaluator {
         titleEn: 'Quantum 500K',
         descriptionVi: 'Chinh phục tổng tích lũy phi thường 500 km.',
         descriptionEn: 'Accumulate a monumental 500 km total distance.',
-        quoteVi: 'Quãng đường đủ để băng qua nhiều thành phố — Đẳng cấp Cyber Athlete.',
+        quoteVi:
+            'Quãng đường đủ để băng qua nhiều thành phố — Đẳng cấp Cyber Athlete.',
         quoteEn: 'A journey spanning cities — True Cyber Athlete supremacy.',
         icon: Icons.public_rounded,
         currentValue: math.min(totalDistanceKm, 500.0),
@@ -266,8 +293,9 @@ class AchievementEvaluator {
         category: BadgeCategory.speed,
         titleVi: 'Phá Vỡ Tốc Độ',
         titleEn: 'Pace Breaker',
-        descriptionVi: 'Đạt Pace < 5:00 min/km (hoặc > 12 km/h) trên quãng đường tối thiểu 3 km.',
-        descriptionEn: 'Achieve sub-5:00 min/km pace over a 3.0+ km session.',
+        descriptionVi:
+            'Chạy với pace tối đa 5:00 phút/km (ít nhất 12 km/h) trên cự ly tối thiểu 3 km.',
+        descriptionEn: 'Run at 5:00 min/km pace or faster over at least 3 km.',
         quoteVi: 'Tốc độ thần tốc xé gió bứt phá khỏi mọi giới hạn an toàn.',
         quoteEn: 'Lightning speed surging beyond comfort zones.',
         icon: Icons.electric_bolt_rounded,
@@ -301,9 +329,11 @@ class AchievementEvaluator {
         titleVi: 'Sức Bền Thiết Giáp',
         titleEn: 'Iron Endurance',
         descriptionVi: 'Duy trì hoạt động thể thao liên tục trên 60 phút.',
-        descriptionEn: 'Sustain active exercise for over 60 continuous minutes.',
+        descriptionEn:
+            'Sustain active exercise for over 60 continuous minutes.',
         quoteVi: 'Ý chí kiên định chiến thắng sự mệt mỏi theo từng nhịp tim.',
-        quoteEn: 'Unwavering stamina prevailing over fatigue with every heartbeat.',
+        quoteEn:
+            'Unwavering stamina prevailing over fatigue with every heartbeat.',
         icon: Icons.timer_rounded,
         currentValue: math.min((maxSingleDurationSec / 60).toDouble(), 60.0),
         targetValue: 60.0,
@@ -321,7 +351,8 @@ class AchievementEvaluator {
         titleEn: 'Dawn Runner',
         descriptionVi: 'Bắt đầu và hoàn thành buổi tập trước 06:00 sáng.',
         descriptionEn: 'Start and complete a session before 6:00 AM.',
-        quoteVi: 'Thức dậy trước bình minh để kiến tạo chiến thắng cho ngày mới.',
+        quoteVi:
+            'Thức dậy trước bình minh để kiến tạo chiến thắng cho ngày mới.',
         quoteEn: 'Awakening before the sun to conquer the day ahead.',
         icon: Icons.wb_sunny_rounded,
         currentValue: hasDawnWorkout ? 1 : 0,
@@ -355,8 +386,10 @@ class AchievementEvaluator {
         titleEn: 'Program Master',
         descriptionVi: 'Hoàn thành buổi tập theo giáo án bài bản.',
         descriptionEn: 'Complete a structured training program.',
-        quoteVi: 'Rèn luyện kỷ luật theo giáo trình để chinh phục đỉnh cao phong độ.',
-        quoteEn: 'Disciplined training structure to reach peak athletic performance.',
+        quoteVi:
+            'Rèn luyện kỷ luật theo giáo trình để chinh phục đỉnh cao phong độ.',
+        quoteEn:
+            'Disciplined training structure to reach peak athletic performance.',
         icon: Icons.military_tech_rounded,
         currentValue: hasAiSync ? 1 : 0,
         targetValue: 1,

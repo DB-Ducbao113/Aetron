@@ -2,6 +2,7 @@ import 'package:fitness_exercise_application/core/localization/app_translations.
 import 'package:fitness_exercise_application/features/settings/presentation/screens/notification_settings_screen.dart';
 import 'package:fitness_exercise_application/features/settings/presentation/widgets/kinetic_settings_section.dart';
 import 'package:fitness_exercise_application/features/settings/presentation/widgets/kinetic_settings_top_bar.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_card.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_theme.dart';
 import 'package:flutter/cupertino.dart';
@@ -64,19 +65,19 @@ void main() {
       expect(find.text('NHẮC NHỞ LUYỆN TẬP'), findsNothing);
       expect(find.text('v1.0.0'), findsNothing);
 
-      // Option A Dark surface colors
+      // Glassline V3 Liquid Glass surface cards
       final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
       expect(scaffold.backgroundColor, equals(KineticColors.dark.background));
-      final sectionMaterials = tester
-          .widgetList<Material>(
+      final sectionCards = tester
+          .widgetList<KineticCard>(
             find.descendant(
               of: find.byType(KineticSettingsSectionGroup),
-              matching: find.byType(Material),
+              matching: find.byType(KineticCard),
             ),
           )
-          .where((m) => m.color == KineticColors.dark.surface1)
+          .where((c) => c.useLiquidGlass)
           .toList();
-      expect(sectionMaterials.length, greaterThanOrEqualTo(2));
+      expect(sectionCards.length, greaterThanOrEqualTo(2));
 
       // Master switch card
       expect(find.text('Nhận thông báo'), findsOneWidget);
@@ -144,19 +145,19 @@ void main() {
       expect(find.text('KHUNG GIỜ YÊN TĨNH'), findsOneWidget);
       expect(find.text('Chế độ yên tĩnh'), findsOneWidget);
 
-      // Option A Light surface colors
+      // Glassline V3 Liquid Glass surface cards
       final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
       expect(scaffold.backgroundColor, equals(KineticColors.light.background));
-      final sectionMaterials = tester
-          .widgetList<Material>(
+      final sectionCards = tester
+          .widgetList<KineticCard>(
             find.descendant(
               of: find.byType(KineticSettingsSectionGroup),
-              matching: find.byType(Material),
+              matching: find.byType(KineticCard),
             ),
           )
-          .where((m) => m.color == KineticColors.light.surface1)
+          .where((c) => c.useLiquidGlass)
           .toList();
-      expect(sectionMaterials.length, greaterThanOrEqualTo(2));
+      expect(sectionCards.length, greaterThanOrEqualTo(2));
 
       expect(find.byType(Switch), findsNothing);
       final switches = tester.widgetList<CupertinoSwitch>(find.byType(CupertinoSwitch)).toList();

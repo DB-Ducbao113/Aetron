@@ -1,4 +1,8 @@
 import 'dart:async';
+import 'dart:ui';
+
+import 'package:fitness_exercise_application/features/shell/presentation/widgets/aetron_bottom_bar.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_glass_icon_button.dart';
 
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/auth/presentation/helpers/password_validator.dart';
@@ -130,40 +134,40 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     final currentLang = ref.watch(appLanguageProvider);
     final isVi = currentLang == AppLanguage.vi;
 
+    final hPad = AetronBottomBar.horizontalPagePaddingOf(context);
+    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
+
     return Scaffold(
       backgroundColor: kinetic.background,
-      body: Column(
-        children: [
-          // ── Flat header (V5): functional row + brand row ──────────────
-          Padding(
-            padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 10, 16, 16),
+      body: KineticGlasslineScaffoldBody(
+        showBottomScrim: false,
+        child: Column(
+          children: [
+            // ── Flat header (V5): functional row + brand row ──────────────
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                hPad,
+                MediaQuery.of(context).padding.top + 10,
+                hPad,
+                16,
+              ),
             child: Column(
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                  Material(
-                    color: kinetic.surface2,
-                    borderRadius: BorderRadius.circular(16),
-                    child: InkWell(
-                      onTap: () => Navigator.of(context).pop(),
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: kinetic.primary.withValues(alpha: 0.3),
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          color: kinetic.primary,
-                          size: 18,
-                        ),
+                    KineticGlassIconButton(
+                      size: 37,
+                      visualSize: 37,
+                      label: isVi ? 'Quay lại' : 'Back',
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: BladeIcon(
+                        BladeIconName.chevL,
+                        size: 18,
+                        color: kinetic.textSecondary,
+                        strokeWidth: 1.7,
                       ),
                     ),
-                  ),
                     const AuthLanguageToggle(),
                   ],
                 ),
@@ -173,7 +177,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(11),
                       child: Image.asset(
-                        'assets/logo.png',
+                        'assets/logo_glassline.png',
                         width: 44,
                         height: 44,
                         fit: BoxFit.cover,
@@ -214,38 +218,50 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             ),
           ),
 
-          // ── 2. Bottom Section: V4 flat card ───────────────────────────────
+          // ── 2. Bottom Section: Frosted Glassline Sheet ────────────────────
           Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: kinetic.surface1,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(KineticTokens.radiusXXL),
-                ),
-                boxShadow: kinetic.isDark
-                    ? null
-                    : KineticTokens.shadowCardLight(),
-                border: kinetic.isDark
-                    ? Border(top: BorderSide(color: kinetic.borderSubtle))
-                    : null,
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(KineticTokens.radiusXXL),
               ),
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(KineticTokens.radiusXXL),
-                ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 36),
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 360),
-                    child: _isSent
-                        ? _buildSuccessState(context, isVi)
-                        : _buildInputState(context, isVi),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: kinetic.surface1.withValues(
+                      alpha: kinetic.isDark ? 0.84 : 0.90,
+                    ),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(KineticTokens.radiusXXL),
+                    ),
+                    border: Border(
+                      top: BorderSide(
+                        color: kinetic.isDark
+                            ? Colors.white.withValues(alpha: 0.14)
+                            : Colors.white.withValues(alpha: 0.80),
+                      ),
+                    ),
+                  ),
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.fromLTRB(
+                      hPad + 4,
+                      20,
+                      hPad + 4,
+                      bottomInset + 28,
+                    ),
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 360),
+                      child: _isSent
+                          ? _buildSuccessState(context, isVi)
+                          : _buildInputState(context, isVi),
+                    ),
                   ),
                 ),
               ),
             ),
           ),
         ],
+        ),
       ),
     );
   }
@@ -311,10 +327,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             ),
             decoration: InputDecoration(
               hintText: isVi ? 'name@example.com' : 'name@example.com',
-              hintStyle: TextStyle(
-                color: kinetic.textMuted,
-                fontSize: 14,
-              ),
+              hintStyle: TextStyle(color: kinetic.textMuted, fontSize: 14),
               filled: true,
               fillColor: kinetic.background,
               prefixIcon: BladeIcon(
@@ -332,10 +345,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(
-                  color: kinetic.primary,
-                  width: 1.5,
-                ),
+                borderSide: BorderSide(color: kinetic.primary, width: 1.5),
               ),
               errorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
@@ -343,10 +353,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               ),
               focusedErrorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(
-                  color: kinetic.error,
-                  width: 1.5,
-                ),
+                borderSide: BorderSide(color: kinetic.error, width: 1.5),
               ),
             ),
             validator: (val) {
@@ -386,10 +393,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   Expanded(
                     child: Text(
                       _errorMessage!,
-                      style: TextStyle(
-                        color: kinetic.error,
-                        fontSize: 12,
-                      ),
+                      style: TextStyle(color: kinetic.error, fontSize: 12),
                     ),
                   ),
                 ],
@@ -543,18 +547,12 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             decoration: BoxDecoration(
               color: kinetic.surface2,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: kinetic.primary.withValues(alpha: 0.5),
-              ),
+              border: Border.all(color: kinetic.primary.withValues(alpha: 0.5)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                BladeIcon(
-                  BladeIconName.mail,
-                  color: kinetic.primary,
-                  size: 14,
-                ),
+                BladeIcon(BladeIconName.mail, color: kinetic.primary, size: 14),
                 const SizedBox(width: 8),
                 Text(
                   email,
@@ -595,36 +593,17 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         const SizedBox(height: 14),
 
         // Resend Button with Countdown
-        OutlinedButton(
+        KineticButton(
+          label: _resendCountdown > 0
+              ? (isVi
+                    ? 'Gửi lại sau (${_resendCountdown}s)'
+                    : 'Resend in (${_resendCountdown}s)')
+              : (isVi ? 'GỬI LẠI EMAIL' : 'RESEND EMAIL'),
+          variant: KineticButtonVariant.secondary,
+          height: KineticTokens.buttonHeight,
           onPressed: (_resendCountdown == 0 && !_isLoading)
               ? _sendResetEmail
               : null,
-          style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            side: BorderSide(
-              color: _resendCountdown == 0
-                  ? kinetic.primary
-                  : kinetic.borderSubtle,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-          ),
-          child: Text(
-            _resendCountdown > 0
-                ? (isVi
-                      ? 'Gửi lại sau (${_resendCountdown}s)'
-                      : 'Resend in (${_resendCountdown}s)')
-                : (isVi ? 'GỬI LẠI EMAIL' : 'RESEND EMAIL'),
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.0,
-              color: _resendCountdown == 0
-                  ? kinetic.primary
-                  : kinetic.textMuted,
-            ),
-          ),
         ),
         if (_errorMessage != null) ...[
           const SizedBox(height: 12),
@@ -774,13 +753,18 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
         children: [
           // ── Flat brand header (V5): real logo + screen title/subtitle ────
           Padding(
-            padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 16, 20, 16),
+            padding: EdgeInsets.fromLTRB(
+              20,
+              MediaQuery.of(context).padding.top + 16,
+              20,
+              16,
+            ),
             child: Row(
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(11),
                   child: Image.asset(
-                    'assets/logo.png',
+                    'assets/logo_glassline.png',
                     width: 44,
                     height: 44,
                     fit: BoxFit.cover,
@@ -948,9 +932,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                             ),
                             errorBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(
-                                color: kinetic.error,
-                              ),
+                              borderSide: BorderSide(color: kinetic.error),
                             ),
                             focusedErrorBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
@@ -1038,9 +1020,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                             ),
                             errorBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(
-                                color: kinetic.error,
-                              ),
+                              borderSide: BorderSide(color: kinetic.error),
                             ),
                             focusedErrorBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
@@ -1143,9 +1123,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
 
                         // Submit Update Button — V4 KineticButton (flat pill)
                         KineticButton(
-                          label: isVi
-                              ? 'CẬP NHẬT MẬT KHẨU'
-                              : 'UPDATE PASSWORD',
+                          label: isVi ? 'CẬP NHẬT MẬT KHẨU' : 'UPDATE PASSWORD',
                           icon: Icons.check_rounded,
                           isLoading: _isLoading,
                           height: KineticTokens.buttonHeightPrimary,

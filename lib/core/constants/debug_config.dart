@@ -89,6 +89,12 @@ const String kGitRevision = String.fromEnvironment(
   defaultValue: 'experiment/ekf4-field-recording',
 );
 
+/// Enables bypassing authentication in debug mode for UI previews and captures.
+const bool kDebugBypassAuth = bool.fromEnvironment(
+  'FLOWFIT_DEBUG_BYPASS_AUTH',
+  defaultValue: false,
+);
+
 /// Reproducible fingerprint representing the exact build / working tree state.
 /// Injected dynamically via --dart-define=FLOWFIT_SOURCE_FINGERPRINT=... during build.
 const String kSourceFingerprint = String.fromEnvironment(

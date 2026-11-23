@@ -1,7 +1,5 @@
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 
 class KineticOverallProgressCard extends StatelessWidget {
@@ -29,13 +27,10 @@ class KineticOverallProgressCard extends StatelessWidget {
     final colors = context.kinetic;
     final progressPercent = (overallProgress * 100).round();
 
-    return Container(
-      padding: const EdgeInsets.all(KineticTokens.spaceLG),
-      decoration: BoxDecoration(
-        color: colors.surface1,
-        borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
-        border: Border.all(color: colors.borderSubtle),
-      ),
+    return KineticCard(
+      useLiquidGlass: true,
+      borderRadius: 21,
+      padding: const EdgeInsets.all(17),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

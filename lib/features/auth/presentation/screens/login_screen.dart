@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:fitness_exercise_application/app/bootstrap.dart';
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
+import 'package:fitness_exercise_application/features/shell/presentation/widgets/aetron_bottom_bar.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/features/auth/presentation/helpers/google_oauth.dart';
@@ -170,19 +171,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     final topPad = MediaQuery.of(context).padding.top;
     final colors = context.kinetic;
 
+    final hPad = AetronBottomBar.horizontalPagePaddingOf(context);
+    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
+
     return Scaffold(
       backgroundColor: colors.background,
-      body: Column(
-        children: [
-          // ── Flat brand row (V5): real logo + hero title/subtitle ─────────
-          Padding(
-            padding: EdgeInsets.fromLTRB(20, topPad + 16, 20, 12),
-            child: Row(
+      body: KineticGlasslineScaffoldBody(
+        showBottomScrim: false,
+        child: Column(
+          children: [
+            // ── Flat header (V5): real logo + hero title/subtitle ─────────
+            Padding(
+              padding: EdgeInsets.fromLTRB(hPad, topPad + 16, hPad, 12),
+              child: Row(
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(11),
                   child: Image.asset(
-                    'assets/logo.png',
+                    'assets/logo_glassline.png',
                     width: 44,
                     height: 44,
                     fit: BoxFit.cover,
@@ -224,29 +230,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           // ── Scrollable Body ───────────────────────────────────────────────
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+              padding: EdgeInsets.fromLTRB(hPad, 24, hPad, bottomInset + 32),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Container(
-                        padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
-                        decoration: BoxDecoration(
-                          color: colors.surface1,
-                          borderRadius: BorderRadius.circular(
-                            KineticTokens.radiusXXL,
-                          ),
-                          boxShadow: colors.isDark
-                              ? null
-                              : KineticTokens.shadowCardLight(),
-                          border: colors.isDark
-                              ? Border.all(color: colors.borderSubtle)
-                              : null,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
+                    KineticCard(
+                      useLiquidGlass: true,
+                      borderRadius: 21,
+                      padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
                           // ── Username field ──────────────────────────────────────
                           _SectionLabel(isVi ? 'TÊN ĐĂNG NHẬP' : 'USERNAME'),
                           const SizedBox(height: 6),
@@ -256,7 +252,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                 ? 'Nhập tên đăng nhập'
                                 : 'Enter your username',
                             prefixIcon: BladeIconName.user,
-                            validator: (value) => validateUsername(value, isVi: isVi),
+                            validator: (value) =>
+                                validateUsername(value, isVi: isVi),
                           ),
                           const SizedBox(height: 16),
 
@@ -302,7 +299,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                               onPressed: () {
                                 Navigator.of(context).push(
                                   MaterialPageRoute(
-                                    builder: (_) => const ForgotPasswordScreen(),
+                                    builder: (_) =>
+                                        const ForgotPasswordScreen(),
                                   ),
                                 );
                               },
@@ -344,11 +342,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           // ── Divider ─────────────────────────────────────────────
                           Row(
                             children: [
-                              Expanded(child: Divider(color: colors.borderSubtle)),
+                              Expanded(
+                                child: Divider(color: colors.borderSubtle),
+                              ),
                               Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 14),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                ),
                                 child: Text(
-                                  isVi ? 'Hoặc tiếp tục với' : 'Or continue with',
+                                  isVi
+                                      ? 'Hoặc tiếp tục với'
+                                      : 'Or continue with',
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
@@ -356,7 +360,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                   ),
                                 ),
                               ),
-                              Expanded(child: Divider(color: colors.borderSubtle)),
+                              Expanded(
+                                child: Divider(color: colors.borderSubtle),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 16),
@@ -406,15 +412,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                               ),
                             ],
                           ),
-                          ],
-                        ),
+                        ],
                       ),
+                    ),
                   ],
                 ),
               ),
             ),
           ),
         ],
+        ),
       ),
     );
   }
@@ -553,65 +560,69 @@ class _GoogleButton extends StatelessWidget {
     final colors = context.kinetic;
     return GestureDetector(
       onTap: (isLoading || disabled) ? null : onPressed,
-      child: Container(
-        height: 52,
-        decoration: BoxDecoration(
-          color: colors.surface2,
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: colors.borderStrong, width: 1.5),
-        ),
-        child: isLoading
-            ? Center(
-                child: SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    color: colors.primary,
-                    strokeWidth: 2,
+      child: KineticTouchFinish(
+        radius: 999,
+        enabled: !isLoading && !disabled,
+        child: Container(
+          height: KineticTokens.buttonHeightPrimary,
+          decoration: BoxDecoration(
+            color: colors.surface2,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: colors.borderStrong, width: 1),
+          ),
+          child: isLoading
+              ? Center(
+                  child: SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      color: colors.primary,
+                      strokeWidth: 2,
+                    ),
                   ),
-                ),
-              )
-            : Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 24,
-                      height: 24,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                      padding: const EdgeInsets.all(2),
-                      child: ClipOval(
-                        child: Image.asset(
-                          'assets/GoogleLogo.jpg',
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Icon(
-                            Icons.g_mobiledata,
-                            color: colors.primary,
-                            size: 20,
+                )
+              : Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 20,
+                        height: 20,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        padding: const EdgeInsets.all(2),
+                        child: ClipOval(
+                          child: Image.asset(
+                            'assets/GoogleLogo.jpg',
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Icon(
+                              Icons.g_mobiledata,
+                              color: colors.primary,
+                              size: 16,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Flexible(
-                      child: Text(
-                        label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: colors.textPrimary,
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: colors.textPrimary,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
+        ),
       ),
     );
   }

@@ -50,14 +50,8 @@ class KineticSkeleton {
   }
 
   /// A shimmering circle placeholder for avatars, icons, etc.
-  static Widget circle({
-    double size = 48,
-    EdgeInsetsGeometry? margin,
-  }) {
-    return _ShimmerCircle(
-      size: size,
-      margin: margin,
-    );
+  static Widget circle({double size = 48, EdgeInsetsGeometry? margin}) {
+    return _ShimmerCircle(size: size, margin: margin);
   }
 
   // ── Screen Skeletons ─────────────────────────────────────────────────────
@@ -106,11 +100,7 @@ class _ShimmerPainter extends CustomPainter {
     final dx = (size.width + shimmerWidth) * progress - shimmerWidth;
 
     final gradient = LinearGradient(
-      colors: [
-        Colors.transparent,
-        highlightColor,
-        Colors.transparent,
-      ],
+      colors: [Colors.transparent, highlightColor, Colors.transparent],
       stops: const [0.0, 0.5, 1.0],
       begin: Alignment.centerLeft,
       end: Alignment.centerRight,
@@ -168,9 +158,7 @@ class _ShimmerBoxState extends State<_ShimmerBox>
     final colors = context.kinetic;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final baseColor = isDark
-        ? colors.surface2
-        : colors.surface3;
+    final baseColor = isDark ? colors.surface2 : colors.surface3;
     final highlightColor = isDark
         ? colors.primary.withValues(alpha: 0.08)
         : colors.primary.withValues(alpha: 0.06);
@@ -262,10 +250,7 @@ class _ShimmerCardState extends State<_ShimmerCard>
           decoration: BoxDecoration(
             color: baseColor,
             borderRadius: BorderRadius.circular(widget.borderRadius),
-            border: Border.all(
-              color: colors.borderSubtle,
-              width: 1,
-            ),
+            border: Border.all(color: colors.borderSubtle, width: 1),
           ),
           child: CustomPaint(
             painter: _ShimmerPainter(
@@ -284,10 +269,7 @@ class _ShimmerCircle extends StatefulWidget {
   final double size;
   final EdgeInsetsGeometry? margin;
 
-  const _ShimmerCircle({
-    this.size = 48,
-    this.margin,
-  });
+  const _ShimmerCircle({this.size = 48, this.margin});
 
   @override
   State<_ShimmerCircle> createState() => _ShimmerCircleState();
@@ -331,10 +313,7 @@ class _ShimmerCircleState extends State<_ShimmerCircle>
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: baseColor,
-            border: Border.all(
-              color: colors.borderSubtle,
-              width: 1,
-            ),
+            border: Border.all(color: colors.borderSubtle, width: 1),
           ),
           child: CustomPaint(
             painter: _ShimmerPainter(
@@ -386,7 +365,10 @@ class _HomeSkeleton extends StatelessWidget {
           ),
           const SizedBox(height: KineticTokens.spaceLG),
           // Hero card
-          KineticSkeleton.card(height: 180, borderRadius: KineticTokens.radiusLG),
+          KineticSkeleton.card(
+            height: 180,
+            borderRadius: KineticTokens.radiusLG,
+          ),
           const SizedBox(height: KineticTokens.spaceMD),
           // Section title
           KineticSkeleton.box(height: 12, width: 100),
@@ -442,7 +424,10 @@ class _AnalyticsSkeleton extends StatelessWidget {
           ),
           const SizedBox(height: KineticTokens.spaceLG),
           // Hero metric
-          KineticSkeleton.card(height: 160, borderRadius: KineticTokens.radiusLG),
+          KineticSkeleton.card(
+            height: 160,
+            borderRadius: KineticTokens.radiusLG,
+          ),
           const SizedBox(height: KineticTokens.spaceMD),
           // Telemetry grid
           Row(
@@ -600,7 +585,7 @@ class _WorkoutDetailsSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(KineticTokens.spaceMD),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -608,7 +593,10 @@ class _WorkoutDetailsSkeleton extends StatelessWidget {
           KineticSkeleton.box(height: 20, width: 160),
           const SizedBox(height: KineticTokens.spaceLG),
           // Hero distance
-          KineticSkeleton.card(height: 140, borderRadius: KineticTokens.radiusLG),
+          KineticSkeleton.card(
+            height: 140,
+            borderRadius: KineticTokens.radiusLG,
+          ),
           const SizedBox(height: KineticTokens.spaceMD),
           // Telemetry grid
           Row(

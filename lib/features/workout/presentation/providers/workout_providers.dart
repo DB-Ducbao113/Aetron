@@ -3,10 +3,12 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:fitness_exercise_application/core/constants/debug_config.dart';
 import 'package:fitness_exercise_application/core/providers/app_providers.dart';
 import 'package:fitness_exercise_application/core/providers/connectivity_providers.dart';
 import 'package:fitness_exercise_application/features/workout/data/local/local_db.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
+import 'package:fitness_exercise_application/features/workout/domain/repositories/workout_repository.dart';
 import 'package:fitness_exercise_application/features/profile/presentation/providers/user_profile_providers.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/workout_tracking_engine.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/scientific_result_metadata.dart';
@@ -30,6 +32,9 @@ class WorkoutList extends _$WorkoutList {
 
   @override
   Future<List<WorkoutSession>> build() async {
+    if (kDebugBypassAuth) {
+      return _generateDebugWorkouts();
+    }
     final user = ref.watch(currentUserIdProvider);
     if (user == null) return const [];
 
@@ -57,7 +62,10 @@ class WorkoutList extends _$WorkoutList {
       if (!kIsWeb) {
         await repository.replaceLocalCache(user, remoteSessions);
       }
-      return _mergePendingLocalSessions(remoteSessions, userId: user);
+      return _mergePendingLocalSessions(
+        await _includePersistedPending(repository, user, remoteSessions),
+        userId: user,
+      );
     } catch (e) {
       debugPrint('[WorkoutList] Remote fetch fallback to local: $e');
     }
@@ -80,6 +88,135 @@ class WorkoutList extends _$WorkoutList {
     } finally {
       _reconnectSyncInFlight = false;
     }
+  }
+
+  /// A successful cloud fetch can still omit workouts whose upload failed.
+  /// Only pending finalized rows are added, not absent synced cloud history.
+  Future<List<WorkoutSession>> _includePersistedPending(
+    WorkoutRepository repository,
+    String userId,
+    List<WorkoutSession> remote,
+  ) async {
+    if (kIsWeb) return remote;
+    final pending = await LocalDB.getUnsyncedWorkoutsForUser(userId);
+    final pendingIds = pending
+        .where((w) => !LocalDB.isRecordingCheckpoint(w))
+        .map((w) => w.sessionId)
+        .toSet();
+    if (pendingIds.isEmpty) return remote;
+    final local = await repository.getSessionsLocal(userId);
+    final merged = {for (final s in remote) s.id: s};
+    for (final session in local) {
+      if (session.userId == userId && pendingIds.contains(session.id)) {
+        merged[session.id] = session;
+      }
+    }
+    return merged.values.toList();
+  }
+
+  List<WorkoutSession> _generateDebugWorkouts() {
+    final now = DateTime.now();
+    // Smooth ~5.24 km running route loop around District 1, Ho Chi Minh City.
+    final routeJson = jsonEncode([
+      const [
+        {'lat': 10.7731, 'lng': 106.7037},
+        {'lat': 10.7746, 'lng': 106.7024},
+        {'lat': 10.7760, 'lng': 106.7011},
+        {'lat': 10.7745, 'lng': 106.6996},
+        {'lat': 10.7726, 'lng': 106.6982},
+        {'lat': 10.7712, 'lng': 106.6966},
+        {'lat': 10.7706, 'lng': 106.6941},
+        {'lat': 10.7724, 'lng': 106.6924},
+        {'lat': 10.7748, 'lng': 106.6915},
+        {'lat': 10.7769, 'lng': 106.6932},
+        {'lat': 10.7785, 'lng': 106.6957},
+        {'lat': 10.7798, 'lng': 106.6983},
+        {'lat': 10.7791, 'lng': 106.7006},
+        {'lat': 10.7774, 'lng': 106.7022},
+        {'lat': 10.7755, 'lng': 106.7036},
+        {'lat': 10.7736, 'lng': 106.7042},
+      ],
+    ]);
+
+    return [
+      WorkoutSession(
+        id: 'debug-run-1',
+        userId: 'debug-user',
+        activityType: 'running',
+        startedAt: now.subtract(const Duration(hours: 2)),
+        endedAt: now.subtract(const Duration(hours: 1, minutes: 27, seconds: 14)),
+        durationSec: 1966,
+        movingTimeSec: 1950,
+        distanceKm: 5.24,
+        steps: 6180,
+        avgSpeedKmh: 9.595,
+        caloriesKcal: 362.0,
+        mode: 'outdoor',
+        filteredRouteJson: routeJson,
+        createdAt: now.subtract(const Duration(hours: 1, minutes: 27)),
+        gpsAnalysis: const WorkoutGpsAnalysis(
+          validDistanceKm: 5.24,
+          restDurationSec: 16,
+        ),
+      ),
+      WorkoutSession(
+        id: 'debug-walk-2',
+        userId: 'debug-user',
+        activityType: 'walking',
+        startedAt: now.subtract(const Duration(days: 1, hours: 2)),
+        endedAt: now.subtract(const Duration(days: 1, hours: 1, minutes: 20)),
+        durationSec: 2400,
+        movingTimeSec: 2350,
+        distanceKm: 3.80,
+        steps: 4620,
+        avgSpeedKmh: 5.7,
+        caloriesKcal: 215.0,
+        mode: 'outdoor',
+        createdAt: now.subtract(const Duration(days: 1, hours: 1)),
+        gpsAnalysis: const WorkoutGpsAnalysis(
+          validDistanceKm: 3.80,
+          restDurationSec: 50,
+        ),
+      ),
+      WorkoutSession(
+        id: 'debug-cycle-3',
+        userId: 'debug-user',
+        activityType: 'cycling',
+        startedAt: now.subtract(const Duration(days: 2, hours: 5)),
+        endedAt: now.subtract(const Duration(days: 2, hours: 4)),
+        durationSec: 3600,
+        movingTimeSec: 3500,
+        distanceKm: 18.5,
+        steps: 0,
+        avgSpeedKmh: 18.5,
+        caloriesKcal: 480.0,
+        mode: 'outdoor',
+        createdAt: now.subtract(const Duration(days: 2, hours: 4)),
+        gpsAnalysis: const WorkoutGpsAnalysis(
+          validDistanceKm: 18.5,
+          restDurationSec: 100,
+        ),
+      ),
+      WorkoutSession(
+        id: 'debug-run-4',
+        userId: 'debug-user',
+        activityType: 'running',
+        startedAt: now.subtract(const Duration(days: 4, hours: 3)),
+        endedAt: now.subtract(const Duration(days: 4, hours: 2, minutes: 15)),
+        durationSec: 2700,
+        movingTimeSec: 2650,
+        distanceKm: 8.12,
+        steps: 6200,
+        avgSpeedKmh: 10.8,
+        caloriesKcal: 560.0,
+        mode: 'outdoor',
+        createdAt: now.subtract(const Duration(days: 4, hours: 2)),
+        gpsAnalysis: const WorkoutGpsAnalysis(
+          validDistanceKm: 8.12,
+          restDurationSec: 50,
+        ),
+      ),
+    ];
   }
 
   /// Shows a just-finished session in the list immediately, without waiting
@@ -158,6 +295,9 @@ class WorkoutList extends _$WorkoutList {
   Future<void> refresh() async {
     state = AsyncLoading<List<WorkoutSession>>().copyWithPrevious(state);
     state = await AsyncValue.guard(() async {
+      if (kDebugBypassAuth) {
+        return _generateDebugWorkouts();
+      }
       final user = ref.read(currentUserIdProvider);
       if (user == null) return const [];
 
@@ -176,7 +316,10 @@ class WorkoutList extends _$WorkoutList {
         if (!kIsWeb) {
           await repository.replaceLocalCache(user, remoteSessions);
         }
-        return _mergePendingLocalSessions(remoteSessions, userId: user);
+        return _mergePendingLocalSessions(
+          await _includePersistedPending(repository, user, remoteSessions),
+          userId: user,
+        );
       } catch (e) {
         debugPrint('[WorkoutList.refresh] Remote fetch error, using local: $e');
       }
@@ -294,8 +437,19 @@ class ActiveWorkout extends _$ActiveWorkout {
 /// Single Workout Provider
 @riverpod
 Future<WorkoutSession?> workout(WorkoutRef ref, String id) async {
+  if (kDebugBypassAuth) {
+    final debugList = ref.watch(workoutListProvider).valueOrNull;
+    if (debugList != null) {
+      for (final s in debugList) {
+        if (s.id == id) return s;
+      }
+    }
+  }
+  final user = ref.watch(currentUserIdProvider);
+  if (user == null) return null;
   final repository = ref.watch(workoutRepositoryProvider);
-  return await repository.getSessionById(id);
+  final session = await repository.getSessionById(id);
+  return session?.userId == user ? session : null;
 }
 
 class WorkoutRoutePresentation {
@@ -318,7 +472,18 @@ final workoutRoutePresentationProvider =
     FutureProvider.family<WorkoutRoutePresentation, String>((ref, id) async {
       final workout = await ref.watch(workoutProvider(id).future);
 
-      if (workout != null) {
+      // Raw GPS fallback is not public: a rejected detail lookup must not
+      // disclose another account's retained local GPS history.
+      if (workout == null) {
+        return const WorkoutRoutePresentation(
+          routePoints: [],
+          routeSegments: [],
+          source: 'none',
+          matchStatus: 'not_found',
+        );
+      }
+
+      {
         final matchedSegments = _decodeRouteSegments(workout.matchedRouteJson);
         if (matchedSegments.isNotEmpty &&
             workout.routeMatchStatus != 'match_failed_fallback_filtered' &&
@@ -399,8 +564,8 @@ final workoutRoutePresentationProvider =
             ? rawSegments
             : (rawRoute.length >= 2 ? [rawRoute] : const <List<LatLng>>[]),
         source: 'raw',
-        matchStatus: workout?.routeMatchStatus ?? 'pending',
-        matchConfidence: workout?.routeMatchConfidence,
+        matchStatus: workout.routeMatchStatus,
+        matchConfidence: workout.routeMatchConfidence,
       );
     });
 
@@ -541,10 +706,8 @@ final todayStatsProvider = Provider<TodayStats>((ref) {
   );
 });
 
-/// Checks if there is an interrupted session that meets recovery criteria:
-/// - Under 24 hours old
-/// - Meaningful: duration >= 180s (3 minutes) OR distance >= 0.5 km (500m)
-/// - Currently marked unsynced
+/// Interrupted checkpoint recovery is explicit, not an automatic final upload.
+/// Keep recoverable progress regardless of age; never offer an active recording.
 final recoverableInterruptedSessionProvider =
     FutureProvider.autoDispose<WorkoutSession?>((ref) async {
       final user = ref.watch(currentUserIdProvider);
@@ -554,16 +717,13 @@ final recoverableInterruptedSessionProvider =
         final unsynced = await LocalDB.getUnsyncedWorkoutsForUser(user);
         if (unsynced.isEmpty) return null;
 
-        final now = DateTime.now();
+        unsynced.sort((a, b) => b.endedAt.compareTo(a.endedAt));
         for (final workout in unsynced) {
-          if (workout.userId != user) continue;
-
-          final age = now.difference(workout.endedAt);
-          if (age.inHours >= 24) continue;
-
-          final isMeaningful =
-              workout.durationSec >= 180 || workout.distanceKm >= 0.5;
-          if (isMeaningful) {
+          if (workout.userId != user ||
+              LocalDB.isRecordingActive(workout.sessionId)) {
+            continue;
+          }
+          if (LocalDB.isRecordingCheckpoint(workout)) {
             return workout.toEntity();
           }
         }

@@ -4,7 +4,7 @@
 -- Run this after workouts.sql so public.workout_sessions already exists.
 -- ================================================================
 
-create or replace view public.v_user_stats as
+create or replace view public.v_user_stats with (security_invoker = true) as
 select
   user_id,
   count(*) as total_sessions,
@@ -19,7 +19,7 @@ select
 from public.workout_sessions
 group by user_id;
 
-create or replace view public.v_weekly_stats as
+create or replace view public.v_weekly_stats with (security_invoker = true) as
 select
   user_id,
   count(*) as sessions_this_week,
@@ -31,7 +31,7 @@ from public.workout_sessions
 where started_at >= (now() - interval '7 days')
 group by user_id;
 
-create or replace view public.v_monthly_sessions as
+create or replace view public.v_monthly_sessions with (security_invoker = true) as
 select
   user_id,
   date_trunc('month', started_at) as month,
@@ -42,6 +42,9 @@ select
 from public.workout_sessions
 group by user_id, date_trunc('month', started_at)
 order by user_id, month desc;
+
+revoke all on public.v_user_stats, public.v_weekly_stats, public.v_monthly_sessions from public, anon;
+grant select on public.v_user_stats, public.v_weekly_stats, public.v_monthly_sessions to authenticated, service_role;
 
 create or replace view public.v_workout_processing_status
 with (security_invoker = true)

@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:convert';
 
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/core/providers/app_providers.dart';
@@ -18,7 +19,9 @@ import 'package:fitness_exercise_application/features/profile/presentation/scree
 import 'package:fitness_exercise_application/features/settings/presentation/providers/settings_preferences_providers.dart';
 import 'package:fitness_exercise_application/features/settings/presentation/screens/notification_settings_screen.dart';
 import 'package:fitness_exercise_application/features/shell/presentation/providers/main_tab_controller_provider.dart';
+import 'package:fitness_exercise_application/features/shell/presentation/widgets/aetron_bottom_bar.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
+import 'package:fitness_exercise_application/features/workout/domain/services/scientific_result_metadata.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/providers/workout_providers.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/screens/details/workout_details_screen.dart';
 import 'package:fitness_exercise_application/features/workout/providers/workout_providers_infra.dart';
@@ -153,8 +156,9 @@ final _weeklyHeroProvider = Provider<_WeeklyHeroData>((ref) {
   final dist = useMetricUnits
       ? weekly.weeklyDistanceKm
       : WorkoutFormatters.kmToMi(weekly.weeklyDistanceKm);
-  final distUnit =
-      WorkoutFormatters.distanceUnitLabel(useMetric: useMetricUnits);
+  final distUnit = WorkoutFormatters.distanceUnitLabel(
+    useMetric: useMetricUnits,
+  );
 
   return _WeeklyHeroData(
     current: dist,
@@ -200,188 +204,213 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       backgroundColor: colors.background,
-      body: SafeArea(
-        top: true,
+      body: KineticGlasslineScaffoldBody(
         child: RefreshIndicator(
-          color: colors.primary,
-          backgroundColor: colors.surface1,
-          onRefresh: () async {
-            setState(() => _isRefreshing = true);
-            try {
-              await ref.read(workoutListProvider.notifier).refresh();
-              final userId = ref.read(currentUserIdProvider);
-              if (userId != null) {
-                ref.invalidate(userProfileProvider(userId));
-              }
-              ref.invalidate(recoverableInterruptedSessionProvider);
-              await ref.read(userGoalProvider.notifier).refresh();
-            } finally {
-              if (mounted) setState(() => _isRefreshing = false);
-            }
-          },
-          child: _isRefreshing
-              ? const HomeSkeletonView()
-              : CustomScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  slivers: [
-                    // 1. Clean Top Bar ("Hôm nay" + Streak + Bell + Avatar)
-                    SliverToBoxAdapter(
-                      child: KineticHomeTopBar(
-                        avatarImage: avatar.imageProvider,
-                        initials: initials,
-                        displayName: displayName,
-                        greeting: greeting,
-                        streakCount: streak.currentStreak,
-                        isVi: isVi,
-                        onAvatarTap: () {
-                          HapticFeedback.selectionClick();
-                          ref.read(mainTabControllerProvider.notifier).state = 4;
-                        },
-                        onStreakTap: () => showModalBottomSheet<void>(
-                          context: context,
-                          isScrollControlled: true,
-                          backgroundColor: Colors.transparent,
-                          builder: (_) =>
-                              KineticStreakDetailsSheet(streak: streak),
-                        ),
-                        onNotificationTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const NotificationSettingsScreen(),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    // Recoverable Unsaved Session Banner
-                    if (recoverableSession != null)
-                      SliverToBoxAdapter(
-                        child: _RecoverableWorkoutBanner(
-                          session: recoverableSession,
-                          isVi: isVi,
-                        ),
-                      ),
-
-                    // Offline Banner
-                    if (isOffline)
-                      const SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: KineticTokens.page,
-                            vertical: KineticTokens.spaceXXS,
-                          ),
-                          child: KineticOfflineBanner(),
-                        ),
-                      ),
-
-                    // 2. Weekly Goal & 7-Day Activity Strip
-                    SliverToBoxAdapter(
-                      child: KineticYourWeekBento(
-                        weeklyDistanceKm: weekly.weeklyDistanceKm,
-                        workoutCount: weekly.workoutCount,
-                        targetDistanceKm: hero.distanceTargetKm,
-                        targetWorkoutCount: 5,
-                        dateRangeText:
-                            _formatWeekDateRange(weekly.startOfWeek, isVi),
-                        isVi: isVi,
-                        useMetricUnits: useMetricUnits,
-                        activeWeekdays: weekly.activeWeekdays,
-                        goalCurrent: hero.current,
-                        goalTarget: hero.target,
-                        goalUnit: hero.unit,
-                        onSetGoalTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const GoalScreen()),
-                        ),
-                      ),
-                    ),
-
-                    const SliverToBoxAdapter(
-                      child: SizedBox(height: KineticTokens.spaceXS),
-                    ),
-
-                    // 3. Recent Activity Card (Strava-style route + 3 metrics)
-                    SliverToBoxAdapter(
-                      child: workoutsAsync.when(
-                        loading: () => const Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: KineticTokens.page,
-                            vertical: KineticTokens.spaceXS,
-                          ),
-                          child: AetronShimmer(
-                            child: AetronSkeletonCard(
-                              padding: EdgeInsets.zero,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  AetronSkeletonBox(
-                                    height: 150,
-                                    borderRadius: KineticTokens.radiusLG,
-                                  ),
-                                  Padding(
-                                    padding:
-                                        EdgeInsets.all(KineticTokens.spaceMD),
-                                    child: AetronSkeletonBox(
-                                      height: 44,
-                                      borderRadius: KineticTokens.radiusMD,
-                                    ),
-                                  ),
-                                ],
+              color: colors.primary,
+              backgroundColor: colors.surface1,
+              onRefresh: () async {
+                setState(() => _isRefreshing = true);
+                try {
+                  await ref.read(workoutListProvider.notifier).refresh();
+                  final userId = ref.read(currentUserIdProvider);
+                  if (userId != null) {
+                    ref.invalidate(userProfileProvider(userId));
+                  }
+                  ref.invalidate(recoverableInterruptedSessionProvider);
+                  await ref.read(userGoalProvider.notifier).refresh();
+                } finally {
+                  if (mounted) setState(() => _isRefreshing = false);
+                }
+              },
+              child: _isRefreshing
+                  ? const HomeSkeletonView()
+                  : CustomScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      slivers: [
+                        // 1. Clean Top Bar (Date eyebrow + Greeting + Bell & Profile Orbs)
+                        SliverToBoxAdapter(
+                          child: KineticHomeTopBar(
+                            avatarImage: avatar.imageProvider,
+                            initials: initials,
+                            displayName: displayName,
+                            greeting: greeting,
+                            streakCount: streak.currentStreak,
+                            isVi: isVi,
+                            onAvatarTap: () {
+                              HapticFeedback.selectionClick();
+                              ref
+                                      .read(mainTabControllerProvider.notifier)
+                                      .state =
+                                  4;
+                            },
+                            onStreakTap: () => showModalBottomSheet<void>(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (_) =>
+                                  KineticStreakDetailsSheet(streak: streak),
+                            ),
+                            onNotificationTap: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    const NotificationSettingsScreen(),
                               ),
                             ),
                           ),
                         ),
-                        error: (err, _) => Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: KineticTokens.page,
-                            vertical: KineticTokens.spaceXS,
-                          ),
-                          child: ErrorState(
-                            title: isVi
-                                ? 'Không thể tải dữ liệu'
-                                : 'Unable to load data',
-                            message: isVi
-                                ? 'Đã xảy ra lỗi khi đồng bộ buổi tập gần đây.'
-                                : 'An error occurred while syncing recent workouts.',
-                            onRetry: () => ref
-                                .read(workoutListProvider.notifier)
-                                .refresh(),
-                          ),
-                        ),
-                        data: (workouts) => KineticRecentActivityCard(
-                          workouts: workouts,
-                          useMetricUnits: useMetricUnits,
-                          isVi: isVi,
-                          showMapTiles: widget.showMapTiles,
-                          onSeeAllTap: () {
-                            HapticFeedback.selectionClick();
-                            ref.read(mainTabControllerProvider.notifier).state =
-                                2;
-                          },
-                          onWorkoutTap: (id) => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  WorkoutDetailsScreen(workoutId: id),
+
+                        // Recoverable Unsaved Session Banner
+                        if (recoverableSession != null)
+                          SliverToBoxAdapter(
+                            child: _RecoverableWorkoutBanner(
+                              session: recoverableSession,
+                              isVi: isVi,
                             ),
                           ),
-                          onStartFirstWorkoutTap: () {
-                            HapticFeedback.selectionClick();
-                            ref.read(mainTabControllerProvider.notifier).state =
-                                1;
-                          },
+
+                        // Offline Banner
+                        if (isOffline)
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: AetronBottomBar.horizontalPagePaddingOf(context),
+                                vertical: KineticTokens.spaceXXS,
+                              ),
+                              child: const KineticOfflineBanner(),
+                            ),
+                          ),
+
+                        // 2. Weekly Goal & 7-Day Activity Strip
+                        SliverToBoxAdapter(
+                          child: KineticYourWeekBento(
+                            weeklyDistanceKm: weekly.weeklyDistanceKm,
+                            workoutCount: weekly.workoutCount,
+                            targetDistanceKm: hero.distanceTargetKm,
+                            targetWorkoutCount: 5,
+                            dateRangeText: _formatWeekDateRange(
+                              weekly.startOfWeek,
+                              isVi,
+                            ),
+                            isVi: isVi,
+                            useMetricUnits: useMetricUnits,
+                            activeWeekdays: weekly.activeWeekdays,
+                            goalCurrent: hero.current,
+                            goalTarget: hero.target,
+                            goalUnit: hero.unit,
+                            onSetGoalTap: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const GoalScreen(),
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
+
+                        const SliverToBoxAdapter(
+                          child: SizedBox(height: KineticTokens.spaceXS),
+                        ),
+
+                        // 3. Recent Activity Card (Route + 3 metrics)
+                        SliverToBoxAdapter(
+                          child: workoutsAsync.when(
+                            loading: () => Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: AetronBottomBar.horizontalPagePaddingOf(context),
+                                vertical: KineticTokens.spaceXS,
+                              ),
+                              child: const AetronShimmer(
+                                child: AetronSkeletonCard(
+                                  padding: EdgeInsets.zero,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      AetronSkeletonBox(
+                                        height: 150,
+                                        borderRadius: KineticTokens.radiusLG,
+                                      ),
+                                      Padding(
+                                        padding: EdgeInsets.all(
+                                          KineticTokens.spaceMD,
+                                        ),
+                                        child: AetronSkeletonBox(
+                                          height: 44,
+                                          borderRadius: KineticTokens.radiusMD,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            error: (err, _) => Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: AetronBottomBar.horizontalPagePaddingOf(context),
+                                vertical: KineticTokens.spaceXS,
+                              ),
+                              child: ErrorState(
+                                title: isVi
+                                    ? 'Không thể tải dữ liệu'
+                                    : 'Unable to load data',
+                                message: isVi
+                                    ? 'Đã xảy ra lỗi khi đồng bộ buổi tập gần đây.'
+                                    : 'An error occurred while syncing recent workouts.',
+                                onRetry: () => ref
+                                    .read(workoutListProvider.notifier)
+                                    .refresh(),
+                              ),
+                            ),
+                            data: (workouts) => KineticRecentActivityCard(
+                              workouts: workouts,
+                              useMetricUnits: useMetricUnits,
+                              isVi: isVi,
+                              showMapTiles: widget.showMapTiles,
+                              onSeeAllTap: () {
+                                HapticFeedback.selectionClick();
+                                ref
+                                        .read(
+                                          mainTabControllerProvider.notifier,
+                                        )
+                                        .state =
+                                    2;
+                              },
+                              onWorkoutTap: (id) => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      WorkoutDetailsScreen(workoutId: id),
+                                ),
+                              ),
+                              onStartFirstWorkoutTap: () {
+                                HapticFeedback.selectionClick();
+                                ref
+                                        .read(
+                                          mainTabControllerProvider.notifier,
+                                        )
+                                        .state =
+                                    1;
+                              },
+                            ),
+                          ),
+                        ),
+
+                        const SliverToBoxAdapter(
+                          child: SizedBox(height: KineticTokens.spaceSM),
+                        ),
+
+                        // 4. Training Plans Horizontal Strip
+                        SliverToBoxAdapter(
+                          child: KineticExploreRoutes(isVi: isVi),
+                        ),
+
+                        SliverToBoxAdapter(
+                          child: SizedBox(
+                            height: AetronBottomBar.scrollBottomPaddingOf(
+                              context,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-
-                    const SliverToBoxAdapter(
-                      child: SizedBox(height: KineticTokens.spaceSM),
-                    ),
-
-                    // 4. Training Plans Horizontal Strip
-                    SliverToBoxAdapter(child: KineticExploreRoutes(isVi: isVi)),
-
-                    const SliverToBoxAdapter(child: SizedBox(height: 28)),
-                  ],
-                ),
-        ),
+            ),
       ),
     );
   }
@@ -389,11 +418,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
 String _greetingForHour(int hour, bool isVi) {
   if (hour >= 5 && hour < 12) {
-    return isVi ? 'Chào buổi sáng,' : 'Good morning,';
+    return isVi ? 'Chào buổi sáng.' : 'Good morning.';
   } else if (hour >= 12 && hour < 18) {
-    return isVi ? 'Chào buổi chiều,' : 'Good afternoon,';
+    return isVi ? 'Chào buổi chiều.' : 'Good afternoon.';
   } else {
-    return isVi ? 'Chào buổi tối,' : 'Good evening,';
+    return isVi ? 'Chào buổi tối.' : 'Good evening.';
   }
 }
 
@@ -495,11 +524,7 @@ class _RecoverableWorkoutBannerState
                   color: colors.primaryTint,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  LucideIcons.clock,
-                  color: colors.primary,
-                  size: 18,
-                ),
+                child: Icon(LucideIcons.clock, color: colors.primary, size: 18),
               ),
               const SizedBox(width: KineticTokens.spaceSM),
               Expanded(
@@ -533,33 +558,53 @@ class _RecoverableWorkoutBannerState
           Row(
             children: [
               Expanded(
-                child: OutlinedButton(
+                child: KineticButton(
+                  label: widget.isVi ? 'Bỏ qua' : 'Discard',
+                  variant: KineticButtonVariant.secondary,
                   onPressed: _isSaving
                       ? null
                       : () async {
                           final confirmed = await showDialog<bool>(
                             context: context,
-                            builder: (ctx) => AlertDialog(
+                            builder: (ctx) => KineticGlassDialog(
+                              borderColor: colors.error.withValues(alpha: 0.4),
                               title: Text(
                                 widget.isVi
                                     ? 'Bỏ buổi tập?'
                                     : 'Discard Workout?',
+                                style: KineticTypography.headlineSmall.copyWith(
+                                  color: colors.textPrimary,
+                                  fontWeight: FontWeight.w800,
+                                ),
                               ),
                               content: Text(
                                 widget.isVi
                                     ? 'Dữ liệu của buổi tập này sẽ bị xóa hoàn toàn.'
                                     : 'This unsaved session will be permanently deleted.',
+                                style: KineticTypography.bodySmall.copyWith(
+                                  color: colors.textSecondary,
+                                  height: 1.4,
+                                ),
                               ),
                               actions: [
                                 TextButton(
                                   onPressed: () => Navigator.of(ctx).pop(false),
-                                  child: Text(widget.isVi ? 'Hủy' : 'Cancel'),
+                                  child: Text(
+                                    widget.isVi ? 'Hủy' : 'Cancel',
+                                    style: TextStyle(
+                                      color: colors.textSecondary,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
                                 ),
                                 TextButton(
                                   onPressed: () => Navigator.of(ctx).pop(true),
                                   child: Text(
                                     widget.isVi ? 'Xóa bỏ' : 'Discard',
-                                    style: TextStyle(color: colors.error),
+                                    style: TextStyle(
+                                      color: colors.error,
+                                      fontWeight: FontWeight.w700,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -576,12 +621,16 @@ class _RecoverableWorkoutBannerState
                             setState(() => _isDismissed = true);
                           }
                         },
-                  child: Text(widget.isVi ? 'Bỏ qua' : 'Discard'),
                 ),
               ),
               const SizedBox(width: KineticTokens.spaceXS),
               Expanded(
-                child: ElevatedButton(
+                child: KineticButton(
+                  label: _isSaving
+                      ? (widget.isVi ? 'Đang lưu...' : 'Saving...')
+                      : (widget.isVi ? 'Lưu lại' : 'Recover & Save'),
+                  icon: Icons.check_rounded,
+                  isLoading: _isSaving,
                   onPressed: _isSaving
                       ? null
                       : () async {
@@ -589,16 +638,18 @@ class _RecoverableWorkoutBannerState
                           setState(() => _isSaving = true);
                           try {
                             final repo = ref.read(workoutRepositoryProvider);
-                            bool saved = false;
-                            try {
-                              await repo
-                                  .saveSessionRemote(widget.session)
-                                  .timeout(const Duration(seconds: 10));
-                              saved = true;
-                            } catch (_) {}
+                            final metadata =
+                                ScientificResultMetadata.decode(
+                                    widget.session.routeMatchMetricsJson,
+                                  )
+                                  ..remove('recording_checkpoint')
+                                  ..['recording_recovered'] = true;
+                            final recovered = widget.session.copyWith(
+                              routeMatchMetricsJson: jsonEncode(metadata),
+                            );
                             await repo.cacheSessionLocal(
-                              widget.session,
-                              isSynced: saved,
+                              recovered,
+                              isSynced: false,
                             );
                             ref.invalidate(workoutListProvider);
                             ref.invalidate(
@@ -616,15 +667,22 @@ class _RecoverableWorkoutBannerState
                                 ),
                               );
                             }
+                          } catch (error) {
+                            if (mounted) {
+                              messenger?.showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    widget.isVi
+                                        ? 'Chưa thể lưu buổi tập. Dữ liệu khôi phục vẫn được giữ.'
+                                        : 'Workout could not be saved. Recovery data is retained.',
+                                  ),
+                                ),
+                              );
+                            }
                           } finally {
                             if (mounted) setState(() => _isSaving = false);
                           }
                         },
-                  child: Text(
-                    _isSaving
-                        ? (widget.isVi ? 'Đang lưu...' : 'Saving...')
-                        : (widget.isVi ? 'Lưu lại' : 'Recover & Save'),
-                  ),
                 ),
               ),
             ],

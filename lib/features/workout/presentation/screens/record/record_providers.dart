@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:convert';
 import 'dart:math' as math;
+import 'package:fitness_exercise_application/features/workout/data/local/local_db.dart';
 import 'package:fitness_exercise_application/core/constants/debug_config.dart';
 import 'package:fitness_exercise_application/core/services/environment_detector.dart';
 import 'package:fitness_exercise_application/features/iod/presentation/providers/iod_controller.dart';
 import 'package:fitness_exercise_application/features/profile/domain/entities/user_profile.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
+import 'package:fitness_exercise_application/features/workout/domain/repositories/workout_repository.dart';
 import 'package:fitness_exercise_application/features/workout/domain/constants/workout_processing_contract.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/gps_pipeline.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/gps_raw_signal_continuity.dart';
@@ -36,7 +39,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 
 import 'package:latlong2/latlong.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'package:fitness_exercise_application/features/workout/providers/workout_providers_infra.dart';
 
@@ -155,6 +157,14 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   Timer? _pauseAutoStopTimer;
   Timer? _gpsHealthTimer;
   Timer? _checkpointTimer;
+  RecordingPersistence<WorkoutSessionFinalization> _persistence =
+      RecordingPersistence<WorkoutSessionFinalization>();
+  DateTime? _stopRequestedAt;
+  WorkoutSessionState? _frozenStopState;
+  String? _recordingOwnerId;
+  bool _pauseCheckpointSaved = false;
+  Future<void>? _pauseOperation;
+  KeepAliveLink? _recordingKeepAlive;
 
   final Stopwatch _stopwatch = Stopwatch();
 
@@ -254,7 +264,20 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
 
   // Public API
 
+  bool hasUnfinishedRecordingForOtherUser(String? userId) =>
+      _recordingOwnerId != null &&
+      _recordingOwnerId != (userId ?? 'local_user') &&
+      state.status != RecordingState.finished &&
+      state.status != RecordingState.idle;
+
   void startWorkout(String activityType, {Position? startupGpsLock}) {
+    if (state.status == RecordingState.active ||
+        state.status == RecordingState.paused ||
+        state.status == RecordingState.stopping ||
+        state.status == RecordingState.error ||
+        state.status == RecordingState.initializing) {
+      return; // Never replace an unfinished or unsaved recording.
+    }
     final sessionId = const Uuid().v4();
     final stride = computeStrideLength(
       activityType: activityType,
@@ -272,6 +295,8 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       recordingSource: _defaultRecordingSource(activityType),
     );
     _resetRuntimeTrackingState();
+    _recordingOwnerId = _ref.read(currentUserIdProvider) ?? 'local_user';
+    LocalDB.registerRecording(sessionId);
     _legacyEnvironmentHint = startPlan.environmentHint;
     if (kEnableTrajectoryPreprocessing ||
         kEnableTrajectoryPreprocessingShadowMode) {
@@ -665,6 +690,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   // Session control
 
   Future<void> pauseWorkout() async {
+    if (state.status != RecordingState.active || _isStopping) return;
     _allowOfflineReconstruction = false;
     _flushRouteBufferToState(force: true);
     _stopwatch.stop();
@@ -674,25 +700,54 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     _gpsHealthTimer?.cancel();
     _checkpointTimer?.cancel();
     _checkpointTimer = null;
-    final locationService = _ref.read(locationTrackingServiceProvider);
-    await _sensorController.stopGpsTracking(
-      locationService: locationService,
-      subscription: _locationSub,
-    );
-    _locationSub = null;
-    final stepService = _ref.read(stepTrackingServiceProvider);
-    _sensorController.pauseStepTracking(stepService);
     state = _sessionLifecycle
         .pause(
-          current: state,
+          current: state.copyWith(
+            durationSeconds: math.max(
+              state.durationSeconds,
+              _stopwatch.elapsed.inSeconds,
+            ),
+          ),
           pauseAutoStopRemainingSeconds: _kPauseAutoStopDelay.inSeconds,
         )
         .copyWith(currentCadenceSpm: 0);
-    _syncLiveActivityState();
-    _startPauseAutoStopCountdown();
+    // Capture the pause boundary before any asynchronous sensor shutdown.
+    _pauseCheckpointSaved = false;
+    final checkpoint = _persistCheckpoint(force: true);
+    _startCheckpointTimer(); // Retry a failed pause checkpoint while paused.
+    final pause = () async {
+      try {
+        final locationService = _ref.read(locationTrackingServiceProvider);
+        await _sensorController.stopGpsTracking(
+          locationService: locationService,
+          subscription: _locationSub,
+        );
+        _locationSub = null;
+        final stepService = _ref.read(stepTrackingServiceProvider);
+        _sensorController.pauseStepTracking(stepService);
+      } catch (error, stack) {
+        debugPrint('[Workout] Pause sensor shutdown failed: $error\n$stack');
+      }
+      await checkpoint;
+    }();
+    _pauseOperation = pause;
+    try {
+      await pause;
+    } finally {
+      _pauseOperation = null;
+      if (mounted && state.status == RecordingState.paused) {
+        _syncLiveActivityState();
+        _startPauseAutoStopCountdown();
+      }
+    }
   }
 
   Future<void> resumeWorkout() async {
+    if (state.status != RecordingState.paused || _isStopping) return;
+    await _pauseOperation;
+    if (!mounted || state.status != RecordingState.paused || _isStopping) {
+      return;
+    }
     _cancelPauseAutoStopCountdown();
     _stopwatch.start();
     final stepService = _ref.read(stepTrackingServiceProvider);
@@ -718,32 +773,55 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       debugPrint('[Workout] stopWorkout ignored — stop already in progress');
       return;
     }
+    if (state.status != RecordingState.active &&
+        state.status != RecordingState.paused &&
+        state.status != RecordingState.error) {
+      return;
+    }
     _isStopping = true;
+    // Keep a terminal attempt (and failed retry data) alive even if the route
+    // rebuilds. Active tracking itself must not be pinned across sign-out.
+    _recordingKeepAlive ??= _ref.keepAlive();
 
     try {
-      _flushRouteBufferToState(force: true);
-      _cancelPauseAutoStopCountdown();
-      state = _sessionLifecycle.stopping(state);
-
-      try {
-        await _shutdownTrackingInfrastructure();
-      } catch (e) {
-        debugPrint('[Workout] Error shutting down tracking: $e');
+      _persistence.seal();
+      if (_frozenStopState == null) {
+        _stopwatch.stop();
+        _checkpointTimer?.cancel();
+        _uiTicker?.cancel();
+        _flushRouteBufferToState(force: true);
+        _cancelPauseAutoStopCountdown();
+        state = _sessionLifecycle.stopping(
+          state.copyWith(
+            durationSeconds: math.max(
+              state.durationSeconds,
+              _stopwatch.elapsed.inSeconds,
+            ),
+          ),
+        );
+        _stopRequestedAt = DateTime.now();
+        _frozenStopState = state;
+        // Pause shutdown may still be running; do not race sensor operations.
+        await _pauseOperation;
+        try {
+          await _shutdownTrackingInfrastructure();
+        } catch (error, stack) {
+          debugPrint('[Workout] Error shutting down tracking: $error\n$stack');
+        }
+        try {
+          _ref.read(iodControllerProvider.notifier).stopSession();
+        } catch (error, stack) {
+          debugPrint('[Workout] Error stopping IOD: $error\n$stack');
+        }
+      } else {
+        state = _sessionLifecycle.stopping(_frozenStopState!);
       }
 
-      // Stop Indoor-Outdoor Detection (IOD) recording
-      _ref.read(iodControllerProvider.notifier).stopSession();
-
-      final finishedAt = DateTime.now();
-      final finalCalories = _computeCalories(
-        distanceMeters: state.distanceMeters,
-        durationSec: state.durationSeconds,
-      );
-
-      final resolvedUserId =
-          _ref.read(currentUserIdProvider) ??
-          Supabase.instance.client.auth.currentUser?.id ??
-          'local_user';
+      final currentOwnerId = _ref.read(currentUserIdProvider) ?? 'local_user';
+      final resolvedUserId = _recordingOwnerId ??= currentOwnerId;
+      if (resolvedUserId != currentOwnerId) {
+        throw StateError('Recording owner changed before save');
+      }
 
       final currentProfile = UserProfile(
         id: 'active-session',
@@ -756,50 +834,60 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
         updatedAt: DateTime.fromMillisecondsSinceEpoch(0),
       );
 
-      final finalization = _sessionFinalizer.finalize(
-        state: state,
-        userId: resolvedUserId,
-        finishedAt: finishedAt,
-        caloriesBurned: finalCalories,
-        fallbackStrideLengthMeters: _defaultStrideLength(
-          state.activityType,
-          _gender,
+      final frozen = _frozenStopState!;
+      final finalization = _persistence.freezeFinalization(
+        () => _sessionFinalizer.finalize(
+          state: frozen,
+          userId: resolvedUserId,
+          finishedAt: _stopRequestedAt!,
+          caloriesBurned: _computeCalories(
+            distanceMeters: frozen.distanceMeters,
+            durationSec: frozen.durationSeconds,
+          ),
+          fallbackStrideLengthMeters: _defaultStrideLength(
+            frozen.activityType,
+            _gender,
+          ),
+          trackingEngine: _trackingEngine,
+          rawGpsPositions: List<Position>.unmodifiable(_rawGpsPositions),
+          filteredRouteSegments: List<List<LatLng>>.unmodifiable(
+            (frozen.smoothedRouteSegments.isNotEmpty
+                    ? frozen.smoothedRouteSegments
+                    : frozen.routeSegments)
+                .where((segment) => segment.isNotEmpty)
+                .map((segment) => List<LatLng>.unmodifiable(segment)),
+          ),
+          gpsAlgorithm: _gpsSmoothingService.algorithmName,
+          enableTrajectoryReconstruction:
+              kEnableTrajectoryReconstruction && _allowOfflineReconstruction,
+          userProfile: currentProfile,
         ),
-        trackingEngine: _trackingEngine,
-        rawGpsPositions: List<Position>.unmodifiable(_rawGpsPositions),
-        filteredRouteSegments: List<List<LatLng>>.unmodifiable(
-          (state.smoothedRouteSegments.isNotEmpty
-                  ? state.smoothedRouteSegments
-                  : state.routeSegments)
-              .where((segment) => segment.isNotEmpty)
-              .map((segment) => List<LatLng>.unmodifiable(segment)),
-        ),
-        gpsAlgorithm: _gpsSmoothingService.algorithmName,
-        enableTrajectoryReconstruction:
-            kEnableTrajectoryReconstruction && _allowOfflineReconstruction,
-        userProfile: currentProfile,
       );
 
-      // 1. Immediately cache locally with safe error handling
+      // 1. Wait for every accepted checkpoint to settle before writing the
+      // immutable final session. A write failure must not mean "finished".
       final repo = _ref.read(workoutRepositoryProvider);
+      await _recordingCoordinator.drainLocalWrites();
+      await _persistence.saveFinal(
+        (pending) => repo.cacheSessionLocal(pending.session, isSynced: false),
+      );
+      LocalDB.unregisterRecording(finalization.sessionId);
+
       try {
-        await repo.cacheSessionLocal(finalization.session, isSynced: false);
-      } catch (e) {
-        debugPrint('[Workout] Local session cache error: $e');
+        _ref
+            .read(workoutListProvider.notifier)
+            .insertLocalSession(finalization.session);
+      } catch (error, stack) {
+        // History presentation is not the durability acknowledgement.
+        debugPrint('[Workout] History refresh failed: $error\n$stack');
       }
-      // Show the finished session in History/Analytics right away instead of
-      // invalidating (the refetch would race the background remote save and
-      // return a list without this session on web).
-      _ref
-          .read(workoutListProvider.notifier)
-          .insertLocalSession(finalization.session);
 
       // 2. IMMEDIATELY transition state to finished so UI navigates to Summary
       // without waiting on slow network or remote database roundtrips.
       if (mounted) {
         final endedState = _sessionLifecycle
             .finish(
-              current: state,
+              current: frozen,
               caloriesBurned: finalization.caloriesBurned,
               avgSpeedKmh: finalization.avgSpeedKmh,
               sessionId: finalization.sessionId,
@@ -812,7 +900,14 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
             );
         state = endedState;
         try {
-          unawaited(_endLiveActivity(endedState));
+          unawaited(
+            _endLiveActivity(endedState).catchError((
+              Object error,
+              StackTrace stack,
+            ) {
+              debugPrint('[Workout] Live activity end error: $error\n$stack');
+            }),
+          );
         } catch (e) {
           debugPrint('[Workout] Live activity end error: $e');
         }
@@ -822,18 +917,22 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       unawaited(
         _syncSessionRemoteInBackground(
           finalization: finalization,
-          resolvedUserId: resolvedUserId,
-        ),
+          resolvedUserId: finalization.session.userId,
+          repo: repo,
+        ).catchError((Object error, StackTrace stack) {
+          debugPrint('[Workout] Background sync failed: $error\n$stack');
+        }),
       );
+      _recordingKeepAlive?.close();
+      _recordingKeepAlive = null;
     } catch (e, stack) {
       debugPrint('[Workout] Error stopping workout: $e\n$stack');
-      // Emergency recovery: Transition to finished so user is never trapped in stopping state
+      // The frozen finalization stays in memory for an idempotent retry. It
+      // is not a durable save and must never trigger summary navigation.
       if (mounted && state.status != RecordingState.finished) {
-        final emergencySessionId =
-            state.sessionId ?? DateTime.now().millisecondsSinceEpoch.toString();
         state = state.copyWith(
-          status: RecordingState.finished,
-          sessionId: emergencySessionId,
+          status: RecordingState.error,
+          errorMessage: 'recording_save_failed',
         );
       }
     } finally {
@@ -844,8 +943,8 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   Future<void> _syncSessionRemoteInBackground({
     required WorkoutSessionFinalization finalization,
     required String resolvedUserId,
+    required WorkoutRepository repo,
   }) async {
-    final repo = _ref.read(workoutRepositoryProvider);
     bool savedRemotely = false;
     if (resolvedUserId != 'local_user') {
       try {
@@ -904,14 +1003,13 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
 
     // Leave local session unsynced until raw upload and job enqueue succeed.
     // The normal sync pass retries the same UUID and idempotent raw records.
-    if (resolvedUserId != 'local_user') unawaited(_retryRemoteSync());
+    if (resolvedUserId != 'local_user') unawaited(_retryRemoteSync(repo));
   }
 
   /// Best-effort retry of every session still waiting in the local cache.
   /// [WorkoutRepositoryImpl.syncPendingData] skips unauthorised users, so this
   /// is a no-op when nobody is signed in.
-  Future<void> _retryRemoteSync() async {
-    final repo = _ref.read(workoutRepositoryProvider);
+  Future<void> _retryRemoteSync(WorkoutRepository repo) async {
     try {
       await repo.syncPendingData();
       debugPrint('[Workout] Pending-session retry sync finished');
@@ -954,6 +1052,12 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   }
 
   void _resetRuntimeTrackingState() {
+    _persistence = RecordingPersistence<WorkoutSessionFinalization>();
+    _stopRequestedAt = null;
+    _frozenStopState = null;
+    _recordingOwnerId = null;
+    _pauseCheckpointSaved = false;
+    _pauseOperation = null;
     _allowOfflineReconstruction = true;
     _gpsPipeline.reset();
     _lastRouteSnapshotTime = null;
@@ -2040,28 +2144,38 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   }
 
   // Crash-recovery checkpointing (H4)
+  // Summary writes do not make raw GPS/step records atomic or flush the
+  // coordinator's outstanding async writes. A process kill or disk error
+  // can lose the most recent summary and any raw samples not yet durable.
   void _startCheckpointTimer() {
     _checkpointTimer?.cancel();
-    _checkpointTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      _persistCheckpoint();
+    _checkpointTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      unawaited(_persistCheckpoint());
     });
   }
 
-  void _persistCheckpoint() {
+  Future<void> _persistCheckpoint({bool force = false}) async {
     if (!mounted ||
+        _persistence.isSealed ||
+        (!force && _persistence.hasPendingCheckpoint) ||
+        (!force &&
+            state.status == RecordingState.paused &&
+            _pauseCheckpointSaved) ||
         (state.status != RecordingState.active &&
             state.status != RecordingState.paused)) {
       return;
     }
-    // Only checkpoint meaningful progress
-    if (state.durationSeconds < 60 && state.distanceMeters < 100) return;
-
-    final userId =
-        _ref.read(currentUserIdProvider) ??
-        Supabase.instance.client.auth.currentUser?.id ??
-        'local_user';
+    // Save early, not only after a long run; an empty session is not a workout.
+    if (state.durationSeconds <= 0 &&
+        state.distanceMeters <= 0 &&
+        state.stepCount <= 0) {
+      return;
+    }
 
     try {
+      final isPauseSnapshot = state.status == RecordingState.paused;
+      final userId = _recordingOwnerId ??=
+          _ref.read(currentUserIdProvider) ?? 'local_user';
       _flushRouteBufferToState(force: true);
       final currentProfile = UserProfile(
         id: 'active-session',
@@ -2097,7 +2211,29 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       );
 
       final repo = _ref.read(workoutRepositoryProvider);
-      unawaited(repo.cacheSessionLocal(finalization.session, isSynced: false));
+      // A checkpoint is a recoverable partial summary, not a final artifact.
+      // Repository sync must preserve this distinction.
+      final checkpointMetrics =
+          jsonDecode(finalization.session.routeMatchMetricsJson)
+              as Map<String, dynamic>;
+      final checkpointSession = finalization.session.copyWith(
+        routeMatchMetricsJson: jsonEncode({
+          ...checkpointMetrics,
+          'recording_checkpoint': true,
+        }),
+      );
+      await _persistence.checkpoint(
+        () async {
+          await repo.cacheSessionLocal(checkpointSession, isSynced: false);
+          if (isPauseSnapshot) _pauseCheckpointSaved = true;
+        },
+        force: force,
+        onError: (error, stack) {
+          debugPrint(
+            '[Workout] Checkpoint write failed; next tick/pause retries: $error\n$stack',
+          );
+        },
+      );
     } catch (e) {
       debugPrint('[Workout] Checkpoint persist error: $e');
     }
@@ -2107,6 +2243,15 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
 
   @override
   void dispose() {
+    _persistence.seal();
+    final sessionId = state.sessionId;
+    if (sessionId != null) {
+      unawaited(
+        _persistence.drained.whenComplete(
+          () => LocalDB.unregisterRecording(sessionId),
+        ),
+      );
+    }
     _stopwatch.stop();
     _uiTicker?.cancel();
     _indoorDistanceTimer?.cancel();

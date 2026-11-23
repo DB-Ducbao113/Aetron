@@ -10,6 +10,7 @@ import 'package:fitness_exercise_application/features/history/presentation/widge
 import 'package:fitness_exercise_application/features/history/presentation/widgets/kinetic_history_top_bar.dart';
 import 'package:fitness_exercise_application/features/settings/presentation/providers/settings_preferences_providers.dart';
 import 'package:fitness_exercise_application/features/shell/presentation/providers/main_tab_controller_provider.dart';
+import 'package:fitness_exercise_application/features/shell/presentation/widgets/aetron_bottom_bar.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/providers/workout_providers.dart';
 import 'package:fitness_exercise_application/shared/aetron/aetron_ui.dart';
@@ -29,7 +30,7 @@ extension HistoryRangeX on HistoryRange {
   String getLabel(AppLanguage lang) {
     switch (this) {
       case HistoryRange.all:
-        return AppTranslations.get('all', lang);
+        return lang == AppLanguage.vi ? 'Tất cả' : 'All';
       case HistoryRange.week:
         return AppTranslations.get('week', lang);
       case HistoryRange.month:
@@ -129,12 +130,15 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       }
     });
 
+    final hPad = AetronBottomBar.horizontalPagePaddingOf(context);
+    final bottomPad = AetronBottomBar.scrollBottomPaddingOf(context);
+
     return Scaffold(
       backgroundColor: colors.background,
-      body: SafeArea(
+      body: KineticGlasslineScaffoldBody(
         child: RefreshIndicator(
           color: colors.primary,
-          backgroundColor: colors.surface2,
+          backgroundColor: colors.surface1,
           onRefresh: _handleRefresh,
           child: _isRefreshing
               ? const CalendarSkeletonView()
@@ -143,7 +147,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     if (workouts.isEmpty) {
                       return ListView(
                         physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.fromLTRB(KineticTokens.page, KineticTokens.spaceSM, KineticTokens.page, 100),
+                        padding: EdgeInsets.fromLTRB(
+                          hPad,
+                          KineticTokens.spaceSM,
+                          hPad,
+                          bottomPad,
+                        ),
                         children: [
                           KineticHistoryTopBar(
                             totalCount: 0,
@@ -177,7 +186,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
                     return ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(KineticTokens.page, KineticTokens.spaceSM, KineticTokens.page, 112),
+                      padding: EdgeInsets.fromLTRB(
+                        hPad,
+                        KineticTokens.spaceSM,
+                        hPad,
+                        bottomPad,
+                      ),
                       children: [
                         // 1. Top Bar
                         KineticHistoryTopBar(
@@ -187,7 +201,42 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                         ),
                         const SizedBox(height: KineticTokens.spaceMD),
 
-                        // 2. Sport Filter (All, Running, Cycling, Walking)
+                        // 2. Time Range Segmented Selector (Tuần, Tháng, Năm, Tất cả)
+                        KineticHistoryRangeTabs(
+                          selected: range,
+                          currentLang: currentLang,
+                          onChanged: (value) {
+                            ref.read(historyRangeProvider.notifier).state =
+                                value;
+                          },
+                        ),
+                        const SizedBox(height: KineticTokens.spaceMD),
+
+                        // 3. Telemetry Overview
+                        if (filtered.isNotEmpty) ...[
+                          KineticHistoryTelemetryBento(
+                            summary: summary,
+                            useMetricUnits: useMetricUnits,
+                            currentLang: currentLang,
+                          ),
+                          const SizedBox(height: KineticTokens.spaceMD),
+                        ],
+
+                        // 4. Section: Filter by sport
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              currentLang == AppLanguage.vi
+                                  ? 'Lọc theo môn'
+                                  : 'Filter by sport',
+                              style: KineticTypography.sectionTitleOf(colors),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: KineticTokens.spaceXS),
+
+                        // 5. Sport Filter Segmented Control (Tất cả, Chạy bộ, Đạp xe, Đi bộ)
                         KineticHistorySportFilter(
                           selected: activityFilter,
                           currentLang: currentLang,
@@ -200,30 +249,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                                 val;
                           },
                         ),
-                        const SizedBox(height: KineticTokens.spaceXS),
-
-                        // 3. Time Range Segmented Selector
-                        KineticHistoryRangeTabs(
-                          selected: range,
-                          currentLang: currentLang,
-                          onChanged: (value) {
-                            ref.read(historyRangeProvider.notifier).state =
-                                value;
-                          },
-                        ),
                         const SizedBox(height: KineticTokens.spaceMD),
 
-                        // 4. Telemetry Bento Overview (Only if there are workouts)
-                        if (filtered.isNotEmpty) ...[
-                          KineticHistoryTelemetryBento(
-                            summary: summary,
-                            useMetricUnits: useMetricUnits,
-                            currentLang: currentLang,
-                          ),
-                          const SizedBox(height: KineticTokens.spaceLG),
-                        ],
-
-                        // 5. Daily Workout List or Filtered Empty State
+                        // 6. Daily Workout List or Filtered Empty State
                         DailyWorkoutList(
                           workouts: filtered,
                           range: range.getLabel(currentLang),

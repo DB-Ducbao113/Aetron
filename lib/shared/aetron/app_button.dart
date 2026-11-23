@@ -30,6 +30,7 @@ class AppButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDisabled = onPressed == null || isLoading;
+    final ios = Theme.of(context).platform == TargetPlatform.iOS;
 
     Color bg;
     Color fg;
@@ -72,14 +73,16 @@ class AppButton extends StatelessWidget {
       backgroundColor: bg,
       foregroundColor: fg,
       disabledBackgroundColor: AetronColors.panelBright.withValues(alpha: 0.4),
-      disabledForegroundColor: AetronColors.textSecondary.withValues(alpha: 0.5),
-      elevation: variant == AppButtonVariant.primary ? 4 : 0,
-      shadowColor: variant == AppButtonVariant.primary
+      disabledForegroundColor: AetronColors.textSecondary.withValues(
+        alpha: 0.5,
+      ),
+      elevation: !ios && variant == AppButtonVariant.primary ? 4 : 0,
+      shadowColor: !ios && variant == AppButtonVariant.primary
           ? AetronColors.primary.withValues(alpha: 0.3)
           : Colors.transparent,
       padding: const EdgeInsets.symmetric(horizontal: 20),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AetronRadius.medium),
+        borderRadius: BorderRadius.circular(ios ? 999 : AetronRadius.medium),
         side: border ?? BorderSide.none,
       ),
     );
@@ -103,7 +106,7 @@ class AppButton extends StatelessWidget {
           const SizedBox(width: 6),
           Flexible(
             child: Text(
-              label.toUpperCase(),
+              ios ? label : label.toUpperCase(),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: AetronTypography.button.copyWith(
@@ -116,7 +119,7 @@ class AppButton extends StatelessWidget {
       );
     } else {
       childWidget = Text(
-        label.toUpperCase(),
+        ios ? label : label.toUpperCase(),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: AetronTypography.button.copyWith(

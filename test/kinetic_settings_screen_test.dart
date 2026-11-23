@@ -173,8 +173,8 @@ void main() {
         await tester.pumpAndSettle();
         await tester.tap(sw);
         await tester.pumpAndSettle();
-        expect(find.byType(AlertDialog), findsOneWidget);
-        await tester.tap(find.byType(TextButton).first);
+        expect(find.byType(KineticGlassDialog), findsOneWidget);
+        await tester.tap(find.text('Cancel'));
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
       }

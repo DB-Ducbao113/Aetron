@@ -450,12 +450,13 @@ entrypoint = "./functions/workouts-end/index.ts"
 
 [functions.deterministic-finalize-worker]
 enabled = true
-verify_jwt = true
+# Worker verifies a dedicated internal dispatch credential in code.
+verify_jwt = false
 import_map = "./functions/deterministic-finalize-worker/deno.json"
 entrypoint = "./functions/deterministic-finalize-worker/index.ts"
 
 [functions.route-correction-worker]
 enabled = true
-verify_jwt = true
+verify_jwt = false
 import_map = "./functions/route-correction-worker/deno.json"
 entrypoint = "./functions/route-correction-worker/index.ts"

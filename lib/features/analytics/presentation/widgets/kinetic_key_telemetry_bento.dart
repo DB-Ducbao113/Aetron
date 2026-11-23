@@ -38,16 +38,19 @@ class KineticKeyTelemetryBento extends StatelessWidget {
         ? WorkoutFormatters.formatDurationFromSeconds(totalDurationSec)
         : '00:00';
 
+    final caloriesStr = totalCalories > 0
+        ? totalCalories.toString().replaceAllMapped(
+            RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+            (m) => '${m[1]},',
+          )
+        : '—';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           isVi ? 'CHỈ SỐ TỔNG HỢP' : 'KEY TELEMETRY',
-          style: KineticTypography.unitLabel.copyWith(
-            color: colors.primary,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1.2,
-          ),
+          style: KineticTypography.cardEyebrowOf(colors),
         ),
         const SizedBox(height: KineticTokens.spaceXS),
         Row(
@@ -81,7 +84,7 @@ class KineticKeyTelemetryBento extends StatelessWidget {
             Expanded(
               child: _TelemetryCard(
                 label: isVi ? 'NĂNG LƯỢNG' : 'CALORIES',
-                value: totalCalories > 0 ? '$totalCalories' : '—',
+                value: caloriesStr,
                 unit: totalCalories > 0 ? 'KCAL' : '',
                 icon: Icons.local_fire_department_rounded,
                 accentColor: colors.tertiary,
@@ -123,16 +126,10 @@ class _TelemetryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.kinetic;
 
-    return Container(
+    return KineticCard(
+      useLiquidGlass: true,
       padding: const EdgeInsets.all(KineticTokens.spaceMD),
-      decoration: BoxDecoration(
-        color: colors.surface1,
-        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
-        border: Border.all(
-          color: colors.borderSubtle,
-          width: 1,
-        ),
-      ),
+      borderRadius: 21,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

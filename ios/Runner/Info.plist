@@ -44,6 +44,13 @@
 	<string>Aetron uses your location while an outdoor workout is active, including in the background if you choose to keep recording, to preserve your route, distance, and pace.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Aetron uses your location to record your route, distance, and pace during an outdoor workout.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Allow Flutter tools on your computer to connect to the app for debugging and hot reload.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_dartobservatory._tcp</string>
+		<string>_dartvmService._tcp</string>
+	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>Aetron uses the camera only when you choose to take a profile photo.</string>
 	<key>NSMotionUsageDescription</key>

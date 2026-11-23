@@ -1,6 +1,9 @@
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_surface_finish.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 export 'kinetic_tokens.dart';
@@ -13,12 +16,37 @@ class KineticTheme {
   static ThemeData get darkTheme => buildTheme(Brightness.dark);
   static ThemeData get lightTheme => buildTheme(Brightness.light);
 
-  static ThemeData buildTheme(Brightness brightness) {
+  static ThemeData buildTheme(
+    Brightness brightness, {
+    TargetPlatform? platform,
+  }) {
+    final target = platform ?? defaultTargetPlatform;
+    final ios = target == TargetPlatform.iOS;
     final isDark = brightness == Brightness.dark;
     final colors = isDark ? KineticColors.dark : KineticColors.light;
 
     return ThemeData(
       useMaterial3: true,
+      platform: target,
+      splashFactory: ios ? NoSplash.splashFactory : null,
+      cupertinoOverrideTheme: CupertinoThemeData(
+        brightness: brightness,
+        primaryColor: colors.primary,
+        scaffoldBackgroundColor: colors.background,
+        barBackgroundColor: colors.surface1,
+      ),
+      iconButtonTheme: ios
+          ? IconButtonThemeData(
+              style: IconButton.styleFrom(
+                foregroundColor: colors.textPrimary,
+                backgroundColor: Colors.transparent,
+                minimumSize: const Size(32, 32),
+                padding: EdgeInsets.zero,
+                shape: const CircleBorder(),
+                highlightColor: colors.primary.withValues(alpha: .12),
+              ),
+            )
+          : null,
       brightness: brightness,
       scaffoldBackgroundColor: colors.background,
       fontFamily: KineticTypography.bodyFontFamily,
@@ -52,53 +80,101 @@ class KineticTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
           side: isDark
-              ? BorderSide(color: colors.borderSubtle.withValues(alpha: 0.5), width: 0.5)
-              : BorderSide.none,
+              ? const BorderSide(
+                  color: Color(0xFF34495F),
+                  width: 1.0,
+                )
+              : BorderSide(
+                  color: colors.borderSubtle,
+                  width: 1.0,
+                ),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: colors.accentFill,
-          foregroundColor: Colors.white,
-          minimumSize: const Size(48, 48),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
-          ),
-          textStyle: KineticTypography.label.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
-          elevation: 0,
-        ),
+        style:
+            ElevatedButton.styleFrom(
+              backgroundColor: colors.accentFill,
+              foregroundColor: Colors.white,
+              minimumSize: Size(
+                ios ? KineticTokens.minTouchTarget : 48,
+                ios ? KineticTokens.buttonHeight : 48,
+              ),
+              padding: EdgeInsets.symmetric(
+                horizontal: ios ? 14 : 20,
+                vertical: ios ? 8 : 14,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
+              ),
+              textStyle: KineticTypography.label.copyWith(
+                fontSize: ios ? 12.5 : null,
+                fontWeight: ios ? FontWeight.w600 : FontWeight.w700,
+                letterSpacing: ios ? 0 : null,
+              ),
+              elevation: 0,
+            ).copyWith(
+              backgroundBuilder: ios
+                  ? (context, states, child) =>
+                        KineticSurfaceFinish.materialLayer(
+                          context,
+                          states,
+                          child,
+                          emphasis: true,
+                        )
+                  : null,
+            ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: colors.textPrimary,
           backgroundColor: colors.surface1,
-          minimumSize: const Size(48, 48),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          minimumSize: Size(
+            ios ? KineticTokens.minTouchTarget : 48,
+            ios ? KineticTokens.buttonHeight : 48,
+          ),
+          padding: EdgeInsets.symmetric(
+            horizontal: ios ? 14 : 20,
+            vertical: ios ? 8 : 14,
+          ),
           side: BorderSide(color: colors.borderStrong, width: 1),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
           ),
           textStyle: KineticTypography.label.copyWith(
+            fontSize: ios ? 12.5 : null,
             fontWeight: FontWeight.w600,
+            letterSpacing: ios ? 0 : null,
           ),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: colors.primary,
-          minimumSize: const Size(48, 48),
-          textStyle: KineticTypography.label,
+          minimumSize: Size(
+            ios ? KineticTokens.minTouchTarget : 48,
+            ios ? 40 : 48,
+          ),
+          padding: EdgeInsets.symmetric(horizontal: ios ? 10 : 16),
+          textStyle: KineticTypography.label.copyWith(
+            fontSize: ios ? 12.5 : null,
+            fontWeight: ios ? FontWeight.w600 : null,
+            letterSpacing: ios ? 0 : null,
+          ),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: colors.surface1,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        hintStyle: KineticTypography.bodyMedium.copyWith(color: colors.textMuted),
-        labelStyle: KineticTypography.bodyMedium.copyWith(color: colors.textSecondary),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: ios ? 12 : 14,
+        ),
+        hintStyle: KineticTypography.bodyMedium.copyWith(
+          color: colors.textMuted,
+        ),
+        labelStyle: KineticTypography.bodyMedium.copyWith(
+          color: colors.textSecondary,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
           borderSide: BorderSide(color: colors.borderSubtle, width: 1),
@@ -119,14 +195,14 @@ class KineticTheme {
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: colors.surface1,
         modalBackgroundColor: colors.surface1,
-        elevation: 12,
+        elevation: ios ? 0 : 12,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: colors.surface1,
-        elevation: 16,
+        elevation: ios ? 0 : 16,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
           side: BorderSide(color: colors.borderSubtle, width: 0.5),
@@ -146,7 +222,7 @@ class KineticTheme {
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
           TargetPlatform.android: _KineticPageTransition(),
-          TargetPlatform.iOS: _KineticPageTransition(),
+          TargetPlatform.iOS: _KineticIOSPageTransition(),
           TargetPlatform.macOS: _KineticPageTransition(),
           TargetPlatform.linux: _KineticPageTransition(),
           TargetPlatform.windows: _KineticPageTransition(),
@@ -166,15 +242,31 @@ class KineticTheme {
         elevation: 8,
       ),
       textTheme: TextTheme(
-        displayLarge: KineticTypography.displayLarge.copyWith(color: colors.textPrimary),
-        headlineLarge: KineticTypography.headlineLarge.copyWith(color: colors.textPrimary),
-        headlineMedium: KineticTypography.headlineMedium.copyWith(color: colors.textPrimary),
-        headlineSmall: KineticTypography.headlineSmall.copyWith(color: colors.textPrimary),
-        bodyLarge: KineticTypography.bodyLarge.copyWith(color: colors.textPrimary),
-        bodyMedium: KineticTypography.bodyMedium.copyWith(color: colors.textSecondary),
-        bodySmall: KineticTypography.bodySmall.copyWith(color: colors.textMuted),
+        displayLarge: KineticTypography.displayLarge.copyWith(
+          color: colors.textPrimary,
+        ),
+        headlineLarge: KineticTypography.headlineLarge.copyWith(
+          color: colors.textPrimary,
+        ),
+        headlineMedium: KineticTypography.headlineMedium.copyWith(
+          color: colors.textPrimary,
+        ),
+        headlineSmall: KineticTypography.headlineSmall.copyWith(
+          color: colors.textPrimary,
+        ),
+        bodyLarge: KineticTypography.bodyLarge.copyWith(
+          color: colors.textPrimary,
+        ),
+        bodyMedium: KineticTypography.bodyMedium.copyWith(
+          color: colors.textSecondary,
+        ),
+        bodySmall: KineticTypography.bodySmall.copyWith(
+          color: colors.textMuted,
+        ),
         labelLarge: KineticTypography.label.copyWith(color: colors.textPrimary),
-        labelMedium: KineticTypography.unitLabel.copyWith(color: colors.textMuted),
+        labelMedium: KineticTypography.unitLabel.copyWith(
+          color: colors.textMuted,
+        ),
       ),
     );
   }
@@ -202,6 +294,29 @@ class _KineticPageTransition extends PageTransitionsBuilder {
         curve: KineticTokens.motionPageCurve,
       ),
       child: child,
+    );
+  }
+}
+
+/// Preserve Apple's horizontal push/pop and interactive edge-swipe behavior.
+class _KineticIOSPageTransition extends CupertinoPageTransitionsBuilder {
+  const _KineticIOSPageTransition();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    if (KineticTokens.reduceMotionOf(context)) return child;
+    return super.buildTransitions(
+      route,
+      context,
+      animation,
+      secondaryAnimation,
+      child,
     );
   }
 }

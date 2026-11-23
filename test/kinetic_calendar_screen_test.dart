@@ -134,7 +134,7 @@ void main() {
         ),
       );
 
-      expect(find.text('TẤT CẢ'), findsOneWidget);
+      expect(find.text('Tất cả'), findsOneWidget);
       expect(find.text('Tuần'), findsOneWidget);
       expect(find.text('Tháng'), findsOneWidget);
       expect(find.text('Năm'), findsOneWidget);
@@ -269,8 +269,7 @@ void main() {
 
       expect(find.text('AETRON ARCHIVE'), findsNothing);
       expect(find.text('1 BUỔI'), findsOneWidget);
-      expect(find.text('Tất cả'), findsOneWidget);
-      expect(find.text('TẤT CẢ'), findsOneWidget);
+      expect(find.text('Tất cả'), findsNWidgets(2));
       expect(find.text('Chạy bộ'), findsWidgets);
       expect(find.text('TỔNG QUAN GIAI ĐOẠN'), findsOneWidget);
       expect(find.text('CHẠY BỘ'), findsOneWidget);

@@ -1,7 +1,10 @@
+import 'package:fitness_exercise_application/features/shell/presentation/widgets/aetron_bottom_bar.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/providers/workout_providers.dart';
+import 'package:fitness_exercise_application/features/workout/presentation/widgets/record/tracking_map_widget.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/workout_route_recap_components.dart';
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
@@ -30,10 +33,11 @@ class KineticRecentActivityCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.kinetic;
+    final hPad = AetronBottomBar.horizontalPagePaddingOf(context);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: KineticTokens.page,
+      padding: EdgeInsets.symmetric(
+        horizontal: hPad,
         vertical: KineticTokens.spaceXS,
       ),
       child: Column(
@@ -48,9 +52,7 @@ class KineticRecentActivityCard extends StatelessWidget {
                   isVi ? 'Hoạt động gần đây' : 'Recent activity',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: KineticTypography.sectionTitle.copyWith(
-                    color: colors.textPrimary,
-                  ),
+                  style: KineticTypography.sectionTitleOf(colors),
                 ),
               ),
               if (workouts.isNotEmpty) ...[
@@ -70,16 +72,15 @@ class KineticRecentActivityCard extends StatelessWidget {
                         children: [
                           Text(
                             isVi ? 'Xem tất cả' : 'See all',
-                            style: KineticTypography.label.copyWith(
-                              color: colors.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: KineticTypography.linkActionOf(colors),
                           ),
                           const SizedBox(width: 2),
-                          Icon(
-                            LucideIcons.chevron_right,
-                            size: 16,
-                            color: colors.primary,
+                          BladeIcon(
+                            BladeIconName.chevR,
+                            size: 15,
+                            color: colors.isDark
+                                ? const Color(0xFF9BC5FF)
+                                : colors.primary,
                           ),
                         ],
                       ),
@@ -89,10 +90,12 @@ class KineticRecentActivityCard extends StatelessWidget {
               ],
             ],
           ),
-          const SizedBox(height: KineticTokens.spaceXS),
+          const SizedBox(height: 10),
 
           if (workouts.isEmpty)
             KineticCard(
+              useLiquidGlass: true,
+              borderRadius: 21,
               padding: const EdgeInsets.all(KineticTokens.spaceXL),
               child: Column(
                 children: [
@@ -175,33 +178,41 @@ class _RecentWorkoutItem extends ConsumerWidget {
     final effectiveDistanceKm = workout.gpsAnalysis.validDistanceKm > 0
         ? workout.gpsAnalysis.validDistanceKm
         : workout.distanceKm;
-    final distanceNumber = (useMetricUnits
-            ? effectiveDistanceKm
-            : WorkoutFormatters.kmToMi(effectiveDistanceKm))
-        .toStringAsFixed(2);
+    final distanceNumber =
+        (useMetricUnits
+                ? effectiveDistanceKm
+                : WorkoutFormatters.kmToMi(effectiveDistanceKm))
+            .toStringAsFixed(2);
     final distanceUnit = useMetricUnits ? 'km' : 'mi';
 
-    final durationStr =
-        WorkoutFormatters.formatDurationFromSeconds(workout.durationSec);
+    final durationStr = WorkoutFormatters.formatElapsedClock(
+      workout.durationSec,
+    );
 
     final String secondaryValue;
-    final String secondaryLabel;
     if (isCycling) {
       final spd = useMetricUnits
           ? workout.avgSpeedKmh
           : workout.avgSpeedKmh * 0.621371;
-      secondaryValue = spd > 0 ? '${spd.toStringAsFixed(1)} ' : '--';
-      secondaryLabel = useMetricUnits ? 'km/h' : 'mph';
+      secondaryValue = spd > 0 ? spd.toStringAsFixed(1) : '--';
+    } else if (workout.avgSpeedKmh >= 0.1) {
+      final effectiveSpeed = useMetricUnits
+          ? workout.avgSpeedKmh
+          : workout.avgSpeedKmh * 0.6213711922;
+      final totalSeconds = (3600 / effectiveSpeed).round();
+      final minutes = totalSeconds ~/ 60;
+      final seconds = totalSeconds % 60;
+      secondaryValue = "$minutes'${seconds.toString().padLeft(2, '0')}”";
     } else {
-      secondaryValue = workout.avgSpeedKmh > 0
-          ? WorkoutFormatters.formatPaceFromSpeedKmh(
-              workout.avgSpeedKmh,
-              useMetric: useMetricUnits,
-            )
-          : '--';
-      secondaryLabel = '/$distanceUnit';
+      secondaryValue = '--';
     }
 
+    final BladeIconName activityBlade = switch (workout.activityType
+        .toLowerCase()) {
+      'cycling' || 'bike' => BladeIconName.bike,
+      'walking' || 'walk' => BladeIconName.walk,
+      _ => BladeIconName.run,
+    };
     final IconData activityIcon = switch (workout.activityType.toLowerCase()) {
       'cycling' || 'bike' => Icons.directions_bike_rounded,
       'walking' || 'walk' => Icons.directions_walk_rounded,
@@ -210,23 +221,31 @@ class _RecentWorkoutItem extends ConsumerWidget {
 
     final String title = isVi
         ? switch (workout.activityType.toLowerCase()) {
-            'cycling' || 'bike' => 'Buổi đạp xe',
-            'running' || 'run' => 'Buổi chạy bộ',
-            'walking' || 'walk' => 'Buổi đi bộ',
+            'cycling' || 'bike' => 'Đạp xe ngoài trời',
+            'running' || 'run' => 'Chạy bộ ngoài trời',
+            'walking' || 'walk' => 'Đi bộ ngoài trời',
             _ => 'Buổi tập',
           }
-        : '${workout.activityType[0].toUpperCase()}${workout.activityType.substring(1)}';
+        : switch (workout.activityType.toLowerCase()) {
+            'cycling' || 'bike' => 'Outdoor cycling',
+            'running' || 'run' => 'Outdoor run',
+            'walking' || 'walk' => 'Outdoor walk',
+            _ =>
+              '${workout.activityType[0].toUpperCase()}${workout.activityType.substring(1)}',
+          };
 
     final localTime = workout.startedAt.toLocal();
     final now = DateTime.now();
-    final isToday = localTime.year == now.year &&
-        localTime.month == now.month &&
-        localTime.day == now.day;
+    final today = DateTime(now.year, now.month, now.day);
+    final workoutDay = DateTime(localTime.year, localTime.month, localTime.day);
+    final dayDiff = today.difference(workoutDay).inDays;
     final timeFormatted =
         '${localTime.hour.toString().padLeft(2, '0')}:${localTime.minute.toString().padLeft(2, '0')}';
-    final subtitle = isToday
-        ? (isVi ? 'Hôm nay · $timeFormatted' : 'Today · $timeFormatted')
-        : '${localTime.day.toString().padLeft(2, '0')}/${localTime.month.toString().padLeft(2, '0')} · $timeFormatted';
+    final subtitle = dayDiff == 0
+        ? (isVi ? 'Hôm nay, $timeFormatted' : 'Today, $timeFormatted')
+        : dayDiff == 1
+        ? (isVi ? 'Hôm qua, $timeFormatted' : 'Yesterday, $timeFormatted')
+        : '${localTime.day.toString().padLeft(2, '0')}/${localTime.month.toString().padLeft(2, '0')}, $timeFormatted';
 
     final routeAsync = ref.watch(workoutRoutePresentationProvider(workout.id));
     final routePresentation = routeAsync.valueOrNull;
@@ -234,8 +253,9 @@ class _RecentWorkoutItem extends ConsumerWidget {
     final routeSegments = routePresentation?.routeSegments ?? const [];
 
     return KineticCard(
-      padding: const EdgeInsets.all(KineticTokens.spaceMD),
-      borderRadius: KineticTokens.radiusLG,
+      useLiquidGlass: true,
+      padding: const EdgeInsets.all(17),
+      borderRadius: 21,
       onTap: onTap,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -244,25 +264,80 @@ class _RecentWorkoutItem extends ConsumerWidget {
           Row(
             children: [
               Container(
-                width: 36,
-                height: 36,
+                width: 35,
+                height: 35,
                 decoration: BoxDecoration(
-                  color: colors.primaryTint,
                   shape: BoxShape.circle,
+                  gradient: colors.isDark
+                      ? const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Color(0x33CAE9FF),
+                            Color(0x2E314B6B),
+                            Color(0x2E1A4781),
+                          ],
+                        )
+                      : const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Color(0xB8FFFFFF),
+                            Color(0x66FFFFFF),
+                            Color(0x334EABE7),
+                          ],
+                        ),
+                  border: Border.all(
+                    color: colors.isDark
+                        ? const Color(0x47B6DCFF)
+                        : Colors.white.withValues(alpha: 0.92),
+                    width: 1.0,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: colors.isDark
+                          ? const Color(0x33000000)
+                          : const Color(0x1C1F406E),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
-                child: Icon(activityIcon, color: colors.primary, size: 19),
+                child: Center(
+                  child: BladeIcon(
+                    activityBlade,
+                    color: colors.isDark
+                        ? const Color(0xFFD5E8FA)
+                        : colors.textPrimary,
+                    size: 16,
+                    strokeWidth: 1.7,
+                  ),
+                ),
               ),
-              const SizedBox(width: KineticTokens.spaceSM),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      '$title · $subtitle',
+                      title,
                       style: KineticTypography.headlineSmall.copyWith(
                         color: colors.textPrimary,
                         fontWeight: FontWeight.w700,
-                        fontSize: 15.5,
+                        fontSize: 13.5,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: KineticTypography.caption.copyWith(
+                        color: colors.isDark
+                            ? const Color(0xFFA6B6C9)
+                            : colors.textMuted,
+                        fontSize: 11,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -270,77 +345,110 @@ class _RecentWorkoutItem extends ConsumerWidget {
                   ],
                 ),
               ),
-              Icon(
-                LucideIcons.chevron_right,
+              BladeIcon(
+                BladeIconName.arrow,
                 color: colors.textMuted,
-                size: 18,
+                size: 15,
+                strokeWidth: 1.7,
               ),
             ],
           ),
 
           // 2. Route Map Preview (when GPS points exist)
           if (routePoints.length >= 2) ...[
-            const SizedBox(height: KineticTokens.spaceSM),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
-              child: SizedBox(
-                height: 150,
-                width: double.infinity,
-                child: WorkoutRoutePreviewMap(
-                  routePoints: routePoints,
-                  routeSegments: routeSegments,
-                  activityType: workout.activityType,
-                  icon: activityIcon,
-                  accentColor: colors.accentFill,
-                  glowColor: colors.accentFill.withValues(alpha: 0.25),
-                  highlightColor: colors.primaryTint,
-                  startColor: colors.success,
-                  endColor: colors.accentFill,
-                  interactive: false,
-                  showMapTiles: showMapTiles,
-                  mapPadding: const EdgeInsets.all(18),
+            const SizedBox(height: 12),
+            Container(
+              height: 140,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: colors.isDark
+                      ? const Color(0x5985C4F4)
+                      : const Color(0x999ACFF7),
+                  width: 1.0,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: colors.isDark
+                        ? const Color(0x29000000)
+                        : const Color(0x142A649D),
+                    blurRadius: 13,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(17),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    WorkoutRoutePreviewMap(
+                      routePoints: routePoints,
+                      routeSegments: routeSegments,
+                      activityType: workout.activityType,
+                      icon: activityIcon,
+                      accentColor: colors.isDark
+                          ? const Color(0xFF75BBFF)
+                          : const Color(0xFF1C7AE8),
+                      glowColor: colors.accentFill.withValues(alpha: 0.25),
+                      highlightColor: colors.primaryTint,
+                      startColor: colors.success,
+                      endColor: colors.isDark
+                          ? const Color(0xFF77BBFF)
+                          : const Color(0xFF1675DE),
+                      interactive: false,
+                      showMapTiles: showMapTiles,
+                      fallbackMapType: AppMapType.streets,
+                      mapPadding: const EdgeInsets.all(18),
+                    ),
+                    IgnorePointer(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.centerRight,
+                            colors: [
+                              colors.isDark
+                                  ? const Color(0x21BBDFFB)
+                                  : Colors.white.withValues(alpha: 0.22),
+                              Colors.transparent,
+                            ],
+                            stops: const [0.0, 0.35],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
           ],
-          const SizedBox(height: KineticTokens.spaceMD),
+          const SizedBox(height: 13),
 
-          // 3. Strava-style 3-Column Metrics Strip
+          // 3. Left-Aligned 3-Column Metrics Row (No vertical divider lines)
           Row(
             children: [
               Expanded(
                 child: _RecentMetricCell(
                   value: distanceNumber,
-                  unit: distanceUnit,
-                  label: isVi ? 'Quãng đường' : 'Distance',
+                  label: distanceUnit.toUpperCase(),
                 ),
               ),
-              Container(
-                width: 1,
-                height: 30,
-                color: colors.borderSubtle,
-              ),
-              Expanded(
-                child: _RecentMetricCell(
-                  value: secondaryValue.trim(),
-                  unit: isCycling
-                      ? (secondaryValue == '--' ? '' : secondaryLabel)
-                      : '',
-                  label: isCycling
-                      ? (isVi ? 'Tốc độ TB' : 'Avg speed')
-                      : (isVi ? 'Pace TB' : 'Avg pace'),
-                ),
-              ),
-              Container(
-                width: 1,
-                height: 30,
-                color: colors.borderSubtle,
-              ),
+              const SizedBox(width: 10),
               Expanded(
                 child: _RecentMetricCell(
                   value: durationStr,
-                  unit: '',
-                  label: isVi ? 'Thời gian' : 'Duration',
+                  label: isVi ? 'THỜI GIAN' : 'DURATION',
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _RecentMetricCell(
+                  value: secondaryValue.trim(),
+                  label: isCycling
+                      ? (useMetricUnits ? 'KM/H' : 'MPH')
+                      : 'PACE',
                 ),
               ),
             ],
@@ -353,12 +461,10 @@ class _RecentWorkoutItem extends ConsumerWidget {
 
 class _RecentMetricCell extends StatelessWidget {
   final String value;
-  final String unit;
   final String label;
 
   const _RecentMetricCell({
     required this.value,
-    required this.unit,
     required this.label,
   });
 
@@ -366,52 +472,40 @@ class _RecentMetricCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.kinetic;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 6),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Text(
-                  value,
-                  style: KineticTypography.metricSmall.copyWith(
-                    color: colors.textPrimary,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 19,
-                  ),
-                ),
-                if (unit.isNotEmpty) ...[
-                  const SizedBox(width: 2),
-                  Text(
-                    unit,
-                    style: KineticTypography.bodySmall.copyWith(
-                      color: colors.textMuted,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            value,
+            style: KineticTypography.metricSmall.copyWith(
+              color: colors.isDark
+                  ? const Color(0xFFEFF6FF)
+                  : colors.textPrimary,
+              fontWeight: FontWeight.w800,
+              fontSize: 18,
+              letterSpacing: -0.5,
+              fontFeatures: KineticTypography.tabularFigures,
             ),
           ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: KineticTypography.caption.copyWith(
-              color: colors.textMuted,
-              fontSize: 11,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: KineticTypography.caption.copyWith(
+            color: colors.isDark
+                ? const Color(0xFF94AAC2)
+                : colors.textMuted,
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.4,
           ),
-        ],
-      ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
     );
   }
 }

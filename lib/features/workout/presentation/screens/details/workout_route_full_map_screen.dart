@@ -3,6 +3,7 @@ import 'package:fitness_exercise_application/features/workout/presentation/widge
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/workout_route_recap_components.dart';
 import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_glass_icon_button.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -85,6 +86,12 @@ class _WorkoutRouteFullMapScreenState extends State<WorkoutRouteFullMapScreen> {
                   _MapOverlayButton(
                     tooltip: isVietnamese ? 'Quay lại' : 'Back',
                     icon: Icons.arrow_back_rounded,
+                    iconWidget: BladeIcon(
+                      BladeIconName.chevL,
+                      size: 18,
+                      color: colors.textSecondary,
+                      strokeWidth: 1.7,
+                    ),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                   const SizedBox(width: 12),
@@ -95,7 +102,9 @@ class _WorkoutRouteFullMapScreenState extends State<WorkoutRouteFullMapScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
                         gradient: KineticGradients.hudSurface(colors),
-                        borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
+                        borderRadius: BorderRadius.circular(
+                          KineticTokens.radiusPill,
+                        ),
                         border: Border.all(
                           color: colors.borderSubtle.withValues(alpha: 0.8),
                         ),
@@ -125,7 +134,9 @@ class _WorkoutRouteFullMapScreenState extends State<WorkoutRouteFullMapScreen> {
                         iconWidget: BladeIcon(
                           BladeIconName.layers,
                           size: 20,
-                          color: isSatellite ? colors.primary : colors.textPrimary,
+                          color: isSatellite
+                              ? colors.primary
+                              : colors.textPrimary,
                         ),
                         isHighlighted: isSatellite,
                         onPressed: () => showAetronMapStylePicker(
@@ -158,7 +169,9 @@ class _WorkoutRouteFullMapScreenState extends State<WorkoutRouteFullMapScreen> {
                     ),
                     decoration: BoxDecoration(
                       gradient: KineticGradients.hudSurface(colors),
-                      borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
+                      borderRadius: BorderRadius.circular(
+                        KineticTokens.radiusPill,
+                      ),
                       border: Border.all(
                         color: colors.borderSubtle.withValues(alpha: 0.8),
                       ),
@@ -216,29 +229,15 @@ class _MapOverlayButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.kinetic;
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
-      child: Ink(
-        decoration: BoxDecoration(
-          gradient: KineticGradients.hudSurface(colors),
-          borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
-          border: Border.all(
-            color: isHighlighted
-                ? colors.primary.withValues(alpha: 0.7)
-                : colors.borderSubtle.withValues(alpha: 0.8),
-          ),
-        ),
-        child: IconButton(
-          key: buttonKey,
-          tooltip: tooltip,
-          onPressed: onPressed,
-          icon: iconWidget ?? Icon(icon),
-          color: colors.textPrimary,
-          iconSize: 22,
-          constraints: const BoxConstraints.tightFor(width: 48, height: 48),
-        ),
+    return KeyedSubtree(
+      key: buttonKey,
+      child: KineticGlassIconButton(
+        label: tooltip,
+        icon: iconWidget ?? Icon(icon, size: 18),
+        active: isHighlighted,
+        size: 37,
+        visualSize: 37,
+        onPressed: onPressed,
       ),
     );
   }

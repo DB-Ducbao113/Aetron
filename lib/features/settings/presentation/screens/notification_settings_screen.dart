@@ -8,6 +8,7 @@ import 'package:fitness_exercise_application/features/settings/presentation/prov
 import 'package:fitness_exercise_application/features/settings/presentation/widgets/kinetic_settings_section.dart';
 import 'package:fitness_exercise_application/features/settings/presentation/widgets/kinetic_settings_top_bar.dart';
 import 'package:fitness_exercise_application/features/settings/presentation/widgets/kinetic_time_input_sheet.dart';
+import 'package:fitness_exercise_application/features/shell/presentation/widgets/aetron_bottom_bar.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/providers/workout_providers.dart';
 import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
@@ -207,19 +208,17 @@ class _NotificationSettingsScreenState
     final currentLang = ref.watch(appLanguageProvider);
     final isVi = currentLang == AppLanguage.vi;
 
+    final hPad = AetronBottomBar.horizontalPagePaddingOf(context);
+
     return Scaffold(
       backgroundColor: colors.background,
-      body: SafeArea(
+      body: KineticGlasslineScaffoldBody(
+        showBottomScrim: false,
         child: Column(
           children: [
             // Header Bar
             Padding(
-              padding: const EdgeInsets.fromLTRB(
-                KineticTokens.page,
-                12,
-                KineticTokens.page,
-                8,
-              ),
+              padding: EdgeInsets.fromLTRB(hPad, 12, hPad, 8),
               child: KineticSettingsTopBar(
                 currentLang: currentLang,
                 title: isVi ? 'Thông báo' : 'Notifications',
@@ -236,11 +235,12 @@ class _NotificationSettingsScreenState
                       ),
                     )
                   : SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(
-                        KineticTokens.page,
+                      padding: EdgeInsets.fromLTRB(
+                        hPad,
                         KineticTokens.spaceXS,
-                        KineticTokens.page,
-                        KineticTokens.spaceXL,
+                        hPad,
+                        MediaQuery.viewPaddingOf(context).bottom +
+                            KineticTokens.spaceXL,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -319,36 +319,17 @@ class _NotificationSettingsScreenState
                             const SizedBox(height: KineticTokens.spaceMD),
                           ],
 
-                          // 1. Master Push Notification Card (Option A Light & Dark)
-                          Container(
+                          // 1. Master Push Notification Card (Glassline V3)
+                          KineticCard(
+                            useLiquidGlass: true,
+                            borderRadius: 21,
                             padding: const EdgeInsets.symmetric(
                               horizontal: KineticTokens.spaceMD,
-                              vertical: 12,
+                              vertical: 14,
                             ),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(
-                                KineticTokens.radiusXL,
-                              ),
-                              border: Border.all(
-                                width: 1.0,
-                                color: _masterEnabled
-                                    ? (isLight
-                                        ? colors.primary.withValues(alpha: 0.22)
-                                        : colors.borderAccent)
-                                    : colors.borderSubtle,
-                              ),
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: _masterEnabled
-                                    ? (isLight
-                                        ? [colors.primaryTint, colors.surface1]
-                                        : [colors.surface2, colors.surface1])
-                                    : [colors.surface1, colors.surface1],
-                              ),
-                              boxShadow:
-                                  isLight ? KineticTokens.shadowCardLight() : null,
-                            ),
+                            borderColor: _masterEnabled
+                                ? colors.primary.withValues(alpha: 0.35)
+                                : null,
                             child: Row(
                               children: [
                                 Container(

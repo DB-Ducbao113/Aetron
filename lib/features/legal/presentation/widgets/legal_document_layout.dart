@@ -1,8 +1,10 @@
 import 'package:fitness_exercise_application/core/legal/legal_documents.dart';
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/legal/presentation/widgets/legal_info_panel.dart';
+import 'package:fitness_exercise_application/features/shell/presentation/widgets/aetron_bottom_bar.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_glass_icon_button.dart';
 import 'package:flutter/material.dart';
 
 /// Clean, document-oriented layout component for long-form legal reading.
@@ -26,31 +28,40 @@ class LegalDocumentLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.kinetic;
+    final hPad = AetronBottomBar.horizontalPagePaddingOf(context);
+    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
 
     return Scaffold(
       backgroundColor: colors.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Standard Document Header with Back Button
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: KineticTokens.spaceMD,
-                vertical: KineticTokens.spaceSM,
-              ),
-              decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: colors.borderSubtle)),
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.of(context).maybePop(),
-                    icon: BladeIcon(
-                      BladeIconName.chevL,
-                      color: colors.textPrimary,
-                      size: 22,
+      body: KineticGlasslineScaffoldBody(
+        showBottomScrim: false,
+        child: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              // Standard Document Header with Back Button
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: hPad,
+                  vertical: KineticTokens.spaceSM,
+                ),
+                decoration: BoxDecoration(
+                  border: Border(bottom: BorderSide(color: colors.borderSubtle)),
+                ),
+                child: Row(
+                  children: [
+                    KineticGlassIconButton(
+                      size: 37,
+                      visualSize: 37,
+                      label: lang == AppLanguage.vi ? 'Quay lại' : 'Back',
+                      onPressed: () => Navigator.of(context).maybePop(),
+                      icon: BladeIcon(
+                        BladeIconName.chevL,
+                        color: colors.textSecondary,
+                        size: 18,
+                        strokeWidth: 1.7,
+                      ),
                     ),
-                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Column(
@@ -84,10 +95,12 @@ class LegalDocumentLayout extends StatelessWidget {
             // Main Document Scroll View
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                horizontal: KineticTokens.page,
-                vertical: KineticTokens.spaceMD,
-              ),
+                padding: EdgeInsets.fromLTRB(
+                  hPad,
+                  KineticTokens.spaceMD,
+                  hPad,
+                  bottomInset + 24,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -162,12 +175,13 @@ class LegalDocumentLayout extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(height: KineticTokens.spaceXXXL),
+                    const SizedBox(height: KineticTokens.spaceXL),
                   ],
                 ),
               ),
             ),
           ],
+          ),
         ),
       ),
     );
@@ -187,13 +201,10 @@ class _TableOfContents extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.kinetic;
 
-    return Container(
+    return KineticCard(
+      useLiquidGlass: true,
+      borderRadius: 21,
       padding: const EdgeInsets.all(KineticTokens.spaceMD),
-      decoration: BoxDecoration(
-        color: colors.surface1,
-        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
-        border: Border.all(color: colors.borderStrong, width: 1.5),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

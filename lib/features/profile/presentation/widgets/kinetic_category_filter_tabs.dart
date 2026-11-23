@@ -24,7 +24,7 @@ class KineticCategoryFilterTabs extends StatelessWidget {
     const categories = BadgeCategory.values;
 
     return SizedBox(
-      height: 38,
+      height: KineticTokens.minTouchTarget,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         clipBehavior: Clip.none,
@@ -44,17 +44,20 @@ class KineticCategoryFilterTabs extends StatelessWidget {
                 HapticFeedback.selectionClick();
                 onSelectCategory(cat);
               },
+              splashFactory: NoSplash.splashFactory,
               borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
               child: AnimatedContainer(
-                duration: KineticTokens.motionTab,
+                duration: KineticTokens.respectingReduceMotion(
+                  context,
+                  KineticTokens.motionTab,
+                ),
                 padding: const EdgeInsets.symmetric(
                   horizontal: KineticTokens.spaceSM,
                   vertical: KineticTokens.spaceXS,
                 ),
                 decoration: BoxDecoration(
                   color: isSelected ? colors.primary : colors.surface1,
-                  borderRadius:
-                      BorderRadius.circular(KineticTokens.radiusPill),
+                  borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
                   border: Border.all(
                     color: isSelected ? colors.primary : colors.borderSubtle,
                     width: 1.0,
@@ -66,14 +69,20 @@ class KineticCategoryFilterTabs extends StatelessWidget {
                     Icon(
                       cat.icon,
                       size: 14,
-                      color: isSelected ? colors.onPrimary : colors.textSecondary,
+                      color: isSelected
+                          ? colors.onPrimary
+                          : colors.textSecondary,
                     ),
                     const SizedBox(width: 6),
                     Text(
                       cat.label(currentLang),
                       style: KineticTypography.bodySmall.copyWith(
-                        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                        color: isSelected ? colors.onPrimary : colors.textSecondary,
+                        fontWeight: isSelected
+                            ? FontWeight.w800
+                            : FontWeight.w600,
+                        color: isSelected
+                            ? colors.onPrimary
+                            : colors.textSecondary,
                       ),
                     ),
                   ],

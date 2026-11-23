@@ -39,6 +39,8 @@ class _FakeRawTrackingRemoteDataSource implements RawTrackingRemoteDataSource {
 class _FakeWorkoutRemoteDataSource implements WorkoutRemoteDataSource {
   final List<String> createdShells = [];
   bool shellCreationThrows = false;
+  int snapshotSaveCalls = 0;
+  bool snapshotSaveThrows = false;
 
   @override
   Future<void> createSessionShell({
@@ -62,7 +64,12 @@ class _FakeWorkoutRemoteDataSource implements WorkoutRemoteDataSource {
     required bool shouldRequestRouteCorrection,
     required double? lastGpsGapDurationSec,
     required bool isGpsSignalWeak,
-  }) async {}
+  }) async {
+    snapshotSaveCalls++;
+    if (snapshotSaveThrows) {
+      throw StateError('Simulated snapshot upload failure');
+    }
+  }
 
   @override
   Future<void> saveSession(WorkoutSession session) async {}
@@ -127,8 +134,14 @@ void main() {
   late _FakeWorkoutRemoteDataSource fakeWorkoutRemote;
   late _FakeWorkoutProcessingRemoteDataSource fakeProcessingRemote;
   late WorkoutRecordingCoordinator coordinator;
+  late bool failLocalGps;
+  late int durableGpsCount;
+  late DateTime snapshotNow;
 
   setUp(() {
+    failLocalGps = false;
+    durableGpsCount = 0;
+    snapshotNow = DateTime.utc(2026, 1, 1);
     fakeRawTracking = _FakeRawTrackingRemoteDataSource();
     fakeWorkoutRemote = _FakeWorkoutRemoteDataSource();
     fakeProcessingRemote = _FakeWorkoutProcessingRemoteDataSource();
@@ -137,6 +150,12 @@ void main() {
       workoutRemote: fakeWorkoutRemote,
       processingRemote: fakeProcessingRemote,
       currentUserId: () => 'test-user-uuid',
+      snapshotClock: () => snapshotNow,
+      persistGps: (_) async {
+        if (failLocalGps) throw StateError('Injected disk write failure');
+        durableGpsCount++;
+      },
+      persistStep: (_) async {},
     );
   });
 
@@ -144,7 +163,66 @@ void main() {
     coordinator.dispose();
   });
 
+  test('live route uploads are capped to 30 seconds even on failure', () async {
+    await coordinator.createRemoteWorkoutShell(
+      sessionId: 'snapshot-test',
+      startedAt: snapshotNow,
+      activityType: 'walking',
+      mode: 'outdoor',
+    );
+    fakeWorkoutRemote.snapshotSaveThrows = true;
+    void queueSnapshot() => coordinator.queueLiveRouteSnapshot(
+      workoutId: 'snapshot-test',
+      routeSegments: const [
+        [LatLng(10, 106), LatLng(10.001, 106.001)],
+      ],
+      lastGpsGapDurationSec: 0,
+      isGpsSignalWeak: false,
+    );
+    queueSnapshot();
+    await Future<void>.delayed(Duration.zero);
+    expect(fakeWorkoutRemote.snapshotSaveCalls, 1);
+    snapshotNow = snapshotNow.add(const Duration(seconds: 5));
+    for (var i = 0; i < 20; i++) {
+      queueSnapshot();
+      await coordinator.syncLiveRouteSnapshot(force: false);
+    }
+    expect(fakeWorkoutRemote.snapshotSaveCalls, 1);
+    snapshotNow = snapshotNow.add(const Duration(seconds: 25));
+    fakeWorkoutRemote.snapshotSaveThrows = false;
+    queueSnapshot();
+    await Future<void>.delayed(Duration.zero);
+    expect(fakeWorkoutRemote.snapshotSaveCalls, 2);
+    snapshotNow = snapshotNow.add(const Duration(seconds: 5));
+    queueSnapshot();
+    await Future<void>.delayed(Duration.zero);
+    expect(fakeWorkoutRemote.snapshotSaveCalls, 2);
+  });
+
   group('Raw tracking upload lifecycle and persistence resilience', () {
+    test(
+      'failed local writes block final save and are retried without loss',
+      () async {
+        failLocalGps = true;
+        coordinator.bufferRawGpsPoint(
+          _createPosition(
+            latitude: 10.77,
+            longitude: 106.69,
+            timestamp: DateTime.utc(2026),
+          ),
+          workoutId: 'local-retry',
+        );
+        await expectLater(coordinator.drainLocalWrites(), throwsStateError);
+        expect(durableGpsCount, 0);
+        expect(coordinator.hasLocalStorageError, isTrue);
+        failLocalGps = false;
+        await coordinator.drainLocalWrites();
+        expect(durableGpsCount, 1);
+        expect(coordinator.hasLocalStorageError, isFalse);
+        await coordinator.drainLocalWrites();
+        expect(durableGpsCount, 1);
+      },
+    );
     test(
       'delayed shell creation holds buffered points in RAM and flushes on ready',
       () async {

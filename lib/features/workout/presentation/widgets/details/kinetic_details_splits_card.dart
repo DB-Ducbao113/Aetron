@@ -2,9 +2,7 @@ import 'dart:math' as math;
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 
 class KineticDetailsSplitsCard extends StatelessWidget {
@@ -46,15 +44,10 @@ class KineticDetailsSplitsCard extends StatelessWidget {
 
     final unitLabel = WorkoutFormatters.distanceUnitLabel(useMetric: useMetricUnits).toUpperCase();
 
-    // V4: flat section — hairline frame, rows already hairline-divided.
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(color: colors.borderSubtle),
-          bottom: BorderSide(color: colors.borderSubtle),
-        ),
-      ),
+    return KineticCard(
+      useLiquidGlass: true,
+      borderRadius: 21,
+      padding: const EdgeInsets.all(17),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

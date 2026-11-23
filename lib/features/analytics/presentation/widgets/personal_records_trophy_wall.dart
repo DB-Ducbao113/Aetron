@@ -9,31 +9,33 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
   final DetailedPersonalRecords records;
   final bool useMetricUnits;
   final AppLanguage currentLang;
+  final String? activityType;
 
   const PersonalRecordsTrophyWall({
     super.key,
     required this.records,
     required this.useMetricUnits,
     required this.currentLang,
+    this.activityType,
   });
 
   @override
   Widget build(BuildContext context) {
     final colors = context.kinetic;
-    final all = records.allRecords;
-    final unlockedCount = records.unlockedCount;
+    final all = activityType == null || activityType == 'running'
+        ? records.allRecords
+        : [
+            records.longestDistance,
+            records.fastestPace,
+            records.maxCalories,
+            records.longestDuration,
+          ];
+    final unlockedCount = all.where((r) => r.isUnlocked).length;
 
-    return Container(
-      width: double.infinity,
+    return KineticCard(
+      useLiquidGlass: true,
       padding: const EdgeInsets.all(KineticTokens.spaceSM),
-      decoration: BoxDecoration(
-        color: colors.surface1,
-        borderRadius: BorderRadius.circular(KineticTokens.radiusHero),
-        boxShadow: colors.isDark ? null : KineticTokens.shadowCardLight(),
-        border: colors.isDark
-            ? Border.all(color: colors.borderSubtle, width: 1)
-            : null,
-      ),
+      borderRadius: 21,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -67,9 +69,7 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
                               : 'Personal Bests',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: KineticTypography.headlineSmall.copyWith(
-                            color: colors.textPrimary,
-                          ),
+                          style: KineticTypography.sectionTitleOf(colors),
                         ),
                       ),
                     ],
@@ -85,7 +85,9 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: colors.primaryTint,
-                    borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
+                    borderRadius: BorderRadius.circular(
+                      KineticTokens.radiusPill,
+                    ),
                   ),
                   child: Text(
                     '$unlockedCount / ${all.length}',
@@ -118,6 +120,7 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
                 record: record,
                 useMetricUnits: useMetricUnits,
                 currentLang: currentLang,
+                activityType: activityType,
                 onTap: () => _showRecordDetailSheet(context, record),
               );
             },
@@ -136,37 +139,15 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (_) => SafeArea(
-        child: Container(
-          margin: const EdgeInsets.fromLTRB(
-            KineticTokens.spaceSM,
-            0,
-            KineticTokens.spaceSM,
-            KineticTokens.spaceSM,
-          ),
-          padding: const EdgeInsets.all(KineticTokens.spaceXL),
-          decoration: BoxDecoration(
-            color: colors.surface1.withValues(alpha: 0.96),
-            borderRadius: BorderRadius.circular(KineticTokens.radiusXXL),
-            border: Border.all(
-              color: isUnlocked ? colors.tertiary : colors.borderSubtle,
-              width: 1,
-            ),
-            boxShadow: KineticTokens.shadowPanel(colors.background),
-          ),
+      builder: (_) => KineticGlassBottomSheet(
+        floating: true,
+        borderRadius: 28,
+        borderColor: isUnlocked ? colors.tertiary.withValues(alpha: 0.65) : null,
+        padding: const EdgeInsets.all(KineticTokens.spaceXL),
+        child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 38,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: colors.borderSubtle,
-                  borderRadius: BorderRadius.circular(KineticTokens.radiusXS),
-                ),
-              ),
-              const SizedBox(height: KineticTokens.spaceLG),
-
               // Emblem
               Container(
                 width: 64,
@@ -182,7 +163,9 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
                   ),
                 ),
                 child: Icon(
-                  isUnlocked ? Icons.emoji_events_rounded : Icons.lock_outline_rounded,
+                  isUnlocked
+                      ? Icons.emoji_events_rounded
+                      : Icons.lock_outline_rounded,
                   size: 32,
                   color: isUnlocked ? colors.tertiary : colors.textSecondary,
                 ),
@@ -190,7 +173,7 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
               const SizedBox(height: KineticTokens.spaceSM),
 
               Text(
-                isVi ? record.titleVi : record.titleEn,
+                _recordTitle(record, currentLang, activityType),
                 style: KineticTypography.cardTitle.copyWith(
                   color: colors.textPrimary,
                 ),
@@ -199,7 +182,9 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
 
               Text(
                 isUnlocked
-                    ? (isVi ? 'KỶ LỤC CÁ NHÂN ĐÃ XÁC LẬP' : 'PERSONAL BEST ESTABLISHED')
+                    ? (isVi
+                          ? 'KỶ LỤC CÁ NHÂN ĐÃ XÁC LẬP'
+                          : 'PERSONAL BEST ESTABLISHED')
                     : (isVi ? 'CHƯA MỞ KHÓA' : 'NOT YET UNLOCKED'),
                 style: KineticTypography.unitLabel.copyWith(
                   fontWeight: FontWeight.w900,
@@ -231,7 +216,11 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            _formatRecordValue(record, useMetricUnits),
+                            _formatRecordValue(
+                              record,
+                              useMetricUnits,
+                              activityType,
+                            ),
                             style: KineticTypography.headlineSmall.copyWith(
                               fontWeight: FontWeight.w900,
                               color: colors.tertiary,
@@ -239,6 +228,17 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
                           ),
                         ],
                       ),
+                      if (record.isEstimated) ...[
+                        const SizedBox(height: KineticTokens.spaceXS),
+                        Text(
+                          isVi
+                              ? 'Ước tính từ tốc độ trung bình của buổi tập.'
+                              : 'Estimated from the workout average pace.',
+                          style: KineticTypography.caption.copyWith(
+                            color: colors.textSecondary,
+                          ),
+                        ),
+                      ],
                       if (record.achievedAt != null) ...[
                         const SizedBox(height: KineticTokens.spaceXS),
                         Row(
@@ -287,15 +287,48 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
     );
   }
 
-  static String _formatRecordValue(SingleRecordItem record, bool useMetricUnits) {
+  static String _recordTitle(
+    SingleRecordItem record,
+    AppLanguage lang,
+    String? activityType,
+  ) {
+    if (record.id == 'pr_fastest_pace' && activityType == 'cycling') {
+      return lang == AppLanguage.vi
+          ? 'Tốc độ TB cao nhất'
+          : 'Top Average Speed';
+    }
+    return lang == AppLanguage.vi ? record.titleVi : record.titleEn;
+  }
+
+  static String _formatRecordValue(
+    SingleRecordItem record,
+    bool useMetricUnits,
+    String? activityType,
+  ) {
     if (record.durationSec != null) {
-      return WorkoutFormatters.formatDurationFromSeconds(record.durationSec!);
+      final duration = WorkoutFormatters.formatDurationFromSeconds(
+        record.durationSec!,
+      );
+      return record.isEstimated ? '≈ $duration' : duration;
     }
     if (record.id == 'pr_longest_dist' && record.numericValue != null) {
-      return WorkoutFormatters.formatDistance(record.numericValue!, useMetric: useMetricUnits, decimals: 1);
+      return WorkoutFormatters.formatDistance(
+        record.numericValue!,
+        useMetric: useMetricUnits,
+        decimals: 1,
+      );
     }
     if (record.id == 'pr_fastest_pace' && record.numericValue != null) {
-      return WorkoutFormatters.formatPaceFromSpeedKmh(record.numericValue!, useMetric: useMetricUnits);
+      if (activityType == 'cycling') {
+        final speed = useMetricUnits
+            ? record.numericValue!
+            : WorkoutFormatters.kmToMi(record.numericValue!);
+        return '${speed.toStringAsFixed(1)} ${useMetricUnits ? 'km/h' : 'mph'}';
+      }
+      return WorkoutFormatters.formatPaceFromSpeedKmh(
+        record.numericValue!,
+        useMetric: useMetricUnits,
+      );
     }
     if (record.id == 'pr_max_cal' && record.numericValue != null) {
       return '${record.numericValue!.round()} kcal';
@@ -309,12 +342,14 @@ class _TrophyCardItem extends StatelessWidget {
   final bool useMetricUnits;
   final AppLanguage currentLang;
   final VoidCallback onTap;
+  final String? activityType;
 
   const _TrophyCardItem({
     required this.record,
     required this.useMetricUnits,
     required this.currentLang,
     required this.onTap,
+    this.activityType,
   });
 
   @override
@@ -322,7 +357,11 @@ class _TrophyCardItem extends StatelessWidget {
     final colors = context.kinetic;
     final isUnlocked = record.isUnlocked;
     final isVi = currentLang == AppLanguage.vi;
-    final title = isVi ? record.titleVi : record.titleEn;
+    final title = PersonalRecordsTrophyWall._recordTitle(
+      record,
+      currentLang,
+      activityType,
+    );
 
     final accentColor = switch (record.category) {
       'speed' => colors.primary,
@@ -413,6 +452,7 @@ class _TrophyCardItem extends StatelessWidget {
                           ? PersonalRecordsTrophyWall._formatRecordValue(
                               record,
                               useMetricUnits,
+                              activityType,
                             )
                           : (isVi ? 'Chưa mở khóa' : 'Locked'),
                       maxLines: 1,

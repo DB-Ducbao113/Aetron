@@ -1,6 +1,9 @@
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
+import 'package:fitness_exercise_application/features/shell/presentation/widgets/aetron_bottom_bar.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_ai_insight.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_glass_icon_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,10 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class WorkoutAiInsightDetailScreen extends ConsumerWidget {
   final WorkoutAiInsight insight;
 
-  const WorkoutAiInsightDetailScreen({
-    super.key,
-    required this.insight,
-  });
+  const WorkoutAiInsightDetailScreen({super.key, required this.insight});
 
   IconData _getActivityIcon(String activity) {
     switch (activity.toLowerCase()) {
@@ -65,21 +65,37 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
   String _formatSignalName(String signalKey, AppLanguage lang) {
     switch (signalKey) {
       case 'pace_fatigue_slope':
-        return lang == AppLanguage.vi ? 'Độ dốc suy giảm Pace (Fatigue Slope)' : 'Pace Fatigue Slope';
+        return lang == AppLanguage.vi
+            ? 'Độ dốc suy giảm Pace (Fatigue Slope)'
+            : 'Pace Fatigue Slope';
       case 'pace_consistency_cv':
-        return lang == AppLanguage.vi ? 'Hệ số biến thiên nhịp (Consistency CV)' : 'Pace Consistency CV';
+        return lang == AppLanguage.vi
+            ? 'Hệ số biến thiên nhịp (Consistency CV)'
+            : 'Pace Consistency CV';
       case 'rest_ratio':
-        return lang == AppLanguage.vi ? 'Tỷ lệ thời gian nghỉ (Rest Ratio)' : 'Rest Ratio %';
+        return lang == AppLanguage.vi
+            ? 'Tỷ lệ thời gian nghỉ (Rest Ratio)'
+            : 'Rest Ratio %';
       case 'gps_reliability_score':
-        return lang == AppLanguage.vi ? 'Độ tin cậy vị trí GPS' : 'GPS Reliability Score';
+        return lang == AppLanguage.vi
+            ? 'Độ tin cậy vị trí GPS'
+            : 'GPS Reliability Score';
       case 'baseline_pace_zscore':
-        return lang == AppLanguage.vi ? 'Lệch chuẩn Pace so với 30 ngày (Z-Score)' : '30-Day Pace Z-Score';
+        return lang == AppLanguage.vi
+            ? 'Lệch chuẩn Pace so với 30 ngày (Z-Score)'
+            : '30-Day Pace Z-Score';
       case 'baseline_distance_zscore':
-        return lang == AppLanguage.vi ? 'Lệch chuẩn quãng đường so với 30 ngày' : '30-Day Distance Z-Score';
+        return lang == AppLanguage.vi
+            ? 'Lệch chuẩn quãng đường so với 30 ngày'
+            : '30-Day Distance Z-Score';
       case 'recent_7d_volume_km':
-        return lang == AppLanguage.vi ? 'Tổng khối lượng vận động 7 ngày gần nhất' : 'Recent 7-Day Training Volume';
+        return lang == AppLanguage.vi
+            ? 'Tổng khối lượng vận động 7 ngày gần nhất'
+            : 'Recent 7-Day Training Volume';
       case 'goal_alignment':
-        return lang == AppLanguage.vi ? 'Mức độ phù hợp với mục tiêu' : 'Goal Alignment Status';
+        return lang == AppLanguage.vi
+            ? 'Mức độ phù hợp với mục tiêu'
+            : 'Goal Alignment Status';
       default:
         return signalKey.replaceAll('_', ' ');
     }
@@ -93,20 +109,30 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
     final isLlm = insight.source == 'llm';
     final accentColor = isLlm ? colors.primary : colors.secondary;
 
+    final hPad = AetronBottomBar.horizontalPagePaddingOf(context);
+
     return Scaffold(
       backgroundColor: colors.background,
-      body: SafeArea(
+      body: KineticGlasslineScaffoldBody(
+        showBottomScrim: false,
         child: Column(
           children: [
             // Top Navigation Bar
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: EdgeInsets.symmetric(horizontal: hPad, vertical: 12),
               child: Row(
                 children: [
-                  IconButton(
+                  KineticGlassIconButton(
+                    size: 37,
+                    visualSize: 37,
+                    label: isVi ? 'Quay lại' : 'Back',
                     onPressed: () => Navigator.of(context).pop(),
-                    icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.textPrimary),
-                    iconSize: 20,
+                    icon: BladeIcon(
+                      BladeIconName.chevL,
+                      color: colors.textSecondary,
+                      size: 18,
+                      strokeWidth: 1.7,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -125,7 +151,9 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          isLlm ? 'Google Gemini 1.5 Flash • Active' : 'Adaptive Smart Engine • Active',
+                          isLlm
+                              ? 'Google Gemini 1.5 Flash • Active'
+                              : 'Adaptive Smart Engine • Active',
                           style: KineticTypography.bodySmall.copyWith(
                             color: accentColor,
                             fontWeight: FontWeight.w600,
@@ -135,10 +163,15 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
                     decoration: BoxDecoration(
                       color: accentColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
+                      borderRadius: BorderRadius.circular(
+                        KineticTokens.radiusPill,
+                      ),
                       border: Border.all(
                         color: accentColor.withValues(alpha: 0.35),
                         width: 1,
@@ -160,21 +193,18 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
             // Scrollable Body
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                padding: EdgeInsets.fromLTRB(
+                  hPad,
+                  8,
+                  hPad,
+                  MediaQuery.viewPaddingOf(context).bottom + 24,
+                ),
                 children: [
                   // 1. Hero Summary Card
-                  Container(
+                  KineticCard(
+                    useLiquidGlass: true,
+                    borderRadius: 21,
                     padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: colors.surface1,
-                      borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
-                      boxShadow: colors.isDark
-                          ? null
-                          : KineticTokens.shadowCardLight(),
-                      border: colors.isDark
-                          ? Border.all(color: colors.borderSubtle)
-                          : null,
-                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -192,7 +222,9 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
                                 ),
                               ),
                               child: Icon(
-                                isLlm ? Icons.auto_awesome_rounded : Icons.psychology_rounded,
+                                isLlm
+                                    ? Icons.auto_awesome_rounded
+                                    : Icons.psychology_rounded,
                                 color: accentColor,
                                 size: 24,
                               ),
@@ -203,7 +235,9 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    isVi ? 'TỔNG QUAN HIỆU SUẤT' : 'PERFORMANCE OVERVIEW',
+                                    isVi
+                                        ? 'TỔNG QUAN HIỆU SUẤT'
+                                        : 'PERFORMANCE OVERVIEW',
                                     style: KineticTypography.unitLabel.copyWith(
                                       color: accentColor,
                                       fontSize: 11,
@@ -253,7 +287,9 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
                   // 2. Strengths Section Card
                   if (insight.strengths.isNotEmpty) ...[
                     _DetailCardSection(
-                      title: isVi ? 'ĐIỂM NỔI BẬT ĐẠT ĐƯỢC' : 'KEY STRENGTHS ACHIEVED',
+                      title: isVi
+                          ? 'ĐIỂM NỔI BẬT ĐẠT ĐƯỢC'
+                          : 'KEY STRENGTHS ACHIEVED',
                       icon: Icons.check_circle_rounded,
                       accentColor: colors.secondary,
                       items: insight.strengths,
@@ -264,7 +300,9 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
                   // 3. Watchouts / Focus Areas Card
                   if (insight.watchouts.isNotEmpty) ...[
                     _DetailCardSection(
-                      title: isVi ? 'LƯU Ý VỀ THỂ LỰC & CẢI THIỆN' : 'PHYSIOLOGICAL FOCUS AREAS',
+                      title: isVi
+                          ? 'LƯU Ý VỀ THỂ LỰC & CẢI THIỆN'
+                          : 'PHYSIOLOGICAL FOCUS AREAS',
                       icon: Icons.lightbulb_rounded,
                       accentColor: colors.tertiary,
                       items: insight.watchouts,
@@ -278,11 +316,10 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: colors.surface1,
-                      borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
-                      border: Border.all(
-                        color: colors.borderSubtle,
-                        width: 1,
+                      borderRadius: BorderRadius.circular(
+                        KineticTokens.radiusLG,
                       ),
+                      border: Border.all(color: colors.borderSubtle, width: 1),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -293,7 +330,9 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
                                 color: colors.surface2,
-                                borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
+                                borderRadius: BorderRadius.circular(
+                                  KineticTokens.radiusMD,
+                                ),
                               ),
                               child: Icon(
                                 Icons.track_changes_rounded,
@@ -307,7 +346,9 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    isVi ? 'KẾ HOẠCH BUỔI TẬP KẾ TIẾP' : 'NEXT SESSION BLUEPRINT',
+                                    isVi
+                                        ? 'KẾ HOẠCH BUỔI TẬP KẾ TIẾP'
+                                        : 'NEXT SESSION BLUEPRINT',
                                     style: KineticTypography.unitLabel.copyWith(
                                       color: colors.primary,
                                       fontSize: 12,
@@ -339,10 +380,16 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
                               child: _MetricPillBox(
                                 label: isVi ? 'HOẠT ĐỘNG' : 'ACTIVITY',
                                 value: _formatActivityLabel(
-                                  insight.nextSessionSuggestion.recommendedActivity,
+                                  insight
+                                      .nextSessionSuggestion
+                                      .recommendedActivity,
                                   currentLang,
                                 ),
-                                icon: _getActivityIcon(insight.nextSessionSuggestion.recommendedActivity),
+                                icon: _getActivityIcon(
+                                  insight
+                                      .nextSessionSuggestion
+                                      .recommendedActivity,
+                                ),
                                 accentColor: colors.primary,
                               ),
                             ),
@@ -350,7 +397,8 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
                             Expanded(
                               child: _MetricPillBox(
                                 label: isVi ? 'THỜI LƯỢNG' : 'DURATION',
-                                value: '${insight.nextSessionSuggestion.targetDurationMin} ${isVi ? 'phút' : 'min'}',
+                                value:
+                                    '${insight.nextSessionSuggestion.targetDurationMin} ${isVi ? 'phút' : 'min'}',
                                 icon: Icons.timer_rounded,
                                 accentColor: colors.secondary,
                               ),
@@ -370,13 +418,18 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
                           ],
                         ),
 
-                        if (insight.nextSessionSuggestion.reason.isNotEmpty) ...[
+                        if (insight
+                            .nextSessionSuggestion
+                            .reason
+                            .isNotEmpty) ...[
                           const SizedBox(height: 16),
                           Container(
                             padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
                               color: colors.surface2,
-                              borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
+                              borderRadius: BorderRadius.circular(
+                                KineticTokens.radiusMD,
+                              ),
                               border: Border.all(
                                 color: colors.borderSubtle,
                                 width: 1,
@@ -394,11 +447,12 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
                                 Expanded(
                                   child: Text(
                                     insight.nextSessionSuggestion.reason,
-                                    style: KineticTypography.bodyMedium.copyWith(
-                                      color: colors.textPrimary,
-                                      fontSize: 13,
-                                      fontStyle: FontStyle.italic,
-                                    ),
+                                    style: KineticTypography.bodyMedium
+                                        .copyWith(
+                                          color: colors.textPrimary,
+                                          fontSize: 13,
+                                          fontStyle: FontStyle.italic,
+                                        ),
                                   ),
                                 ),
                               ],
@@ -416,7 +470,9 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
                       padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
                         color: colors.surface1,
-                        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
+                        borderRadius: BorderRadius.circular(
+                          KineticTokens.radiusLG,
+                        ),
                         border: Border.all(
                           color: colors.borderSubtle,
                           width: 1,
@@ -434,7 +490,9 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                isVi ? 'CƠ SỞ TÍN HIỆU TOÁN HỌC ĐÃ PHÂN TÍCH' : 'TELEMETRY SIGNALS ANALYZED',
+                                isVi
+                                    ? 'CƠ SỞ TÍN HIỆU TOÁN HỌC ĐÃ PHÂN TÍCH'
+                                    : 'TELEMETRY SIGNALS ANALYZED',
                                 style: KineticTypography.unitLabel.copyWith(
                                   color: colors.primary,
                                   fontSize: 11,
@@ -462,11 +520,12 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
                                   Expanded(
                                     child: Text(
                                       _formatSignalName(sig, currentLang),
-                                      style: KineticTypography.bodySmall.copyWith(
-                                        color: colors.textSecondary,
-                                        fontSize: 12.5,
-                                        fontWeight: FontWeight.w500,
-                                      ),
+                                      style: KineticTypography.bodySmall
+                                          .copyWith(
+                                            color: colors.textSecondary,
+                                            fontSize: 12.5,
+                                            fontWeight: FontWeight.w500,
+                                          ),
                                     ),
                                   ),
                                 ],
@@ -515,16 +574,10 @@ class _DetailCardSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.kinetic;
 
-    return Container(
+    return KineticCard(
+      useLiquidGlass: true,
+      borderRadius: 21,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: colors.surface1,
-        borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
-        border: Border.all(
-          color: colors.borderSubtle,
-          width: 1,
-        ),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -544,34 +597,36 @@ class _DetailCardSection extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          ...items.map((item) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      margin: const EdgeInsets.only(top: 6, right: 10),
-                      width: 6,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: accentColor,
+          ...items.map(
+            (item) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: 6, right: 10),
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: accentColor,
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      item,
+                      style: KineticTypography.bodySmall.copyWith(
+                        color: colors.textPrimary,
+                        fontSize: 13,
+                        height: 1.45,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                    Expanded(
-                      child: Text(
-                        item,
-                        style: KineticTypography.bodySmall.copyWith(
-                          color: colors.textPrimary,
-                          fontSize: 13,
-                          height: 1.45,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              )),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -603,10 +658,7 @@ class _MetricPillBox extends StatelessWidget {
       decoration: BoxDecoration(
         color: colors.surface2,
         borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
-        border: Border.all(
-          color: colors.borderSubtle,
-          width: 1,
-        ),
+        border: Border.all(color: colors.borderSubtle, width: 1),
       ),
       child: Column(
         children: [

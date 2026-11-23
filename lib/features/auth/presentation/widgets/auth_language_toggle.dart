@@ -1,5 +1,6 @@
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
+import 'package:fitness_exercise_application/shared/kinetic/native_liquid_glass.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +12,25 @@ class AuthLanguageToggle extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.kinetic;
     final current = ref.watch(appLanguageProvider);
+
+    if (NativeLiquidGlass.enabledOf(context)) {
+      return Semantics(
+        container: true,
+        label: current == AppLanguage.vi
+            ? 'Chọn ngôn ngữ. Hiện tại: Tiếng Việt'
+            : 'Choose language. Current: English',
+        child: SizedBox(
+          width: 74,
+          height: KineticTokens.segmentedControlHeight,
+          child: NativeGlassSegmentedControl(
+            labels: const ['VI', 'EN'],
+            selectedIndex: current == AppLanguage.vi ? 0 : 1,
+            onChanged: (index) =>
+                _setLanguage(ref, index == 0 ? AppLanguage.vi : AppLanguage.en),
+          ),
+        ),
+      );
+    }
 
     return Semantics(
       container: true,
@@ -74,34 +94,32 @@ class _LanguageOption extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(9),
-          child: AnimatedContainer(
-            duration: KineticTokens.motionTab,
-            curve: Curves.easeOutCubic,
-            width: 34,
-            height: 26,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: selected
-                  ? colors.primary.withValues(alpha: 0.16)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(9),
-              border: selected
-                  ? Border.all(
-                      color: colors.primary.withValues(
-                        alpha: 0.55,
-                      ),
-                    )
-                  : null,
-            ),
-            child: Text(
-              label,
-              style: TextStyle(
+          child: KineticTouchFinish(
+            radius: 9,
+            emphasis: selected,
+            child: AnimatedContainer(
+              duration: KineticTokens.motionTab,
+              curve: Curves.easeOutCubic,
+              width: 34,
+              height: 26,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
                 color: selected
-                    ? colors.primary
-                    : colors.textMuted,
-                fontSize: 11,
-                fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                letterSpacing: 0.4,
+                    ? colors.primary.withValues(alpha: 0.16)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(9),
+                border: selected
+                    ? Border.all(color: colors.primary.withValues(alpha: 0.55))
+                    : null,
+              ),
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: selected ? colors.primary : colors.textMuted,
+                  fontSize: 11,
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                  letterSpacing: 0.4,
+                ),
               ),
             ),
           ),

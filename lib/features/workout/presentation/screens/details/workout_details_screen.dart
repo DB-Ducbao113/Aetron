@@ -1,5 +1,6 @@
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/settings/presentation/providers/settings_preferences_providers.dart';
+import 'package:fitness_exercise_application/features/shell/presentation/widgets/aetron_bottom_bar.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/providers/workout_providers.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/screens/details/workout_route_full_map_screen.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/details/kinetic_details_delete_dialog.dart';
@@ -71,9 +72,12 @@ class WorkoutDetailsScreen extends ConsumerWidget {
     final routeAsync = ref.watch(workoutRoutePresentationProvider(workoutId));
     final useMetricUnits = ref.watch(metricUnitsPreferenceProvider).value ?? true;
 
+    final hPad = AetronBottomBar.horizontalPagePaddingOf(context);
+
     return Scaffold(
       backgroundColor: colors.background,
-      body: SafeArea(
+      body: KineticGlasslineScaffoldBody(
+        showBottomScrim: false,
         child: Column(
           children: [
             // Top Bar
@@ -120,7 +124,12 @@ class WorkoutDetailsScreen extends ConsumerWidget {
 
                   return ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(KineticTokens.page, 8, KineticTokens.page, 40),
+                    padding: EdgeInsets.fromLTRB(
+                      hPad,
+                      8,
+                      hPad,
+                      MediaQuery.viewPaddingOf(context).bottom + 28,
+                    ),
                     children: [
                       // 1. Activity Header
                       KineticDetailsHeader(

@@ -91,14 +91,14 @@ void main() {
 
       expect(find.text('AETRON ARCHIVE'), findsNothing);
       expect(find.text('Chi tiết buổi tập'), findsOneWidget);
-      expect(find.byIcon(Icons.arrow_back_rounded), findsOneWidget);
-      expect(find.byIcon(Icons.delete_outline_rounded), findsOneWidget);
+      expect(find.byTooltip('Quay lại'), findsOneWidget);
+      expect(find.byTooltip('Xóa buổi tập'), findsOneWidget);
 
-      await tester.tap(find.byIcon(Icons.arrow_back_rounded));
+      await tester.tap(find.byTooltip('Quay lại'));
       await tester.pump();
       expect(backTapped, isTrue);
 
-      await tester.tap(find.byIcon(Icons.delete_outline_rounded));
+      await tester.tap(find.byTooltip('Xóa buổi tập'));
       await tester.pump();
       expect(deleteTapped, isTrue);
     });

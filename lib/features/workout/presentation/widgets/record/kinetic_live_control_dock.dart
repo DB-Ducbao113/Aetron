@@ -1,5 +1,7 @@
 import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_glass_icon_button.dart';
+import 'package:fitness_exercise_application/shared/kinetic/native_liquid_glass.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -44,6 +46,10 @@ class KineticLiveControlDock extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.kinetic;
 
+    if (NativeLiquidGlass.enabledOf(context) && !isSaving) {
+      return _buildNativeDock(context, colors);
+    }
+
     return SafeArea(
       top: false,
       child: Padding(
@@ -77,6 +83,121 @@ class KineticLiveControlDock extends StatelessWidget {
     );
   }
 
+  Widget _buildNativeDock(BuildContext context, KineticColors colors) {
+    Widget action({
+      required String label,
+      required String symbol,
+      required VoidCallback onTap,
+      bool prominent = false,
+      bool destructive = false,
+      bool enabled = true,
+      int flex = 1,
+    }) {
+      final button = SizedBox(
+        height: KineticTokens.liveControlHeight,
+        child: NativeGlassControl(
+          properties: {
+            'kind': 'action',
+            'label': label,
+            'symbol': symbol,
+            'prominent': prominent,
+            'destructive': destructive,
+            'enabled': enabled,
+            'accent': colors.primary.toARGB32(),
+            'foreground': destructive
+                ? colors.tertiary.toARGB32()
+                : colors.textPrimary.toARGB32(),
+            'dark': colors.isDark,
+            'reduceMotion': KineticTokens.reduceMotionOf(context),
+          },
+          onTap: (_) => onTap(),
+        ),
+      );
+      return flex == 1 ? button : Expanded(flex: flex, child: button);
+    }
+
+    final lock = KineticGlassIconButton(
+      label: isVi
+          ? (isLocked ? 'Mở khóa màn hình' : 'Khóa màn hình')
+          : (isLocked ? 'Unlock screen' : 'Lock screen'),
+      icon: BladeIcon(
+        BladeIconName.lock,
+        size: 18,
+        color: isLocked ? colors.primary : colors.textPrimary,
+      ),
+      active: isLocked,
+      size: KineticTokens.liveControlHeight,
+      onPressed: () {
+        HapticFeedback.heavyImpact();
+        onToggleLock();
+      },
+    );
+
+    final finishIcon = KineticGlassIconButton(
+      label: isVi ? 'Kết thúc bài tập' : 'Finish workout',
+      icon: BladeIcon(BladeIconName.flag, size: 18, color: colors.tertiary),
+      size: KineticTokens.liveControlHeight,
+      onPressed: () {
+        HapticFeedback.heavyImpact();
+        onStop();
+      },
+    );
+
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+        child: Row(
+          children: [
+            lock,
+            const SizedBox(width: 10),
+            if (!isPaused) ...[
+              Expanded(
+                child: action(
+                  label: isVi ? 'TẠM DỪNG' : 'PAUSE',
+                  symbol: 'pause.fill',
+                  prominent: true,
+                  enabled: canToggle,
+                  onTap: () {
+                    if (!canToggle) return;
+                    HapticFeedback.mediumImpact();
+                    onPauseResume();
+                  },
+                ),
+              ),
+              const SizedBox(width: 10),
+              finishIcon,
+            ] else ...[
+              action(
+                label: isVi ? 'TIẾP TỤC' : 'RESUME',
+                symbol: 'play.fill',
+                prominent: true,
+                enabled: canToggle,
+                flex: 3,
+                onTap: () {
+                  if (!canToggle) return;
+                  HapticFeedback.mediumImpact();
+                  onPauseResume();
+                },
+              ),
+              const SizedBox(width: 10),
+              action(
+                label: isVi ? 'KẾT THÚC' : 'FINISH',
+                symbol: 'flag.fill',
+                destructive: true,
+                flex: 2,
+                onTap: () {
+                  HapticFeedback.heavyImpact();
+                  onStop();
+                },
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildLockButton(KineticColors colors) {
     return Semantics(
       label: isVi
@@ -91,24 +212,28 @@ class KineticLiveControlDock extends StatelessWidget {
             onToggleLock();
           },
           customBorder: const CircleBorder(),
-          child: Container(
-            width: 54,
-            height: 54,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isLocked
-                  ? colors.primary.withValues(alpha: 0.2)
-                  : colors.surface2,
-              border: Border.all(
-                color: isLocked ? colors.primary : colors.borderSubtle,
-                width: 1.2,
+          child: KineticTouchFinish(
+            radius: KineticTokens.liveControlHeight / 2,
+            emphasis: isLocked,
+            child: Container(
+              width: KineticTokens.liveControlHeight,
+              height: KineticTokens.liveControlHeight,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isLocked
+                    ? colors.primary.withValues(alpha: 0.2)
+                    : colors.surface2,
+                border: Border.all(
+                  color: isLocked ? colors.primary : colors.borderSubtle,
+                  width: 1.2,
+                ),
               ),
-            ),
-            child: Center(
-              child: BladeIcon(
-                BladeIconName.lock,
-                size: 22,
-                color: isLocked ? colors.primary : colors.textPrimary,
+              child: Center(
+                child: BladeIcon(
+                  BladeIconName.lock,
+                  size: 18,
+                  color: isLocked ? colors.primary : colors.textPrimary,
+                ),
               ),
             ),
           ),
@@ -119,7 +244,7 @@ class KineticLiveControlDock extends StatelessWidget {
 
   Widget _buildPauseButton(KineticColors colors) {
     return SizedBox(
-      height: 54,
+      height: KineticTokens.liveControlHeight,
       child: Semantics(
         label: isVi ? 'Tạm dừng bài tập' : 'Pause workout',
         button: true,
@@ -132,7 +257,7 @@ class KineticLiveControlDock extends StatelessWidget {
               : null,
           icon: BladeIcon(
             BladeIconName.pause,
-            size: 24,
+            size: 20,
             color: colors.onPrimary,
           ),
           label: Text(
@@ -158,7 +283,7 @@ class KineticLiveControlDock extends StatelessWidget {
 
   Widget _buildResumeButton(KineticColors colors) {
     return SizedBox(
-      height: 54,
+      height: KineticTokens.liveControlHeight,
       child: Semantics(
         label: isVi ? 'Tiếp tục bài tập' : 'Resume workout',
         button: true,
@@ -169,7 +294,11 @@ class KineticLiveControlDock extends StatelessWidget {
                   onPauseResume();
                 }
               : null,
-          icon: BladeIcon(BladeIconName.play, size: 24, color: colors.onPrimary),
+          icon: BladeIcon(
+            BladeIconName.play,
+            size: 20,
+            color: colors.onPrimary,
+          ),
           label: Text(
             isVi ? 'TIẾP TỤC' : 'RESUME',
             style: KineticTypography.unitLabel.copyWith(
@@ -208,31 +337,35 @@ class KineticLiveControlDock extends StatelessWidget {
                     onStop();
                   },
             customBorder: const CircleBorder(),
-            child: Container(
-              width: 54,
-              height: 54,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: colors.surface2,
-                border: Border.all(color: colors.tertiary, width: 1.4),
-              ),
-              child: Center(
-                child: isSaving
-                    ? SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            colors.tertiary,
+            child: KineticTouchFinish(
+              radius: 27,
+              enabled: !isSaving,
+              child: Container(
+                width: KineticTokens.liveControlHeight,
+                height: KineticTokens.liveControlHeight,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: colors.surface2,
+                  border: Border.all(color: colors.tertiary, width: 1.4),
+                ),
+                child: Center(
+                  child: isSaving
+                      ? SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              colors.tertiary,
+                            ),
                           ),
+                        )
+                      : BladeIcon(
+                          BladeIconName.flag,
+                          size: 18,
+                          color: colors.tertiary,
                         ),
-                      )
-                    : BladeIcon(
-                        BladeIconName.flag,
-                        size: 22,
-                        color: colors.tertiary,
-                      ),
+                ),
               ),
             ),
           ),
@@ -243,7 +376,7 @@ class KineticLiveControlDock extends StatelessWidget {
 
   Widget _buildFinishButton(KineticColors colors) {
     return SizedBox(
-      height: 54,
+      height: KineticTokens.liveControlHeight,
       child: Semantics(
         label: isVi ? 'Kết thúc bài tập' : 'Finish workout',
         button: true,
@@ -258,45 +391,49 @@ class KineticLiveControlDock extends StatelessWidget {
                     onStop();
                   },
             borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
-            child: AnimatedContainer(
-              duration: KineticTokens.motionTab,
-              decoration: BoxDecoration(
-                color: colors.surface2,
-                borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
-                border: Border.all(color: colors.borderStrong, width: 1.5),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (isSaving)
-                    SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          colors.tertiary,
+            child: KineticTouchFinish(
+              radius: KineticTokens.radiusPill,
+              enabled: !isSaving,
+              child: AnimatedContainer(
+                duration: KineticTokens.motionTab,
+                decoration: BoxDecoration(
+                  color: colors.surface2,
+                  borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
+                  border: Border.all(color: colors.borderStrong, width: 1.5),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (isSaving)
+                      SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            colors.tertiary,
+                          ),
                         ),
+                      )
+                    else
+                      BladeIcon(
+                        BladeIconName.flag,
+                        size: 18,
+                        color: colors.tertiary,
                       ),
-                    )
-                  else
-                    BladeIcon(
-                      BladeIconName.flag,
-                      size: 20,
-                      color: colors.tertiary,
+                    const SizedBox(width: 6),
+                    Text(
+                      isSaving
+                          ? (isVi ? 'ĐANG LƯU' : 'SAVING')
+                          : (isVi ? 'KẾT THÚC' : 'FINISH'),
+                      style: KineticTypography.unitLabel.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: colors.tertiary,
+                        letterSpacing: 0.8,
+                      ),
                     ),
-                  const SizedBox(width: 6),
-                  Text(
-                    isSaving
-                        ? (isVi ? 'ĐANG LƯU' : 'SAVING')
-                        : (isVi ? 'KẾT THÚC' : 'FINISH'),
-                    style: KineticTypography.unitLabel.copyWith(
-                      fontWeight: FontWeight.w900,
-                      color: colors.tertiary,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

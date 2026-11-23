@@ -1,5 +1,7 @@
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
+import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_glass_icon_button.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
 import 'package:flutter/material.dart';
@@ -8,12 +10,14 @@ class KineticHistoryTopBar extends StatelessWidget {
   final int totalCount;
   final AppLanguage currentLang;
   final bool isOffline;
+  final VoidCallback? onCalendarTap;
 
   const KineticHistoryTopBar({
     super.key,
     required this.totalCount,
     required this.currentLang,
     this.isOffline = false,
+    this.onCalendarTap,
   });
 
   @override
@@ -27,50 +31,68 @@ class KineticHistoryTopBar extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            // Left: Page Title (Clear & Prominent)
+            // Left: Eyebrow + Page Title (Clear & Prominent)
             Expanded(
-              child: Text(
-                AppTranslations.get('workout_history', currentLang),
-                style: KineticTypography.pageTitle.copyWith(
-                  color: colors.textPrimary,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    currentLang == AppLanguage.vi
+                        ? 'HOẠT ĐỘNG ĐÃ LƯU'
+                        : 'SAVED ACTIVITIES',
+                    style: KineticTypography.tabEyebrowOf(colors),
+                  ),
+                  const SizedBox(height: 3),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      AppTranslations.get('workout_history', currentLang),
+                      style: KineticTypography.tabTitleOf(colors),
+                      maxLines: 1,
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(width: KineticTokens.spaceSM),
 
-            // Workout Count Badge Pill
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: KineticTokens.spaceSM, vertical: KineticTokens.spaceXXS),
-              decoration: BoxDecoration(
-                color: colors.primary.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
-                border: Border.all(
-                  color: colors.primary.withValues(alpha: 0.35),
+            if (totalCount > 0)
+              Padding(
+                padding: const EdgeInsets.only(right: KineticTokens.spaceXS),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: colors.primaryTint,
+                    borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
+                    border: Border.all(
+                      color: colors.primary.withValues(alpha: 0.18),
+                      width: 0.8,
+                    ),
+                  ),
+                  child: Text(
+                    '$totalCount ${currentLang == AppLanguage.vi ? "BUỔI" : "WORKOUTS"}',
+                    style: KineticTypography.caption.copyWith(
+                      color: colors.primary,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 10.5,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
                 ),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: colors.primary,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    '$totalCount ${currentLang == AppLanguage.vi ? 'BUỔI' : 'SESSIONS'}',
-                    style: KineticTypography.unitLabel.copyWith(
-                      color: colors.primary,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ],
+
+            KineticGlassIconButton(
+              label: currentLang == AppLanguage.vi ? 'Lịch' : 'Calendar',
+              size: 37,
+              visualSize: 37,
+              onPressed: onCalendarTap ?? () {},
+              icon: BladeIcon(
+                BladeIconName.cal,
+                size: 18,
+                color: colors.textSecondary,
+                strokeWidth: 1.7,
               ),
             ),
           ],

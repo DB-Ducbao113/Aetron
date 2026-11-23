@@ -1,0 +1,4 @@
+tags:
+  # Requires private field datasets or a captured physical-device database.
+  # Run explicitly when those inputs are present; never count as a CI pass.
+  external-data: {}

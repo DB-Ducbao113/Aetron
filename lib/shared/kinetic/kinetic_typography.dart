@@ -1,3 +1,4 @@
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
 import 'package:flutter/material.dart';
 
 class KineticTypography {
@@ -148,31 +149,89 @@ class KineticTypography {
     height: 1.2,
   );
 
-  /// Tiêu đề page của các tab chính (Hôm nay, Lịch sử, Phân tích, Hồ sơ, Cài đặt).
+  /// Tiêu đề page của các tab chính & sub-screen (Cài đặt, Thông báo).
   static const TextStyle pageTitle = TextStyle(
+    fontFamily: displayFontFamily,
+    fontSize: 24,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -0.35,
+    height: 1.2,
+  );
+
+  /// Tiêu đề section sạch dạng sentence-case (Mục tiêu tuần, Hoạt động gần đây, Lọc theo môn).
+  static const TextStyle sectionTitle = TextStyle(
+    fontFamily: displayFontFamily,
+    fontSize: 16,
+    fontWeight: FontWeight.w700,
+    letterSpacing: -0.2,
+    height: 1.25,
+  );
+
+  /// Eyebrow đồng bộ cho cả 5 tab chính.
+  static const TextStyle tabEyebrow = TextStyle(
+    fontFamily: displayFontFamily,
+    fontSize: 10.5,
+    fontWeight: FontWeight.w800,
+    letterSpacing: 1.05,
+    height: 1.2,
+  );
+
+  /// Tiêu đề lớn đồng bộ cho cả 5 tab chính (Home, Activity, History, Analytics, Profile).
+  static const TextStyle tabTitle = TextStyle(
     fontFamily: displayFontFamily,
     fontSize: 28,
     fontWeight: FontWeight.w800,
-    letterSpacing: -0.56,
-    height: 1.15,
+    letterSpacing: -0.45,
+    height: 1.18,
   );
 
-  /// Tiêu đề section sạch dạng sentence-case (Mục tiêu tuần, Hoạt động gần đây).
-  static const TextStyle sectionTitle = TextStyle(
+  /// Eyebrow in hoa cho thẻ / nhóm mục (TỔNG QUAN GIAI ĐOẠN, CHỈ SỐ TỔNG HỢP, TIỆN ÍCH & CÀI ĐẶT).
+  static const TextStyle cardEyebrow = TextStyle(
     fontFamily: displayFontFamily,
-    fontSize: 18,
-    fontWeight: FontWeight.w700,
-    letterSpacing: -0.25,
-    height: 1.25,
+    fontSize: 11,
+    fontWeight: FontWeight.w800,
+    letterSpacing: 1.1,
+    height: 1.2,
   );
 
-  /// Tiêu đề page con (Details, Summary, Achievements).
+  /// Nhãn chữ bên trong mọi thanh segmented control (Activity, History, Analytics).
+  static const TextStyle segmentedLabel = TextStyle(
+    fontFamily: displayFontFamily,
+    fontSize: 12,
+    fontWeight: FontWeight.w700,
+    letterSpacing: 0.1,
+    height: 1.2,
+  );
+
+  static TextStyle tabEyebrowOf(KineticColors colors) => tabEyebrow.copyWith(
+    color: colors.isDark ? const Color(0xFF839AB4) : colors.textMuted,
+  );
+
+  static TextStyle tabTitleOf(KineticColors colors) => tabTitle.copyWith(
+    color: colors.isDark ? const Color(0xFFF4F8FE) : colors.textPrimary,
+  );
+
+  static TextStyle sectionTitleOf(KineticColors colors) =>
+      sectionTitle.copyWith(
+        color: colors.isDark ? const Color(0xFFE9F1FD) : colors.textPrimary,
+      );
+
+  static TextStyle cardEyebrowOf(KineticColors colors, {Color? color}) =>
+      cardEyebrow.copyWith(color: color ?? colors.primary);
+
+  static TextStyle linkActionOf(KineticColors colors) => label.copyWith(
+    fontSize: 12,
+    fontWeight: FontWeight.w700,
+    color: colors.isDark ? const Color(0xFF9BC5FF) : colors.primary,
+  );
+
+  /// Tiêu đề page con (Details, Summary, Achievements, Programs, ProfileSetup).
   static const TextStyle pageTitleCompact = TextStyle(
     fontFamily: displayFontFamily,
-    fontSize: 18,
-    fontWeight: FontWeight.w700,
-    letterSpacing: -0.18,
-    height: 1.25,
+    fontSize: 20,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -0.3,
+    height: 1.2,
   );
 
   /// Dòng nhỏ phía trên tiêu đề (eyebrow).

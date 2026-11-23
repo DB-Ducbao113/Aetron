@@ -1,5 +1,6 @@
 // @deno-types="https://esm.sh/@supabase/supabase-js@2.105.1"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.105.1";
+import { authorizedWorkoutDispatcher } from "../_shared/workout_dispatch_auth.ts";
 
 type RoutePoint = {
   lat: number;
@@ -40,6 +41,7 @@ type ProcessingJobRow = {
   id: string;
   workout_id: string;
   attempt_count: number | null;
+  dispatch_nonce: string;
 };
 
 type WorkoutRouteRow = {
@@ -74,31 +76,22 @@ async function handleRequest(req: Request): Promise<Response> {
 
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
       Deno.env.get("AETRON_SERVICE_ROLE_KEY");
-    const authHeader = req.headers.get("Authorization") ?? "";
-    const apiKeyHeader = req.headers.get("apikey") ?? "";
-    const bearerToken = authHeader.replace(/^Bearer\s+/i, "").trim();
-
-    if (
-      !serviceRoleKey ||
-      (bearerToken !== serviceRoleKey && apiKeyHeader !== serviceRoleKey)
-    ) {
+    const payload = await authorizedWorkoutDispatcher(
+      req, "route-correction-worker", Deno.env.get("AETRON_WORKER_DISPATCH_SECRET"),
+    );
+    if (!payload) {
       return json({ error: "Unauthorized" }, 401);
     }
+    if (!serviceRoleKey) return json({ error: "Worker unavailable" }, 503);
 
-    const payload = await req.json().catch(() => ({}));
-    const workoutId = payload.workout_id as string | undefined;
-    const jobId = payload.job_id as string | undefined;
-
-    if (!workoutId && !jobId) {
-      return json({ error: "Missing workout_id or job_id" }, 400);
-    }
+    const { workout_id: workoutId, job_id: jobId, dispatch_nonce: dispatchNonce } = payload;
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       serviceRoleKey,
     );
 
-    const job = await fetchQueuedJob(supabase, { workoutId, jobId });
+    const job = await fetchQueuedJob(supabase, { workoutId, jobId, dispatchNonce });
     if (!job) {
       return json({ status: "noop", reason: "job_not_found" });
     }
@@ -251,22 +244,19 @@ export function routeMatchingAvailable(_provider: string): boolean {
 
 async function fetchQueuedJob(
   supabase: SupabaseAdminClient,
-  input: { workoutId?: string; jobId?: string },
+  input: { workoutId: string; jobId: string; dispatchNonce: string },
 ): Promise<ProcessingJobRow | null> {
-  let query = supabase
+  const query = supabase
     .from("workout_processing_jobs")
     .select("*")
     .eq("job_type", ROUTE_CORRECTION_JOB_TYPE)
     .eq("status", "queued")
+    .eq("id", input.jobId)
+    .eq("workout_id", input.workoutId)
+    .eq("dispatch_nonce", input.dispatchNonce)
     .lt("attempt_count", MAX_ATTEMPTS)
     .order("created_at", { ascending: true })
     .limit(1);
-
-  if (input.jobId) {
-    query = query.eq("id", input.jobId);
-  } else if (input.workoutId) {
-    query = query.eq("workout_id", input.workoutId);
-  }
 
   const { data, error } = await query.maybeSingle();
   if (error) throw error;
@@ -296,12 +286,14 @@ async function markJobStarted(
       status: "running",
       started_at: new Date().toISOString(),
       attempt_count: Number(job.attempt_count ?? 0) + 1,
+      dispatch_nonce: null,
       finished_at: null,
       error_message: null,
     })
     .eq("id", job.id)
     .eq("status", "queued")
     .eq("attempt_count", Number(job.attempt_count ?? 0))
+    .eq("dispatch_nonce", job.dispatch_nonce)
     .select("id").maybeSingle();
   if (error) throw error;
   return data != null;

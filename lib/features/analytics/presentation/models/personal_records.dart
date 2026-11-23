@@ -11,6 +11,7 @@ class SingleRecordItem {
   final DateTime? achievedAt;
   final String? workoutId;
   final bool isUnlocked;
+  final bool isEstimated;
   final String unlockHintVi;
   final String unlockHintEn;
 
@@ -24,6 +25,7 @@ class SingleRecordItem {
     this.achievedAt,
     this.workoutId,
     required this.isUnlocked,
+    this.isEstimated = false,
     required this.unlockHintVi,
     required this.unlockHintEn,
   });
@@ -51,15 +53,15 @@ class DetailedPersonalRecords {
   });
 
   List<SingleRecordItem> get allRecords => [
-        best1k,
-        best5k,
-        best10k,
-        best21k,
-        longestDistance,
-        fastestPace,
-        maxCalories,
-        longestDuration,
-      ];
+    best1k,
+    best5k,
+    best10k,
+    best21k,
+    longestDistance,
+    fastestPace,
+    maxCalories,
+    longestDuration,
+  ];
 
   int get unlockedCount => allRecords.where((r) => r.isUnlocked).length;
 
@@ -116,7 +118,7 @@ class DetailedPersonalRecords {
     SingleRecordItem longestDist = const SingleRecordItem(
       id: 'pr_longest_dist',
       titleVi: 'Quãng Đường Xa Nhất',
-      titleEn: 'Longest Run',
+      titleEn: 'Longest Distance',
       category: 'endurance',
       isUnlocked: false,
       unlockHintVi: 'Hoàn thành buổi tập đầu tiên',
@@ -130,8 +132,8 @@ class DetailedPersonalRecords {
       titleEn: 'Top Pace',
       category: 'speed',
       isUnlocked: false,
-      unlockHintVi: 'Chạy ngoài trời với GPS',
-      unlockHintEn: 'Run outdoors with GPS',
+      unlockHintVi: 'Hoàn thành buổi tập có tốc độ ghi nhận',
+      unlockHintEn: 'Complete a workout with recorded speed',
     );
 
     // 7. Max Calories
@@ -170,15 +172,21 @@ class DetailedPersonalRecords {
           ? w.gpsAnalysis.validDistanceKm
           : w.distanceKm;
 
-      // Check 1K
-      if (dist >= 1.0) {
-        // Find best split if available, else estimate from pace
-        int time1k = (w.durationSec * (1.0 / dist)).round();
-        if (w.lapSplits.isNotEmpty) {
-          final split1 = w.lapSplits.map((s) => s.durationSeconds).reduce(math.min);
-          if (split1 > 0) time1k = split1;
-        }
-        if (min1kSec == null || time1k < min1kSec) {
+      final isRun =
+          w.activityType.toLowerCase() == 'running' ||
+          w.activityType.toLowerCase() == 'run';
+      final hasTimedDistance = isRun && dist.isFinite && w.durationSec > 0;
+
+      // Ignore partial closing laps; they are not one-kilometre records.
+      if (hasTimedDistance && dist >= 1.0) {
+        final fullLaps = w.lapSplits.where(
+          (s) => (s.distanceKm - 1.0).abs() <= .001 && s.durationSeconds > 0,
+        );
+        final estimated = fullLaps.isEmpty && (dist - 1.0).abs() > .001;
+        final time1k = fullLaps.isEmpty
+            ? (w.durationSec / dist).round()
+            : fullLaps.map((s) => s.durationSeconds).reduce(math.min);
+        if (time1k > 0 && (min1kSec == null || time1k < min1kSec)) {
           min1kSec = time1k;
           best1k = SingleRecordItem(
             id: 'pr_1k',
@@ -186,6 +194,7 @@ class DetailedPersonalRecords {
             titleEn: 'Fastest 1K',
             category: 'speed',
             durationSec: time1k,
+            isEstimated: estimated,
             achievedAt: w.startedAt,
             workoutId: w.id,
             isUnlocked: true,
@@ -196,9 +205,9 @@ class DetailedPersonalRecords {
       }
 
       // Check 5K
-      if (dist >= 5.0) {
+      if (hasTimedDistance && dist >= 5.0) {
         final time5k = (w.durationSec * (5.0 / dist)).round();
-        if (min5kSec == null || time5k < min5kSec) {
+        if (time5k > 0 && (min5kSec == null || time5k < min5kSec)) {
           min5kSec = time5k;
           best5k = SingleRecordItem(
             id: 'pr_5k',
@@ -206,6 +215,7 @@ class DetailedPersonalRecords {
             titleEn: 'Fastest 5K',
             category: 'distance',
             durationSec: time5k,
+            isEstimated: (dist - 5.0).abs() > .001,
             achievedAt: w.startedAt,
             workoutId: w.id,
             isUnlocked: true,
@@ -216,9 +226,9 @@ class DetailedPersonalRecords {
       }
 
       // Check 10K
-      if (dist >= 10.0) {
+      if (hasTimedDistance && dist >= 10.0) {
         final time10k = (w.durationSec * (10.0 / dist)).round();
-        if (min10kSec == null || time10k < min10kSec) {
+        if (time10k > 0 && (min10kSec == null || time10k < min10kSec)) {
           min10kSec = time10k;
           best10k = SingleRecordItem(
             id: 'pr_10k',
@@ -226,6 +236,7 @@ class DetailedPersonalRecords {
             titleEn: 'Fastest 10K',
             category: 'distance',
             durationSec: time10k,
+            isEstimated: (dist - 10.0).abs() > .001,
             achievedAt: w.startedAt,
             workoutId: w.id,
             isUnlocked: true,
@@ -236,9 +247,9 @@ class DetailedPersonalRecords {
       }
 
       // Check 21.1K
-      if (dist >= 21.0975) {
+      if (hasTimedDistance && dist >= 21.0975) {
         final time21k = (w.durationSec * (21.0975 / dist)).round();
-        if (min21kSec == null || time21k < min21kSec) {
+        if (time21k > 0 && (min21kSec == null || time21k < min21kSec)) {
           min21kSec = time21k;
           best21k = SingleRecordItem(
             id: 'pr_21k',
@@ -246,6 +257,7 @@ class DetailedPersonalRecords {
             titleEn: 'Half-Marathon (21.1K)',
             category: 'distance',
             durationSec: time21k,
+            isEstimated: (dist - 21.0975).abs() > .001,
             achievedAt: w.startedAt,
             workoutId: w.id,
             isUnlocked: true,
@@ -261,7 +273,7 @@ class DetailedPersonalRecords {
         longestDist = SingleRecordItem(
           id: 'pr_longest_dist',
           titleVi: 'Quãng Đường Xa Nhất',
-          titleEn: 'Longest Run',
+          titleEn: 'Longest Distance',
           category: 'endurance',
           numericValue: dist,
           achievedAt: w.startedAt,
@@ -377,7 +389,7 @@ class DetailedPersonalRecords {
       longestDistance: SingleRecordItem(
         id: 'pr_longest_dist',
         titleVi: 'Quãng Đường Xa Nhất',
-        titleEn: 'Longest Run',
+        titleEn: 'Longest Distance',
         category: 'endurance',
         isUnlocked: false,
         unlockHintVi: 'Hoàn thành buổi tập đầu tiên',
@@ -389,8 +401,8 @@ class DetailedPersonalRecords {
         titleEn: 'Top Pace',
         category: 'speed',
         isUnlocked: false,
-        unlockHintVi: 'Chạy ngoài trời với GPS',
-        unlockHintEn: 'Run outdoors with GPS',
+        unlockHintVi: 'Hoàn thành buổi tập có tốc độ ghi nhận',
+        unlockHintEn: 'Complete a workout with recorded speed',
       ),
       maxCalories: SingleRecordItem(
         id: 'pr_max_cal',

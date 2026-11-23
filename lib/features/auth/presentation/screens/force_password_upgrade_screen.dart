@@ -1,3 +1,4 @@
+import 'package:fitness_exercise_application/features/shell/presentation/widgets/aetron_bottom_bar.dart';
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/auth/presentation/helpers/password_validator.dart';
 import 'package:fitness_exercise_application/features/auth/presentation/screens/auth_wrapper.dart';
@@ -104,14 +105,17 @@ class _ForcePasswordUpgradeScreenState
     final kinetic = context.kinetic;
     final currentLang = ref.watch(appLanguageProvider);
 
+    final hPad = AetronBottomBar.horizontalPagePaddingOf(context);
+    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
+
     return Scaffold(
       backgroundColor: kinetic.background,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: KineticTokens.spaceXL,
-            vertical: KineticTokens.spaceLG,
-          ),
+      body: KineticGlasslineScaffoldBody(
+        showBottomScrim: false,
+        child: SafeArea(
+          bottom: false,
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(hPad, 18, hPad, bottomInset + 28),
           child: Form(
             key: _formKey,
             child: Column(
@@ -200,15 +204,11 @@ class _ForcePasswordUpgradeScreenState
                 const SizedBox(height: 8),
 
                 // Security Description Card
-                Container(
+                KineticCard(
+                  useLiquidGlass: true,
+                  borderRadius: 21,
                   padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: kinetic.surface1,
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(
-                      color: kinetic.tertiary.withValues(alpha: 0.35),
-                    ),
-                  ),
+                  borderColor: kinetic.tertiary.withValues(alpha: 0.35),
                   child: Text(
                     currentLang == AppLanguage.vi
                         ? 'Mật khẩu hiện tại của bạn chưa đủ mạnh. Để bảo vệ tài khoản theo quy chuẩn mới, bạn phải tạo mật khẩu mới (chữ hoa, chữ thường, số & ký tự đặc biệt) trước khi truy cập ứng dụng.'
@@ -222,20 +222,10 @@ class _ForcePasswordUpgradeScreenState
                 ),
                 const SizedBox(height: 24),
 
-                Container(
+                KineticCard(
+                  useLiquidGlass: true,
+                  borderRadius: 21,
                   padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
-                  decoration: BoxDecoration(
-                    color: kinetic.surface1,
-                    borderRadius: BorderRadius.circular(
-                      KineticTokens.radiusXXL,
-                    ),
-                    boxShadow: kinetic.isDark
-                        ? null
-                        : KineticTokens.shadowCardLight(),
-                    border: kinetic.isDark
-                        ? Border.all(color: kinetic.borderSubtle)
-                        : null,
-                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -361,6 +351,7 @@ class _ForcePasswordUpgradeScreenState
               ],
             ),
           ),
+        ),
         ),
       ),
     );
