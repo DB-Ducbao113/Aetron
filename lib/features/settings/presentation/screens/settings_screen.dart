@@ -11,6 +11,7 @@ import 'package:fitness_exercise_application/features/profile/presentation/provi
 import 'package:fitness_exercise_application/features/profile/presentation/widgets/edit_display_name_sheet.dart';
 import 'package:fitness_exercise_application/features/settings/presentation/providers/notification_settings_providers.dart';
 import 'package:fitness_exercise_application/features/settings/presentation/providers/settings_preferences_providers.dart';
+import 'package:fitness_exercise_application/features/settings/presentation/screens/notification_settings_screen.dart';
 import 'package:fitness_exercise_application/features/settings/presentation/widgets/kinetic_settings_section.dart';
 import 'package:fitness_exercise_application/features/settings/presentation/widgets/kinetic_settings_top_bar.dart';
 import 'package:fitness_exercise_application/features/shell/presentation/widgets/aetron_bottom_bar.dart';
@@ -380,7 +381,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   }
 
   Future<void> _refreshPermissions() async {
-    if (Platform.environment.containsKey('FLUTTER_TEST')) {
+    if (NotificationService.instance.shouldBypassOsBridgeInTest) {
       if (!mounted) return;
       setState(() {
         _loadingPermissions = false;
@@ -397,72 +398,72 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       // 1. Notification Permission Check
       PermissionStatus notifStatus = PermissionStatus.denied;
       try {
-        final notifAllowed = await NotificationService.instance
-            .areNotificationsAllowed();
-        if (notifAllowed) {
-          notifStatus = PermissionStatus.granted;
-        } else {
-          final s = await Permission.notification.status;
-          notifStatus = (s.isGranted || s.isLimited)
-              ? PermissionStatus.granted
-              : s;
-        }
+        final osNotifState = await NotificationService.instance
+            .getOsPermissionState();
+        notifStatus = switch (osNotifState) {
+          NotificationOsPermissionState.granted => PermissionStatus.granted,
+          NotificationOsPermissionState.denied =>
+            PermissionStatus.permanentlyDenied,
+          NotificationOsPermissionState.notDetermined => PermissionStatus.denied,
+        };
       } catch (_) {
-        try {
-          final s = await Permission.notification.status;
-          notifStatus = (s.isGranted || s.isLimited)
-              ? PermissionStatus.granted
-              : PermissionStatus.denied;
-        } catch (_) {
-          notifStatus = PermissionStatus.denied;
-        }
+        notifStatus = PermissionStatus.denied;
       }
+
+      final skipOtherHardwareInTest =
+          Platform.environment.containsKey('FLUTTER_TEST');
 
       // 2. Camera Permission Check
       PermissionStatus camStatus = PermissionStatus.denied;
-      try {
-        camStatus = await Permission.camera.status;
-      } catch (_) {
-        camStatus = PermissionStatus.denied;
+      if (!skipOtherHardwareInTest) {
+        try {
+          camStatus = await Permission.camera.status;
+        } catch (_) {
+          camStatus = PermissionStatus.denied;
+        }
       }
 
       // 3. Location (GPS) Permission Check - Query Geolocator first across all platforms
       PermissionStatus locStatus = PermissionStatus.denied;
-      try {
-        final geoPerm = await Geolocator.checkPermission();
-        if (geoPerm == LocationPermission.always ||
-            geoPerm == LocationPermission.whileInUse) {
-          locStatus = PermissionStatus.granted;
-        } else if (geoPerm == LocationPermission.deniedForever) {
-          locStatus = PermissionStatus.permanentlyDenied;
-        } else {
-          locStatus = PermissionStatus.denied;
-        }
-      } catch (_) {
+      if (!skipOtherHardwareInTest) {
         try {
-          final s = await Permission.locationWhenInUse.status;
-          locStatus = s;
+          final geoPerm = await Geolocator.checkPermission();
+          if (geoPerm == LocationPermission.always ||
+              geoPerm == LocationPermission.whileInUse) {
+            locStatus = PermissionStatus.granted;
+          } else if (geoPerm == LocationPermission.deniedForever) {
+            locStatus = PermissionStatus.permanentlyDenied;
+          } else {
+            locStatus = PermissionStatus.denied;
+          }
         } catch (_) {
-          locStatus = PermissionStatus.denied;
+          try {
+            final s = await Permission.locationWhenInUse.status;
+            locStatus = s;
+          } catch (_) {
+            locStatus = PermissionStatus.denied;
+          }
         }
       }
 
       // 4. Photos Permission Check
       PermissionState photoState = PermissionState.notDetermined;
-      try {
-        photoState = await PhotoManager.getPermissionState(
-          requestOption: const PermissionRequestOption(
-            iosAccessLevel: IosAccessLevel.readWrite,
-          ),
-        );
-      } catch (_) {
+      if (!skipOtherHardwareInTest) {
         try {
-          final p = await Permission.photos.status;
-          photoState = (p.isGranted || p.isLimited)
-              ? PermissionState.authorized
-              : PermissionState.denied;
+          photoState = await PhotoManager.getPermissionState(
+            requestOption: const PermissionRequestOption(
+              iosAccessLevel: IosAccessLevel.readWrite,
+            ),
+          );
         } catch (_) {
-          photoState = PermissionState.denied;
+          try {
+            final p = await Permission.photos.status;
+            photoState = (p.isGranted || p.isLimited)
+                ? PermissionState.authorized
+                : PermissionState.denied;
+          } catch (_) {
+            photoState = PermissionState.denied;
+          }
         }
       }
 
@@ -507,9 +508,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     bool value,
     AppLanguage lang,
   ) async {
+    final isTestBlocked =
+        NotificationService.instance.shouldBypassOsBridgeInTest;
     if (value) {
-      if (Platform.environment.containsKey('FLUTTER_TEST')) {
+      if (isTestBlocked) {
         await _setNotificationsEnabled(false);
+        return;
+      }
+      final osBefore = await NotificationService.instance
+          .getOsPermissionState();
+      if (osBefore == NotificationOsPermissionState.denied) {
+        await NotificationService.instance.openNotificationSettings();
+        await _refreshPermissions();
         return;
       }
       final allowed = await NotificationService.instance.requestPermissions();
@@ -518,12 +528,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         await _setNotificationsEnabled(true);
       } else {
         await _setNotificationsEnabled(false);
-        if (!Platform.environment.containsKey('FLUTTER_TEST')) {
-          await openAppSettings();
-        }
+        await NotificationService.instance.openNotificationSettings();
       }
     } else {
-      await _setNotificationsEnabled(false);
+      if (!isTestBlocked) {
+        await NotificationService.instance.openNotificationSettings();
+      }
     }
   }
 
@@ -983,6 +993,36 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                                 ),
                                 onTap: () => _showThemeSelector(currentLang),
                               ),
+                              KineticSettingsTile(
+                                icon: Icons.notifications_outlined,
+                                bladeIcon: BladeIconName.bell,
+                                title: currentLang == AppLanguage.vi
+                                    ? 'Lịch nhắc tập luyện'
+                                    : 'Workout Reminders',
+                                subtitle: _isNotificationActive
+                                    ? (currentLang == AppLanguage.vi
+                                          ? 'Đang bật • Giờ nhắc & khung giờ yên tĩnh'
+                                          : 'On • Daily schedule & quiet hours')
+                                    : (currentLang == AppLanguage.vi
+                                          ? 'Tùy chỉnh giờ nhắc & khung giờ yên tĩnh'
+                                          : 'Configure schedule & quiet hours'),
+                                accentColor: colors.secondary,
+                                trailing: Icon(
+                                  Icons.chevron_right_rounded,
+                                  color: colors.textSecondary,
+                                ),
+                                onTap: () async {
+                                  await Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const NotificationSettingsScreen(),
+                                    ),
+                                  );
+                                  if (!mounted) return;
+                                  await _loadPreferences();
+                                  await _refreshPermissions();
+                                },
+                              ),
                             ],
                           ),
                           const SizedBox(height: KineticTokens.spaceLG),
@@ -1005,20 +1045,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                                         'checking_access',
                                         currentLang,
                                       )
-                                    : _isNotificationActive
+                                    : _isNotificationGranted
                                     ? (currentLang == AppLanguage.vi
-                                          ? 'Đã cho phép • Nhắc nhở tập & chuỗi Streak'
-                                          : 'Allowed • Workout & streak alerts')
-                                    : !_isNotificationGranted
-                                    ? (currentLang == AppLanguage.vi
-                                          ? 'Chưa cho phép • Bật để nhận thông báo từ iPhone'
-                                          : 'Denied • Tap to allow alerts')
+                                          ? 'Đã cho phép • Chạm để mở cài đặt hệ thống'
+                                          : 'Allowed • Tap to open system settings')
                                     : (currentLang == AppLanguage.vi
-                                          ? 'Đã tắt • Chạm để nhận nhắc nhở tập'
-                                          : 'Off • Tap to enable workout alerts'),
+                                          ? 'Chưa cho phép • Bật trong cài đặt hệ thống'
+                                          : 'Denied • Tap to allow in system settings'),
                                 accentColor: colors.secondary,
                                 trailing: CupertinoSwitch(
-                                  value: _isNotificationActive,
+                                  value: _isNotificationGranted,
                                   onChanged: (val) =>
                                       _toggleNotificationPermission(
                                         val,
@@ -1029,7 +1065,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                                   thumbColor: Colors.white,
                                 ),
                                 onTap: () => _toggleNotificationPermission(
-                                  !_isNotificationActive,
+                                  !_isNotificationGranted,
                                   currentLang,
                                 ),
                               ),

@@ -205,36 +205,39 @@ class _NotificationLifecycleObserverState
     }
   }
 
-  void _refreshNotificationSchedules() {
-    final settingsAsync = ref.read(notificationSettingsProvider);
-    final settings = settingsAsync.valueOrNull;
-    if (settings == null) return;
+  Future<void> _refreshNotificationSchedules() async {
+    try {
+      final settings = await ref.read(notificationSettingsProvider.future);
+      final osAllowed = await NotificationService.instance
+          .areNotificationsAllowed();
+      if (!mounted) return;
 
-    final lang = ref.read(appLanguageProvider);
-    final workouts = ref.read(workoutListProvider).valueOrNull ?? [];
-    final activeGoal = ref.read(userGoalProvider).valueOrNull;
-    final streak = ref.read(streakProvider).currentStreak;
-    final useMetric = ref.read(metricUnitsPreferenceProvider).value ?? true;
+      final lang = ref.read(appLanguageProvider);
+      final workouts = ref.read(workoutListProvider).valueOrNull ?? [];
+      final activeGoal = ref.read(userGoalProvider).valueOrNull;
+      final streak = ref.read(streakProvider).currentStreak;
+      final useMetric = ref.read(metricUnitsPreferenceProvider).value ?? true;
 
-    NotificationScheduler.refreshSchedules(
-      notificationsEnabled: settings.notificationsEnabled,
-      workoutRemindersEnabled: settings.workoutRemindersEnabled,
-      morningReminderTime: settings.morningTime,
-      goalProgressEnabled: settings.goalProgressEnabled,
-      eveningCheckInEnabled: settings.eveningCheckInEnabled,
-      eveningCheckInTime: settings.eveningTime,
-      achievementEnabled: settings.achievementEnabled,
-      streakRemindersEnabled: settings.streakRemindersEnabled,
-      inactivityRemindersEnabled: settings.inactivityRemindersEnabled,
-      quietHoursEnabled: settings.quietHoursEnabled,
-      quietHoursStart: settings.quietHoursStart,
-      quietHoursEnd: settings.quietHoursEnd,
-      lang: lang,
-      workouts: workouts,
-      activeGoal: activeGoal,
-      currentStreak: streak,
-      useMetricUnits: useMetric,
-    );
+      await NotificationScheduler.refreshSchedules(
+        notificationsEnabled: settings.notificationsEnabled && osAllowed,
+        workoutRemindersEnabled: settings.workoutRemindersEnabled,
+        morningReminderTime: settings.morningTime,
+        goalProgressEnabled: settings.goalProgressEnabled,
+        eveningCheckInEnabled: settings.eveningCheckInEnabled,
+        eveningCheckInTime: settings.eveningTime,
+        achievementEnabled: settings.achievementEnabled,
+        streakRemindersEnabled: settings.streakRemindersEnabled,
+        inactivityRemindersEnabled: settings.inactivityRemindersEnabled,
+        quietHoursEnabled: settings.quietHoursEnabled,
+        quietHoursStart: settings.quietHoursStart,
+        quietHoursEnd: settings.quietHoursEnd,
+        lang: lang,
+        workouts: workouts,
+        activeGoal: activeGoal,
+        currentStreak: streak,
+        useMetricUnits: useMetric,
+      );
+    } catch (_) {}
   }
 
   @override
