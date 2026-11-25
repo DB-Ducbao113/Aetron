@@ -9,9 +9,10 @@ class XuRunningStepDetector {
   static const periodUs = 20000;
   static const _maxGapUs = 250000;
   static const _window = 50;
-  /// Minimum peak-to-peak dynamic range (m/s²) in a 1-second window required
-  /// to distinguish active running motion from resting sensor noise and hand tremor.
-  static const _minDynamicRange = 0.25;
+  /// Minimum peak-to-peak dynamic range (m/s²) in a 1-second FIR window required
+  /// to distinguish active running impact from resting sensor noise, breathing,
+  /// and hand-held posture sway while standing still.
+  static const _minDynamicRange = 1.80;
   static final _fir = _coefficients();
   final _raw = ListQueue<double>(15);
   final _spectrum = ListQueue<double>(256);
@@ -104,6 +105,9 @@ class XuRunningStepDetector {
       if (f > maxFir) maxFir = f;
     }
     final isStationary = (maxFir - minFir) < _minDynamicRange;
+    if (isStationary) {
+      _pendingTime = null;
+    }
 
     final frequency = _frequency;
     final interference = frequency != null && frequency > 3.5;
