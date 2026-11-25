@@ -102,3 +102,6 @@ exports/
 # Local tools and benchmark datasets
 tool/
 tooling/
+docs/research/
+assets/models/
+reports/
