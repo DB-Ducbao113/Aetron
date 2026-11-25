@@ -53,15 +53,15 @@ class KineticDetailsHeader extends StatelessWidget {
     final (badgeColor, badgeText) = switch (flag) {
       WorkoutValidityFlag.verified => (
         colors.primary,
-        currentLang == AppLanguage.vi ? 'HỢP LỆ' : 'VERIFIED',
+        currentLang == AppLanguage.vi ? 'Hợp lệ' : 'Verified',
       ),
       WorkoutValidityFlag.partial => (
         colors.tertiary,
-        currentLang == AppLanguage.vi ? 'CẢNH BÁO' : 'WARNING',
+        currentLang == AppLanguage.vi ? 'Cảnh báo' : 'Warning',
       ),
       WorkoutValidityFlag.unverified => (
         colors.error,
-        currentLang == AppLanguage.vi ? 'KHÔNG HỢP LỆ' : 'FLAGGED',
+        currentLang == AppLanguage.vi ? 'Không hợp lệ' : 'Flagged',
       ),
     };
 
@@ -103,7 +103,7 @@ class KineticDetailsHeader extends StatelessWidget {
                     WorkoutFormatters.formatActivityType(
                       workout.activityType,
                       currentLang,
-                    ).toUpperCase(),
+                    ),
                     style: KineticTypography.headlineMedium.copyWith(
                       color: colors.textPrimary,
                       fontWeight: FontWeight.w800,

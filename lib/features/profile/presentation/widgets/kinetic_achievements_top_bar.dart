@@ -45,8 +45,8 @@ class KineticAchievementsTopBar extends StatelessWidget {
             children: [
               Text(
                 currentLang == AppLanguage.vi
-                    ? 'THÀNH TÍCH AETRON'
-                    : 'AETRON ACHIEVEMENTS',
+                    ? 'Thành tích Aetron'
+                    : 'Aetron achievements',
                 style: KineticTypography.pageEyebrow.copyWith(
                   color: colors.primary,
                 ),

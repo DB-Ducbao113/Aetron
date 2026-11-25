@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/core/services/notification_scheduler.dart';
 import 'package:fitness_exercise_application/core/services/notification_service.dart';
@@ -33,7 +34,8 @@ class NotificationSettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _NotificationSettingsScreenState
-    extends ConsumerState<NotificationSettingsScreen> {
+    extends ConsumerState<NotificationSettingsScreen>
+    with WidgetsBindingObserver {
   bool _masterEnabled = true;
 
   // Group 1: Luyện tập & Chuỗi ngày (Daily Workout & Streak)
@@ -49,12 +51,25 @@ class _NotificationSettingsScreenState
   String _quietEnd = '07:00';
 
   bool _isOsAllowed = true;
-  bool _loading = true;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadSettings();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadSettings();
+    }
   }
 
   Future<void> _loadSettings() async {
@@ -70,7 +85,9 @@ class _NotificationSettingsScreenState
 
     if (!mounted) return;
     setState(() {
-      _masterEnabled = prefs.getBool(kNotificationsPrefKey) ?? true;
+      _isOsAllowed = allowed;
+      final userPref = prefs.getBool(kNotificationsPrefKey) ?? true;
+      _masterEnabled = allowed && userPref;
 
       // Group 1: Tập luyện & Chuỗi ngày
       final workout = prefs.getBool(kWorkoutRemindersPrefKey) ?? true;
@@ -89,18 +106,46 @@ class _NotificationSettingsScreenState
       _quietHours = prefs.getBool(kQuietHoursPrefKey) ?? true;
       _quietStart = prefs.getString(kQuietHoursStartPrefKey) ?? '22:00';
       _quietEnd = prefs.getString(kQuietHoursEndPrefKey) ?? '07:00';
-
-      _isOsAllowed = allowed;
-      _loading = false;
     });
   }
 
   Future<void> _updateMaster(bool val) async {
-    setState(() => _masterEnabled = val);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(kNotificationsPrefKey, val);
-    if (!mounted) return;
-    _triggerScheduler();
+    if (val) {
+      bool allowed = _isOsAllowed;
+      if (!allowed) {
+        if (Platform.environment.containsKey('FLUTTER_TEST')) {
+          allowed = widget.osPermissionOverride ?? true;
+        } else {
+          allowed = await NotificationService.instance.requestPermissions();
+          if (!allowed) {
+            allowed =
+                await NotificationService.instance.areNotificationsAllowed();
+          }
+        }
+      }
+
+      if (!allowed) {
+        if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+          await openAppSettings();
+        }
+        return;
+      }
+
+      setState(() {
+        _isOsAllowed = true;
+        _masterEnabled = true;
+      });
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(kNotificationsPrefKey, true);
+      if (!mounted) return;
+      _triggerScheduler();
+    } else {
+      setState(() => _masterEnabled = false);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(kNotificationsPrefKey, false);
+      if (!mounted) return;
+      _triggerScheduler();
+    }
   }
 
   Future<void> _toggleWorkoutAndStreak(bool val) async {
@@ -228,13 +273,7 @@ class _NotificationSettingsScreenState
             ),
 
             Expanded(
-              child: _loading
-                  ? Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(colors.primary),
-                      ),
-                    )
-                  : SingleChildScrollView(
+              child: SingleChildScrollView(
                       padding: EdgeInsets.fromLTRB(
                         hPad,
                         KineticTokens.spaceXS,
@@ -306,7 +345,7 @@ class _NotificationSettingsScreenState
                                           MaterialTapTargetSize.shrinkWrap,
                                     ),
                                     child: Text(
-                                      isVi ? 'MỞ' : 'OPEN',
+                                      isVi ? 'Mở' : 'Open',
                                       style: KineticTypography.unitLabel.copyWith(
                                         color: colors.primary,
                                         fontWeight: FontWeight.bold,
@@ -323,6 +362,7 @@ class _NotificationSettingsScreenState
                           KineticCard(
                             useLiquidGlass: true,
                             borderRadius: 21,
+                            onTap: () => _updateMaster(!_masterEnabled),
                             padding: const EdgeInsets.symmetric(
                               horizontal: KineticTokens.spaceMD,
                               vertical: 14,
@@ -487,7 +527,7 @@ class _NotificationSettingsScreenState
                           IgnorePointer(
                             ignoring: !_masterEnabled,
                             child: KineticSettingsSectionGroup(
-                              title: isVi ? 'Khung giờ yên tĩnh' : 'Quiet Hours',
+                              title: isVi ? 'Khung giờ yên tĩnh' : 'Quiet hours',
                               children: [
                                 KineticSettingsTile(
                                   icon: Icons.nights_stay_rounded,

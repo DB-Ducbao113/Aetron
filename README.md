@@ -84,14 +84,6 @@ Người dùng Android có thể lựa chọn 1 trong 2 cách trải nghiệm ti
 
 ---
 
-## 📸 Hình ảnh minh họa (Visual Showcase)
-
-| Chạy bộ (Running) | Đạp xe (Cycling) | Đi bộ (Walking) | Vận động viên Aetron |
-| :---: | :---: | :---: | :---: |
-| <img src="assets/running_real.jpg" width="160" /> | <img src="assets/cycling_real.jpg" width="160" /> | <img src="assets/walking_real.jpg" width="160" /> | <img src="assets/home_hero_runner.jpg" width="160" /> |
-
----
-
 ## 🛠️ Công nghệ phát triển (Technology Stack)
 
 | Thành phần | Công nghệ / Thư viện |

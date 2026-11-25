@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:fitness_exercise_application/features/profile/domain/entities/user_profile.dart';
 import 'package:fitness_exercise_application/features/profile/domain/repositories/user_profile_repository.dart';
@@ -44,19 +46,30 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
 
   @override
   Future<UserProfile?> getProfile(String userId) async {
-    // 1. Try remote truth first to ensure real-time multi-device sync
+    // 1. Return fast local cache immediately if present (0ms display)
+    final localProfile = await getLocal(userId);
+    if (localProfile != null) {
+      unawaited(() async {
+        try {
+          final remote = await fetchRemote(userId);
+          if (remote != null) {
+            await cacheLocal(remote);
+          }
+        } catch (_) {}
+      }());
+      return localProfile;
+    }
+
+    // 2. Initial login without local cache: fetch remote
     try {
       final remoteProfile = await fetchRemote(userId);
       if (remoteProfile != null) {
         await cacheLocal(remoteProfile);
         return remoteProfile;
       }
-    } catch (e) {
-      // Offline or cloud fetch error, fall back to local cache
-    }
+    } catch (_) {}
 
-    // 2. Fallback to local SQLite cache
-    return await getLocal(userId);
+    return null;
   }
 
   @override

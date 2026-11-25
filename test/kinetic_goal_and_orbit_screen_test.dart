@@ -191,8 +191,8 @@ void main() {
 
         expect(find.text('Aetron Orbit'), findsOneWidget);
         expect(find.text('Mạng lưới định vị vệ tinh GPS'), findsOneWidget);
-        expect(find.text('12 VỆ TINH GPS'), findsOneWidget);
-        expect(find.text('ĐỘ CAO 20,200 KM'), findsOneWidget);
+        expect(find.text('12 vệ tinh GPS'), findsOneWidget);
+        expect(find.text('Độ cao 20,200 km'), findsOneWidget);
         expect(find.byType(CustomPaint), findsWidgets);
       },
     );

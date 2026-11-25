@@ -9,6 +9,7 @@ class PasswordSecurityResult {
   final bool hasLowercase;
   final bool hasNumber;
   final bool hasSpecialChar;
+  final bool notContainsUsername;
 
   const PasswordSecurityResult({
     required this.isMinLength,
@@ -16,10 +17,16 @@ class PasswordSecurityResult {
     required this.hasLowercase,
     required this.hasNumber,
     required this.hasSpecialChar,
+    this.notContainsUsername = true,
   });
 
   bool get isValid =>
-      isMinLength && hasUppercase && hasLowercase && hasNumber && hasSpecialChar;
+      isMinLength &&
+      hasUppercase &&
+      hasLowercase &&
+      hasNumber &&
+      hasSpecialChar &&
+      notContainsUsername;
 
   int get score {
     int count = 0;
@@ -28,11 +35,19 @@ class PasswordSecurityResult {
     if (hasLowercase) count++;
     if (hasNumber) count++;
     if (hasSpecialChar) count++;
+    if (notContainsUsername) count++;
     return count;
   }
 }
 
-PasswordSecurityResult evaluatePasswordSecurity(String password) {
+PasswordSecurityResult evaluatePasswordSecurity(
+  String password, {
+  String? username,
+}) {
+  final cleanUsername = username?.trim().toLowerCase() ?? '';
+  final hasUsernameConflict = cleanUsername.length >= 3 &&
+      password.toLowerCase().contains(cleanUsername);
+
   return PasswordSecurityResult(
     isMinLength: password.length >= 8,
     hasUppercase: RegExp(r'[A-Z]').hasMatch(password),
@@ -40,14 +55,19 @@ PasswordSecurityResult evaluatePasswordSecurity(String password) {
     hasNumber: RegExp(r'[0-9]').hasMatch(password),
     hasSpecialChar:
         RegExp(r'[!@#$%^&*(),.?":{}|<>_\-+=\\/\[\]]').hasMatch(password),
+    notContainsUsername: !hasUsernameConflict,
   );
 }
 
-String? validatePasswordStrict(String? val, AppLanguage lang) {
+String? validatePasswordStrict(
+  String? val,
+  AppLanguage lang, {
+  String? username,
+}) {
   if (val == null || val.isEmpty) {
     return lang == AppLanguage.vi ? 'Vui lòng nhập mật khẩu' : 'Please enter password';
   }
-  final result = evaluatePasswordSecurity(val);
+  final result = evaluatePasswordSecurity(val, username: username);
   if (!result.isMinLength) {
     return lang == AppLanguage.vi
         ? 'Mật khẩu phải có ít nhất 8 ký tự'
@@ -73,6 +93,9 @@ String? validatePasswordStrict(String? val, AppLanguage lang) {
         ? 'Mật khẩu phải có ký tự đặc biệt (!@#%...)'
         : 'Password must contain a special character (!@#%...)';
   }
+  if (!result.notContainsUsername) {
+    return AppTranslations.get('password_cannot_contain_username', lang);
+  }
   return null;
 }
 
@@ -80,11 +103,13 @@ String? validatePasswordStrict(String? val, AppLanguage lang) {
 class PasswordSecurityMeter extends StatelessWidget {
   final String password;
   final AppLanguage lang;
+  final String? username;
 
   const PasswordSecurityMeter({
     super.key,
     required this.password,
     required this.lang,
+    this.username,
   });
 
   @override
@@ -92,20 +117,22 @@ class PasswordSecurityMeter extends StatelessWidget {
     if (password.isEmpty) return const SizedBox.shrink();
 
     final colors = context.kinetic;
-    final result = evaluatePasswordSecurity(password);
+    final result = evaluatePasswordSecurity(password, username: username);
+    final hasUsernameRule = username != null && username!.trim().length >= 3;
+    final maxScore = hasUsernameRule ? 6 : 5;
     final score = result.score;
 
     Color strengthColor;
     String strengthLabel;
-    if (score <= 2) {
+    if (score <= (hasUsernameRule ? 3 : 2)) {
       strengthColor = colors.error;
-      strengthLabel = lang == AppLanguage.vi ? 'YẾU' : 'WEAK';
-    } else if (score <= 4) {
+      strengthLabel = lang == AppLanguage.vi ? 'Yếu' : 'Weak';
+    } else if (score < maxScore) {
       strengthColor = colors.tertiary;
-      strengthLabel = lang == AppLanguage.vi ? 'TRUNG BÌNH' : 'MEDIUM';
+      strengthLabel = lang == AppLanguage.vi ? 'Trung bình' : 'Medium';
     } else {
       strengthColor = colors.secondary;
-      strengthLabel = lang == AppLanguage.vi ? 'BẢO MẬT TỐI ƯU' : 'STRONG SECURITY';
+      strengthLabel = lang == AppLanguage.vi ? 'Bảo mật tối ưu' : 'Strong security';
     }
 
     return Container(
@@ -126,7 +153,7 @@ class PasswordSecurityMeter extends StatelessWidget {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(99),
                   child: LinearProgressIndicator(
-                    value: score / 5,
+                    value: score / maxScore,
                     minHeight: 6,
                     color: strengthColor,
                     backgroundColor: Colors.white.withValues(alpha: 0.08),
@@ -172,6 +199,11 @@ class PasswordSecurityMeter extends StatelessWidget {
                 label: lang == AppLanguage.vi ? 'Ký tự đặc biệt (!@#%)' : 'Special (!@#%)',
                 isMet: result.hasSpecialChar,
               ),
+              if (hasUsernameRule)
+                _RuleChip(
+                  label: AppTranslations.get('no_username_rule', lang),
+                  isMet: result.notContainsUsername,
+                ),
             ],
           ),
         ],

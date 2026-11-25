@@ -71,7 +71,7 @@ void main() {
 
       expect(find.text('AETRON ARCHIVE'), findsNothing);
       expect(find.text('Lịch sử tập luyện'), findsOneWidget);
-      expect(find.text('15 BUỔI'), findsOneWidget);
+      expect(find.text('15 buổi'), findsOneWidget);
     });
 
     testWidgets('shows offline indicator when isOffline is true', (
@@ -167,7 +167,7 @@ void main() {
         ),
       );
 
-      expect(find.text('TỔNG QUAN GIAI ĐOẠN'), findsOneWidget);
+      expect(find.text('Tổng quan giai đoạn'), findsOneWidget);
       expect(find.text('8 hoạt động'), findsOneWidget);
       expect(find.text('64.2'), findsOneWidget);
       expect(find.text('KM'), findsOneWidget);
@@ -189,10 +189,10 @@ void main() {
         ),
       );
 
-      expect(find.text('CHẠY BỘ'), findsOneWidget);
+      expect(find.text('Chạy bộ'), findsOneWidget);
       expect(find.text('10.50'), findsOneWidget);
       expect(find.text('KM'), findsOneWidget);
-      expect(find.text('ĐÃ XÁC MINH'), findsOneWidget);
+      expect(find.text('Đã xác minh'), findsOneWidget);
       expect(find.byIcon(Icons.directions_run_rounded), findsOneWidget);
     });
   });
@@ -208,7 +208,7 @@ void main() {
         ),
       );
 
-      expect(find.text('BẮT ĐẦU BUỔI TẬP'), findsOneWidget);
+      expect(find.text('Bắt đầu buổi tập'), findsOneWidget);
       expect(find.byIcon(Icons.history_rounded), findsOneWidget);
     });
 
@@ -233,7 +233,7 @@ void main() {
           ),
         );
 
-        await tester.tap(find.text('BẮT ĐẦU BUỔI TẬP'));
+        await tester.tap(find.text('Bắt đầu buổi tập'));
         await tester.pump();
 
         expect(container.read(mainTabControllerProvider), 1);
@@ -268,11 +268,11 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('AETRON ARCHIVE'), findsNothing);
-      expect(find.text('1 BUỔI'), findsOneWidget);
+      expect(find.text('1 buổi'), findsOneWidget);
       expect(find.text('Tất cả'), findsNWidgets(2));
       expect(find.text('Chạy bộ'), findsWidgets);
-      expect(find.text('TỔNG QUAN GIAI ĐOẠN'), findsOneWidget);
-      expect(find.text('CHẠY BỘ'), findsOneWidget);
+      expect(find.text('Tổng quan giai đoạn'), findsOneWidget);
+      expect(find.text('Chạy bộ'), findsWidgets);
     });
   });
 }

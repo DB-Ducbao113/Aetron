@@ -154,7 +154,7 @@ class KineticLiveControlDock extends StatelessWidget {
             if (!isPaused) ...[
               Expanded(
                 child: action(
-                  label: isVi ? 'TẠM DỪNG' : 'PAUSE',
+                  label: isVi ? 'Tạm dừng' : 'Pause',
                   symbol: 'pause.fill',
                   prominent: true,
                   enabled: canToggle,
@@ -169,7 +169,7 @@ class KineticLiveControlDock extends StatelessWidget {
               finishIcon,
             ] else ...[
               action(
-                label: isVi ? 'TIẾP TỤC' : 'RESUME',
+                label: isVi ? 'Tiếp tục' : 'Resume',
                 symbol: 'play.fill',
                 prominent: true,
                 enabled: canToggle,
@@ -182,7 +182,7 @@ class KineticLiveControlDock extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               action(
-                label: isVi ? 'KẾT THÚC' : 'FINISH',
+                label: isVi ? 'Kết thúc' : 'Finish',
                 symbol: 'flag.fill',
                 destructive: true,
                 flex: 2,
@@ -261,7 +261,7 @@ class KineticLiveControlDock extends StatelessWidget {
             color: colors.onPrimary,
           ),
           label: Text(
-            isVi ? 'TẠM DỪNG' : 'PAUSE',
+            isVi ? 'Tạm dừng' : 'Pause',
             style: KineticTypography.unitLabel.copyWith(
               fontWeight: FontWeight.w800,
               letterSpacing: 1.0,
@@ -300,7 +300,7 @@ class KineticLiveControlDock extends StatelessWidget {
             color: colors.onPrimary,
           ),
           label: Text(
-            isVi ? 'TIẾP TỤC' : 'RESUME',
+            isVi ? 'Tiếp tục' : 'Resume',
             style: KineticTypography.unitLabel.copyWith(
               fontWeight: FontWeight.w800,
               letterSpacing: 1.0,
@@ -424,8 +424,8 @@ class KineticLiveControlDock extends StatelessWidget {
                     const SizedBox(width: 6),
                     Text(
                       isSaving
-                          ? (isVi ? 'ĐANG LƯU' : 'SAVING')
-                          : (isVi ? 'KẾT THÚC' : 'FINISH'),
+                          ? (isVi ? 'Đang lưu' : 'Saving')
+                          : (isVi ? 'Kết thúc' : 'Finish'),
                       style: KineticTypography.unitLabel.copyWith(
                         fontWeight: FontWeight.w900,
                         color: colors.tertiary,

@@ -55,7 +55,7 @@ class KineticSummaryRouteRecap extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      currentLang == AppLanguage.vi ? 'BẢN ĐỒ CUNG ĐƯỜNG' : 'ROUTE MAP',
+                      currentLang == AppLanguage.vi ? 'Bản đồ cung đường' : 'Route map',
                       style: KineticTypography.unitLabel.copyWith(
                         color: colors.textPrimary,
                         letterSpacing: 1.1,
@@ -82,7 +82,7 @@ class KineticSummaryRouteRecap extends StatelessWidget {
                       ),
                       const SizedBox(width: 5),
                       Text(
-                        currentLang == AppLanguage.vi ? 'ĐÃ LÀM MỊN' : 'SMOOTHED',
+                        currentLang == AppLanguage.vi ? 'Đã làm mịn' : 'Smoothed',
                         style: KineticTypography.unitLabel.copyWith(
                           color: colors.primary,
                         ),

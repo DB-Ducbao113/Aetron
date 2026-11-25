@@ -1,11 +1,7 @@
 import 'dart:convert';
-import 'dart:math';
-import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'google_oauth_stub.dart'
-    if (dart.library.js_interop) 'google_oauth_web.dart';
 
 const authCallbackUrl = 'io.supabase.flutter://callback';
 
@@ -20,16 +16,6 @@ const kGoogleIosClientId = String.fromEnvironment(
   'GOOGLE_IOS_CLIENT_ID',
   defaultValue: '741155040974-jvfb8ca41otk67f9pp1st5aqcp3mdqn9.apps.googleusercontent.com',
 );
-
-String _generateRawNonce([int length = 32]) {
-  const charset = '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._~';
-  final random = Random.secure();
-  return List.generate(length, (_) => charset[random.nextInt(charset.length)]).join();
-}
-
-String _sha256Hex(String input) {
-  return sha256.convert(utf8.encode(input)).toString();
-}
 
 Map<String, dynamic>? _decodeJwtPayload(String token) {
   try {
@@ -85,39 +71,7 @@ Future<bool> startGoogleOAuthSignIn({
       ? iosClientId
       : kGoogleIosClientId;
 
-  // 1. WEB FLOW: Directly obtain Google ID Token from Google Identity Services
-  // This stays 100% on aetron.netlify.app without redirecting to supabase.co
-  if (kIsWeb) {
-    try {
-      final rawNonce = _generateRawNonce();
-      final hashedNonce = _sha256Hex(rawNonce);
-
-      final idToken = await getGoogleIdTokenWeb(effectiveWebId, hashedNonce);
-      if (idToken != null && idToken.isNotEmpty) {
-        final res = await _signInWithIdTokenSafe(
-          idToken: idToken,
-          rawNonce: rawNonce,
-        );
-        return res.user != null;
-      }
-    } on AuthException catch (e) {
-      debugPrint('❌ Supabase Auth with Google ID Token error: ${e.message}');
-      rethrow;
-    } catch (e) {
-      debugPrint('❌ Google GIS Web ID Token error: $e');
-    }
-
-    // If popup was blocked or GIS failed, fallback to standard OAuth
-    return await Supabase.instance.client.auth.signInWithOAuth(
-      OAuthProvider.google,
-      redirectTo: '${Uri.base.origin}/app/',
-      authScreenLaunchMode: LaunchMode.platformDefault,
-      scopes: 'email profile',
-      queryParams: const {'prompt': 'select_account'},
-    );
-  }
-
-  // 2. MOBILE FLOW (iOS / Android): Native Google Sign-In SDK
+  // Mobile flow (iOS / Android): Native Google Sign-In SDK
   try {
     final isIos = defaultTargetPlatform == TargetPlatform.iOS;
     final GoogleSignIn googleSignIn = GoogleSignIn(

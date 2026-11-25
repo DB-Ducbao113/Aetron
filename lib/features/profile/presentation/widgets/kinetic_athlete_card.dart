@@ -262,8 +262,8 @@ class KineticAthleteCard extends ConsumerWidget {
                       const SizedBox(height: 2),
                       Text(
                         currentLang == AppLanguage.vi
-                            ? 'NGÀY LIÊN TIẾP'
-                            : 'DAY STREAK',
+                            ? 'ngày liên tiếp'
+                            : 'day streak',
                         style: KineticTypography.unitLabel.copyWith(
                           color: colors.textMuted,
                           fontSize: 10,
@@ -294,7 +294,7 @@ class KineticAthleteCard extends ConsumerWidget {
                         AppTranslations.get(
                           'member_since',
                           currentLang,
-                        ).toUpperCase(),
+                        ),
                         style: KineticTypography.unitLabel.copyWith(
                           color: colors.textMuted,
                           fontSize: 10,

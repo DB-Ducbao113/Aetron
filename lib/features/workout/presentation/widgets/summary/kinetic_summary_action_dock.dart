@@ -23,7 +23,7 @@ class KineticSummaryActionDock extends StatelessWidget {
       children: [
         // Share Workout Button
         KineticButton(
-          label: currentLang == AppLanguage.vi ? 'CHIA SẺ BUỔI TẬP' : 'SHARE WORKOUT',
+          label: currentLang == AppLanguage.vi ? 'Chia sẻ buổi tập' : 'Share workout',
           icon: Icons.ios_share_rounded,
           variant: KineticButtonVariant.secondary,
           onPressed: onShare,
@@ -32,7 +32,7 @@ class KineticSummaryActionDock extends StatelessWidget {
 
         // Done / Complete Button
         KineticButton(
-          label: currentLang == AppLanguage.vi ? 'HOÀN THÀNH' : 'DONE',
+          label: currentLang == AppLanguage.vi ? 'Hoàn thành' : 'Done',
           icon: Icons.check_rounded,
           variant: KineticButtonVariant.primary,
           onPressed: onDone,
@@ -41,7 +41,7 @@ class KineticSummaryActionDock extends StatelessWidget {
 
         // Deep Dive Details
         KineticButton(
-          label: currentLang == AppLanguage.vi ? 'XEM CHI TIẾT KỸ THUẬT' : 'VIEW FULL TELEMETRY',
+          label: currentLang == AppLanguage.vi ? 'Xem chi tiết kỹ thuật' : 'View full telemetry',
           icon: Icons.insights_rounded,
           variant: KineticButtonVariant.ghost,
           onPressed: onViewDetails,

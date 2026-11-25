@@ -128,7 +128,7 @@ class DetailedPersonalRecords {
     // 6. Fastest Pace
     SingleRecordItem fastestPace = const SingleRecordItem(
       id: 'pr_fastest_pace',
-      titleVi: 'Pace Nhanh Nhất',
+      titleVi: 'Nhịp Độ Nhanh Nhất',
       titleEn: 'Top Pace',
       category: 'speed',
       isUnlocked: false,
@@ -289,7 +289,7 @@ class DetailedPersonalRecords {
         maxSpeedKmh = w.avgSpeedKmh;
         fastestPace = SingleRecordItem(
           id: 'pr_fastest_pace',
-          titleVi: 'Pace Nhanh Nhất',
+          titleVi: 'Nhịp Độ Nhanh Nhất',
           titleEn: 'Top Pace',
           category: 'speed',
           numericValue: w.avgSpeedKmh,
@@ -397,7 +397,7 @@ class DetailedPersonalRecords {
       ),
       fastestPace: SingleRecordItem(
         id: 'pr_fastest_pace',
-        titleVi: 'Pace Nhanh Nhất',
+        titleVi: 'Nhịp Độ Nhanh Nhất',
         titleEn: 'Top Pace',
         category: 'speed',
         isUnlocked: false,

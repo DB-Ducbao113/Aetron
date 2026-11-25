@@ -29,9 +29,9 @@ void main() {
       await tester.pump();
 
       expect(find.text('Theo dõi hành trình fitness'), findsOneWidget);
-      expect(find.text('Tạo Tài Khoản'), findsOneWidget);
+      expect(find.text('Tạo tài khoản'), findsOneWidget);
       expect(find.text('Đăng nhập ngay'), findsOneWidget);
-      expect(find.text('TÊN ĐĂNG NHẬP'), findsOneWidget);
+      expect(find.text('Tên đăng nhập'), findsOneWidget);
       expect(find.text('Nhập tên đăng nhập'), findsOneWidget);
       expect(find.text('VI'), findsOneWidget);
       expect(find.text('EN'), findsOneWidget);
@@ -68,7 +68,7 @@ void main() {
         await tester.pump();
 
         // Do NOT check terms checkbox
-        final regBtn = find.text('Tạo Tài Khoản');
+        final regBtn = find.text('Tạo tài khoản');
         expect(regBtn, findsOneWidget);
         await tester.tap(regBtn);
         await tester.pumpAndSettle();
@@ -95,7 +95,7 @@ void main() {
       await tester.pump();
 
       // Tap submit without terms checked to verify validator passes on username
-      final regBtn = find.text('Tạo Tài Khoản');
+      final regBtn = find.text('Tạo tài khoản');
       await tester.tap(regBtn);
       await tester.pumpAndSettle();
 
@@ -117,11 +117,35 @@ void main() {
         await tester.enterText(textFields.at(0), 'runner@gmail.com');
         await tester.enterText(textFields.at(1), 'Password123!');
         await tester.enterText(textFields.at(2), 'Password123!');
-        await tester.tap(find.text('Tạo Tài Khoản'));
+        await tester.tap(find.text('Tạo tài khoản'));
         await tester.pump();
 
         expect(
           find.text('Dùng 3-24 chữ cái thường, số, dấu chấm (.) hoặc (_)'),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets(
+      'rejects password that contains the username during registration',
+      (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(800, 1400);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() => tester.view.resetPhysicalSize());
+
+        await tester.pumpWidget(buildTestApp(const RegisterScreen()));
+        await tester.pump();
+
+        final textFields = find.byType(TextFormField);
+        await tester.enterText(textFields.at(0), 'runner99');
+        await tester.enterText(textFields.at(1), 'Runner99!Pass');
+        await tester.enterText(textFields.at(2), 'Runner99!Pass');
+        await tester.tap(find.text('Tạo tài khoản'));
+        await tester.pump();
+
+        expect(
+          find.text('Mật khẩu không được trùng hoặc chứa tên đăng nhập'),
           findsOneWidget,
         );
       },

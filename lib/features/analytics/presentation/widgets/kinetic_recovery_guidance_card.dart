@@ -105,7 +105,7 @@ class KineticRecoveryGuidanceCard extends ConsumerWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            isVi ? 'CHỈ DẪN HỒI PHỤC' : 'RECOVERY GUIDANCE',
+                            isVi ? 'Chỉ dẫn hồi phục' : 'Recovery guidance',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: KineticTypography.cardEyebrowOf(colors),

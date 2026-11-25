@@ -106,7 +106,7 @@ class AppButton extends StatelessWidget {
           const SizedBox(width: 6),
           Flexible(
             child: Text(
-              ios ? label : label.toUpperCase(),
+              label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: AetronTypography.button.copyWith(
@@ -119,7 +119,7 @@ class AppButton extends StatelessWidget {
       );
     } else {
       childWidget = Text(
-        ios ? label : label.toUpperCase(),
+        label,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: AetronTypography.button.copyWith(

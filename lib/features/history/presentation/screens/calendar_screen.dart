@@ -91,9 +91,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     var totalSteps = 0;
 
     for (final w in workouts) {
-      final validDist = w.gpsAnalysis.validDistanceKm > 0
-          ? w.gpsAnalysis.validDistanceKm
-          : w.distanceKm;
+      final validDist = w.distanceKm;
       totalDist += validDist;
       totalDuration += w.durationSec;
       totalCalories += w.caloriesKcal.round();
@@ -143,6 +141,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           child: _isRefreshing
               ? const CalendarSkeletonView()
               : workoutsAsync.when(
+                  skipLoadingOnReload: true,
+                  skipLoadingOnRefresh: true,
                   data: (workouts) {
                     if (workouts.isEmpty) {
                       return ListView(
@@ -214,10 +214,16 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
                         // 3. Telemetry Overview
                         if (filtered.isNotEmpty) ...[
-                          KineticHistoryTelemetryBento(
-                            summary: summary,
-                            useMetricUnits: useMetricUnits,
-                            currentLang: currentLang,
+                          AnimatedSwitcher(
+                            duration: KineticTokens.motionTab,
+                            switchInCurve: Curves.easeOutCubic,
+                            switchOutCurve: Curves.easeInCubic,
+                            child: KineticHistoryTelemetryBento(
+                              key: ValueKey('telemetry_${range.name}_$activityFilter'),
+                              summary: summary,
+                              useMetricUnits: useMetricUnits,
+                              currentLang: currentLang,
+                            ),
                           ),
                           const SizedBox(height: KineticTokens.spaceMD),
                         ],
@@ -252,9 +258,15 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                         const SizedBox(height: KineticTokens.spaceMD),
 
                         // 6. Daily Workout List or Filtered Empty State
-                        DailyWorkoutList(
-                          workouts: filtered,
-                          range: range.getLabel(currentLang),
+                        AnimatedSwitcher(
+                          duration: KineticTokens.motionTab,
+                          switchInCurve: Curves.easeOutCubic,
+                          switchOutCurve: Curves.easeInCubic,
+                          child: DailyWorkoutList(
+                            key: ValueKey('list_${range.name}_$activityFilter'),
+                            workouts: filtered,
+                            range: range.getLabel(currentLang),
+                          ),
                         ),
                       ],
                     );

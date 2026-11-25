@@ -106,20 +106,20 @@ class _KineticSummaryHeroDistanceState
       case WorkoutValidityFlag.verified:
         validityColor = colors.primary;
         validityText = widget.currentLang == AppLanguage.vi
-            ? 'GPS ĐÃ XÁC MINH'
-            : 'GPS VERIFIED';
+            ? 'GPS đã xác minh'
+            : 'GPS verified';
         break;
       case WorkoutValidityFlag.partial:
         validityColor = colors.secondary;
         validityText = widget.currentLang == AppLanguage.vi
-            ? 'GPS HIỆU CHỈNH'
-            : 'GPS CALIBRATED';
+            ? 'GPS hiệu chỉnh'
+            : 'GPS calibrated';
         break;
       case WorkoutValidityFlag.unverified:
         validityColor = colors.tertiary;
         validityText = widget.currentLang == AppLanguage.vi
-            ? 'CẢM BIẾN NỘI SUY'
-            : 'SENSOR INTERPOLATED';
+            ? 'Cảm biến nội suy'
+            : 'Sensor interpolated';
         break;
     }
 
@@ -149,8 +149,8 @@ class _KineticSummaryHeroDistanceState
                       Expanded(
                         child: Text(
                           widget.currentLang == AppLanguage.vi
-                              ? 'HOÀN THÀNH XUẤT SẮC'
-                              : 'SESSION COMPLETE',
+                              ? 'Hoàn thành xuất sắc'
+                              : 'Session complete',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: KineticTypography.unitLabel.copyWith(

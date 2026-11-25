@@ -10,6 +10,7 @@ import 'package:fitness_exercise_application/features/legal/presentation/screens
 import 'package:fitness_exercise_application/features/legal/presentation/screens/terms_of_service_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fitness_exercise_application/shared/aetron/aetron_logo_paths.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -188,15 +189,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 12),
             child: Row(
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(11),
-                  child: Image.asset(
-                    'assets/logo_glassline.png',
-                    width: 44,
-                    height: 44,
-                    fit: BoxFit.cover,
-                  ),
-                ),
+                const AetronBrandMark(size: 44),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -251,7 +244,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               children: [
                                 // ── Username field ──────────────────────────────────────
                                 _SectionLabel(
-                                  isVi ? 'TÊN ĐĂNG NHẬP' : 'USERNAME',
+                                  isVi ? 'Tên đăng nhập' : 'Username',
                                 ),
                                 const SizedBox(height: 6),
                                 _StitchTextField(
@@ -261,13 +254,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                       : 'Enter username',
                                   prefixIcon: BladeIconName.user,
                                   keyboardType: TextInputType.text,
+                                  onChanged: (_) => setState(() {}),
                                   validator: (value) =>
                                       validateUsername(value, isVi: isVi),
                                 ),
                                 const SizedBox(height: 16),
 
                                 // ── Password field ──────────────────────────────────────
-                                _SectionLabel(isVi ? 'MẬT KHẨU' : 'PASSWORD'),
+                                _SectionLabel(isVi ? 'Mật khẩu' : 'Password'),
                                 const SizedBox(height: 6),
                                 _StitchTextField(
                                   controller: _passwordController,
@@ -276,6 +270,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                       : 'Create password',
                                   prefixIcon: BladeIconName.lock,
                                   obscureText: _obscurePassword,
+                                  onChanged: (_) => setState(() {}),
                                   suffixIcon: IconButton(
                                     onPressed: () => setState(
                                       () =>
@@ -292,7 +287,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                   validator: (value) => validatePasswordStrict(
                                     value,
                                     currentLang,
+                                    username: _usernameController.text,
                                   ),
+                                ),
+                                PasswordSecurityMeter(
+                                  password: _passwordController.text,
+                                  lang: currentLang,
+                                  username: _usernameController.text,
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
@@ -311,8 +312,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 // ── Confirm password field ──────────────────────────────
                                 _SectionLabel(
                                   isVi
-                                      ? 'XÁC NHẬN MẬT KHẨU'
-                                      : 'CONFIRM PASSWORD',
+                                      ? 'Xác nhận mật khẩu'
+                                      : 'Confirm password',
                                 ),
                                 const SizedBox(height: 6),
                                 _StitchTextField(
@@ -462,8 +463,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 // ── Primary CTA ─────────────────────────────────────────
                                 _PrimaryButton(
                                   label: isVi
-                                      ? 'Tạo Tài Khoản'
-                                      : 'Create Account',
+                                      ? 'Tạo tài khoản'
+                                      : 'Create account',
                                   isLoading: _isLoading,
                                   onPressed: _register,
                                 ),
@@ -538,7 +539,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      isVi ? 'ĐĂNG KÝ THÀNH CÔNG' : 'REGISTRATION SUCCESSFUL',
+                      isVi ? 'Đăng ký thành công' : 'Registration successful',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 20,
@@ -589,7 +590,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     ),
                     const SizedBox(height: 32),
                     _PrimaryButton(
-                      label: isVi ? 'Đăng nhập ngay' : 'Sign In Now',
+                      label: isVi ? 'Đăng nhập ngay' : 'Sign in now',
                       isLoading: false,
                       onPressed: () {
                         Navigator.of(context).pushAndRemoveUntil(
@@ -641,6 +642,7 @@ class _StitchTextField extends StatelessWidget {
     this.suffixIcon,
     this.validator,
     this.keyboardType,
+    this.onChanged,
   });
 
   final TextEditingController controller;
@@ -650,6 +652,7 @@ class _StitchTextField extends StatelessWidget {
   final Widget? suffixIcon;
   final FormFieldValidator<String>? validator;
   final TextInputType? keyboardType;
+  final ValueChanged<String>? onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -658,6 +661,7 @@ class _StitchTextField extends StatelessWidget {
       controller: controller,
       obscureText: obscureText,
       keyboardType: keyboardType,
+      onChanged: onChanged,
       style: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w500,

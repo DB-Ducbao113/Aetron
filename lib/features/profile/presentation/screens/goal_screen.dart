@@ -601,20 +601,20 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: EdgeInsets.fromLTRB(
                   hPad,
-                  KineticTokens.spaceXXS,
+                  KineticTokens.spaceSM,
                   hPad,
-                  24,
+                  28,
                 ),
                 children: [
                   // 2.1 Athletic Discipline Selector (Distance / Sessions / Calories)
                   _buildDisciplineSelector(colors, currentLang),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
 
                   // 2.2 Cadence Selector (Weekly vs Monthly)
                   _buildCadenceSelector(colors, currentLang),
-                  const SizedBox(height: KineticTokens.spaceSM),
+                  const SizedBox(height: 14),
 
-                  // 2.3 Compact Target Card
+                  // 2.3 Hero Target Card
                   _buildEnergyReactorCard(
                     context,
                     colors,
@@ -625,7 +625,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                     maxVal,
                     step,
                   ),
-                  const SizedBox(height: KineticTokens.spaceSM),
+                  const SizedBox(height: 16),
 
                   // 2.4 Athletic Goal Presets (Starter, Pro, Elite, Beast)
                   _buildAthleticPresets(
@@ -634,19 +634,15 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                     useMetricUnits,
                     accent,
                   ),
-                  const SizedBox(height: KineticTokens.spaceSM),
+                  const SizedBox(height: 16),
 
-                  // 2.5 Real-World Impact & Benchmark Projection
+                  // 2.5 Real-World Impact & Benchmark Projection (with integrated Badge Milestone)
                   _buildRealWorldImpactCard(
                     colors,
                     currentLang,
                     useMetricUnits,
                     accent,
                   ),
-                  const SizedBox(height: KineticTokens.spaceXS),
-
-                  // 2.6 Target Reward / Badge Unlock Spotlight
-                  _buildBadgeUnlockPreview(colors, currentLang, accent),
                 ],
               ),
             ),
@@ -759,7 +755,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
         GoalType.workouts,
         Icons.fitness_center_rounded,
         isVi ? 'Buổi tập' : 'Sessions',
-        isVi ? 'BUỔI' : 'SESSIONS',
+        isVi ? 'buổi' : 'sessions',
         colors.secondary,
       ),
       (
@@ -834,8 +830,8 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
           borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
           child: AnimatedContainer(
             duration: KineticTokens.motionTab,
-            constraints: const BoxConstraints(minHeight: 40),
-            padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 5),
+            constraints: const BoxConstraints(minHeight: 44),
+            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: isSelected
@@ -860,12 +856,12 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(icon, size: 13, color: iconColor),
-                      const SizedBox(width: 4),
+                      Icon(icon, size: 14, color: iconColor),
+                      const SizedBox(width: 5),
                       Text(
                         title,
                         style: KineticTypography.label.copyWith(
-                          fontSize: 12.5,
+                          fontSize: 13,
                           fontWeight: isSelected
                               ? FontWeight.w800
                               : FontWeight.w600,
@@ -881,7 +877,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                   Text(
                     badge,
                     style: KineticTypography.caption.copyWith(
-                      fontSize: 9.5,
+                      fontSize: 10,
                       fontWeight: FontWeight.w700,
                       color: badgeColor,
                       letterSpacing: 0.6,
@@ -1058,12 +1054,13 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
     final displayValue = _formatTargetValue(_targetValue, _selectedType);
     final accentText = _readableAccentForText(accent, colors);
     final intensity = _getIntensityInfo(colors);
+    final ratio = ((_targetValue - minVal) / (maxVal - minVal)).clamp(0.0, 1.0);
 
     return KineticCard(
       useLiquidGlass: true,
-      borderRadius: 21,
+      borderRadius: 24,
       borderColor: accent.withValues(alpha: 0.28),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       child: Column(
         children: [
           // 1. Top Bar: Period Label & Quick Direct Input Action
@@ -1075,29 +1072,35 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                 child: Row(
                   children: [
                     Container(
-                      width: 6,
-                      height: 6,
+                      width: 7,
+                      height: 7,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: accent,
+                        boxShadow: [
+                          BoxShadow(
+                            color: accent.withValues(alpha: 0.6),
+                            blurRadius: 6,
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    Flexible(
+                    const SizedBox(width: 8),
+                    Expanded(
                       child: FittedBox(
                         fit: BoxFit.scaleDown,
                         alignment: Alignment.centerLeft,
                         child: Text(
                           _selectedPeriod == GoalPeriod.weekly
-                              ? (isVi ? 'MỤC TIÊU TUẦN' : 'WEEKLY TARGET')
-                              : (isVi ? 'MỤC TIÊU THÁNG' : 'MONTHLY TARGET'),
+                              ? (isVi ? 'Mục tiêu tuần' : 'Weekly target')
+                              : (isVi ? 'Mục tiêu tháng' : 'Monthly target'),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: KineticTypography.unitLabel.copyWith(
-                            fontSize: 10.5,
+                            fontSize: 11,
                             fontWeight: FontWeight.w800,
                             color: accentText,
-                            letterSpacing: 0.8,
+                            letterSpacing: 0.9,
                           ),
                         ),
                       ),
@@ -1119,10 +1122,18 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                         _showDirectValueEditor(context, currentLang);
                       },
                       borderRadius: BorderRadius.circular(10),
-                      child: Padding(
+                      child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 3,
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colors.surface2,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: colors.borderSubtle,
+                            width: 0.8,
+                          ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -1132,10 +1143,11 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                               size: 15,
                               color: accentText,
                             ),
-                            const SizedBox(width: 3),
+                            const SizedBox(width: 4),
                             Text(
                               isVi ? 'Nhập số' : 'Enter value',
                               style: KineticTypography.caption.copyWith(
+                                fontSize: 11.5,
                                 fontWeight: FontWeight.w700,
                                 color: colors.textSecondary,
                               ),
@@ -1149,9 +1161,9 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 14),
 
-          // 2. Compact Interactive Ergonomic Steppers with Metric Center
+          // 2. Interactive Ergonomic Steppers with Bold Hero Metric Center
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -1174,10 +1186,10 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                       HapticFeedback.lightImpact();
                       _showDirectValueEditor(context, currentLang);
                     },
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
+                        horizontal: 8,
                         vertical: 4,
                       ),
                       child: FittedBox(
@@ -1191,19 +1203,21 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                             Text(
                               displayValue,
                               style: KineticTypography.displayLarge.copyWith(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w800,
+                                fontSize: 38,
+                                fontWeight: FontWeight.w900,
                                 height: 1.05,
                                 color: colors.textPrimary,
+                                letterSpacing: -0.5,
                               ),
                             ),
-                            const SizedBox(width: 5),
+                            const SizedBox(width: 6),
                             Text(
                               unit.toUpperCase(),
                               style: KineticTypography.metricUnit.copyWith(
-                                fontSize: 13,
+                                fontSize: 14,
                                 fontWeight: FontWeight.w800,
                                 color: accentText,
+                                letterSpacing: 0.5,
                               ),
                             ),
                           ],
@@ -1224,22 +1238,53 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
               ),
             ],
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: 14),
 
-          // 3. Clean & Compact Athletic Intensity Tag
+          // 3. Tactile Intensity Meter Track & Level Badge
+          ClipRRect(
+            borderRadius: BorderRadius.circular(3),
+            child: Container(
+              height: 4.5,
+              width: double.infinity,
+              color: colors.surface2,
+              child: FractionallySizedBox(
+                alignment: Alignment.centerLeft,
+                widthFactor: ratio.clamp(0.04, 1.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        intensity.color.withValues(alpha: 0.4),
+                        intensity.color,
+                      ],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: intensity.color.withValues(alpha: 0.6),
+                        blurRadius: 6,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // 4. Athletic Intensity Badge & Description
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4.5),
             decoration: BoxDecoration(
-              color: intensity.color.withValues(alpha: 0.1),
+              color: intensity.color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
               border: Border.all(
-                color: intensity.color.withValues(alpha: 0.25),
+                color: intensity.color.withValues(alpha: 0.3),
               ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(intensity.icon, size: 13, color: intensity.color),
+                Icon(intensity.icon, size: 14, color: intensity.color),
                 const SizedBox(width: 6),
                 Flexible(
                   child: Text(
@@ -1247,9 +1292,10 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: KineticTypography.caption.copyWith(
-                      fontSize: 11,
+                      fontSize: 11.5,
                       fontWeight: FontWeight.w700,
                       color: intensity.color,
+                      letterSpacing: 0.3,
                     ),
                   ),
                 ),
@@ -1276,23 +1322,26 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
         borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
         child: AnimatedContainer(
           duration: KineticTokens.motionPress,
-          width: 38,
-          height: 38,
+          width: 44,
+          height: 44,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: enabled
-                ? colors.surface2
+                ? (colors.isDark ? colors.surface2 : colors.surface1)
                 : colors.surface2.withValues(alpha: 0.3),
             border: Border.all(
               color: enabled
-                  ? accentIcon.withValues(alpha: 0.35)
-                  : colors.borderSubtle.withValues(alpha: 0.2),
+                  ? accentIcon.withValues(alpha: 0.4)
+                  : colors.borderSubtle.withValues(alpha: 0.25),
               width: 1.2,
             ),
+            boxShadow: enabled && !colors.isDark
+                ? KineticTokens.shadowCardLight()
+                : null,
           ),
           child: Icon(
             icon,
-            size: 18,
+            size: 20,
             color: enabled
                 ? accentIcon
                 : colors.textMuted.withValues(alpha: 0.4),
@@ -1316,44 +1365,48 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
 
     return KineticCard(
       useLiquidGlass: true,
-      borderRadius: 21,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      borderRadius: 24,
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(4),
+                padding: const EdgeInsets.all(5),
                 decoration: BoxDecoration(
                   color: accent.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   Icons.auto_awesome_rounded,
-                  size: 13,
+                  size: 14,
                   color: accentText,
                 ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  isVi
-                      ? 'Ý NGHĨA & HIỆU QUẢ THỰC TẾ'
-                      : 'REAL-WORLD PERFORMANCE IMPACT',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: KineticTypography.unitLabel.copyWith(
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w800,
-                    color: accentText,
-                    letterSpacing: 0.8,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    isVi
+                        ? 'Ý nghĩa & hiệu quả thực tế'
+                        : 'Real-world performance impact',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: KineticTypography.unitLabel.copyWith(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: accentText,
+                      letterSpacing: 0.9,
+                    ),
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 12),
 
           _buildImpactItem(
             colors: colors,
@@ -1361,7 +1414,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
             description: isVi ? benchmark.landmarkVi : benchmark.landmarkEn,
             accent: accent,
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           _buildImpactItem(
             colors: colors,
             icon: Icons.local_fire_department_rounded,
@@ -1370,13 +1423,23 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                 : benchmark.calorieImpactEn,
             accent: accent,
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           _buildImpactItem(
             colors: colors,
             icon: Icons.calendar_month_rounded,
             description: isVi ? benchmark.scheduleVi : benchmark.scheduleEn,
             accent: accent,
           ),
+
+          const SizedBox(height: 12),
+          Container(
+            height: 1,
+            color: colors.borderSubtle.withValues(alpha: 0.6),
+          ),
+          const SizedBox(height: 12),
+
+          // Integrated Trophy Milestone Reward Spotlight
+          _buildBadgeUnlockPreview(colors, currentLang, accent),
         ],
       ),
     );
@@ -1393,24 +1456,24 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Container(
-          padding: const EdgeInsets.all(3),
+          padding: const EdgeInsets.all(4.5),
           decoration: BoxDecoration(
             color: colors.surface2,
             borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
           ),
-          child: Icon(icon, size: 12, color: accentIcon),
+          child: Icon(icon, size: 14, color: accentIcon),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 10),
         Expanded(
           child: Text(
             description,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: KineticTypography.bodySmall.copyWith(
-              fontSize: 11.5,
+              fontSize: 12.5,
               fontWeight: FontWeight.w600,
               color: colors.textPrimary,
-              height: 1.25,
+              height: 1.3,
             ),
           ),
         ),
@@ -1559,15 +1622,32 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          isVi ? 'GÓI MỤC TIÊU ĐỀ XUẤT' : 'RECOMMENDED GOAL PRESETS',
-          style: KineticTypography.unitLabel.copyWith(
-            fontSize: 10.5,
-            color: colors.primary,
-            letterSpacing: 0.9,
-          ),
+        Row(
+          children: [
+            Icon(
+              Icons.bolt_rounded,
+              size: 14,
+              color: colors.primary,
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  isVi ? 'Gói mục tiêu đề xuất' : 'Recommended goal presets',
+                  style: KineticTypography.unitLabel.copyWith(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: colors.primary,
+                    letterSpacing: 0.9,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 8),
         Row(
           children: [
             for (int i = 0; i < presets.length; i++) ...[
@@ -1616,50 +1696,57 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
         child: AnimatedContainer(
           duration: KineticTokens.motionTab,
           padding: const EdgeInsets.symmetric(
-            vertical: 5,
-            horizontal: KineticTokens.spaceXXS,
+            vertical: 8,
+            horizontal: 4,
           ),
           decoration: BoxDecoration(
             color: isSelected
                 ? presetColor.withValues(alpha: 0.16)
-                : colors.surface1,
+                : (colors.isDark ? colors.surface2 : colors.surface1),
             borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
             border: Border.all(
               color: isSelected ? presetColor : colors.borderSubtle,
               width: isSelected ? 1.5 : 1.0,
             ),
-            boxShadow: !isSelected && !colors.isDark
-                ? KineticTokens.shadowCardLight()
-                : null,
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: presetColor.withValues(alpha: 0.25),
+                      blurRadius: 8,
+                    ),
+                  ]
+                : (!colors.isDark ? KineticTokens.shadowCardLight() : null),
           ),
           child: Column(
             children: [
-              Icon(icon, size: 13, color: presetColor),
-              const SizedBox(height: 2),
+              Icon(icon, size: 15, color: presetColor),
+              const SizedBox(height: 3),
               Text(
                 title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: KineticTypography.caption.copyWith(
-                  fontSize: 10.5,
+                  fontSize: 11,
                   fontWeight: FontWeight.w800,
                   color: presetColor,
                 ),
               ),
-              const SizedBox(height: 1),
+              const SizedBox(height: 2),
               FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(
                   '$displayVal $unitLabel',
                   maxLines: 1,
                   style: KineticTypography.caption.copyWith(
-                    fontSize: 10.5,
+                    fontSize: 11.5,
                     fontWeight: FontWeight.w700,
-                    color: isSelected ? colors.textPrimary : colors.textMuted,
+                    color:
+                        isSelected ? colors.textPrimary : colors.textSecondary,
                     fontFeatures: KineticTypography.tabularFigures,
                   ),
                 ),
               ),
+              const SizedBox(height: 1),
               FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(
@@ -1667,7 +1754,8 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: KineticTypography.caption.copyWith(
-                    fontSize: 9.5,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
                     color: isSelected ? presetColor : colors.textMuted,
                   ),
                 ),
@@ -1744,25 +1832,27 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
 
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: KineticTokens.spaceSM,
-        vertical: KineticTokens.spaceXS,
+        horizontal: 10,
+        vertical: 8,
       ),
       decoration: BoxDecoration(
         color: colors.surface2.withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
-        border: Border.all(color: colors.borderSubtle),
+        border: Border.all(
+          color: accent.withValues(alpha: 0.25),
+        ),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(6),
+            padding: const EdgeInsets.all(7),
             decoration: BoxDecoration(
-              color: accent.withValues(alpha: 0.15),
+              color: accent.withValues(alpha: 0.16),
               borderRadius: BorderRadius.circular(KineticTokens.radiusSM),
             ),
             child: Icon(
               badgeIcon,
-              size: 17,
+              size: 18,
               color: _readableAccentForIcon(accent, colors),
             ),
           ),
@@ -1781,12 +1871,13 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
                     color: colors.textPrimary,
                   ),
                 ),
+                const SizedBox(height: 1),
                 Text(
                   badgeDesc,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: KineticTypography.caption.copyWith(
-                    fontSize: 10.5,
+                    fontSize: 11,
                     color: colors.textMuted,
                   ),
                 ),
@@ -1908,8 +1999,8 @@ class _GoalScreenState extends ConsumerState<GoalScreen>
             Expanded(
               child: KineticButton(
                 label: hasGoal
-                    ? (isVi ? 'LƯU MỤC TIÊU' : 'UPDATE GOAL')
-                    : (isVi ? 'KÍCH HOẠT MỤC TIÊU' : 'ACTIVATE GOAL'),
+                    ? (isVi ? 'Lưu mục tiêu' : 'Update goal')
+                    : (isVi ? 'Kích hoạt mục tiêu' : 'Activate goal'),
                 icon: Icons.bolt_rounded,
                 variant: KineticButtonVariant.primary,
                 height: KineticTokens.buttonHeight,
@@ -2014,8 +2105,8 @@ class _DirectValueEditorSheetState extends State<_DirectValueEditorSheet> {
                   Expanded(
                     child: Text(
                       widget.isVi
-                          ? 'NHẬP CHÍNH XÁC MỤC TIÊU'
-                          : 'ENTER EXACT TARGET',
+                          ? 'Nhập chính xác mục tiêu'
+                          : 'Enter exact target',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: KineticTypography.unitLabel.copyWith(
@@ -2063,7 +2154,7 @@ class _DirectValueEditorSheetState extends State<_DirectValueEditorSheet> {
               ),
               const SizedBox(height: KineticTokens.spaceLG),
               KineticButton(
-                label: widget.isVi ? 'ÁP DỤNG MỤC TIÊU' : 'APPLY TARGET',
+                label: widget.isVi ? 'Áp dụng mục tiêu' : 'Apply target',
                 icon: Icons.check_circle_rounded,
                 variant: KineticButtonVariant.primary,
                 height: KineticTokens.buttonHeightPrimary,

@@ -179,7 +179,7 @@ class _KineticTimeInputSheetState extends State<KineticTimeInputSheet> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        isVi ? 'CÀI ĐẶT THỜI GIAN' : 'SET TIME',
+                        isVi ? 'Cài đặt thời gian' : 'Set time',
                         style: KineticTypography.headlineSmall.copyWith(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
@@ -212,7 +212,7 @@ class _KineticTimeInputSheetState extends State<KineticTimeInputSheet> {
                 _NumericTimeBox(
                   controller: _hourController,
                   focusNode: _hourFocus,
-                  label: isVi ? 'GIỜ' : 'HOUR',
+                  label: isVi ? 'Giờ' : 'Hour',
                   colors: colors,
                   onIncrement: () => _adjustHour(1),
                   onDecrement: () => _adjustHour(-1),
@@ -241,7 +241,7 @@ class _KineticTimeInputSheetState extends State<KineticTimeInputSheet> {
                 _NumericTimeBox(
                   controller: _minuteController,
                   focusNode: _minuteFocus,
-                  label: isVi ? 'PHÚT' : 'MINUTE',
+                  label: isVi ? 'Phút' : 'Minute',
                   colors: colors,
                   onIncrement: () => _adjustMinute(5),
                   onDecrement: () => _adjustMinute(-5),
@@ -314,7 +314,7 @@ class _KineticTimeInputSheetState extends State<KineticTimeInputSheet> {
               children: [
                 Expanded(
                   child: KineticButton(
-                    label: isVi ? 'HỦY' : 'CANCEL',
+                    label: isVi ? 'Hủy' : 'Cancel',
                     height: KineticTokens.buttonHeight,
                     variant: KineticButtonVariant.secondary,
                     onPressed: () => Navigator.of(context).pop(),
@@ -324,7 +324,7 @@ class _KineticTimeInputSheetState extends State<KineticTimeInputSheet> {
                 Expanded(
                   flex: 2,
                   child: KineticButton(
-                    label: isVi ? 'XÁC NHẬN' : 'CONFIRM',
+                    label: isVi ? 'Xác nhận' : 'Confirm',
                     icon: Icons.check_rounded,
                     height: KineticTokens.buttonHeight,
                     onPressed: _confirm,

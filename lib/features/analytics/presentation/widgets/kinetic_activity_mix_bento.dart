@@ -90,7 +90,7 @@ class KineticActivityMixBento extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isVi ? 'CƠ CẤU MÔN TẬP' : 'DISCIPLINE BREAKDOWN',
+                      isVi ? 'Cơ cấu môn tập' : 'Discipline breakdown',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: KineticTypography.cardEyebrowOf(colors),

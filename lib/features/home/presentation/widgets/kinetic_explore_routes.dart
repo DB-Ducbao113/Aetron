@@ -16,6 +16,7 @@ class KineticExploreRoutes extends StatelessWidget {
 
     final plans = [
       (
+        id: 'couch_to_5k',
         title: '5K\nStarter',
         badge: isVi ? '4 TUẦN · NGƯỜI MỚI' : '4 WEEKS · BEGINNER',
         subtitle: isVi ? 'Khám phá giáo án ›' : 'Explore plan ›',
@@ -35,8 +36,9 @@ class KineticExploreRoutes extends StatelessWidget {
         tint: colors.primary,
       ),
       (
-        title: 'Easy\nCycle',
-        badge: isVi ? '3 TUẦN · CYCLING' : '3 WEEKS · CYCLING',
+        id: 'easy_base_run',
+        title: isVi ? 'Chạy\nThả lỏng' : 'Easy\nBase Run',
+        badge: isVi ? 'ZONE 2 · PHỤC HỒI' : 'ZONE 2 · RECOVERY',
         subtitle: isVi ? 'Khám phá giáo án ›' : 'Explore plan ›',
         lightGradient: const LinearGradient(
           begin: Alignment.topLeft,
@@ -54,6 +56,7 @@ class KineticExploreRoutes extends StatelessWidget {
         tint: colors.secondary,
       ),
       (
+        id: 'pace_builder_10k',
         title: isVi ? 'Xây tốc độ\n10K' : '10K Pace\nBuilder',
         badge: isVi ? '6 TUẦN · TỐC ĐỘ' : '6 WEEKS · SPEED',
         subtitle: isVi ? 'Khám phá giáo án ›' : 'Explore plan ›',
@@ -73,6 +76,7 @@ class KineticExploreRoutes extends StatelessWidget {
         tint: colors.primary,
       ),
       (
+        id: 'speed_intervals',
         title: isVi ? 'Biến tốc\n5K' : '5K Speed\nIntervals',
         badge: isVi ? '4 TUẦN · INTERVAL' : '4 WEEKS · INTERVALS',
         subtitle: isVi ? 'Khám phá giáo án ›' : 'Explore plan ›',
@@ -163,7 +167,7 @@ class KineticExploreRoutes extends StatelessWidget {
               return SizedBox(
                 width: 185,
                 child: KineticCard(
-                  useLiquidGlass: true,
+                  useLiquidGlass: false,
                   padding: const EdgeInsets.all(16),
                   borderRadius: 18,
                   backgroundColor: Colors.transparent,
@@ -176,7 +180,9 @@ class KineticExploreRoutes extends StatelessWidget {
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => const RunningProgramsScreen(),
+                        builder: (_) => RunningProgramsScreen(
+                          initialProgramId: plan.id,
+                        ),
                       ),
                     );
                   },

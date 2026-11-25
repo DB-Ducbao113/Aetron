@@ -7,6 +7,7 @@ import 'package:fitness_exercise_application/shared/kinetic/kinetic_glass_icon_b
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/auth/presentation/helpers/password_validator.dart';
 import 'package:fitness_exercise_application/features/auth/presentation/widgets/auth_language_toggle.dart';
+import 'package:fitness_exercise_application/shared/aetron/aetron_logo_paths.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:flutter/foundation.dart';
@@ -104,8 +105,20 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       _startResendCountdown();
     } on AuthException catch (e) {
       if (!mounted) return;
+      final isVi = lang == AppLanguage.vi;
+      final lower = e.message.toLowerCase();
+      String msg = e.message;
+      if (lower.contains('rate limit') || lower.contains('too many')) {
+        msg = isVi
+            ? 'Bạn đã gửi yêu cầu quá nhiều lần. Vui lòng đợi trong giây lát.'
+            : 'Too many requests. Please wait before trying again.';
+      } else if (lower.contains('not found') || lower.contains('user not found')) {
+        msg = isVi
+            ? 'Không tìm thấy tài khoản với email này.'
+            : 'No account found with this email.';
+      }
       setState(() {
-        _errorMessage = e.message;
+        _errorMessage = msg;
         _isLoading = false;
       });
     } catch (_) {
@@ -174,22 +187,14 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 const SizedBox(height: 20),
                 Row(
                   children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(11),
-                      child: Image.asset(
-                        'assets/logo_glassline.png',
-                        width: 44,
-                        height: 44,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
+                    const AetronBrandMark(size: 44),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            isVi ? 'KHÔI PHỤC MẬT KHẨU' : 'FORGOT PASSWORD',
+                            isVi ? 'Khôi phục mật khẩu' : 'Forgot password',
                             style: TextStyle(
                               fontSize: 19,
                               fontWeight: FontWeight.w800,
@@ -308,7 +313,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
           // Email Input Field
           Text(
-            isVi ? 'ĐỊA CHỈ EMAIL' : 'EMAIL ADDRESS',
+            isVi ? 'Địa chỉ email' : 'Email address',
             style: TextStyle(
               color: kinetic.primary,
               fontSize: 11,
@@ -405,7 +410,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
           // Primary Send Reset Link Button — V4 KineticButton (flat pill)
           KineticButton(
-            label: isVi ? 'GỬI LIÊN KẾT XÁC THỰC' : 'SEND RESET LINK',
+            label: isVi ? 'Gửi liên kết xác thực' : 'Send reset link',
             icon: Icons.send_rounded,
             isLoading: _isLoading,
             height: KineticTokens.buttonHeightPrimary,
@@ -585,7 +590,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
         // Open Email App Button — V4 KineticButton (flat pill)
         KineticButton(
-          label: isVi ? 'MỞ HỘP THƯ EMAIL' : 'OPEN EMAIL APP',
+          label: isVi ? 'Mở ứng dụng email' : 'Open email app',
           icon: Icons.open_in_new_rounded,
           height: KineticTokens.buttonHeightPrimary,
           onPressed: _openEmailApp,
@@ -598,7 +603,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               ? (isVi
                     ? 'Gửi lại sau (${_resendCountdown}s)'
                     : 'Resend in (${_resendCountdown}s)')
-              : (isVi ? 'GỬI LẠI EMAIL' : 'RESEND EMAIL'),
+              : (isVi ? 'Gửi lại email' : 'Resend email'),
           variant: KineticButtonVariant.secondary,
           height: KineticTokens.buttonHeight,
           onPressed: (_resendCountdown == 0 && !_isLoading)
@@ -746,6 +751,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     final currentLang = ref.watch(appLanguageProvider);
     final isVi = currentLang == AppLanguage.vi;
     final kinetic = context.kinetic;
+    final currentUser = Supabase.instance.client.auth.currentUser;
+    final username = (currentUser?.userMetadata?['username'] as String?) ??
+        currentUser?.email?.split('@').first;
 
     return Scaffold(
       backgroundColor: kinetic.background,
@@ -761,22 +769,14 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
             ),
             child: Row(
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(11),
-                  child: Image.asset(
-                    'assets/logo_glassline.png',
-                    width: 44,
-                    height: 44,
-                    fit: BoxFit.cover,
-                  ),
-                ),
+                const AetronBrandMark(size: 44),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        isVi ? 'THIẾT LẬP MẬT KHẨU MỚI' : 'SET NEW PASSWORD',
+                        isVi ? 'Thiết lập mật khẩu mới' : 'Set new password',
                         style: TextStyle(
                           fontSize: 19,
                           fontWeight: FontWeight.w800,
@@ -868,7 +868,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
 
                         // New Password Field
                         Text(
-                          isVi ? 'MẬT KHẨU MỚI' : 'NEW PASSWORD',
+                          isVi ? 'Mật khẩu mới' : 'New password',
                           style: TextStyle(
                             color: kinetic.primary,
                             fontSize: 11,
@@ -943,19 +943,20 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                             ),
                           ),
                           validator: (val) =>
-                              validatePasswordStrict(val, currentLang),
+                              validatePasswordStrict(val, currentLang, username: username),
                         ),
 
                         // Interactive Password Security Meter
                         PasswordSecurityMeter(
                           password: _passwordController.text,
                           lang: currentLang,
+                          username: username,
                         ),
                         const SizedBox(height: 18),
 
                         // Confirm Password Field
                         Text(
-                          isVi ? 'XÁC NHẬN MẬT KHẨU' : 'CONFIRM PASSWORD',
+                          isVi ? 'Xác nhận mật khẩu' : 'Confirm password',
                           style: TextStyle(
                             color: kinetic.primary,
                             fontSize: 11,
@@ -1123,7 +1124,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
 
                         // Submit Update Button — V4 KineticButton (flat pill)
                         KineticButton(
-                          label: isVi ? 'CẬP NHẬT MẬT KHẨU' : 'UPDATE PASSWORD',
+                          label: isVi ? 'Cập nhật mật khẩu' : 'Update password',
                           icon: Icons.check_rounded,
                           isLoading: _isLoading,
                           height: KineticTokens.buttonHeightPrimary,

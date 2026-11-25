@@ -46,22 +46,22 @@ class _AthleteSetupFlowState extends State<AthleteSetupFlow> {
     }
     return _hasDisplayName!
         ? const ProfileSetupScreen()
-        : _AthleteNameScreen(
+        : AthleteNameScreen(
             onComplete: () => setState(() => _hasDisplayName = true),
           );
   }
 }
 
-class _AthleteNameScreen extends ConsumerStatefulWidget {
-  const _AthleteNameScreen({required this.onComplete});
+class AthleteNameScreen extends ConsumerStatefulWidget {
+  const AthleteNameScreen({super.key, required this.onComplete});
 
   final VoidCallback onComplete;
 
   @override
-  ConsumerState<_AthleteNameScreen> createState() => _AthleteNameScreenState();
+  ConsumerState<AthleteNameScreen> createState() => _AthleteNameScreenState();
 }
 
-class _AthleteNameScreenState extends ConsumerState<_AthleteNameScreen> {
+class _AthleteNameScreenState extends ConsumerState<AthleteNameScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   bool _isSaving = false;
@@ -117,157 +117,183 @@ class _AthleteNameScreenState extends ConsumerState<_AthleteNameScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        (lang == AppLanguage.vi
-                                ? 'HIỆU CHỈNH DANH TÍNH'
-                                : 'IDENTITY CALIBRATION')
-                            .toUpperCase(),
-                        style: KineticTypography.unitLabel.copyWith(
-                          color: colors.primary,
-                          letterSpacing: 1.2,
+              KineticEntrance(
+                index: 0,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          lang == AppLanguage.vi
+                              ? 'Hiệu chỉnh danh tính'
+                              : 'Identity calibration',
+                          style: KineticTypography.unitLabel.copyWith(
+                            color: colors.primary,
+                            letterSpacing: 1.0,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        lang == AppLanguage.vi
-                            ? 'Thiết lập Vận động viên'
-                            : 'Athlete Setup',
-                        style: KineticTypography.headlineLarge.copyWith(
-                          color: colors.textPrimary,
-                          fontWeight: FontWeight.w700,
+                        const SizedBox(height: 4),
+                        Text(
+                          lang == AppLanguage.vi
+                              ? 'Thiết lập vận động viên'
+                              : 'Athlete setup',
+                          style: KineticTypography.headlineLarge.copyWith(
+                            color: colors.textPrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  KineticGlassIconButton(
-                    size: 37,
-                    visualSize: 37,
-                    label: lang == AppLanguage.vi ? 'Đăng xuất' : 'Sign out',
-                    icon: BladeIcon(
-                      BladeIconName.logout,
-                      color: colors.textSecondary,
-                      size: 18,
-                      strokeWidth: 1.7,
+                      ],
                     ),
-                    onPressed: () async {
-                      final confirmed = await AetronLogoutDialog.show(context);
-                      if (confirmed == true && context.mounted) {
-                        await Supabase.instance.client.auth.signOut();
-                        if (context.mounted) {
-                          Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(
-                              builder: (_) => const AuthWrapper(),
-                            ),
-                            (_) => false,
-                          );
+                    KineticGlassIconButton(
+                      size: 37,
+                      visualSize: 37,
+                      label: lang == AppLanguage.vi ? 'Đăng xuất' : 'Sign out',
+                      icon: BladeIcon(
+                        BladeIconName.logout,
+                        color: colors.textSecondary,
+                        size: 18,
+                        strokeWidth: 1.7,
+                      ),
+                      onPressed: () async {
+                        final confirmed = await AetronLogoutDialog.show(context);
+                        if (confirmed == true && context.mounted) {
+                          await Supabase.instance.client.auth.signOut();
+                          if (context.mounted) {
+                            Navigator.of(context).pushAndRemoveUntil(
+                              MaterialPageRoute(
+                                builder: (_) => const AuthWrapper(),
+                              ),
+                              (_) => false,
+                            );
+                          }
                         }
-                      }
-                    },
-                  ),
-                ],
+                      },
+                    ),
+                  ],
+                ),
               ),
               const Spacer(),
-              Center(
-                child: Container(
-                  width: 82,
-                  height: 82,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: colors.primary.withValues(alpha: 0.12),
-                    border: Border.all(color: colors.primary),
-                    boxShadow: [
-                      BoxShadow(
-                        color: colors.primary.withValues(alpha: 0.18),
-                        blurRadius: 28,
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    Icons.person_outline_rounded,
-                    color: colors.primary,
-                    size: 40,
+              KineticEntrance(
+                index: 1,
+                child: Center(
+                  child: Container(
+                    width: 82,
+                    height: 82,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: colors.primary.withValues(alpha: 0.12),
+                      border: Border.all(color: colors.primary),
+                      boxShadow: [
+                        BoxShadow(
+                          color: colors.primary.withValues(alpha: 0.18),
+                          blurRadius: 28,
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.person_outline_rounded,
+                      color: colors.primary,
+                      size: 40,
+                    ),
                   ),
                 ),
               ),
               const SizedBox(height: 26),
-              Text(
-                lang == AppLanguage.vi
-                    ? 'BẠN TÊN LÀ GÌ?'
-                    : 'WHAT SHOULD\nWE CALL YOU?',
-                style: KineticTypography.headlineLarge.copyWith(
-                  color: colors.textPrimary,
-                  height: 1.1,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                lang == AppLanguage.vi
-                    ? 'Đây là tên Aetron sẽ dùng để chào bạn khi tập luyện.'
-                    : 'This is how Aetron will greet you during your training.',
-                style: KineticTypography.bodySmall.copyWith(
-                  color: colors.textMuted,
-                  height: 1.35,
+              KineticEntrance(
+                index: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      lang == AppLanguage.vi
+                          ? 'Bạn tên là gì?'
+                          : 'What should\nwe call you?',
+                      style: KineticTypography.headlineLarge.copyWith(
+                        color: colors.textPrimary,
+                        height: 1.1,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      lang == AppLanguage.vi
+                          ? 'Đây là tên Aetron sẽ dùng để chào bạn khi tập luyện.'
+                          : 'This is how Aetron will greet you during your training.',
+                      style: KineticTypography.bodySmall.copyWith(
+                        color: colors.textMuted,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 24),
-              Form(
-                key: _formKey,
-                child: TextFormField(
-                  controller: _nameController,
-                  textCapitalization: TextCapitalization.words,
-                  textInputAction: TextInputAction.done,
-                  onFieldSubmitted: (_) => _continue(),
-                  style: KineticTypography.bodyLarge.copyWith(
-                    color: colors.textPrimary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  validator: (value) {
-                    final name = value?.trim() ?? '';
-                    if (name.length < 2) {
-                      return lang == AppLanguage.vi
-                          ? 'Nhập ít nhất 2 ký tự'
-                          : 'Enter at least 2 characters';
-                    }
-                    if (name.length > 24) {
-                      return lang == AppLanguage.vi
-                          ? 'Nhập tối đa 24 ký tự'
-                          : 'Use 24 characters or fewer';
-                    }
-                    return null;
-                  },
-                  decoration: InputDecoration(
-                    hintText: lang == AppLanguage.vi
-                        ? 'HỌ VÀ TÊN'
-                        : 'YOUR NAME',
-                    hintStyle: KineticTypography.bodyMedium.copyWith(
-                      color: colors.textMuted,
-                      letterSpacing: 1.0,
+              KineticEntrance(
+                index: 3,
+                child: Form(
+                  key: _formKey,
+                  child: TextFormField(
+                    controller: _nameController,
+                    textCapitalization: TextCapitalization.words,
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: (_) => _continue(),
+                    style: KineticTypography.bodyLarge.copyWith(
+                      color: colors.textPrimary,
+                      fontWeight: FontWeight.w600,
                     ),
-                    prefixIcon: Icon(
-                      Icons.badge_outlined,
-                      color: colors.primary,
-                    ),
-                    filled: true,
-                    fillColor: colors.surface1,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: colors.borderSubtle),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: colors.borderSubtle),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: colors.primary, width: 1.4),
+                    validator: (value) {
+                      final name = value?.trim() ?? '';
+                      if (name.length < 2) {
+                        return lang == AppLanguage.vi
+                            ? 'Nhập ít nhất 2 ký tự'
+                            : 'Enter at least 2 characters';
+                      }
+                      if (name.length > 24) {
+                        return lang == AppLanguage.vi
+                            ? 'Nhập tối đa 24 ký tự'
+                            : 'Use 24 characters or fewer';
+                      }
+                      return null;
+                    },
+                    decoration: InputDecoration(
+                      hintText: lang == AppLanguage.vi
+                          ? 'Nhập họ và tên của bạn'
+                          : 'Enter your full name',
+                      hintStyle: KineticTypography.bodyMedium.copyWith(
+                        color: colors.textMuted,
+                        letterSpacing: 0.2,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.badge_outlined,
+                        color: colors.primary,
+                      ),
+                      filled: true,
+                      fillColor: colors.isDark
+                          ? const Color(0x28314B6B)
+                          : const Color(0x66FFFFFF),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
+                        borderSide: BorderSide(
+                          color: colors.isDark
+                              ? const Color(0x38B6DCFF)
+                              : Colors.white.withValues(alpha: 0.85),
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
+                        borderSide: BorderSide(
+                          color: colors.isDark
+                              ? const Color(0x38B6DCFF)
+                              : Colors.white.withValues(alpha: 0.85),
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
+                        borderSide: BorderSide(color: colors.primary, width: 1.4),
+                      ),
                     ),
                   ),
                 ),
@@ -283,13 +309,16 @@ class _AthleteNameScreenState extends ConsumerState<_AthleteNameScreen> {
                 ),
               ],
               const Spacer(flex: 2),
-              KineticButton(
-                label: lang == AppLanguage.vi ? 'TIẾP TỤC' : 'CONTINUE',
-                icon: Icons.arrow_forward_rounded,
-                variant: KineticButtonVariant.primary,
-                isLoading: _isSaving,
-                onPressed: _isSaving ? null : _continue,
-                height: KineticTokens.buttonHeightPrimary,
+              KineticEntrance(
+                index: 4,
+                child: KineticButton(
+                  label: lang == AppLanguage.vi ? 'Tiếp tục' : 'Continue',
+                  icon: Icons.arrow_forward_rounded,
+                  variant: KineticButtonVariant.primary,
+                  isLoading: _isSaving,
+                  onPressed: _isSaving ? null : _continue,
+                  height: KineticTokens.buttonHeightPrimary,
+                ),
               ),
             ],
           ),

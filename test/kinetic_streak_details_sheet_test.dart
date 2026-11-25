@@ -65,25 +65,25 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.text('NGÀY LIÊN TIẾP'), findsOneWidget);
+      expect(find.text('ngày liên tiếp'), findsOneWidget);
 
       // Verify week strip labels
-      expect(find.text('TUẦN NÀY'), findsOneWidget);
+      expect(find.text('Tuần này'), findsOneWidget);
       expect(find.text('T2'), findsOneWidget);
       expect(find.text('CN'), findsOneWidget);
 
       // Verify core metrics: Best streak & Next target
-      expect(find.text('KỶ LỤC TỐT NHẤT'), findsOneWidget);
-      expect(find.text('12 Ngày'), findsOneWidget);
-      expect(find.text('MỐC TIẾP THEO'), findsOneWidget);
+      expect(find.text('Kỷ lục tốt nhất'), findsOneWidget);
+      expect(find.text('12 ngày'), findsOneWidget);
+      expect(find.text('Mốc tiếp theo'), findsOneWidget);
       expect(
-        find.text('7 Ngày'),
+        find.text('7 ngày'),
         findsOneWidget,
       ); // calculateNextStreakTarget(5) is 7
 
       // Verify single primary CTA exists
       expect(find.byType(KineticButton), findsOneWidget);
-      expect(find.text('BẮT ĐẦU TẬP ĐỂ GIỮ CHUỖI 🔥'), findsOneWidget);
+      expect(find.text('Bắt đầu tập để giữ chuỗi 🔥'), findsOneWidget);
     });
 
     testWidgets('renders seamlessly in light mode with adaptive tokens', (
@@ -135,13 +135,13 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.text('NGÀY LIÊN TIẾP'), findsOneWidget);
+      expect(find.text('ngày liên tiếp'), findsOneWidget);
 
       // Verify tier title rendered
-      expect(find.text('CHIẾN BINH TITAN'), findsOneWidget);
+      expect(find.text('Chiến binh Titan'), findsOneWidget);
 
       // Next target for 15 is 30
-      expect(find.text('30 Ngày'), findsOneWidget);
+      expect(find.text('30 ngày'), findsOneWidget);
       expect(find.text('Còn 15 ngày'), findsOneWidget);
     });
 

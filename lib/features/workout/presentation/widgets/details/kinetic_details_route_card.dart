@@ -107,8 +107,8 @@ class KineticDetailsRouteCard extends StatelessWidget {
                       Flexible(
                         child: Text(
                           currentLang == AppLanguage.vi
-                              ? 'BẢN ĐỒ CUNG ĐƯỜNG'
-                              : 'ROUTE MAP',
+                              ? 'Bản đồ cung đường'
+                              : 'Route map',
                           overflow: TextOverflow.ellipsis,
                           style: KineticTypography.unitLabel.copyWith(
                             color: colors.textPrimary,

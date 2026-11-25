@@ -10,13 +10,13 @@ enum BadgeTier {
   String label(AppLanguage lang) {
     switch (this) {
       case BadgeTier.bronze:
-        return lang == AppLanguage.vi ? 'ĐỒNG' : 'BRONZE';
+        return lang == AppLanguage.vi ? 'Đồng' : 'Bronze';
       case BadgeTier.silver:
-        return lang == AppLanguage.vi ? 'BẠC' : 'SILVER';
+        return lang == AppLanguage.vi ? 'Bạc' : 'Silver';
       case BadgeTier.gold:
-        return lang == AppLanguage.vi ? 'VÀNG' : 'GOLD';
+        return lang == AppLanguage.vi ? 'Vàng' : 'Gold';
       case BadgeTier.quantum:
-        return lang == AppLanguage.vi ? 'QUANTUM' : 'QUANTUM';
+        return lang == AppLanguage.vi ? 'Quantum' : 'Quantum';
     }
   }
 
@@ -180,7 +180,7 @@ class AchievementBadge {
 
   String remainingText(AppLanguage lang) {
     if (isUnlocked) {
-      return lang == AppLanguage.vi ? 'ĐÃ ĐẠT ĐƯỢC' : 'UNLOCKED';
+      return lang == AppLanguage.vi ? 'Đã đạt được' : 'Unlocked';
     }
     final remaining = (targetValue - currentValue).clamp(0.0, targetValue);
     final remFormatted = remaining % 1 == 0

@@ -65,7 +65,9 @@ class KineticWorkoutStopSheet extends StatelessWidget {
       durationSeconds,
     );
     final isCycling = activityType.toLowerCase() == 'cycling';
-    final paceOrSpeedLabel = isCycling ? (isVi ? 'TỐC ĐỘ' : 'SPEED') : 'PACE';
+    final paceOrSpeedLabel = isCycling
+        ? (isVi ? 'Tốc độ' : 'Speed')
+        : (isVi ? 'Nhịp độ' : 'Pace');
     final paceOrSpeedValue = isCycling
         ? speedKmh.toStringAsFixed(1)
         : (speedKmh > 0.1
@@ -108,7 +110,7 @@ class KineticWorkoutStopSheet extends StatelessWidget {
 
             // Title
             Text(
-              isVi ? 'BẠN CÓ CHẮC CHẮN MUỐN DỪNG?' : 'FINISH THIS WORKOUT?',
+              isVi ? 'Bạn có chắc chắn muốn dừng?' : 'Finish this workout?',
               textAlign: TextAlign.center,
               style: KineticTypography.headlineSmall.copyWith(
                 fontWeight: FontWeight.w900,
@@ -147,7 +149,7 @@ class KineticWorkoutStopSheet extends StatelessWidget {
                   // Distance
                   Expanded(
                     child: _MiniMetricItem(
-                      label: isVi ? 'QUÃNG ĐƯỜNG' : 'DISTANCE',
+                      label: isVi ? 'Quãng đường' : 'Distance',
                       value: distanceDisplay,
                       unit: distanceUnit,
                       colors: colors,
@@ -161,7 +163,7 @@ class KineticWorkoutStopSheet extends StatelessWidget {
                   // Time
                   Expanded(
                     child: _MiniMetricItem(
-                      label: isVi ? 'THỜI GIAN' : 'DURATION',
+                      label: isVi ? 'Thời gian' : 'Duration',
                       value: durationDisplay,
                       unit: '',
                       colors: colors,
@@ -188,7 +190,7 @@ class KineticWorkoutStopSheet extends StatelessWidget {
 
             // Primary Action: STOP & SAVE WORKOUT
             KineticButton(
-              label: isVi ? 'KẾT THÚC & LƯU BÀI TẬP' : 'FINISH & SAVE SESSION',
+              label: isVi ? 'Kết thúc & lưu bài tập' : 'Finish & save session',
               icon: Icons.flag_rounded,
               height: KineticTokens.buttonHeightPrimary,
               onPressed: () {
@@ -200,7 +202,7 @@ class KineticWorkoutStopSheet extends StatelessWidget {
 
             // Secondary Action: CONTINUE WORKOUT (Dismiss sheet & continue)
             KineticButton(
-              label: isVi ? 'TIẾP TỤC TẬP LUYỆN' : 'CONTINUE WORKOUT',
+              label: isVi ? 'Tiếp tục tập luyện' : 'Continue workout',
               icon: Icons.play_arrow_rounded,
               variant: KineticButtonVariant.secondary,
               height: KineticTokens.buttonHeight,

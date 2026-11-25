@@ -887,7 +887,7 @@ class _MapStylePickerSheet extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      isVi ? "CHỌN KIỂU BẢN ĐỒ" : "SELECT MAP STYLE",
+                      isVi ? "Chọn kiểu bản đồ" : "Select map style",
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: KineticTypography.pageEyebrow.copyWith(
@@ -913,13 +913,13 @@ class _MapStylePickerSheet extends StatelessWidget {
                 optionKey: const Key('map-style-option-satellite'),
                 type: AppMapType.satellite,
                 activeType: activeType,
-                title: isVi ? "Ảnh Vệ Tinh 3D" : "3D Satellite Imagery",
+                title: isVi ? "Ảnh vệ tinh 3D" : "3D satellite imagery",
                 subtitle: isVi
                     ? "Ảnh chụp thực tế độ phân giải cao"
                     : "Photorealistic aerial satellite imagery",
                 iconBuilder: (color, size) =>
                     Icon(Icons.satellite_alt_rounded, color: color, size: size),
-                badge: isVi ? "CHÂN THỰC" : "REALISTIC",
+                badge: isVi ? "Chân thực" : "Realistic",
               ),
               const SizedBox(height: 12),
               _buildMapOption(
@@ -927,13 +927,13 @@ class _MapStylePickerSheet extends StatelessWidget {
                 optionKey: const Key('map-style-option-streets'),
                 type: AppMapType.streets,
                 activeType: activeType,
-                title: isVi ? "Đường Phố Rõ Nét" : "Clean Street Map",
+                title: isVi ? "Đường phố rõ nét" : "Clean street map",
                 subtitle: isVi
                     ? "Bản đồ đường xá, công viên tinh tế"
                     : "Clean minimal street & sports map",
                 iconBuilder: (color, size) =>
                     BladeIcon(BladeIconName.map, color: color, size: size),
-                badge: isVi ? "RÕ NÉT" : "CLEAN",
+                badge: isVi ? "Rõ nét" : "Clean",
               ),
             ],
           ),

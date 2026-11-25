@@ -100,32 +100,32 @@ class _Workout3DCountdownOverlayState extends State<Workout3DCountdownOverlay>
     final String subText;
 
     if (widget.isLockingGps) {
-      statusText = isVi ? 'ĐANG KẾT NỐI GPS' : 'CONNECTING GPS';
+      statusText = isVi ? 'Đang kết nối GPS' : 'Connecting GPS';
       subText = isVi
           ? 'Đang xác định vị trí chính xác...'
           : 'Acquiring precise satellite location...';
     } else {
       switch (widget.countdown) {
         case 3:
-          statusText = isVi ? 'CHUẨN BỊ' : 'GET READY';
+          statusText = isVi ? 'Chuẩn bị' : 'Get ready';
           subText = isVi
               ? 'Hít thở sâu & chuẩn bị tư thế...'
               : 'Take a deep breath & get ready...';
           break;
         case 2:
-          statusText = isVi ? 'SẴN SÀNG' : 'STEADY';
+          statusText = isVi ? 'Sẵn sàng' : 'Steady';
           subText = isVi
               ? 'GPS và cảm biến đã sẵn sàng...'
               : 'Sensors and GPS ready...';
           break;
         case 1:
-          statusText = isVi ? 'XUẤT PHÁT' : 'SET';
+          statusText = isVi ? 'Xuất phát' : 'Set';
           subText = isVi
               ? 'Bắt đầu trong 1 giây!'
               : 'Starting in 1 second!';
           break;
         default:
-          statusText = isVi ? 'BẮT ĐẦU!' : 'GO!';
+          statusText = isVi ? 'Bắt đầu!' : 'Go!';
           subText = isVi
               ? 'Chúc bạn một buổi tập tuyệt vời!'
               : 'Have a great workout!';
@@ -354,7 +354,7 @@ class _Workout3DCountdownOverlayState extends State<Workout3DCountdownOverlay>
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          isVi ? 'CHẠM ĐỂ BẮT ĐẦU NGAY' : 'TAP TO START IMMEDIATELY',
+                          isVi ? 'Chạm để bắt đầu ngay' : 'Tap to start immediately',
                           style: KineticTypography.unitLabel.copyWith(
                             fontWeight: FontWeight.w800,
                             color: accent.withValues(alpha: 0.9),

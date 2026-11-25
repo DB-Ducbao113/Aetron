@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:fitness_exercise_application/core/constants/debug_config.dart';
+import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/core/providers/app_providers.dart';
 import 'package:fitness_exercise_application/features/profile/domain/entities/user_profile.dart';
 import 'package:fitness_exercise_application/features/profile/presentation/providers/user_profile_providers.dart';
@@ -148,8 +149,11 @@ class AvatarUploadNotifier extends StateNotifier<AvatarState> {
 
     final profile = _ref.read(currentUserProfileProvider).valueOrNull;
     if (profile == null) {
+      final isVi = _ref.read(appLanguageProvider) == AppLanguage.vi;
       state = state.copyWith(
-        errorMessage: 'Complete your profile before adding a photo.',
+        errorMessage: isVi
+            ? 'Vui lòng hoàn tất hồ sơ của bạn trước khi thêm ảnh đại diện.'
+            : 'Complete your profile before adding a photo.',
       );
       return;
     }
@@ -243,8 +247,11 @@ class AvatarUploadNotifier extends StateNotifier<AvatarState> {
 
     final profile = _ref.read(currentUserProfileProvider).valueOrNull;
     if (profile == null) {
+      final isVi = _ref.read(appLanguageProvider) == AppLanguage.vi;
       state = state.copyWith(
-        errorMessage: 'Complete your profile before changing your photo.',
+        errorMessage: isVi
+            ? 'Vui lòng hoàn tất hồ sơ trước khi đổi ảnh đại diện.'
+            : 'Complete your profile before changing your photo.',
       );
       return;
     }
@@ -290,12 +297,15 @@ class AvatarUploadNotifier extends StateNotifier<AvatarState> {
         errorMessage: _profileUpdateErrorMessage(e),
       );
     } catch (e, stackTrace) {
+      final isVi = _ref.read(appLanguageProvider) == AppLanguage.vi;
       debugPrint('Avatar removal failed: $e\n$stackTrace');
       state = state.copyWith(
         isUploading: false,
         errorMessage: _unknownAvatarErrorMessage(
           e,
-          fallback: 'Could not remove your photo. Please try again.',
+          fallback: isVi
+              ? 'Không thể gỡ ảnh đại diện. Vui lòng thử lại.'
+              : 'Could not remove your photo. Please try again.',
         ),
       );
     }
@@ -303,14 +313,19 @@ class AvatarUploadNotifier extends StateNotifier<AvatarState> {
 
   Future<String?> _requestImagePermission(ImageSource source) async {
     if (kIsWeb) return null;
+    final isVi = _ref.read(appLanguageProvider) == AppLanguage.vi;
 
     if (source == ImageSource.camera) {
       final status = await Permission.camera.request();
       if (status.isGranted) return null;
       if (status.isPermanentlyDenied) {
-        return 'Camera access is blocked. Allow it in Settings.';
+        return isVi
+            ? 'Quyền truy cập Camera bị chặn. Vui lòng bật lại trong Cài đặt.'
+            : 'Camera access is blocked. Allow it in Settings.';
       }
-      return 'Camera access is needed to take a photo.';
+      return isVi
+          ? 'Cần quyền Camera để chụp ảnh đại diện mới.'
+          : 'Camera access is needed to take a photo.';
     }
 
     if (!kIsWeb && Platform.isIOS) {
@@ -321,50 +336,69 @@ class AvatarUploadNotifier extends StateNotifier<AvatarState> {
       );
       if (ps.isAuth) return null;
       if (ps == PermissionState.limited) {
-        return 'Full photo access is needed. Change Photos to Full Access in Settings.';
+        return isVi
+            ? 'Cần toàn quyền truy cập ảnh. Vui lòng chuyển thành Toàn quyền trong Cài đặt.'
+            : 'Full photo access is needed. Change Photos to Full Access in Settings.';
       }
 
       final status = await Permission.photos.status;
       if (status.isPermanentlyDenied) {
-        return 'Photo access is blocked. Allow Full Access in Settings.';
+        return isVi
+            ? 'Quyền truy cập thư viện ảnh bị chặn. Vui lòng cấp quyền trong Cài đặt.'
+            : 'Photo access is blocked. Allow Full Access in Settings.';
       }
-      return 'Photo access is needed to choose an image.';
+      return isVi
+          ? 'Cần quyền truy cập ảnh để chọn ảnh đại diện.'
+          : 'Photo access is needed to choose an image.';
     }
 
     return null;
   }
 
   String _storageErrorMessage(StorageException error) {
+    final isVi = _ref.read(appLanguageProvider) == AppLanguage.vi;
     final message = error.message.toLowerCase();
     if (message.contains('row-level security') ||
         message.contains('not allowed') ||
         message.contains('unauthorized')) {
-      return 'Photo upload is blocked right now. Please sign in again.';
+      return isVi
+          ? 'Tải ảnh đại diện bị chặn lúc này. Vui lòng đăng nhập lại.'
+          : 'Photo upload is blocked right now. Please sign in again.';
     }
     if (message.contains('bucket')) {
-      return 'Photo storage is not ready yet. Please try again later.';
+      return isVi
+          ? 'Bộ nhớ lưu ảnh chưa sẵn sàng. Vui lòng thử lại sau.'
+          : 'Photo storage is not ready yet. Please try again later.';
     }
-    return 'Could not upload your photo.';
+    return isVi ? 'Không thể tải ảnh đại diện lên.' : 'Could not upload your photo.';
   }
 
   String _profileUpdateErrorMessage(PostgrestException error) {
+    final isVi = _ref.read(appLanguageProvider) == AppLanguage.vi;
     final message = error.message.toLowerCase();
     if (message.contains('row-level security') ||
         message.contains('permission')) {
-      return 'Your profile could not be updated right now.';
+      return isVi
+          ? 'Không thể cập nhật hồ sơ của bạn lúc này.'
+          : 'Your profile could not be updated right now.';
     }
-    return 'Could not update your profile photo.';
+    return isVi ? 'Không thể cập nhật ảnh đại diện.' : 'Could not update your profile photo.';
   }
 
   String _unknownAvatarErrorMessage(Object error, {required String fallback}) {
+    final isVi = _ref.read(appLanguageProvider) == AppLanguage.vi;
     final message = error.toString();
     if (message.contains('PathAccessException') ||
         message.contains('FileSystemException')) {
-      return 'Could not read the selected photo. Please choose another image.';
+      return isVi
+          ? 'Không thể đọc tệp ảnh đã chọn. Vui lòng chọn ảnh khác.'
+          : 'Could not read the selected photo. Please choose another image.';
     }
     if (message.toLowerCase().contains('network') ||
         message.toLowerCase().contains('socket')) {
-      return 'Network error while updating your photo. Please try again.';
+      return isVi
+          ? 'Lỗi kết nối mạng khi tải ảnh. Vui lòng thử lại.'
+          : 'Network error while updating your photo. Please try again.';
     }
     return fallback;
   }

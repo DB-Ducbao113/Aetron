@@ -150,7 +150,13 @@ class NotificationService {
         >();
     if (ios != null) {
       final permissions = await ios.checkPermissions();
-      return permissions?.isEnabled ?? false;
+      if (permissions?.isEnabled == true) return true;
+      try {
+        final status = await Permission.notification.status;
+        return status.isGranted || status.isLimited;
+      } catch (_) {
+        return false;
+      }
     }
 
     final macos = _notifications

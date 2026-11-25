@@ -50,7 +50,7 @@ class KineticAnalyticsHeader extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      isVi ? 'HIỆU SUẤT' : 'PERFORMANCE',
+                      isVi ? 'Hiệu suất' : 'Performance',
                       style: KineticTypography.tabEyebrowOf(colors),
                     ),
                     const SizedBox(height: 3),

@@ -144,7 +144,7 @@ private final class GlassOpticalRimView: UIView {
     }
 }
 
-/// Paths match the five 24x24 Glassline SVGs, scaled to their 18pt dock size.
+/// Paths match the five 24x24 Glassline SVGs, scaled to their 21pt dock size.
 /// Template images let UIKit tint the same outline in both selection states.
 private enum GlasslineDockIcons {
     static let home = draw(.home)
@@ -159,7 +159,7 @@ private enum GlasslineDockIcons {
     private enum Shape { case home, history, plus, analytics, profile, bell, gear, pin }
 
     private static func draw(_ shape: Shape) -> UIImage {
-        let size: CGFloat = 18
+        let size: CGFloat = 21
         let renderer = UIGraphicsImageRenderer(size: CGSize(width: size, height: size))
         let image = renderer.image { rendererContext in
             let scale = size / 24.0
@@ -419,9 +419,9 @@ private final class GlassControlView: UIView {
                         let bottomConstraint = titleLabel.bottomAnchor.constraint(equalTo: button.bottomAnchor, constant: -7.0)
                         NSLayoutConstraint.activate([
                             iconView.centerXAnchor.constraint(equalTo: button.centerXAnchor),
-                            iconView.widthAnchor.constraint(equalToConstant: 18),
-                            iconView.heightAnchor.constraint(equalToConstant: 18),
-                            iconView.bottomAnchor.constraint(equalTo: titleLabel.topAnchor, constant: -3.0),
+                            iconView.widthAnchor.constraint(equalToConstant: 21),
+                            iconView.heightAnchor.constraint(equalToConstant: 21),
+                            iconView.bottomAnchor.constraint(equalTo: titleLabel.topAnchor, constant: -2.0),
                             titleLabel.centerXAnchor.constraint(equalTo: button.centerXAnchor),
                             titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: button.leadingAnchor, constant: 2),
                             titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: button.trailingAnchor, constant: -2),
@@ -683,10 +683,10 @@ private final class GlassControlView: UIView {
     private var allowsMotion: Bool { !reducedMotion && !UIAccessibility.isReduceMotionEnabled }
 
     private func currentDockFontSize() -> CGFloat {
-        if bounds.width <= 0 { return 9.5 }
-        if bounds.width < 345 { return 8.8 }
-        if bounds.width < 370 { return 9.2 }
-        return 9.5
+        if bounds.width <= 0 { return 10.2 }
+        if bounds.width < 345 { return 9.5 }
+        if bounds.width < 375 { return 9.8 }
+        return 10.2
     }
 
     override func layoutSubviews() {
@@ -701,8 +701,8 @@ private final class GlassControlView: UIView {
             if kind == "dock", bounds.height > 0 {
                 // Keep all 5 dock labels on one exact horizontal baseline and
                 // size the center "+" orb so it sits cleanly inside the capsule.
-                let orbSize: CGFloat = bounds.height >= 60 ? 27 : (bounds.height >= 58 ? 26 : 24)
-                let labelBottom: CGFloat = bounds.height >= 60 ? 7.5 : (bounds.height >= 58 ? 6.5 : 5.5)
+                let orbSize: CGFloat = bounds.height >= 60 ? 28 : (bounds.height >= 58 ? 27 : 25)
+                let labelBottom: CGFloat = bounds.height >= 60 ? 6.0 : (bounds.height >= 58 ? 5.0 : 4.5)
                 recordWidthConstraint?.constant = orbSize
                 recordHeightConstraint?.constant = orbSize
                 recordBottomConstraint?.constant = -labelBottom

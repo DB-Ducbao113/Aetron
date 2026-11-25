@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+<title>AETRON · E liền nét</title>
+<defs><radialGradient id="tile-bg" cx="0.18" cy="0.04" r="1.24"><stop offset="0" stop-color="#29405D"/><stop offset="0.48" stop-color="#182B42"/><stop offset="1" stop-color="#0C1420"/></radialGradient></defs><rect x="0" y="0" width="1024" height="1024" rx="0" fill="url(#tile-bg)"/><g transform="translate(109.86933 28.28083) scale(0.69125)"><g fill="#93BFFF" fill-rule="evenodd">
+<path d="M697 254 L804 431 L408 1030 L163 1030 L260.02835 889 L-11.97165 889 L23.19845 819 L308.19845 819 L359.12113 745 L163.12113 745 L215.49485 650 L424.49485 650 L470.60052 583 L206.60052 583 L243.83505 510 L520.83505 510 Z"/>
+<path d="M833 481 L1118 1030 H885 L843 947 H690 L581 837 H788 L692 654 Z"/>
+</g></g>
+</svg>

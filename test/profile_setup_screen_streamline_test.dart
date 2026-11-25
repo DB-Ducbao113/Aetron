@@ -58,9 +58,9 @@ void main() {
       expect(find.text('Cập nhật chỉ số sức khỏe của bạn'), findsNothing);
 
       // Verified: Unit selector rendered
-      expect(find.text('ĐƠN VỊ ĐO ƯA THÍCH'), findsOneWidget);
-      expect(find.text('HỆ MÉT'), findsOneWidget);
-      expect(find.text('HỆ ANH'), findsOneWidget);
+      expect(find.text('Đơn vị đo ưa thích'), findsOneWidget);
+      expect(find.text('Hệ mét'), findsOneWidget);
+      expect(find.text('Hệ Anh'), findsOneWidget);
     });
 
     testWidgets('Initial Profile Setup renders clean title + subtitle without duplicate headings', (tester) async {

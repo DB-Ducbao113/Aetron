@@ -340,13 +340,8 @@ private struct _AppLogoBadge: View {
   var body: some View {
     Image("LiveActivityLogo")
       .resizable()
-      .scaledToFill()
+      .scaledToFit()
       .frame(width: size, height: size)
-      .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-      .overlay(
-        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-          .stroke(Color(red: 0.0, green: 0.9, blue: 1.0).opacity(0.4), lineWidth: 1)
-      )
   }
 }
 

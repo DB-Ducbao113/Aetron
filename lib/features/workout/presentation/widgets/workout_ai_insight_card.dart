@@ -77,36 +77,36 @@ class _CompactAiInsightCard extends StatelessWidget {
     if (lang == AppLanguage.vi) {
       switch (activity.toLowerCase()) {
         case 'running':
-          return 'CHẠY BỘ';
+          return 'Chạy bộ';
         case 'walking':
-          return 'ĐI BỘ';
+          return 'Đi bộ';
         case 'cycling':
-          return 'ĐẠP XE';
+          return 'Đạp xe';
         case 'rest':
-          return 'NGHỈ NGƠI';
+          return 'Nghỉ ngơi';
         default:
-          return activity.toUpperCase();
+          return activity;
       }
     }
-    return activity.toUpperCase();
+    return activity.isEmpty ? '' : '${activity[0].toUpperCase()}${activity.substring(1)}';
   }
 
   String _formatIntensityLabel(String intensity, AppLanguage lang) {
     if (lang == AppLanguage.vi) {
       switch (intensity.toLowerCase()) {
         case 'recovery':
-          return 'PHỤC HỒI';
+          return 'Phục hồi';
         case 'aerobic':
-          return 'AEROBIC';
+          return 'Aerobic';
         case 'tempo':
-          return 'TEMPO';
+          return 'Tempo';
         case 'interval':
-          return 'INTERVAL';
+          return 'Interval';
         default:
-          return intensity.toUpperCase();
+          return intensity;
       }
     }
-    return intensity.toUpperCase();
+    return intensity.isEmpty ? '' : '${intensity[0].toUpperCase()}${intensity.substring(1)}';
   }
 
   @override
@@ -166,7 +166,7 @@ class _CompactAiInsightCard extends StatelessWidget {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        isVi ? 'AI COACH INSIGHT' : 'AI COACH INSIGHT',
+                        isVi ? 'Phân tích từ AI Coach' : 'AI Coach insight',
                         style: KineticTypography.pageEyebrow.copyWith(
                           color: accentColor,
                         ),
@@ -183,7 +183,7 @@ class _CompactAiInsightCard extends StatelessWidget {
                         ),
                       ),
                       child: Text(
-                        isLlm ? 'AI ACTIVE' : 'SMART OFFLINE',
+                        isLlm ? 'AI Active' : 'Smart Offline',
                         style: KineticTypography.unitLabel.copyWith(
                           color: accentColor,
                         ),

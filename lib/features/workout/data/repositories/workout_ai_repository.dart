@@ -1,8 +1,10 @@
+import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/workout/data/datasources/workout_ai_remote_datasource.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_ai_insight.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_ai_signals.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/workout_signal_extractor.dart';
+import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
 import 'package:flutter/foundation.dart';
 
 /// Repository managing AI Post-Workout Insight operations with local fallback protection.
@@ -95,8 +97,13 @@ class WorkoutAiRepository {
         ? '${workout.activityType[0].toUpperCase()}${workout.activityType.substring(1)}'
         : 'Workout';
 
+    final viAct = WorkoutFormatters.formatActivityType(
+      workout.activityType,
+      AppLanguage.vi,
+    ).toLowerCase();
+
     final headline = isVi
-        ? 'Đánh giá buổi ${workout.activityType}'
+        ? 'Đánh giá buổi $viAct'
         : '$actCapitalized Performance Summary';
 
     final mainInsight = isVi

@@ -116,9 +116,13 @@ class _AetronGlobeOrbitScreenState extends ConsumerState<AetronGlobeOrbitScreen>
     final isVi = currentLang == AppLanguage.vi;
     final canPop = Navigator.of(context).canPop();
 
-    return Scaffold(
-      backgroundColor: colors.background,
-      body: Stack(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: colors.isDark
+          ? SystemUiOverlayStyle.light
+          : SystemUiOverlayStyle.dark,
+      child: Scaffold(
+        backgroundColor: colors.background,
+        body: Stack(
         fit: StackFit.expand,
         children: [
           // 1. Ambient Radial Glow Background aligned with Kinetic palette
@@ -220,14 +224,14 @@ class _AetronGlobeOrbitScreenState extends ConsumerState<AetronGlobeOrbitScreen>
                                       Text(
                                         widget.statusPillText ??
                                             (isVi
-                                                ? 'ĐANG TẢI DỮ LIỆU'
-                                                : 'LOADING DATA'),
+                                                ? 'Đang tải dữ liệu'
+                                                : 'Loading data'),
                                         style: KineticTypography.unitLabel
                                             .copyWith(
                                               color: colors.primary,
                                               fontSize: 11.5,
-                                              fontWeight: FontWeight.w700,
-                                              letterSpacing: 0.9,
+                                              fontWeight: FontWeight.w600,
+                                              letterSpacing: 0.3,
                                             ),
                                       ),
                                     ],
@@ -336,8 +340,8 @@ class _AetronGlobeOrbitScreenState extends ConsumerState<AetronGlobeOrbitScreen>
                                       label: compactWidth
                                           ? '12 GPS'
                                           : (isVi
-                                                ? '12 VỆ TINH GPS'
-                                                : '12 GPS SATS'),
+                                                ? '12 vệ tinh GPS'
+                                                : '12 GPS sats'),
                                       semanticLabel: isVi
                                           ? 'Đã kết nối 12 vệ tinh GPS'
                                           : 'Connected to 12 GPS satellites',
@@ -350,10 +354,10 @@ class _AetronGlobeOrbitScreenState extends ConsumerState<AetronGlobeOrbitScreen>
                                     child: _telemetryChip(
                                       icon: Icons.wifi_tethering_rounded,
                                       label: compactWidth
-                                          ? '20,200 KM'
+                                          ? '20,200 km'
                                           : (isVi
-                                                ? 'ĐỘ CAO 20,200 KM'
-                                                : 'ALT 20,200 KM'),
+                                                ? 'Độ cao 20,200 km'
+                                                : 'Alt 20,200 km'),
                                       semanticLabel: isVi
                                           ? 'Độ cao vệ tinh 20.200 ki-lô-mét'
                                           : 'Satellite altitude 20,200 kilometers',
@@ -380,7 +384,7 @@ class _AetronGlobeOrbitScreenState extends ConsumerState<AetronGlobeOrbitScreen>
                               progress: _controller.value,
                               colors: colors,
                               isVi: isVi,
-                              barWidth: compactWidth ? 220.0 : 268.0,
+                              barWidth: compactWidth ? 260.0 : 310.0,
                             ),
                           ),
                         ),
@@ -392,6 +396,7 @@ class _AetronGlobeOrbitScreenState extends ConsumerState<AetronGlobeOrbitScreen>
             ),
           ),
         ],
+      ),
       ),
     );
   }
@@ -445,11 +450,15 @@ class _AetronGlobeOrbitScreenState extends ConsumerState<AetronGlobeOrbitScreen>
   }) {
     final percentInt = (progress.clamp(0.0, 1.0) * 100).toInt();
     final track = BoxDecoration(
-      color: colors.surface2,
-      borderRadius: BorderRadius.circular(3),
+      color: colors.isDark ? const Color(0x2995BDE4) : const Color(0x295490CB),
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(
+        color: colors.isDark ? const Color(0x21B6D3F2) : const Color(0x42A1CFF8),
+        width: 1.0,
+      ),
     );
 
-    const barHeight = 5.5;
+    const barHeight = 7.0;
     final Widget bar;
     if (widget.onComplete != null) {
       bar = Container(
@@ -508,9 +517,9 @@ class _AetronGlobeOrbitScreenState extends ConsumerState<AetronGlobeOrbitScreen>
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: KineticTypography.bodyMedium.copyWith(
-                    fontSize: 13.5,
+                    fontSize: 14.5,
                     fontWeight: FontWeight.w600,
-                    color: colors.textSecondary,
+                    color: colors.textPrimary,
                     letterSpacing: 0.2,
                   ),
                 ),
@@ -519,7 +528,7 @@ class _AetronGlobeOrbitScreenState extends ConsumerState<AetronGlobeOrbitScreen>
               Text(
                 '$percentInt%',
                 style: KineticTypography.headlineSmall.copyWith(
-                  fontSize: 15.0,
+                  fontSize: 16.5,
                   fontWeight: FontWeight.w800,
                   color: colors.primary,
                   letterSpacing: 0.5,
@@ -528,7 +537,7 @@ class _AetronGlobeOrbitScreenState extends ConsumerState<AetronGlobeOrbitScreen>
               ),
             ],
           ),
-          const SizedBox(height: 9),
+          const SizedBox(height: 10),
           bar,
         ],
       ),
@@ -536,16 +545,20 @@ class _AetronGlobeOrbitScreenState extends ConsumerState<AetronGlobeOrbitScreen>
   }
 
   BoxDecoration _progressFill(KineticColors colors) => BoxDecoration(
-    gradient: LinearGradient(
+    gradient: const LinearGradient(
       colors: [
-        colors.secondary.withValues(alpha: 0.3),
-        colors.primary,
-        colors.secondary.withValues(alpha: 0.3),
+        Color(0xFF398BF6),
+        Color(0xFF71B6FC),
+        Color(0xFFACE9F7),
       ],
+      stops: [0.0, 0.56, 1.0],
     ),
-    borderRadius: BorderRadius.circular(3),
-    boxShadow: [
-      BoxShadow(color: colors.primary.withValues(alpha: 0.7), blurRadius: 10),
+    borderRadius: BorderRadius.circular(20),
+    boxShadow: const [
+      BoxShadow(
+        color: Color(0x6353A6F3),
+        blurRadius: 10,
+      ),
     ],
   );
 }

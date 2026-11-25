@@ -4,9 +4,7 @@ import 'package:fitness_exercise_application/features/history/presentation/widge
 import 'package:fitness_exercise_application/features/settings/presentation/providers/settings_preferences_providers.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -103,13 +101,18 @@ class DailyWorkoutList extends ConsumerWidget {
 
               // Workout History Cards for this day
               Column(
-                children: dayWorkouts.map((workout) {
+                children: dayWorkouts.asMap().entries.map((item) {
+                  final idx = item.key;
+                  final workout = item.value;
                   return Padding(
                     padding: const EdgeInsets.only(bottom: KineticTokens.spaceXS),
-                    child: KineticWorkoutHistoryCard(
-                      workout: workout,
-                      useMetricUnits: useMetricUnits,
-                      currentLang: currentLang,
+                    child: KineticEntrance(
+                      index: idx,
+                      child: KineticWorkoutHistoryCard(
+                        workout: workout,
+                        useMetricUnits: useMetricUnits,
+                        currentLang: currentLang,
+                      ),
                     ),
                   );
                 }).toList(),
@@ -130,7 +133,7 @@ class DailyWorkoutList extends ConsumerWidget {
       final localStart = workout.startedAt.toLocal();
       final dateHeader = lang == AppLanguage.vi
           ? '${localStart.day.toString().padLeft(2, '0')}/${localStart.month.toString().padLeft(2, '0')}/${localStart.year}'
-          : DateFormat('MMM dd, yyyy').format(localStart).toUpperCase();
+          : DateFormat('MMM dd, yyyy').format(localStart);
       map.putIfAbsent(dateHeader, () => []).add(workout);
     }
     return map;

@@ -95,7 +95,7 @@ class _KineticCardState extends State<KineticCard> {
           (isLight
               ? Colors.white.withValues(alpha: 0.90)
               : const Color(0x54ACD8FF));
-      final sigma = isLight ? 18.0 : 20.0;
+      final sigma = isLight ? 12.0 : 14.0;
 
       content = DecoratedBox(
         decoration: BoxDecoration(
@@ -105,8 +105,8 @@ class _KineticCardState extends State<KineticCard> {
               color: isLight
                   ? const Color(0x21235189)
                   : const Color(0x5900091C),
-              blurRadius: isLight ? 22 : 27,
-              offset: Offset(0, isLight ? 9 : 10),
+              blurRadius: isLight ? 16 : 20,
+              offset: Offset(0, isLight ? 6 : 8),
             ),
           ],
         ),
@@ -116,13 +116,15 @@ class _KineticCardState extends State<KineticCard> {
             fit: StackFit.passthrough,
             children: [
               Positioned.fill(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: glassGradient,
-                      borderRadius: radius,
-                      border: Border.all(color: glassBorder, width: 1.0),
+                child: RepaintBoundary(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: glassGradient,
+                        borderRadius: radius,
+                        border: Border.all(color: glassBorder, width: 1.0),
+                      ),
                     ),
                   ),
                 ),

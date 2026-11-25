@@ -95,10 +95,10 @@ void main() {
       expect(find.bySemanticsLabel(RegExp(r'Qu.*')), findsOneWidget);
 
       // Running secondary row shows Pace
-      expect(find.text('PACE TỨC THÌ'), findsOneWidget);
-      expect(find.text('THỜI GIAN'), findsOneWidget);
-      expect(find.text('CALO'), findsOneWidget);
-      expect(find.text('BƯỚC CHÂN'), findsOneWidget);
+      expect(find.text('Nhịp độ tức thì'), findsOneWidget);
+      expect(find.text('Thời gian'), findsOneWidget);
+      expect(find.text('Calo'), findsOneWidget);
+      expect(find.text('Bước chân'), findsOneWidget);
     });
 
     testWidgets('renders cycling cadence/speed correctly without step count', (tester) async {
@@ -123,9 +123,9 @@ void main() {
       );
 
       expect(find.text('15.80'), findsOneWidget);
-      expect(find.text('TỐC ĐỘ TỨC THÌ'), findsOneWidget);
+      expect(find.text('Tốc độ tức thì'), findsOneWidget);
       // Cycling does not render step count
-      expect(find.text('SỐ BƯỚC CHÂN'), findsNothing);
+      expect(find.text('Số bước chân'), findsNothing);
     });
   });
 
@@ -150,9 +150,9 @@ void main() {
         ),
       );
 
-      expect(find.text('TẠM DỪNG'), findsOneWidget);
+      expect(find.text('Tạm dừng'), findsOneWidget);
 
-      await tester.tap(find.text('TẠM DỪNG'));
+      await tester.tap(find.text('Tạm dừng'));
       await tester.pump();
       expect(pauseResumed, isTrue);
 
@@ -186,7 +186,7 @@ void main() {
       );
 
       // In paused state, hero button label is TIẾP TỤC
-      expect(find.text('TIẾP TỤC'), findsOneWidget);
+      expect(find.text('Tiếp tục'), findsOneWidget);
       expect(
         find.byIcon(BladeIcon.iconDataFor(BladeIconName.lock)),
         findsOneWidget,
@@ -227,11 +227,11 @@ void main() {
 
       // Time (12:34)
       expect(find.text('12:34'), findsOneWidget);
-      expect(find.text('THỜI GIAN'), findsOneWidget);
+      expect(find.text('Thời gian'), findsOneWidget);
 
       // Calories (182 kcal)
       expect(find.text('182'), findsOneWidget);
-      expect(find.text('CALO'), findsOneWidget);
+      expect(find.text('Calo'), findsOneWidget);
 
       // Tap card triggers onExpand
       await tester.tap(find.text('2.54'));
@@ -256,14 +256,14 @@ void main() {
         ),
       );
 
-      expect(find.text('BẠN CÓ CHẮC CHẮN MUỐN DỪNG?'), findsOneWidget);
-      expect(find.text('QUÃNG ĐƯỜNG'), findsOneWidget);
+      expect(find.text('Bạn có chắc chắn muốn dừng?'), findsOneWidget);
+      expect(find.text('Quãng đường'), findsOneWidget);
       expect(find.text('3.45'), findsOneWidget);
       expect(find.text('KM'), findsOneWidget);
-      expect(find.text('THỜI GIAN'), findsOneWidget);
+      expect(find.text('Thời gian'), findsOneWidget);
       expect(find.text('20:45'), findsOneWidget);
-      expect(find.text('TIẾP TỤC TẬP LUYỆN'), findsOneWidget);
-      expect(find.text('KẾT THÚC & LƯU BÀI TẬP'), findsOneWidget);
+      expect(find.text('Tiếp tục tập luyện'), findsOneWidget);
+      expect(find.text('Kết thúc & lưu bài tập'), findsOneWidget);
     });
 
     testWidgets('renders in English and works with light theme', (tester) async {
@@ -282,13 +282,13 @@ void main() {
         ),
       );
 
-      expect(find.text('FINISH THIS WORKOUT?'), findsOneWidget);
-      expect(find.text('DISTANCE'), findsOneWidget);
+      expect(find.text('Finish this workout?'), findsOneWidget);
+      expect(find.text('Distance'), findsOneWidget);
       expect(find.text('MI'), findsOneWidget);
-      expect(find.text('CONTINUE WORKOUT'), findsOneWidget);
-      expect(find.text('FINISH & SAVE SESSION'), findsOneWidget);
+      expect(find.text('Continue workout'), findsOneWidget);
+      expect(find.text('Finish & save session'), findsOneWidget);
 
-      final titleWidget = tester.widget<Text>(find.text('FINISH THIS WORKOUT?'));
+      final titleWidget = tester.widget<Text>(find.text('Finish this workout?'));
       expect(titleWidget.style?.color != Colors.white, isTrue);
     });
   });

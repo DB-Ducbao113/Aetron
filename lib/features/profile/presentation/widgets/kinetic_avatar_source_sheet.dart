@@ -34,7 +34,7 @@ class KineticAvatarSourceSheet extends ConsumerWidget {
         children: [
           // Title
           Text(
-            currentLang == AppLanguage.vi ? 'ẢNH ĐẠI DIỆN' : 'PROFILE AVATAR',
+            currentLang == AppLanguage.vi ? 'Ảnh đại diện' : 'Profile avatar',
             style: KineticTypography.unitLabel.copyWith(
               color: colors.primary,
               letterSpacing: 1.1,

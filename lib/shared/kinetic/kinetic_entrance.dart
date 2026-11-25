@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -32,6 +34,7 @@ class _KineticEntranceState extends State<KineticEntrance>
   late final AnimationController _controller;
   late final Animation<double> _fade;
   late final Animation<Offset> _slide;
+  Timer? _timer;
   bool _motionStarted = false;
 
   @override
@@ -67,7 +70,7 @@ class _KineticEntranceState extends State<KineticEntrance>
     if (KineticTokens.reduceMotionOf(context)) {
       _controller.value = 1.0;
     } else if (widget.index > 0) {
-      Future<void>.delayed(widget.stagger * widget.index, () {
+      _timer = Timer(widget.stagger * widget.index, () {
         if (mounted) _controller.forward();
       });
     } else {
@@ -77,6 +80,7 @@ class _KineticEntranceState extends State<KineticEntrance>
 
   @override
   void dispose() {
+    _timer?.cancel();
     _controller.dispose();
     super.dispose();
   }

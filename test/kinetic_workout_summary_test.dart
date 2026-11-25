@@ -122,8 +122,8 @@ void main() {
 
         expect(find.text('12.45'), findsOneWidget);
         expect(find.text('KM'), findsOneWidget);
-        expect(find.text('HOÀN THÀNH XUẤT SẮC'), findsOneWidget);
-        expect(find.text('GPS ĐÃ XÁC MINH'), findsOneWidget);
+        expect(find.text('Hoàn thành xuất sắc'), findsOneWidget);
+        expect(find.text('GPS đã xác minh'), findsOneWidget);
         expect(find.text('Bước đi vững chãi và đều đặn!'), findsNothing);
       },
     );
@@ -149,7 +149,7 @@ void main() {
       // 10 km * 0.621371 = 6.21 mi
       expect(find.text('6.21'), findsOneWidget);
       expect(find.text('MI'), findsOneWidget);
-      expect(find.text('GPS CALIBRATED'), findsOneWidget);
+      expect(find.text('GPS calibrated'), findsOneWidget);
       expect(find.text('Bước đi vững chãi và đều đặn!'), findsNothing);
     });
   });
@@ -173,11 +173,11 @@ void main() {
           ),
         );
 
-        expect(find.text('THỜI GIAN DI CHUYỂN'), findsOneWidget);
-        expect(find.text('PACE TRUNG BÌNH'), findsOneWidget);
-        expect(find.text('NĂNG LƯỢNG'), findsOneWidget);
+        expect(find.text('Thời gian di chuyển'), findsOneWidget);
+        expect(find.text('Nhịp độ trung bình'), findsOneWidget);
+        expect(find.text('Năng lượng'), findsOneWidget);
         expect(find.text('320'), findsOneWidget);
-        expect(find.text('TỔNG SỐ BƯỚC'), findsOneWidget);
+        expect(find.text('Tổng số bước'), findsOneWidget);
         expect(find.text('4200'), findsOneWidget);
       },
     );
@@ -198,10 +198,10 @@ void main() {
         ),
       );
 
-      expect(find.text('TỐC ĐỘ TB'), findsOneWidget);
+      expect(find.text('Tốc độ TB'), findsOneWidget);
       expect(find.text('25.0'), findsOneWidget);
       expect(find.text('km/h'), findsWidgets);
-      expect(find.text('VẬN TỐC TỐI ĐA'), findsOneWidget);
+      expect(find.text('Vận tốc tối đa'), findsOneWidget);
       expect(find.text('TỔNG SỐ BƯỚC'), findsNothing);
     });
   });
@@ -239,7 +239,7 @@ void main() {
         ),
       );
 
-      expect(find.text('PHÂN TÁCH CỰ LY'), findsOneWidget);
+      expect(find.text('Phân tách cự ly'), findsOneWidget);
       expect(find.text('3 chặng'), findsOneWidget);
       expect(find.text('Km 1'), findsOneWidget);
       expect(find.text('Km 2'), findsOneWidget);
@@ -265,15 +265,15 @@ void main() {
         ),
       );
 
-      await tester.tap(find.text('CHIA SẺ BUỔI TẬP'));
+      await tester.tap(find.text('Chia sẻ buổi tập'));
       await tester.pump();
       expect(sharePressed, isTrue);
 
-      await tester.tap(find.text('HOÀN THÀNH'));
+      await tester.tap(find.text('Hoàn thành'));
       await tester.pump();
       expect(donePressed, isTrue);
 
-      await tester.tap(find.text('XEM CHI TIẾT KỸ THUẬT'));
+      await tester.tap(find.text('Xem chi tiết kỹ thuật'));
       await tester.pump();
       expect(detailsPressed, isTrue);
     });
@@ -340,13 +340,13 @@ void main() {
       expect(find.text('KM'), findsOneWidget);
       // Subtitle headlines are removed
       expect(find.text('Bước đi vững chãi và đều đặn!'), findsNothing);
-      expect(find.text('THỜI GIAN DI CHUYỂN'), findsOneWidget);
+      expect(find.text('Thời gian di chuyển'), findsOneWidget);
       expect(find.text('360'), findsOneWidget);
       // Exactly 1 share button on the screen (the prominent action dock button)
-      expect(find.text('CHIA SẺ BUỔI TẬP'), findsOneWidget);
+      expect(find.text('Chia sẻ buổi tập'), findsOneWidget);
       expect(find.byIcon(Icons.ios_share_rounded), findsOneWidget);
-      expect(find.text('HOÀN THÀNH'), findsOneWidget);
-      expect(find.text('XEM CHI TIẾT KỸ THUẬT'), findsOneWidget);
+      expect(find.text('Hoàn thành'), findsOneWidget);
+      expect(find.text('Xem chi tiết kỹ thuật'), findsOneWidget);
     });
   });
 }

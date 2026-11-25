@@ -16,6 +16,9 @@ class _DockMetrics {
   final double height;
   final double maxWidth;
   final double labelFontSize;
+  final double iconSize;
+  final double centerButtonSize;
+  final double centerIconSize;
 
   const _DockMetrics({
     required this.horizontalMargin,
@@ -23,6 +26,9 @@ class _DockMetrics {
     required this.height,
     required this.maxWidth,
     required this.labelFontSize,
+    required this.iconSize,
+    required this.centerButtonSize,
+    required this.centerIconSize,
   });
 }
 
@@ -35,22 +41,47 @@ _DockMetrics _resolveDockMetrics(BuildContext context) {
   final double horizontalMargin;
   final double dockHeight;
   final double labelFontSize;
+  final double iconSize;
+  final double centerButtonSize;
+  final double centerIconSize;
+  final double maxWidth;
+
   if (width < 370) {
+    // Ultra compact phones (e.g. 320px width)
     horizontalMargin = 10.0;
-    dockHeight = 56.0;
-    labelFontSize = 9.0;
-  } else if (width <= 385) {
-    horizontalMargin = 12.0;
     dockHeight = 58.0;
-    labelFontSize = 9.2;
+    labelFontSize = 9.8;
+    iconSize = 20.0;
+    centerButtonSize = 44.0;
+    centerIconSize = 22.0;
+    maxWidth = 360.0;
+  } else if (width <= 390) {
+    // Compact phones (iPhone SE 375x667, iPhone mini 375x812)
+    horizontalMargin = 12.0;
+    dockHeight = 60.0;
+    labelFontSize = 10.2;
+    iconSize = 21.0;
+    centerButtonSize = 44.0;
+    centerIconSize = 22.0;
+    maxWidth = 390.0;
   } else if (width <= 415) {
+    // Standard phones (iPhone 15 / 16 / 14 / 13 @ 390-393px)
     horizontalMargin = 14.0;
-    dockHeight = 60.0;
-    labelFontSize = 9.5;
+    dockHeight = 61.0;
+    labelFontSize = 10.5;
+    iconSize = 21.5;
+    centerButtonSize = 44.0;
+    centerIconSize = 22.0;
+    maxWidth = 420.0;
   } else {
+    // Large Plus & Pro Max phones (iPhone 15 Plus, 15 Pro Max @ 430px)
     horizontalMargin = 16.0;
-    dockHeight = 60.0;
-    labelFontSize = 9.5;
+    dockHeight = 62.0;
+    labelFontSize = 10.8;
+    iconSize = 22.0;
+    centerButtonSize = 44.0;
+    centerIconSize = 22.0;
+    maxWidth = 430.0;
   }
 
   final double bottomMargin;
@@ -69,8 +100,11 @@ _DockMetrics _resolveDockMetrics(BuildContext context) {
     horizontalMargin: horizontalMargin,
     bottomMargin: bottomMargin,
     height: dockHeight,
-    maxWidth: 420.0,
+    maxWidth: maxWidth,
     labelFontSize: labelFontSize,
+    iconSize: iconSize,
+    centerButtonSize: centerButtonSize,
+    centerIconSize: centerIconSize,
   );
 }
 
@@ -284,6 +318,7 @@ class AetronBottomBar extends ConsumerWidget {
                   selected: currentIndex == 0,
                   height: metrics.height - 6,
                   fontSize: metrics.labelFontSize,
+                  iconSize: metrics.iconSize,
                   onTap: () => onChanged(0),
                 ),
               ),
@@ -294,6 +329,7 @@ class AetronBottomBar extends ConsumerWidget {
                   selected: currentIndex == 2,
                   height: metrics.height - 6,
                   fontSize: metrics.labelFontSize,
+                  iconSize: metrics.iconSize,
                   onTap: () => onChanged(2),
                 ),
               ),
@@ -304,6 +340,8 @@ class AetronBottomBar extends ConsumerWidget {
                     'nav_activity',
                     currentLang,
                   ),
+                  size: metrics.centerButtonSize,
+                  iconSize: metrics.centerIconSize,
                   onTap: () => onChanged(1),
                 ),
               ),
@@ -314,6 +352,7 @@ class AetronBottomBar extends ConsumerWidget {
                   selected: currentIndex == 3,
                   height: metrics.height - 6,
                   fontSize: metrics.labelFontSize,
+                  iconSize: metrics.iconSize,
                   onTap: () => onChanged(3),
                 ),
               ),
@@ -324,6 +363,7 @@ class AetronBottomBar extends ConsumerWidget {
                   selected: currentIndex == 4,
                   height: metrics.height - 6,
                   fontSize: metrics.labelFontSize,
+                  iconSize: metrics.iconSize,
                   onTap: () => onChanged(4),
                 ),
               ),
@@ -354,6 +394,7 @@ class _NavTabItem extends StatelessWidget {
   final bool selected;
   final double height;
   final double fontSize;
+  final double iconSize;
   final VoidCallback onTap;
 
   const _NavTabItem({
@@ -362,6 +403,7 @@ class _NavTabItem extends StatelessWidget {
     required this.selected,
     required this.height,
     required this.fontSize,
+    required this.iconSize,
     required this.onTap,
   });
 
@@ -405,12 +447,12 @@ class _NavTabItem extends StatelessWidget {
                   curve: Curves.easeOutCubic,
                   child: BladeIcon(
                     bladeIcon,
-                    size: 18.5,
+                    size: iconSize,
                     color: itemColor,
                     strokeWidth: 1.7,
                   ),
                 ),
-                const SizedBox(height: 2.0),
+                const SizedBox(height: 2.5),
                 Text(
                   label,
                   maxLines: 1,
@@ -435,11 +477,15 @@ class _NavTabItem extends StatelessWidget {
 class _CenterRecordButton extends StatelessWidget {
   final bool selected;
   final String semanticLabel;
+  final double size;
+  final double iconSize;
   final VoidCallback onTap;
 
   const _CenterRecordButton({
     required this.selected,
     required this.semanticLabel,
+    required this.size,
+    required this.iconSize,
     required this.onTap,
   });
 
@@ -465,7 +511,7 @@ class _CenterRecordButton extends StatelessWidget {
                 context,
                 KineticTokens.motionTab,
               ),
-              constraints: const BoxConstraints.tightFor(width: 44, height: 44),
+              constraints: BoxConstraints.tightFor(width: size, height: size),
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
@@ -522,7 +568,7 @@ class _CenterRecordButton extends StatelessWidget {
                   color: isDark
                       ? const Color(0xFFB6D8FF)
                       : colors.primary,
-                  size: 22,
+                  size: iconSize,
                   strokeWidth: 2.2,
                 ),
               ),

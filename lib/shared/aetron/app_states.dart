@@ -1,98 +1,6 @@
 import 'package:fitness_exercise_application/shared/aetron/aetron_ui.dart';
 import 'package:flutter/material.dart';
 
-class EmptyState extends StatelessWidget {
-  const EmptyState({
-    super.key,
-    required this.title,
-    this.description,
-    this.icon = Icons.inbox_outlined,
-    this.actionLabel,
-    this.onAction,
-  });
-
-  final String title;
-  final String? description;
-  final IconData icon;
-  final String? actionLabel;
-  final VoidCallback? onAction;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AetronSpacing.xl),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: AetronColors.cyan.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-                border: Border.all(color: AetronColors.cyan.withValues(alpha: 0.25)),
-              ),
-              child: Icon(icon, color: AetronColors.cyanSoft, size: 36),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              title.toUpperCase(),
-              textAlign: TextAlign.center,
-              style: AetronTypography.headingMedium.copyWith(
-                color: AetronColors.textPrimary,
-                letterSpacing: 1.1,
-              ),
-            ),
-            if (description != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                description!,
-                textAlign: TextAlign.center,
-                style: AetronTypography.bodySmall.copyWith(
-                  color: AetronColors.textSecondary,
-                  height: 1.4,
-                ),
-              ),
-            ],
-            if (actionLabel != null && onAction != null) ...[
-              const SizedBox(height: 24),
-              AppButton(
-                label: actionLabel!,
-                onPressed: onAction,
-                fullWidth: false,
-                height: 44,
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class LoadingState extends StatelessWidget {
-  const LoadingState({
-    super.key,
-    this.label = 'LOADING',
-    this.message,
-  });
-
-  final String label;
-  final String? message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AetronSpacing.lg),
-        child: AetronLoadingPanel(label: label, message: message),
-      ),
-    );
-  }
-}
-
 class ErrorState extends StatelessWidget {
   const ErrorState({
     super.key,
@@ -134,7 +42,7 @@ class ErrorState extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                title.toUpperCase(),
+                title,
                 style: AetronTypography.headingMedium.copyWith(
                   color: AetronColors.textPrimary,
                   letterSpacing: 0.8,
@@ -151,7 +59,7 @@ class ErrorState extends StatelessWidget {
               if (onRetry != null) ...[
                 const SizedBox(height: 20),
                 AppButton(
-                  label: 'RETRY',
+                  label: 'Thử lại',
                   onPressed: onRetry,
                   variant: AppButtonVariant.outlined,
                   icon: Icons.refresh_rounded,

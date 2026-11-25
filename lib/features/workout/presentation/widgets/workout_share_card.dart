@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
+import 'package:fitness_exercise_application/shared/aetron/aetron_logo_paths.dart';
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
@@ -90,7 +91,7 @@ class _WorkoutShareCardSheetState extends State<WorkoutShareCardSheet>
     );
 
     if (isVi) {
-      return '🏃 Vừa hoàn thành $distStr trong $durationStr (Pace: $paceStr) cùng Aetron! 🔥 ${widget.calories} kcal\n\n#Aetron #Fitness #ChayBo #Workout';
+      return '🏃 Vừa hoàn thành $distStr trong $durationStr (Nhịp độ: $paceStr) cùng Aetron! 🔥 ${widget.calories} kcal\n\n#Aetron #Fitness #ChayBo #Workout';
     } else {
       return '🏃 Just crushed $distStr in $durationStr (Avg Pace: $paceStr) with Aetron! 🔥 ${widget.calories} kcal\n\n#Aetron #Fitness #Running #Workout';
     }
@@ -355,7 +356,7 @@ class _WorkoutShareCardSheetState extends State<WorkoutShareCardSheet>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          isVi ? 'CHIA SẺ BUỔI TẬP' : 'SHARE WORKOUT',
+                          isVi ? 'Chia sẻ buổi tập' : 'Share workout',
                           style: KineticTypography.pageEyebrow.copyWith(
                             color: colors.primary,
                             letterSpacing: 1.2,
@@ -399,7 +400,7 @@ class _WorkoutShareCardSheetState extends State<WorkoutShareCardSheet>
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   children: [
                     _ThemePill(
-                      label: 'Aetron Blue',
+                      label: isVi ? 'Xanh Aetron' : 'Aetron Blue',
                       color: const Color(0xFF006EE6),
                       isSelected: _selectedTheme == ShareCardTheme.aetronBlue,
                       onTap: () => setState(
@@ -408,7 +409,7 @@ class _WorkoutShareCardSheetState extends State<WorkoutShareCardSheet>
                     ),
                     const SizedBox(width: 8),
                     _ThemePill(
-                      label: 'Clean White',
+                      label: isVi ? 'Trắng Tinh Khôi' : 'Clean White',
                       color: const Color(0xFFE2E8F0),
                       isSelected: _selectedTheme == ShareCardTheme.cleanWhite,
                       onTap: () => setState(
@@ -417,7 +418,7 @@ class _WorkoutShareCardSheetState extends State<WorkoutShareCardSheet>
                     ),
                     const SizedBox(width: 8),
                     _ThemePill(
-                      label: 'Obsidian',
+                      label: isVi ? 'Đá Obsidian' : 'Obsidian',
                       color: const Color(0xFF38BDF8),
                       isSelected: _selectedTheme == ShareCardTheme.obsidian,
                       onTap: () => setState(
@@ -426,7 +427,7 @@ class _WorkoutShareCardSheetState extends State<WorkoutShareCardSheet>
                     ),
                     const SizedBox(width: 8),
                     _ThemePill(
-                      label: 'Arctic Mist',
+                      label: isVi ? 'Sương Bắc Cực' : 'Arctic Mist',
                       color: const Color(0xFF0284C7),
                       isSelected: _selectedTheme == ShareCardTheme.arcticMist,
                       onTap: () => setState(
@@ -468,7 +469,7 @@ class _WorkoutShareCardSheetState extends State<WorkoutShareCardSheet>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isVi ? 'CHỌN MẠNG XÃ HỘI' : 'SHARE TO SOCIALS',
+                      isVi ? 'Chọn mạng xã hội' : 'Share to socials',
                       style: KineticTypography.unitLabel.copyWith(
                         color: colors.textSecondary,
                         letterSpacing: 1.0,
@@ -881,21 +882,7 @@ class _ShareCardContent extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          Container(
-                            width: 30,
-                            height: 30,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isLightCard
-                                  ? const Color(0xFFEAF3FF)
-                                  : Colors.white.withValues(alpha: 0.14),
-                            ),
-                            child: Icon(
-                              Icons.bolt_rounded,
-                              color: accentColor,
-                              size: 18,
-                            ),
-                          ),
+                          AetronBrandMark(size: 28, color: accentColor),
                           const SizedBox(width: 8),
                           Text(
                             'AETRON',
@@ -959,7 +946,7 @@ class _ShareCardContent extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.only(bottom: 7),
                         child: Text(
-                          isVi ? 'KHOẢNG CÁCH' : 'DISTANCE',
+                          isVi ? 'Khoảng cách' : 'Distance',
                           style: KineticTypography.unitLabel.copyWith(
                             fontWeight: FontWeight.w700,
                             color: secondaryInk,
@@ -981,7 +968,7 @@ class _ShareCardContent extends StatelessWidget {
                       Expanded(
                         child: _ShareStat(
                           icon: Icons.timer_rounded,
-                          label: isVi ? 'THỜI GIAN' : 'DURATION',
+                          label: isVi ? 'Thời gian' : 'Duration',
                           value: durationStr,
                           valueColor: primaryInk,
                           labelColor: secondaryInk,
@@ -991,7 +978,7 @@ class _ShareCardContent extends StatelessWidget {
                       Expanded(
                         child: _ShareStat(
                           icon: Icons.speed_rounded,
-                          label: isVi ? 'PACE TB' : 'AVG PACE',
+                          label: isVi ? 'Nhịp độ TB' : 'Avg pace',
                           value: paceStr,
                           valueColor: primaryInk,
                           labelColor: secondaryInk,
@@ -1008,7 +995,7 @@ class _ShareCardContent extends StatelessWidget {
                       Expanded(
                         child: _ShareStat(
                           icon: Icons.local_fire_department_rounded,
-                          label: isVi ? 'CALO ĐỐT' : 'CALORIES',
+                          label: isVi ? 'Calo đốt' : 'Calories',
                           value: '$calories kcal',
                           valueColor: primaryInk,
                           labelColor: secondaryInk,
@@ -1019,7 +1006,7 @@ class _ShareCardContent extends StatelessWidget {
                         Expanded(
                           child: _ShareStat(
                             icon: Icons.directions_walk_rounded,
-                            label: isVi ? 'SỐ BƯỚC' : 'STEPS',
+                            label: isVi ? 'Số bước' : 'Steps',
                             value: '$steps',
                             valueColor: primaryInk,
                             labelColor: secondaryInk,

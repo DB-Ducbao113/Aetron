@@ -14,6 +14,7 @@ import 'package:fitness_exercise_application/features/workout/presentation/provi
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/record/tracking_map_widget.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_theme_provider.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -190,7 +191,7 @@ class _MainShellState extends ConsumerState<MainShell> {
       child: Scaffold(
         backgroundColor: colors.background,
         extendBody: true,
-        body: IndexedStack(
+        body: _FadeIndexedStack(
           index: currentIndex,
           children: [
             for (var i = 0; i < _screens.length; i++)
@@ -206,6 +207,73 @@ class _MainShellState extends ConsumerState<MainShell> {
           currentIndex: currentIndex,
           onChanged: _onTabSelected,
         ),
+      ),
+    );
+  }
+}
+
+class _FadeIndexedStack extends StatefulWidget {
+  final int index;
+  final List<Widget> children;
+
+  const _FadeIndexedStack({
+    required this.index,
+    required this.children,
+  });
+
+  @override
+  State<_FadeIndexedStack> createState() => _FadeIndexedStackState();
+}
+
+class _FadeIndexedStackState extends State<_FadeIndexedStack>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: KineticTokens.motionTab,
+      value: 1.0,
+    );
+  }
+
+  @override
+  void didUpdateWidget(_FadeIndexedStack oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.index != oldWidget.index) {
+      if (Platform.environment.containsKey('FLUTTER_TEST')) {
+        _controller.value = 1.0;
+      } else {
+        _controller.forward(from: 0.0);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (Platform.environment.containsKey('FLUTTER_TEST') ||
+        KineticTokens.reduceMotionOf(context)) {
+      return IndexedStack(
+        index: widget.index,
+        children: widget.children,
+      );
+    }
+
+    return FadeTransition(
+      opacity: _controller.drive(
+        CurveTween(curve: Curves.easeOutCubic),
+      ),
+      child: IndexedStack(
+        index: widget.index,
+        children: widget.children,
       ),
     );
   }

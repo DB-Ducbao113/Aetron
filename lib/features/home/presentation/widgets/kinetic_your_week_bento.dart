@@ -63,9 +63,6 @@ class KineticYourWeekBento extends StatelessWidget {
         ? ((displayCurrent / displayTarget) * 100).round().clamp(0, 999)
         : 0;
 
-    final currentStr = (unit == 'km' || unit == 'mi')
-        ? displayCurrent.toStringAsFixed(1)
-        : displayCurrent.round().toString();
     final targetStr = (unit == 'km' || unit == 'mi')
         ? displayTarget.toStringAsFixed(0)
         : displayTarget.round().toString();
@@ -169,8 +166,9 @@ class KineticYourWeekBento extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.baseline,
                   textBaseline: TextBaseline.alphabetic,
                   children: [
-                    Text(
-                      currentStr,
+                    KineticCountUp(
+                      value: displayCurrent,
+                      decimals: (unit == 'km' || unit == 'mi') ? 1 : 0,
                       style: KineticTypography.displayLarge.copyWith(
                         color: colors.isDark
                             ? const Color(0xFFF3F8FF)
@@ -217,7 +215,9 @@ class KineticYourWeekBento extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                     child: Align(
                       alignment: Alignment.centerLeft,
-                      child: FractionallySizedBox(
+                      child: AnimatedFractionallySizedBox(
+                        duration: const Duration(milliseconds: 500),
+                        curve: Curves.easeOutCubic,
                         widthFactor: progress,
                         child: Container(
                           decoration: BoxDecoration(

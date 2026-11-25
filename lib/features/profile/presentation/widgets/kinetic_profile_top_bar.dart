@@ -24,7 +24,7 @@ class KineticProfileTopBar extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                currentLang == AppLanguage.vi ? 'TÀI KHOẢN' : 'ACCOUNT',
+                currentLang == AppLanguage.vi ? 'Tài khoản' : 'Account',
                 style: KineticTypography.tabEyebrowOf(colors),
               ),
               const SizedBox(height: 3),

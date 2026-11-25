@@ -745,10 +745,10 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
     // V5 bottom-panel label row content (same wording as the live top bar).
     final panelIsVi = currentLang == AppLanguage.vi;
     final panelStatusText = switch (widget.activityType.toLowerCase()) {
-      'cycling' => panelIsVi ? 'ĐẠP XE' : 'CYCLING',
-      'running' => panelIsVi ? 'CHẠY BỘ' : 'RUNNING',
-      'walking' => panelIsVi ? 'ĐI BỘ' : 'WALKING',
-      _ => panelIsVi ? 'TẬP LUYỆN' : 'WORKOUT',
+      'cycling' => panelIsVi ? 'Đạp xe' : 'Cycling',
+      'running' => panelIsVi ? 'Chạy bộ' : 'Running',
+      'walking' => panelIsVi ? 'Đi bộ' : 'Walking',
+      _ => panelIsVi ? 'Tập luyện' : 'Workout',
     };
     final panelIsOutdoor = state.trackingMode != kIndoorMode;
     final panelGpsLabel = !panelIsOutdoor
@@ -1120,8 +1120,8 @@ class _RecordScreenState extends ConsumerState<RecordScreen> {
                             const SizedBox(height: 20),
                             Text(
                               currentLang == AppLanguage.vi
-                                  ? 'MÀN HÌNH ĐÃ KHÓA'
-                                  : 'SCREEN LOCKED',
+                                  ? 'Màn hình đã khóa'
+                                  : 'Screen locked',
                               style: KineticTypography.headlineSmall.copyWith(
                                 color: context.kinetic.textPrimary,
                                 letterSpacing: 2,

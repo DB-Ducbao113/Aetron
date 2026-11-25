@@ -16,8 +16,8 @@ Future<bool> showAetronPermissionSheet(
         isScrollControlled: true,
         builder: (sheetContext) => _AetronPermissionSheet(
           kind: kind,
-          actionLabel: actionLabel ?? (isVietnamese ? 'TIẾP TỤC' : 'CONTINUE'),
-          notNowLabel: notNowLabel ?? (isVietnamese ? 'ĐỂ SAU' : 'NOT NOW'),
+          actionLabel: actionLabel ?? (isVietnamese ? 'Tiếp tục' : 'Continue'),
+          notNowLabel: notNowLabel ?? (isVietnamese ? 'Để sau' : 'Not now'),
           isVietnamese: isVietnamese,
           onCancel: () => Navigator.of(sheetContext).pop(false),
           onContinue: () => Navigator.of(sheetContext).pop(true),

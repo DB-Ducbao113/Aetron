@@ -49,7 +49,7 @@ class KineticKeyTelemetryBento extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          isVi ? 'CHỈ SỐ TỔNG HỢP' : 'KEY TELEMETRY',
+          isVi ? 'Chỉ số tổng hợp' : 'Key telemetry',
           style: KineticTypography.cardEyebrowOf(colors),
         ),
         const SizedBox(height: KineticTokens.spaceXS),
@@ -57,10 +57,12 @@ class KineticKeyTelemetryBento extends StatelessWidget {
           children: [
             Expanded(
               child: _TelemetryCard(
-                label: isVi ? 'QUÃNG ĐƯỜNG' : 'DISTANCE',
+                label: isVi ? 'Quãng đường' : 'Distance',
                 value: displayDistance > 0
                     ? displayDistance.toStringAsFixed(1)
                     : '—',
+                numericValue: displayDistance > 0 ? displayDistance : null,
+                decimalPlaces: 1,
                 unit: displayDistance > 0 ? distanceUnit.toUpperCase() : '',
                 icon: Icons.route_rounded,
                 accentColor: colors.primary,
@@ -69,7 +71,7 @@ class KineticKeyTelemetryBento extends StatelessWidget {
             const SizedBox(width: KineticTokens.spaceXS),
             Expanded(
               child: _TelemetryCard(
-                label: isVi ? 'THỜI GIAN' : 'ACTIVE TIME',
+                label: isVi ? 'Thời gian' : 'Active time',
                 value: durationStr,
                 unit: '',
                 icon: Icons.timer_rounded,
@@ -83,9 +85,11 @@ class KineticKeyTelemetryBento extends StatelessWidget {
           children: [
             Expanded(
               child: _TelemetryCard(
-                label: isVi ? 'NĂNG LƯỢNG' : 'CALORIES',
+                label: isVi ? 'Năng lượng' : 'Calories',
                 value: caloriesStr,
-                unit: totalCalories > 0 ? 'KCAL' : '',
+                numericValue: totalCalories > 0 ? totalCalories : null,
+                decimalPlaces: 0,
+                unit: totalCalories > 0 ? 'kcal' : '',
                 icon: Icons.local_fire_department_rounded,
                 accentColor: colors.tertiary,
               ),
@@ -93,9 +97,11 @@ class KineticKeyTelemetryBento extends StatelessWidget {
             const SizedBox(width: KineticTokens.spaceXS),
             Expanded(
               child: _TelemetryCard(
-                label: isVi ? 'BUỔI TẬP' : 'SESSIONS',
+                label: isVi ? 'Buổi tập' : 'Sessions',
                 value: '${workouts.length}',
-                unit: isVi ? 'BUỔI' : 'WORKOUTS',
+                numericValue: workouts.length,
+                decimalPlaces: 0,
+                unit: isVi ? 'buổi' : 'workouts',
                 icon: Icons.sports_score_rounded,
                 accentColor: colors.primary,
               ),
@@ -110,6 +116,8 @@ class KineticKeyTelemetryBento extends StatelessWidget {
 class _TelemetryCard extends StatelessWidget {
   final String label;
   final String value;
+  final num? numericValue;
+  final int decimalPlaces;
   final String unit;
   final IconData icon;
   final Color accentColor;
@@ -117,6 +125,8 @@ class _TelemetryCard extends StatelessWidget {
   const _TelemetryCard({
     required this.label,
     required this.value,
+    this.numericValue,
+    this.decimalPlaces = 0,
     required this.unit,
     required this.icon,
     required this.accentColor,
@@ -167,12 +177,21 @@ class _TelemetryCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.baseline,
               textBaseline: TextBaseline.alphabetic,
               children: [
-                Text(
-                  value,
-                  style: KineticTypography.metricCompact.copyWith(
-                    color: colors.textPrimary,
+                if (numericValue != null)
+                  KineticCountUp(
+                    value: numericValue!,
+                    decimalPlaces: decimalPlaces,
+                    style: KineticTypography.metricCompact.copyWith(
+                      color: colors.textPrimary,
+                    ),
+                  )
+                else
+                  Text(
+                    value,
+                    style: KineticTypography.metricCompact.copyWith(
+                      color: colors.textPrimary,
+                    ),
                   ),
-                ),
                 if (unit.isNotEmpty) ...[
                   const SizedBox(width: KineticTokens.spaceXXS),
                   Text(

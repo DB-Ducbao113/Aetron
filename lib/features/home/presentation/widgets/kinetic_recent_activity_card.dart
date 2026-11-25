@@ -175,9 +175,7 @@ class _RecentWorkoutItem extends ConsumerWidget {
     final colors = context.kinetic;
     final isCycling = workout.activityType.toLowerCase() == 'cycling';
 
-    final effectiveDistanceKm = workout.gpsAnalysis.validDistanceKm > 0
-        ? workout.gpsAnalysis.validDistanceKm
-        : workout.distanceKm;
+    final effectiveDistanceKm = workout.distanceKm;
     final distanceNumber =
         (useMetricUnits
                 ? effectiveDistanceKm
@@ -195,6 +193,12 @@ class _RecentWorkoutItem extends ConsumerWidget {
           ? workout.avgSpeedKmh
           : workout.avgSpeedKmh * 0.621371;
       secondaryValue = spd > 0 ? spd.toStringAsFixed(1) : '--';
+    } else if (workout.gpsAnalysis.effectivePaceSecPerKm != null &&
+        workout.gpsAnalysis.effectivePaceSecPerKm! > 0) {
+      final totalSeconds = workout.gpsAnalysis.effectivePaceSecPerKm!.round();
+      final minutes = totalSeconds ~/ 60;
+      final seconds = totalSeconds % 60;
+      secondaryValue = "$minutes'${seconds.toString().padLeft(2, '0')}”";
     } else if (workout.avgSpeedKmh >= 0.1) {
       final effectiveSpeed = useMetricUnits
           ? workout.avgSpeedKmh
@@ -439,7 +443,7 @@ class _RecentWorkoutItem extends ConsumerWidget {
               Expanded(
                 child: _RecentMetricCell(
                   value: durationStr,
-                  label: isVi ? 'THỜI GIAN' : 'DURATION',
+                  label: isVi ? 'Thời gian' : 'Duration',
                 ),
               ),
               const SizedBox(width: 10),
@@ -448,7 +452,7 @@ class _RecentWorkoutItem extends ConsumerWidget {
                   value: secondaryValue.trim(),
                   label: isCycling
                       ? (useMetricUnits ? 'KM/H' : 'MPH')
-                      : 'PACE',
+                      : (isVi ? 'Nhịp độ' : 'Pace'),
                 ),
               ),
             ],

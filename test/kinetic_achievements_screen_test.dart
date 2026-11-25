@@ -24,10 +24,10 @@ void main() {
       await tester.pumpWidget(buildTestApp(const AchievementsScreen()));
       await tester.pumpAndSettle();
 
-      expect(find.text('THÀNH TÍCH AETRON'), findsOneWidget);
+      expect(find.text('Thành tích Aetron'), findsOneWidget);
       expect(find.text('Kho Huy Hiệu'), findsOneWidget);
-      expect(find.text('TIẾN TRÌNH DANH HIỆU'), findsOneWidget);
-      expect(find.text('TẤT CẢ HUY HIỆU'), findsOneWidget);
+      expect(find.text('Tiến trình danh hiệu'), findsOneWidget);
+      expect(find.text('Tất cả huy hiệu'), findsOneWidget);
     });
 
     testWidgets('filters badges when tapping category tabs', (WidgetTester tester) async {
@@ -41,7 +41,7 @@ void main() {
       await tester.tap(distanceTab);
       await tester.pumpAndSettle();
 
-      expect(find.text('CỰ LY'), findsWidgets);
+      expect(find.text('Cự ly'), findsWidgets);
     });
 
     testWidgets('opens badge detail sheet on tapping badge item', (WidgetTester tester) async {
@@ -56,7 +56,7 @@ void main() {
       await tester.tap(badgeFinder);
       await tester.pumpAndSettle();
 
-      expect(find.text('TIẾN ĐỘ THỰC HIỆN'), findsOneWidget);
+      expect(find.text('Tiến độ thực hiện'), findsOneWidget);
     });
   });
 }

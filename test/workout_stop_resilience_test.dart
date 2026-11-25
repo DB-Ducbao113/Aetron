@@ -30,7 +30,7 @@ void main() {
       );
 
       // Verify the saving text and progress spinner are visible
-      expect(find.text('ĐANG LƯU'), findsOneWidget);
+      expect(find.text('Đang lưu'), findsOneWidget);
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
       // Main stop icon should not be rendered while saving
       expect(find.byIcon(Icons.stop_rounded), findsNothing);
@@ -52,7 +52,7 @@ void main() {
         ),
       );
 
-      expect(find.text('SAVING'), findsOneWidget);
+      expect(find.text('Saving'), findsOneWidget);
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });
 
@@ -90,11 +90,11 @@ void main() {
       await tester.tap(find.text('Open Stop Sheet'));
       await tester.pumpAndSettle();
 
-      expect(find.text('KẾT THÚC & LƯU BÀI TẬP'), findsOneWidget);
-      expect(find.text('TIẾP TỤC TẬP LUYỆN'), findsOneWidget);
+      expect(find.text('Kết thúc & lưu bài tập'), findsOneWidget);
+      expect(find.text('Tiếp tục tập luyện'), findsOneWidget);
 
       // Tapping the primary button confirms stop
-      await tester.tap(find.text('KẾT THÚC & LƯU BÀI TẬP'));
+      await tester.tap(find.text('Kết thúc & lưu bài tập'));
       await tester.pumpAndSettle();
 
       expect(confirmedResult, isTrue);
@@ -135,7 +135,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tapping the secondary button cancels stop
-      await tester.tap(find.text('TIẾP TỤC TẬP LUYỆN'));
+      await tester.tap(find.text('Tiếp tục tập luyện'));
       await tester.pumpAndSettle();
 
       expect(confirmedResult, isFalse);

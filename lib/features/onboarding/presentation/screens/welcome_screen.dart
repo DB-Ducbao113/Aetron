@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/auth/presentation/screens/auth_wrapper.dart';
+import 'package:fitness_exercise_application/shared/aetron/aetron_logo_paths.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_glass_icon_button.dart';
@@ -225,8 +226,8 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                       // Next / Get Started Action Button
                       _ModernActionButton(
                         label: isLastPage
-                            ? (isVi ? 'BẮT ĐẦU NGAY' : 'GET STARTED')
-                            : (isVi ? 'TIẾP TỤC' : 'NEXT'),
+                            ? (isVi ? 'Bắt đầu ngay' : 'Get started')
+                            : (isVi ? 'Tiếp tục' : 'Next'),
                         onPressed: _goNext,
                         isProcessing: _isCompleting,
                         isLastPage: isLastPage,
@@ -250,56 +251,56 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
       return const [
         _OnboardingPageData(
           step: '01 / 04',
-          eyebrow: 'AETRON FITNESS',
-          titlePrefix: 'NÂNG TẦM\nHIỆU SUẤT ',
-          titleAccent: 'MỖI NGÀY',
+          eyebrow: 'Aetron Fitness',
+          titlePrefix: 'Nâng tầm\nhiệu suất ',
+          titleAccent: 'mỗi ngày',
           titleSuffix: '',
           description:
               'Theo dõi từng buổi chạy bộ, đạp xe và đi bộ với giao diện trực quan, nhịp độ rõ ràng và dữ liệu chính xác.',
-          primaryPill: 'GPS TRỰC TIẾP',
-          secondaryPill: 'SẴN SÀNG',
+          primaryPill: 'GPS trực tiếp',
+          secondaryPill: 'Sẵn sàng',
           primaryIcon: Icons.sensors_rounded,
           secondaryIcon: Icons.bolt_rounded,
           heroType: _OnboardingHeroType.runner,
         ),
         _OnboardingPageData(
           step: '02 / 04',
-          eyebrow: 'BẢN ĐỒ & GPS',
-          titlePrefix: 'THEO DÕI LỘ TRÌNH\nCHÍNH XÁC ',
-          titleAccent: 'THỜI GIAN THỰC',
+          eyebrow: 'Bản đồ & GPS',
+          titlePrefix: 'Theo dõi lộ trình\nchính xác ',
+          titleAccent: 'thời gian thực',
           titleSuffix: '',
           description:
               'Ghi lại trọn vẹn hành trình ngoài trời với bản đồ đường chạy, pace từng km, quãng đường và calo tiêu hao.',
-          primaryPill: 'LỘ TRÌNH TRỰC TIẾP',
-          secondaryPill: 'GPS CHÍNH XÁC',
+          primaryPill: 'Lộ trình trực tiếp',
+          secondaryPill: 'GPS chính xác',
           primaryIcon: Icons.route_rounded,
           secondaryIcon: Icons.speed_rounded,
           heroType: _OnboardingHeroType.tracking,
         ),
         _OnboardingPageData(
           step: '03 / 04',
-          eyebrow: 'PHÂN TÍCH TIẾN ĐỘ',
-          titlePrefix: 'BIỂU ĐỒ\n',
-          titleAccent: 'CHUYÊN SÂU',
-          titleSuffix: ' & RÕ RÀNG',
+          eyebrow: 'Phân tích tiến độ',
+          titlePrefix: 'Biểu đồ\n',
+          titleAccent: 'chuyên sâu',
+          titleSuffix: ' & rõ ràng',
           description:
               'Tổng hợp khối lượng vận động theo tuần, tháng, năm cùng kỷ lục cá nhân giúp bạn kiểm soát mục tiêu dễ dàng.',
-          primaryPill: 'XU HƯỚNG TUẦN',
-          secondaryPill: 'KỶ LỤC CÁ NHÂN',
+          primaryPill: 'Xu hướng tuần',
+          secondaryPill: 'Kỷ lục cá nhân',
           primaryIcon: Icons.query_stats_rounded,
           secondaryIcon: Icons.trending_up_rounded,
           heroType: _OnboardingHeroType.analysis,
         ),
         _OnboardingPageData(
           step: '04 / 04',
-          eyebrow: 'MỤC TIÊU & CHUỖI NGÀY',
-          titlePrefix: 'CHINH PHỤC MỤC TIÊU\n& ',
-          titleAccent: 'HUY HIỆU',
-          titleSuffix: ' MỖI TUẦN',
+          eyebrow: 'Mục tiêu & chuỗi ngày',
+          titlePrefix: 'Chinh phục mục tiêu\n& ',
+          titleAccent: 'huy hiệu',
+          titleSuffix: ' mỗi tuần',
           description:
               'Duy trì thói quen luyện tập đều đặn, hoàn thành mục tiêu tuần và mở khóa các cột mốc thành tích mới.',
-          primaryPill: 'CHUỖI TẬP LUYỆN',
-          secondaryPill: 'THÀNH TÍCH CÁ NHÂN',
+          primaryPill: 'Chuỗi tập luyện',
+          secondaryPill: 'Thành tích cá nhân',
           primaryIcon: Icons.local_fire_department_rounded,
           secondaryIcon: Icons.emoji_events_rounded,
           heroType: _OnboardingHeroType.achievements,
@@ -310,56 +311,56 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
     return const [
       _OnboardingPageData(
         step: '01 / 04',
-        eyebrow: 'AETRON FITNESS',
-        titlePrefix: 'TRAIN SMARTER\nEVERY ',
-        titleAccent: 'MILE',
+        eyebrow: 'Aetron Fitness',
+        titlePrefix: 'Train smarter\nevery ',
+        titleAccent: 'mile',
         titleSuffix: '',
         description:
             'Track your runs, rides, and walks with crisp live metrics, intuitive pacing splits, and clean progress views.',
-        primaryPill: 'LIVE TRACKING',
-        secondaryPill: 'READY TO MOVE',
+        primaryPill: 'Live tracking',
+        secondaryPill: 'Ready to move',
         primaryIcon: Icons.sensors_rounded,
         secondaryIcon: Icons.bolt_rounded,
         heroType: _OnboardingHeroType.runner,
       ),
       _OnboardingPageData(
         step: '02 / 04',
-        eyebrow: 'GPS ROUTE MAPPING',
-        titlePrefix: 'TRACK EVERY ROUTE\nWITH ',
-        titleAccent: 'PRECISION',
+        eyebrow: 'GPS Route Mapping',
+        titlePrefix: 'Track every route\nwith ',
+        titleAccent: 'precision',
         titleSuffix: '',
         description:
             'Record outdoor runs and rides with live mapping, real-time pace splits, distance, and calories burned.',
-        primaryPill: 'LIVE ROUTE TRACE',
-        secondaryPill: 'ACCURATE GPS',
+        primaryPill: 'Live route trace',
+        secondaryPill: 'Accurate GPS',
         primaryIcon: Icons.route_rounded,
         secondaryIcon: Icons.speed_rounded,
         heroType: _OnboardingHeroType.tracking,
       ),
       _OnboardingPageData(
         step: '03 / 04',
-        eyebrow: 'WEEKLY ANALYTICS',
-        titlePrefix: 'CLEAR INSIGHTS\nFOR ',
-        titleAccent: 'PROGRESS',
+        eyebrow: 'Weekly Analytics',
+        titlePrefix: 'Clear insights\nfor ',
+        titleAccent: 'progress',
         titleSuffix: '',
         description:
             'Turn every workout into weekly distance trends, personal best records, and consistent training insights.',
-        primaryPill: 'WEEKLY TRENDS',
-        secondaryPill: 'PERSONAL BESTS',
+        primaryPill: 'Weekly trends',
+        secondaryPill: 'Personal bests',
         primaryIcon: Icons.query_stats_rounded,
         secondaryIcon: Icons.trending_up_rounded,
         heroType: _OnboardingHeroType.analysis,
       ),
       _OnboardingPageData(
         step: '04 / 04',
-        eyebrow: 'GOALS & STREAKS',
-        titlePrefix: 'STAY CONSISTENT\nBUILD ',
-        titleAccent: 'MOMENTUM',
+        eyebrow: 'Goals & Streaks',
+        titlePrefix: 'Stay consistent\nbuild ',
+        titleAccent: 'momentum',
         titleSuffix: '',
         description:
             'Build lasting habits with daily workout streaks, weekly distance targets, and milestone badges.',
-        primaryPill: 'DAILY STREAKS',
-        secondaryPill: 'MILESTONE BADGES',
+        primaryPill: 'Daily streaks',
+        secondaryPill: 'Milestone badges',
         primaryIcon: Icons.local_fire_department_rounded,
         secondaryIcon: Icons.emoji_events_rounded,
         heroType: _OnboardingHeroType.achievements,
@@ -484,15 +485,8 @@ class _WelcomeTopBar extends ConsumerWidget {
                         strokeWidth: 1.7,
                       ),
                     )
-                  : Center(
-                      child: Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: colors.primary,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
+                  : const Center(
+                      child: AetronBrandMark(size: 30),
                     ),
             ),
             const SizedBox(width: 10),
@@ -559,11 +553,11 @@ class _WelcomeTopBar extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 10),
               ),
               child: Text(
-                currentLang == AppLanguage.vi ? 'BỎ QUA' : 'SKIP',
+                currentLang == AppLanguage.vi ? 'Bỏ qua' : 'Skip',
                 style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.0,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.3,
                 ),
               ),
             ),

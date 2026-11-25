@@ -153,7 +153,7 @@ class KineticStreakDetailsSheet extends ConsumerWidget {
                                       ),
                                 ),
                                 Text(
-                                  tierTitle.toUpperCase(),
+                                  tierTitle,
                                   style: KineticTypography.unitLabel.copyWith(
                                     color: tierColor,
                                     fontSize: 11,
@@ -254,11 +254,11 @@ class KineticStreakDetailsSheet extends ConsumerWidget {
                       KineticButton(
                         label: isTodayCompleted
                             ? (isVi
-                                  ? 'TIẾP TỤC TẬP LUYỆN 🔥'
-                                  : 'CONTINUE WORKOUT 🔥')
+                                  ? 'Tiếp tục tập luyện 🔥'
+                                  : 'Continue workout 🔥')
                             : (isVi
-                                  ? 'BẮT ĐẦU TẬP ĐỂ GIỮ CHUỖI 🔥'
-                                  : 'START WORKOUT FOR STREAK 🔥'),
+                                  ? 'Bắt đầu tập để giữ chuỗi 🔥'
+                                  : 'Start workout for streak 🔥'),
                         icon: Icons.play_arrow_rounded,
                         onPressed: () {
                           ref.read(mainTabControllerProvider.notifier).state =
@@ -356,7 +356,7 @@ class _StreakHeroCard extends StatelessWidget {
                   ),
                   const SizedBox(height: KineticTokens.spaceXXS),
                   Text(
-                    isVi ? 'NGÀY LIÊN TIẾP' : 'DAYS STREAK',
+                    isVi ? 'ngày liên tiếp' : 'days streak',
                     style: KineticTypography.unitLabel.copyWith(
                       color: tierColor,
                       fontSize: 11,
@@ -461,7 +461,7 @@ class _StreakWeekStrip extends StatelessWidget {
               BladeIcon(BladeIconName.cal, color: colors.primary, size: 15),
               const SizedBox(width: KineticTokens.spaceXXS),
               Text(
-                isVi ? 'TUẦN NÀY' : 'THIS WEEK',
+                isVi ? 'Tuần này' : 'This week',
                 style: KineticTypography.unitLabel.copyWith(
                   color: colors.primary,
                   fontSize: 11,
@@ -670,8 +670,7 @@ class _StreakCoreMetricsRow extends StatelessWidget {
                     const SizedBox(width: KineticTokens.spaceXS),
                     Expanded(
                       child: Text(
-                        (isVi ? 'Kỷ lục tốt nhất' : 'Best Streak')
-                            .toUpperCase(),
+                        isVi ? 'Kỷ lục tốt nhất' : 'Best streak',
                         overflow: TextOverflow.ellipsis,
                         style: KineticTypography.unitLabel.copyWith(
                           color: colors.textSecondary,
@@ -685,7 +684,7 @@ class _StreakCoreMetricsRow extends StatelessWidget {
                 ),
                 const SizedBox(height: KineticTokens.spaceXS),
                 Text(
-                  '$longestDays ${isVi ? 'Ngày' : 'Days'}',
+                  '$longestDays ${isVi ? 'ngày' : 'days'}',
                   style: KineticTypography.headlineMedium.copyWith(
                     color: colors.textPrimary,
                   ),
@@ -736,7 +735,7 @@ class _StreakCoreMetricsRow extends StatelessWidget {
                     const SizedBox(width: KineticTokens.spaceXS),
                     Expanded(
                       child: Text(
-                        (isVi ? 'Mốc tiếp theo' : 'Next Target').toUpperCase(),
+                        isVi ? 'Mốc tiếp theo' : 'Next target',
                         overflow: TextOverflow.ellipsis,
                         style: KineticTypography.unitLabel.copyWith(
                           color: colors.textSecondary,
@@ -750,7 +749,7 @@ class _StreakCoreMetricsRow extends StatelessWidget {
                 ),
                 const SizedBox(height: KineticTokens.spaceXS),
                 Text(
-                  '$targetDays ${isVi ? 'Ngày' : 'Days'}',
+                  '$targetDays ${isVi ? 'ngày' : 'days'}',
                   style: KineticTypography.headlineMedium.copyWith(
                     color: colors.textPrimary,
                   ),

@@ -200,7 +200,7 @@ class _LiveLapHudToastState extends State<LiveLapHudToast>
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            isVi ? 'Pace chặng' : 'Split Pace',
+                            isVi ? 'Nhịp độ chặng' : 'Split Pace',
                             style: KineticTypography.caption.copyWith(
                               fontWeight: FontWeight.w600,
                               color: colors.textSecondary.withValues(alpha: 0.8),

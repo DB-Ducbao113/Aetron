@@ -127,8 +127,8 @@ void main() {
         isUnlocked: false,
       );
 
-      expect(badge.tier.label(AppLanguage.vi), 'VÀNG');
-      expect(badge.tier.label(AppLanguage.en), 'GOLD');
+      expect(badge.tier.label(AppLanguage.vi), 'Vàng');
+      expect(badge.tier.label(AppLanguage.en), 'Gold');
       expect(badge.progressPercent, 46);
       expect(badge.formattedProgress(AppLanguage.vi), '45.5 / 100 km');
       expect(badge.remainingText(AppLanguage.vi), 'Còn 54.5 km');

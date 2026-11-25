@@ -56,9 +56,7 @@ class KineticWorkoutHistoryCard extends StatelessWidget {
     final activityName = _getActivityName(workout.activityType, currentLang);
     final timeStr = DateFormat('HH:mm').format(workout.startedAt.toLocal());
 
-    final distanceKm = workout.gpsAnalysis.validDistanceKm > 0
-        ? workout.gpsAnalysis.validDistanceKm
-        : workout.distanceKm;
+    final distanceKm = workout.distanceKm;
 
     final distanceStr = WorkoutFormatters.formatDistance(
       distanceKm,
@@ -72,10 +70,16 @@ class KineticWorkoutHistoryCard extends StatelessWidget {
 
     final paceSpeedStr = isCycling
         ? '${(useMetricUnits ? workout.avgSpeedKmh : workout.avgSpeedKmh * 0.621371).toStringAsFixed(1)} ${useMetricUnits ? 'km/h' : 'mph'}'
-        : WorkoutFormatters.formatPaceFromSpeedKmh(
-            workout.avgSpeedKmh,
-            useMetric: useMetricUnits,
-          );
+        : (workout.gpsAnalysis.effectivePaceSecPerKm != null &&
+                workout.gpsAnalysis.effectivePaceSecPerKm! > 0
+            ? WorkoutFormatters.formatPaceFromSecondsPerKm(
+                workout.gpsAnalysis.effectivePaceSecPerKm!,
+                useMetric: useMetricUnits,
+              )
+            : WorkoutFormatters.formatPaceFromSpeedKmh(
+                workout.avgSpeedKmh,
+                useMetric: useMetricUnits,
+              ));
 
     final validityFlag = workout.gpsAnalysis.validityFlag;
     final Color validityColor;
@@ -83,27 +87,30 @@ class KineticWorkoutHistoryCard extends StatelessWidget {
     switch (validityFlag) {
       case WorkoutValidityFlag.verified:
         validityColor = colors.primary;
-        validityText = isVi ? 'ĐÃ XÁC MINH' : 'VERIFIED';
+        validityText = isVi ? 'Đã xác minh' : 'Verified';
         break;
       case WorkoutValidityFlag.partial:
         validityColor = colors.secondary;
-        validityText = isVi ? 'HIỆU CHỈNH' : 'CALIBRATED';
+        validityText = isVi ? 'Hiệu chỉnh' : 'Calibrated';
         break;
       case WorkoutValidityFlag.unverified:
         validityColor = colors.tertiary;
-        validityText = isVi ? 'CẢM BIẾN' : 'SENSOR';
+        validityText = isVi ? 'Cảm biến' : 'Sensor';
         break;
     }
 
     return KineticCard(
-      useLiquidGlass: true,
+      useLiquidGlass: false,
       padding: const EdgeInsets.all(17),
       borderRadius: 21,
       onTap: () {
         HapticFeedback.lightImpact();
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (_) => WorkoutDetailsScreen(workoutId: workout.id),
+            builder: (_) => WorkoutDetailsScreen(
+              workoutId: workout.id,
+              initialWorkout: workout,
+            ),
           ),
         );
       },
@@ -128,7 +135,7 @@ class KineticWorkoutHistoryCard extends StatelessWidget {
                     Icon(activityIcon, size: 12, color: colors.primary),
                     const SizedBox(width: 4),
                     Text(
-                      activityName.toUpperCase(),
+                      activityName,
                       style: KineticTypography.unitLabel.copyWith(
                         color: colors.primary,
                         fontSize: 10,

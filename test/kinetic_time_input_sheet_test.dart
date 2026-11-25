@@ -19,9 +19,9 @@ void main() {
       );
 
       // Verify Title and Subtitle
-      expect(find.text('CÀI ĐẶT THỜI GIAN'), findsOneWidget);
-      expect(find.text('GIỜ'), findsOneWidget);
-      expect(find.text('PHÚT'), findsOneWidget);
+      expect(find.text('Cài đặt thời gian'), findsOneWidget);
+      expect(find.text('Giờ'), findsOneWidget);
+      expect(find.text('Phút'), findsOneWidget);
 
       // Verify Text fields
       expect(find.text('08'), findsOneWidget);
@@ -34,8 +34,8 @@ void main() {
       expect(find.text('22:00'), findsOneWidget);
 
       // Verify Buttons
-      expect(find.text('XÁC NHẬN'), findsOneWidget);
-      expect(find.text('HỦY'), findsOneWidget);
+      expect(find.text('Xác nhận'), findsOneWidget);
+      expect(find.text('Hủy'), findsOneWidget);
     });
 
     testWidgets('tapping preset chip updates time and confirm returns updated time', (tester) async {
@@ -69,7 +69,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap Confirm
-      await tester.tap(find.text('XÁC NHẬN'));
+      await tester.tap(find.text('Xác nhận'));
       await tester.pumpAndSettle();
 
       expect(result, '18:00');
@@ -111,7 +111,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap Confirm
-      await tester.tap(find.text('XÁC NHẬN'));
+      await tester.tap(find.text('Xác nhận'));
       await tester.pumpAndSettle();
 
       expect(result, '09:05');
@@ -143,7 +143,7 @@ void main() {
       await tester.tap(find.text('Open Picker'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('HỦY'));
+      await tester.tap(find.text('Hủy'));
       await tester.pumpAndSettle();
 
       expect(result, isNull);

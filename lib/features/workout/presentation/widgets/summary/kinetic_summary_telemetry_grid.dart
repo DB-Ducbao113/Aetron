@@ -44,12 +44,12 @@ class KineticSummaryTelemetryGrid extends StatelessWidget {
     final String paceSpeedLabel;
 
     if (_isCycling) {
-      paceSpeedLabel = currentLang == AppLanguage.vi ? 'TỐC ĐỘ TB' : 'AVG SPEED';
+      paceSpeedLabel = currentLang == AppLanguage.vi ? 'Tốc độ TB' : 'Avg speed';
       final speedVal = useMetricUnits ? avgSpeedKmh : avgSpeedKmh * 0.621371;
       primaryPaceSpeedValue = speedVal.toStringAsFixed(1);
       primaryPaceSpeedUnit = useMetricUnits ? 'km/h' : 'mph';
     } else {
-      paceSpeedLabel = currentLang == AppLanguage.vi ? 'PACE TRUNG BÌNH' : 'AVG PACE';
+      paceSpeedLabel = currentLang == AppLanguage.vi ? 'Nhịp độ trung bình' : 'Avg pace';
       final formattedPace = effectivePaceSecPerKm != null
           ? WorkoutFormatters.formatPaceFromSecondsPerKm(
               effectivePaceSecPerKm!,
@@ -71,7 +71,7 @@ class KineticSummaryTelemetryGrid extends StatelessWidget {
     final String? fourthSubtitle;
 
     if (_isCycling) {
-      fourthLabel = currentLang == AppLanguage.vi ? 'VẬN TỐC TỐI ĐA' : 'MAX SPEED';
+      fourthLabel = currentLang == AppLanguage.vi ? 'Vận tốc tối đa' : 'Max speed';
       final maxSpeed = avgSpeedKmh * 1.35; // Estimated max speed
       final dispMax = useMetricUnits ? maxSpeed : maxSpeed * 0.621371;
       fourthValue = dispMax.toStringAsFixed(1);
@@ -79,7 +79,7 @@ class KineticSummaryTelemetryGrid extends StatelessWidget {
       fourthIcon = BladeIconName.pulse;
       fourthSubtitle = currentLang == AppLanguage.vi ? 'Ước tính cao điểm' : 'Peak estimate';
     } else {
-      fourthLabel = currentLang == AppLanguage.vi ? 'TỔNG SỐ BƯỚC' : 'TOTAL STEPS';
+      fourthLabel = currentLang == AppLanguage.vi ? 'Tổng số bước' : 'Total steps';
       fourthValue = steps > 0 ? '$steps' : '--';
       fourthUnit = currentLang == AppLanguage.vi ? 'bước' : 'steps';
       fourthIcon = BladeIconName.walk;
@@ -112,7 +112,7 @@ class KineticSummaryTelemetryGrid extends StatelessWidget {
                 // 1. Moving Time
                 cell(
                   _TelemetryCard(
-                    label: currentLang == AppLanguage.vi ? 'THỜI GIAN DI CHUYỂN' : 'MOVING TIME',
+                    label: currentLang == AppLanguage.vi ? 'Thời gian di chuyển' : 'Moving time',
                     value: movingTimeFormatted,
                     unit: null,
                     icon: BladeIconName.clock,
@@ -146,7 +146,7 @@ class KineticSummaryTelemetryGrid extends StatelessWidget {
                 // 3. Active Calories
                 cell(
                   _TelemetryCard(
-                    label: currentLang == AppLanguage.vi ? 'NĂNG LƯỢNG' : 'ENERGY BURN',
+                    label: currentLang == AppLanguage.vi ? 'Năng lượng' : 'Energy burn',
                     value: '$calories',
                     unit: 'kcal',
                     icon: BladeIconName.flame,

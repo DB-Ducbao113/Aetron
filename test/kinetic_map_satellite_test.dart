@@ -88,9 +88,9 @@ void main() {
         await tester.tap(find.byKey(const Key('activity-map-layer-btn')));
         await tester.pumpAndSettle();
 
-        expect(find.text('CHỌN KIỂU BẢN ĐỒ'), findsOneWidget);
-        expect(find.text('Ảnh Vệ Tinh 3D'), findsOneWidget);
-        expect(find.text('Đường Phố Rõ Nét'), findsOneWidget);
+        expect(find.text('Chọn kiểu bản đồ'), findsOneWidget);
+        expect(find.text('Ảnh vệ tinh 3D'), findsOneWidget);
+        expect(find.text('Đường phố rõ nét'), findsOneWidget);
 
         await tester.tap(find.byKey(const Key('map-style-option-streets')));
         await tester.pumpAndSettle();

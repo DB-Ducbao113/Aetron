@@ -133,7 +133,7 @@ void main() {
     await tester.tap(find.text('Hướng dẫn').first);
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
-    expect(find.text('LỘ TRÌNH HUẤN LUYỆN TỪNG BƯỚC'), findsOneWidget);
+    expect(find.text('Lộ trình huấn luyện từng bước'), findsOneWidget);
   });
 
   testWidgets('RunningProgramsScreen renders on 360pt width Android phone without overflow', (tester) async {
