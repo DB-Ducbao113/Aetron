@@ -122,6 +122,27 @@ void main() {
       expect(displaySegments.last.first, afterGap);
       expect(displaySegments.any(containsPair(beforeGap, afterGap)), isFalse);
     });
+
+    test(
+      'smoothCurveForDisplay rounds angular bends smoothly while staying inside convex hull',
+      () {
+        const angular = <LatLng>[
+          LatLng(10.00000, 106.00000),
+          LatLng(10.00010, 106.00000),
+          LatLng(10.00010, 106.00010),
+        ];
+
+        final curved = smoothCurveForDisplay(angular, iterations: 2);
+
+        expect(curved.first, angular.first);
+        expect(curved.last, angular.last);
+        expect(curved.length, greaterThan(angular.length));
+        for (final pt in curved) {
+          expect(pt.latitude, inInclusiveRange(10.00000, 10.00010));
+          expect(pt.longitude, inInclusiveRange(106.00000, 106.00010));
+        }
+      },
+    );
   });
 }
 

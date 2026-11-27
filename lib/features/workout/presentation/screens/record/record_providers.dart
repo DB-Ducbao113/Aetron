@@ -4,9 +4,11 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'package:fitness_exercise_application/features/workout/data/local/local_db.dart';
 import 'package:fitness_exercise_application/core/constants/debug_config.dart';
+import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/core/services/environment_detector.dart';
 import 'package:fitness_exercise_application/features/iod/presentation/providers/iod_controller.dart';
 import 'package:fitness_exercise_application/features/profile/domain/entities/user_profile.dart';
+import 'package:fitness_exercise_application/features/settings/presentation/providers/settings_preferences_providers.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
 import 'package:fitness_exercise_application/features/workout/domain/repositories/workout_repository.dart';
 import 'package:fitness_exercise_application/features/workout/domain/constants/workout_processing_contract.dart';
@@ -1140,21 +1142,30 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
 
   void _syncLiveActivityState() {
     final liveActivity = _ref.read(iosLiveActivityServiceProvider);
+    final useMetricUnits =
+        _ref.read(metricUnitsPreferenceProvider).value ?? true;
+    final lang = _ref.read(appLanguageProvider);
+    final effectiveStatus = state.isAutoPaused ? 'paused' : state.status.name;
     unawaited(
       liveActivity.syncWorkout(
         activityType: state.activityType,
         trackingMode: state.trackingMode,
-        status: state.status.name,
+        status: effectiveStatus,
         durationSeconds: state.durationSeconds,
         distanceMeters: state.distanceMeters,
         avgSpeedKmh: state.avgSpeedKmh,
         caloriesBurned: state.caloriesBurned,
+        useMetricUnits: useMetricUnits,
+        languageCode: lang.name,
       ),
     );
   }
 
   Future<void> _endLiveActivity(WorkoutSessionState finalState) {
     final liveActivity = _ref.read(iosLiveActivityServiceProvider);
+    final useMetricUnits =
+        _ref.read(metricUnitsPreferenceProvider).value ?? true;
+    final lang = _ref.read(appLanguageProvider);
     return liveActivity.endWorkout(
       activityType: finalState.activityType,
       trackingMode: finalState.trackingMode,
@@ -1162,6 +1173,8 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       distanceMeters: finalState.distanceMeters,
       avgSpeedKmh: finalState.avgSpeedKmh,
       caloriesBurned: finalState.caloriesBurned,
+      useMetricUnits: useMetricUnits,
+      languageCode: lang.name,
     );
   }
 

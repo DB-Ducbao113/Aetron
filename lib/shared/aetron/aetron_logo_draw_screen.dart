@@ -123,13 +123,11 @@ class _AetronLogoDrawScreenState extends State<AetronLogoDrawScreen>
         widget.forceDarkPalette ??
         (Theme.of(context).brightness == Brightness.dark);
     final bgColor = isDark ? KineticColors.dark.background : Colors.white;
-    final markColor = isDark
-        ? const Color(0xFF93BFFF)
-        : const Color(0xFF1166DB);
-    final wordmarkColor = isDark
-        ? const Color(0xFFF3F7FF)
-        : const Color(0xFF152437);
-    final tipColor = isDark ? const Color(0xFFF3F7FF) : Colors.white;
+    final markColor = AetronLogoPaths.accentColorFor(isDark: isDark);
+    final wordmarkColor = AetronLogoPaths.wordmarkColorFor(isDark: isDark);
+    final tipColor = isDark
+        ? AetronLogoPaths.darkTipColor
+        : AetronLogoPaths.lightTipColor;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,

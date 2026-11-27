@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
+import 'package:fitness_exercise_application/shared/aetron/aetron_logo_paths.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -309,23 +310,49 @@ class _AetronGlobeOrbitScreenState extends ConsumerState<AetronGlobeOrbitScreen>
                             ),
                           ),
                           SizedBox(height: compactHeight ? 6 : 20),
-                          Text(
-                            widget.customTitle ?? 'Aetron',
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: KineticTypography.headlineLarge.copyWith(
-                              color: colors.textPrimary,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: -0.5,
-                              shadows: [
-                                Shadow(
-                                  color: colors.primary.withValues(alpha: 0.5),
-                                  blurRadius: 18,
+                          if (widget.customTitle == null ||
+                              widget.customTitle!.trim().isEmpty ||
+                              widget.customTitle!.trim().toLowerCase() ==
+                                  'aetron')
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                              ),
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: AetronBrandLockup(
+                                  key: const ValueKey(
+                                    'aetron-globe-brand-lockup',
+                                  ),
+                                  markSize: compactHeight ? 28 : 34,
+                                  wordmarkHeight: compactHeight ? 18 : 22,
+                                  spacing: compactHeight ? 8 : 10,
+                                  forceDark: widget.forceDarkPalette
+                                      ? true
+                                      : null,
                                 ),
-                              ],
+                              ),
+                            )
+                          else
+                            Text(
+                              widget.customTitle!,
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: KineticTypography.headlineLarge.copyWith(
+                                color: colors.textPrimary,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: -0.5,
+                                shadows: [
+                                  Shadow(
+                                    color: colors.primary.withValues(
+                                      alpha: 0.5,
+                                    ),
+                                    blurRadius: 18,
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
                           if (widget.showTelemetryChips) ...[
                             SizedBox(height: compactHeight ? 12 : 20),
                             Padding(

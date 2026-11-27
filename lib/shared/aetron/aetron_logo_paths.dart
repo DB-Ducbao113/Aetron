@@ -8,16 +8,32 @@ import 'package:flutter/material.dart';
 class AetronLogoPaths {
   const AetronLogoPaths._();
 
+  /// Official AETRON brand palette matching the startup [AetronLogoDrawScreen].
+  static const Color darkAccentColor = Color(0xFF93BFFF);
+  static const Color lightAccentColor = Color(0xFF1166DB);
+  static const Color darkWordmarkColor = Color(0xFFF3F7FF);
+  static const Color lightWordmarkColor = Color(0xFF152437);
+  static const Color darkTipColor = Color(0xFFF3F7FF);
+  static const Color lightTipColor = Colors.white;
+
   /// Original mark viewBox from `AETRON_Mark_Dark.svg`:
   /// `-52.87649 208.96629 1215.9102 866.06742`
   static const double markMinX = -52.87649;
   static const double markMinY = 208.96629;
   static const double markWidth = 1215.9102;
   static const double markHeight = 866.06742;
+  static const double markAspectRatio = markWidth / markHeight;
 
   /// Stylized wordmark bounding box (with forward italic lean + E speed bars)
   static const double wordmarkWidth = 4420.0;
   static const double wordmarkHeight = 820.0;
+  static const double wordmarkAspectRatio = wordmarkWidth / wordmarkHeight;
+
+  static Color accentColorFor({required bool isDark}) =>
+      isDark ? darkAccentColor : lightAccentColor;
+
+  static Color wordmarkColorFor({required bool isDark}) =>
+      isDark ? darkWordmarkColor : lightWordmarkColor;
 
   static Matrix4 _markTransform(Size size) {
     final sx = size.width / markWidth;
@@ -265,15 +281,22 @@ class AetronLogoPaths {
 class AetronBrandMark extends StatelessWidget {
   final double size;
   final Color? color;
+  final bool? forceDark;
 
-  const AetronBrandMark({super.key, this.size = 44.0, this.color});
+  const AetronBrandMark({
+    super.key,
+    this.size = 44.0,
+    this.color,
+    this.forceDark,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.kinetic.isDark;
-    final markColor =
-        color ??
-        (isDark ? const Color(0xFF93BFFF) : const Color(0xFF1166DB));
+    final isDark =
+        forceDark ??
+        (Theme.of(context).extension<KineticColors>()?.isDark ??
+            Theme.of(context).brightness == Brightness.dark);
+    final markColor = color ?? AetronLogoPaths.accentColorFor(isDark: isDark);
     final height =
         size * (AetronLogoPaths.markHeight / AetronLogoPaths.markWidth);
     return SizedBox(
@@ -290,6 +313,119 @@ class AetronBrandMark extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// Static theme-adaptive stylized aerodynamic `AETRON` vector wordmark widget
+/// matching the startup [AetronLogoDrawScreen] ("AETRON · E liền nét").
+class AetronWordmark extends StatelessWidget {
+  final double height;
+  final double? width;
+  final Color? accentColor;
+  final Color? color;
+  final bool? forceDark;
+  final bool showUnderline;
+  final String? semanticLabel;
+
+  const AetronWordmark({
+    super.key,
+    this.height = 20.0,
+    this.width,
+    this.accentColor,
+    this.color,
+    this.forceDark,
+    this.showUnderline = true,
+    this.semanticLabel = 'AETRON',
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark =
+        forceDark ??
+        (Theme.of(context).extension<KineticColors>()?.isDark ??
+            Theme.of(context).brightness == Brightness.dark);
+    final resolvedAccent =
+        accentColor ?? AetronLogoPaths.accentColorFor(isDark: isDark);
+    final resolvedColor =
+        color ?? AetronLogoPaths.wordmarkColorFor(isDark: isDark);
+
+    final double resolvedWidth =
+        width ?? height * AetronLogoPaths.wordmarkAspectRatio;
+    final double resolvedHeight = width != null
+        ? width! / AetronLogoPaths.wordmarkAspectRatio
+        : height;
+
+    final paint = SizedBox(
+      width: resolvedWidth,
+      height: resolvedHeight,
+      child: CustomPaint(
+        size: Size(resolvedWidth, resolvedHeight),
+        painter: AetronWordmarkPainter(
+          progress: 1.0,
+          accentColor: resolvedAccent,
+          color: resolvedColor,
+          showUnderline: showUnderline,
+        ),
+      ),
+    );
+
+    if (semanticLabel == null) return paint;
+    return Semantics(label: semanticLabel, child: paint);
+  }
+}
+
+/// Unified horizontal AETRON brand lockup combining [AetronBrandMark] and
+/// [AetronWordmark] with exact startup palette and proportions.
+class AetronBrandLockup extends StatelessWidget {
+  final double markSize;
+  final double? wordmarkHeight;
+  final double? spacing;
+  final Color? accentColor;
+  final Color? wordmarkColor;
+  final bool? forceDark;
+  final bool showUnderline;
+  final String? semanticLabel;
+
+  const AetronBrandLockup({
+    super.key,
+    this.markSize = 28.0,
+    this.wordmarkHeight,
+    this.spacing,
+    this.accentColor,
+    this.wordmarkColor,
+    this.forceDark,
+    this.showUnderline = true,
+    this.semanticLabel = 'AETRON',
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final resolvedWordmarkHeight = wordmarkHeight ?? (markSize * 0.64);
+    final resolvedSpacing = spacing ?? (markSize * 0.28);
+
+    final lockup = Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        AetronBrandMark(
+          size: markSize,
+          color: accentColor,
+          forceDark: forceDark,
+        ),
+        SizedBox(width: resolvedSpacing),
+        AetronWordmark(
+          height: resolvedWordmarkHeight,
+          accentColor: accentColor,
+          color: wordmarkColor,
+          forceDark: forceDark,
+          showUnderline: showUnderline,
+          semanticLabel: null,
+        ),
+      ],
+    );
+
+    if (semanticLabel == null) return lockup;
+    return Semantics(label: semanticLabel, child: lockup);
   }
 }
 
@@ -464,12 +600,14 @@ class AetronWordmarkPainter extends CustomPainter {
   final double shimmerProgress;
   final Color accentColor;
   final Color color;
+  final bool showUnderline;
 
   const AetronWordmarkPainter({
     required this.progress,
     this.shimmerProgress = 0.0,
-    this.accentColor = const Color(0xFF1166DB),
-    this.color = const Color(0xFF152437),
+    this.accentColor = AetronLogoPaths.lightAccentColor,
+    this.color = AetronLogoPaths.lightWordmarkColor,
+    this.showUnderline = true,
   });
 
   @override
@@ -523,10 +661,10 @@ class AetronWordmarkPainter extends CustomPainter {
 
     // Tapered aerodynamic speed underline streak shooting beneath AETRON
     final lineT = ((progress - 0.48) / 0.52).clamp(0.0, 1.0);
-    if (lineT > 0.01) {
+    if (showUnderline && lineT > 0.01) {
       final eased = Curves.easeOutCubic.transform(lineT);
       final y = size.height * 0.96;
-      final h = (size.height * 0.065).clamp(1.8, 2.8);
+      final h = (size.height * 0.065).clamp(1.0, 2.8);
       final left = size.width * 0.03;
       final fullW = size.width * 0.93 * eased;
 
@@ -585,6 +723,7 @@ class AetronWordmarkPainter extends CustomPainter {
     return oldDelegate.progress != progress ||
         oldDelegate.shimmerProgress != shimmerProgress ||
         oldDelegate.accentColor != accentColor ||
-        oldDelegate.color != color;
+        oldDelegate.color != color ||
+        oldDelegate.showUnderline != showUnderline;
   }
 }

@@ -143,7 +143,10 @@ void main() {
       );
 
       expect(tester.takeException(), isNull);
-      expect(find.text('Aetron'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('aetron-globe-brand-lockup')),
+        findsOneWidget,
+      );
       expect(find.textContaining('%'), findsOneWidget);
     });
 

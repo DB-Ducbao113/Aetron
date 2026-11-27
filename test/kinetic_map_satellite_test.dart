@@ -32,12 +32,114 @@ void main() {
       final boundaries = satLayers[1] as TileLayer;
       expect(imagery.urlTemplate, contains('World_Imagery'));
       expect(boundaries.urlTemplate, contains('World_Boundaries_and_Places'));
+      expect(imagery.maxNativeZoom, 18);
+      expect(imagery.maxZoom, double.infinity);
+      expect(boundaries.maxNativeZoom, 18);
+      expect(boundaries.maxZoom, double.infinity);
 
       final streetLayers = buildAetronMapTileLayers(AppMapType.streets);
       expect(streetLayers.length, 1);
       final streets = streetLayers[0] as TileLayer;
       expect(streets.urlTemplate, contains('World_Street_Map'));
+      expect(streets.maxNativeZoom, 18);
+      expect(streets.maxZoom, double.infinity);
     });
+
+    test('buildAetronRoutePolylines renders 4-layer Aetron Glassline gradient ribbon', () {
+      const seg = <LatLng>[
+        LatLng(10.7769, 106.7009),
+        LatLng(10.7775, 106.7014),
+        LatLng(10.7780, 106.7020),
+      ];
+
+      final fullLayers = buildAetronRoutePolylines(
+        segments: const [seg],
+        mapType: AppMapType.satellite,
+        isDark: true,
+      );
+      expect(fullLayers, hasLength(4));
+      expect(fullLayers[2].gradientColors, hasLength(3));
+      expect(fullLayers[2].strokeCap, StrokeCap.round);
+      expect(fullLayers[2].strokeJoin, StrokeJoin.round);
+
+      final liteLayers = buildAetronRoutePolylines(
+        segments: const [seg],
+        mapType: AppMapType.streets,
+        isDark: false,
+        lite: true,
+      );
+      expect(liteLayers, hasLength(2));
+      expect(liteLayers[1].gradientColors, hasLength(3));
+    });
+
+    test(
+      'buildAetronRoutePolylines seamlessly merges short indoor gaps (<=45m) and draws dashed bridges for longer blackouts (>45m)',
+      () {
+        // 1. Short indoor hiccup (~18m apart) + single-point recovery -> 1 continuous solid ribbon (4 layers, 0 dashed)
+        const segA = <LatLng>[
+          LatLng(10.77690, 106.70090),
+          LatLng(10.77696, 106.70095),
+        ];
+        const orphan = <LatLng>[LatLng(10.77704, 106.70102)];
+        const segB = <LatLng>[
+          LatLng(10.77712, 106.70108),
+          LatLng(10.77720, 106.70115),
+        ];
+
+        final seamless = buildAetronRoutePolylines(
+          segments: const [segA, orphan, segB],
+          mapType: AppMapType.satellite,
+          isDark: true,
+        );
+        expect(seamless, hasLength(4));
+        expect(seamless.every((p) => p.pattern.segments == null), isTrue);
+
+        // 2. Long GPS blackout (~280m apart) -> 2 dashed bridge layers + 2x4 solid layers = 10 layers
+        const farSeg = <LatLng>[
+          LatLng(10.77950, 106.70115),
+          LatLng(10.78010, 106.70140),
+        ];
+        final withBridge = buildAetronRoutePolylines(
+          segments: const [segA, farSeg],
+          mapType: AppMapType.streets,
+          isDark: false,
+        );
+        expect(withBridge, hasLength(10));
+        expect(
+          withBridge.where((p) => p.pattern.segments != null),
+          hasLength(2),
+        );
+      },
+    );
+
+    testWidgets(
+      'TrackingMapWidget allows zoom up to 22 and auto-zooms closely for indoor walking',
+      (tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            child: MaterialApp(
+              theme: KineticTheme.lightTheme,
+              home: const Scaffold(
+                body: TrackingMapWidget(
+                  routePoints: [
+                    LatLng(10.77690, 106.70090),
+                    LatLng(10.77695, 106.70094),
+                  ],
+                  activityType: 'walking',
+                  isGpsSignalWeak: true,
+                  showMapTiles: false,
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        final map = tester.widget<FlutterMap>(find.byType(FlutterMap));
+        expect(map.options.maxZoom, 22.0);
+        expect(map.options.initialZoom, greaterThanOrEqualTo(19.0));
+      },
+    );
 
     test('appMapTypeProvider defaults to satellite and persists changes', () async {
       final container = ProviderContainer();

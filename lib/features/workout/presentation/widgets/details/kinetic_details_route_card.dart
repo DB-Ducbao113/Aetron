@@ -77,8 +77,8 @@ class KineticDetailsRouteCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               currentLang == AppLanguage.vi
-                  ? 'Buổi tập vẫn lưu trữ đầy đủ chỉ số hiệu suất telemetry.'
-                  : 'Full telemetry stats are preserved for this workout session.',
+                  ? 'Các chỉ số luyện tập của buổi này vẫn được lưu đầy đủ.'
+                  : 'All workout metrics for this session are saved.',
               style: KineticTypography.bodySmall.copyWith(
                 color: colors.textMuted,
               ),

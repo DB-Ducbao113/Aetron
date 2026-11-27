@@ -352,29 +352,35 @@ class _WorkoutShareCardSheetState extends State<WorkoutShareCardSheet>
                       ),
                     ),
                     const SizedBox(width: 10),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          isVi ? 'Chia sẻ buổi tập' : 'Share workout',
-                          style: KineticTypography.pageEyebrow.copyWith(
-                            color: colors.primary,
-                            letterSpacing: 1.2,
-                            fontWeight: FontWeight.w800,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isVi ? 'Chia sẻ buổi tập' : 'Share workout',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: KineticTypography.pageEyebrow.copyWith(
+                              color: colors.primary,
+                              letterSpacing: 1.2,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
-                        ),
-                        Text(
-                          isVi
-                              ? 'Thẻ Vinh Danh Thành Tích'
-                              : 'Achievement Card',
-                          style: KineticTypography.headlineSmall.copyWith(
-                            color: colors.textPrimary,
-                            fontWeight: FontWeight.w900,
+                          Text(
+                            isVi
+                                ? 'Thẻ Vinh Danh Thành Tích'
+                                : 'Achievement Card',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: KineticTypography.headlineSmall.copyWith(
+                              color: colors.textPrimary,
+                              fontWeight: FontWeight.w900,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                    const Spacer(),
+                    const SizedBox(width: 8),
                     KineticGlassIconButton(
                       size: 37,
                       visualSize: 37,
@@ -733,11 +739,15 @@ class _ActionSquareButton extends StatelessWidget {
             children: [
               Icon(icon, size: 16, color: color),
               const SizedBox(width: 6),
-              Text(
-                label,
-                style: KineticTypography.label.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: colors.textPrimary,
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: KineticTypography.label.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: colors.textPrimary,
+                  ),
                 ),
               ),
             ],
@@ -880,20 +890,21 @@ class _ShareCardContent extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          AetronBrandMark(size: 28, color: accentColor),
-                          const SizedBox(width: 8),
-                          Text(
-                            'AETRON',
-                            style: KineticTypography.headlineSmall.copyWith(
-                              fontWeight: FontWeight.w800,
-                              color: primaryInk,
-                              letterSpacing: 1.8,
-                            ),
+                      Flexible(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: AetronBrandLockup(
+                            key: const ValueKey('share-card-brand-lockup'),
+                            markSize: 28,
+                            wordmarkHeight: 18,
+                            spacing: 8,
+                            accentColor: accentColor,
+                            wordmarkColor: primaryInk,
                           ),
-                        ],
+                        ),
                       ),
+                      const SizedBox(width: 8),
                       Text(
                         dateStr,
                         style: KineticTypography.unitLabel.copyWith(
@@ -1021,16 +1032,30 @@ class _ShareCardContent extends StatelessWidget {
 
                   // Bottom Watermark
                   Center(
-                    child: Text(
-                      isVi
-                          ? 'Ghi lại hành trình luyện tập — Aetron'
-                          : 'Tracked with Aetron',
-                      textAlign: TextAlign.center,
-                      style: KineticTypography.caption.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: secondaryInk,
-                        letterSpacing: 0.3,
-                      ),
+                    child: Wrap(
+                      alignment: WrapAlignment.center,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: [
+                        Text(
+                          isVi
+                              ? 'Ghi lại hành trình luyện tập —'
+                              : 'Tracked with',
+                          textAlign: TextAlign.center,
+                          style: KineticTypography.caption.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: secondaryInk,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                        AetronWordmark(
+                          height: 11,
+                          accentColor: accentColor,
+                          color: secondaryInk,
+                          showUnderline: false,
+                        ),
+                      ],
                     ),
                   ),
                 ],

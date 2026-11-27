@@ -123,7 +123,8 @@ void main() {
         expect(find.text('12.45'), findsOneWidget);
         expect(find.text('KM'), findsOneWidget);
         expect(find.text('Hoàn thành xuất sắc'), findsOneWidget);
-        expect(find.text('GPS đã xác minh'), findsOneWidget);
+        expect(find.text('GPS đã xác minh'), findsNothing);
+        expect(find.text('Cảm biến nội suy'), findsNothing);
         expect(find.text('Bước đi vững chãi và đều đặn!'), findsNothing);
       },
     );
@@ -137,7 +138,7 @@ void main() {
             distanceKm: 10.0,
             activityType: 'walking',
             useMetricUnits: false,
-            validityFlag: WorkoutValidityFlag.partial,
+            validityFlag: WorkoutValidityFlag.unverified,
             currentLang: AppLanguage.en,
           ),
         ),
@@ -149,7 +150,8 @@ void main() {
       // 10 km * 0.621371 = 6.21 mi
       expect(find.text('6.21'), findsOneWidget);
       expect(find.text('MI'), findsOneWidget);
-      expect(find.text('GPS calibrated'), findsOneWidget);
+      expect(find.text('GPS calibrated'), findsNothing);
+      expect(find.text('Sensor interpolated'), findsNothing);
       expect(find.text('Bước đi vững chãi và đều đặn!'), findsNothing);
     });
   });

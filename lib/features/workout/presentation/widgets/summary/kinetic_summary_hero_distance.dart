@@ -100,29 +100,6 @@ class _KineticSummaryHeroDistanceState
     final colors = context.kinetic;
     final distanceUnit = widget.useMetricUnits ? 'KM' : 'MI';
 
-    final Color validityColor;
-    final String validityText;
-    switch (widget.validityFlag) {
-      case WorkoutValidityFlag.verified:
-        validityColor = colors.primary;
-        validityText = widget.currentLang == AppLanguage.vi
-            ? 'GPS đã xác minh'
-            : 'GPS verified';
-        break;
-      case WorkoutValidityFlag.partial:
-        validityColor = colors.secondary;
-        validityText = widget.currentLang == AppLanguage.vi
-            ? 'GPS hiệu chỉnh'
-            : 'GPS calibrated';
-        break;
-      case WorkoutValidityFlag.unverified:
-        validityColor = colors.tertiary;
-        validityText = widget.currentLang == AppLanguage.vi
-            ? 'Cảm biến nội suy'
-            : 'Sensor interpolated';
-        break;
-    }
-
     return ScaleTransition(
       scale: _entranceScale,
       child: KineticCard(
@@ -134,45 +111,25 @@ class _KineticSummaryHeroDistanceState
           children: [
             Row(
               children: [
-                Expanded(
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 7,
-                        height: 7,
-                        decoration: BoxDecoration(
-                          color: colors.primary,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          widget.currentLang == AppLanguage.vi
-                              ? 'Hoàn thành xuất sắc'
-                              : 'Session complete',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: KineticTypography.unitLabel.copyWith(
-                            color: colors.primary,
-                            letterSpacing: 1.1,
-                          ),
-                        ),
-                      ),
-                    ],
+                Container(
+                  width: 7,
+                  height: 7,
+                  decoration: BoxDecoration(
+                    color: colors.primary,
+                    shape: BoxShape.circle,
                   ),
                 ),
                 const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: validityColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
-                  ),
+                Expanded(
                   child: Text(
-                    validityText,
+                    widget.currentLang == AppLanguage.vi
+                        ? 'Hoàn thành xuất sắc'
+                        : 'Session complete',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: KineticTypography.unitLabel.copyWith(
-                      color: validityColor,
+                      color: colors.primary,
+                      letterSpacing: 1.1,
                     ),
                   ),
                 ),

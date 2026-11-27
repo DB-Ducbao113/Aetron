@@ -102,7 +102,9 @@ void main() {
   });
 
   group('KineticDetailsHeader Widget Tests', () {
-    testWidgets('renders verified sport header correctly', (tester) async {
+    testWidgets('renders clean sport header without validity pill clutter', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         buildTestable(
           KineticDetailsHeader(
@@ -115,11 +117,15 @@ void main() {
 
       expect(find.text('Chạy bộ'), findsOneWidget);
       expect(find.text('Chủ Nhật, 15/10/2023'), findsOneWidget);
-      expect(find.text('Hợp lệ'), findsOneWidget);
+      expect(find.text('Hợp lệ'), findsNothing);
+      expect(find.text('Cảnh báo'), findsNothing);
+      expect(find.text('Không hợp lệ'), findsNothing);
       expect(find.byIcon(Icons.directions_run_rounded), findsOneWidget);
     });
 
-    testWidgets('renders warning flag with reason banner', (tester) async {
+    testWidgets('hides internal flagged segment banners from user header', (
+      tester,
+    ) async {
       final flaggedWorkout = mockWorkoutSession.copyWith(
         gpsAnalysis: WorkoutGpsAnalysis(
           validityFlag: WorkoutValidityFlag.partial,
@@ -149,10 +155,11 @@ void main() {
         ),
       );
 
-      expect(find.text('Cảnh báo'), findsOneWidget);
+      expect(find.text('Chạy bộ'), findsOneWidget);
+      expect(find.text('Cảnh báo'), findsNothing);
       expect(
         find.text('Tốc độ bất thường tương tự phương tiện cơ giới'),
-        findsOneWidget,
+        findsNothing,
       );
     });
 
@@ -167,7 +174,7 @@ void main() {
       );
 
       expect(find.text('Chạy bộ'), findsOneWidget);
-      expect(find.text('Hợp lệ'), findsOneWidget);
+      expect(find.text('Hợp lệ'), findsNothing);
       expect(find.byIcon(Icons.directions_run_rounded), findsOneWidget);
       expect(find.textContaining('Thứ'), findsNothing);
       expect(find.textContaining('Chủ Nhật'), findsNothing);
@@ -187,7 +194,11 @@ void main() {
       );
 
       expect(find.text('Không có dữ liệu bản đồ'), findsOneWidget);
-      expect(find.textContaining('chỉ số hiệu suất telemetry'), findsOneWidget);
+      expect(
+        find.text('Các chỉ số luyện tập của buổi này vẫn được lưu đầy đủ.'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('telemetry'), findsNothing);
     });
 
     testWidgets(

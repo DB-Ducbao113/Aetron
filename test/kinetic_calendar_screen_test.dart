@@ -192,7 +192,9 @@ void main() {
       expect(find.text('Chạy bộ'), findsOneWidget);
       expect(find.text('10.50'), findsOneWidget);
       expect(find.text('KM'), findsOneWidget);
-      expect(find.text('Đã xác minh'), findsOneWidget);
+      expect(find.text('Đã xác minh'), findsNothing);
+      expect(find.text('Hiệu chỉnh'), findsNothing);
+      expect(find.text('Cảm biến'), findsNothing);
       expect(find.byIcon(Icons.directions_run_rounded), findsOneWidget);
     });
   });

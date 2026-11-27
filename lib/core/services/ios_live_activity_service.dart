@@ -21,6 +21,8 @@ class IosLiveActivityService {
     required double distanceMeters,
     required double avgSpeedKmh,
     required int caloriesBurned,
+    bool useMetricUnits = true,
+    String languageCode = 'vi',
   }) async {
     if (!_isSupportedPlatform) return;
     try {
@@ -32,6 +34,8 @@ class IosLiveActivityService {
         'distanceMeters': distanceMeters,
         'avgSpeedKmh': avgSpeedKmh,
         'caloriesBurned': caloriesBurned,
+        'useMetricUnits': useMetricUnits,
+        'languageCode': languageCode,
       });
     } catch (error) {
       debugPrint('[LiveActivity] sync failed: $error');
@@ -45,6 +49,8 @@ class IosLiveActivityService {
     required double distanceMeters,
     required double avgSpeedKmh,
     required int caloriesBurned,
+    bool useMetricUnits = true,
+    String languageCode = 'vi',
   }) async {
     if (!_isSupportedPlatform) return;
     try {
@@ -56,6 +62,8 @@ class IosLiveActivityService {
         'distanceMeters': distanceMeters,
         'avgSpeedKmh': avgSpeedKmh,
         'caloriesBurned': caloriesBurned,
+        'useMetricUnits': useMetricUnits,
+        'languageCode': languageCode,
       });
     } catch (error) {
       debugPrint('[LiveActivity] end failed: $error');

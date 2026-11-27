@@ -50,7 +50,6 @@ class KineticWorkoutHistoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.kinetic;
-    final isVi = currentLang == AppLanguage.vi;
     final isCycling = workout.activityType.toLowerCase() == 'cycling';
     final activityIcon = _getActivityIcon(workout.activityType);
     final activityName = _getActivityName(workout.activityType, currentLang);
@@ -81,24 +80,6 @@ class KineticWorkoutHistoryCard extends StatelessWidget {
                 useMetric: useMetricUnits,
               ));
 
-    final validityFlag = workout.gpsAnalysis.validityFlag;
-    final Color validityColor;
-    final String validityText;
-    switch (validityFlag) {
-      case WorkoutValidityFlag.verified:
-        validityColor = colors.primary;
-        validityText = isVi ? 'Đã xác minh' : 'Verified';
-        break;
-      case WorkoutValidityFlag.partial:
-        validityColor = colors.secondary;
-        validityText = isVi ? 'Hiệu chỉnh' : 'Calibrated';
-        break;
-      case WorkoutValidityFlag.unverified:
-        validityColor = colors.tertiary;
-        validityText = isVi ? 'Cảm biến' : 'Sensor';
-        break;
-    }
-
     return KineticCard(
       useLiquidGlass: false,
       padding: const EdgeInsets.all(17),
@@ -117,7 +98,7 @@ class KineticWorkoutHistoryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top Row: Activity Pill + Time + GPS Badge + Arrow
+          // Top Row: Activity Pill + Time + Arrow
           Row(
             children: [
               Container(
@@ -157,27 +138,6 @@ class KineticWorkoutHistoryCard extends StatelessWidget {
               ),
 
               const Spacer(),
-
-              // Validity chip
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: validityColor.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
-                ),
-                child: Text(
-                  validityText,
-                  style: KineticTypography.unitLabel.copyWith(
-                    color: validityColor,
-                    fontSize: 9.5,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 4),
               BladeIcon(BladeIconName.chevR, size: 16, color: colors.textMuted),
             ],
           ),

@@ -1,55 +1,14 @@
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/record/tracking_map_widget.dart';
 import 'dart:math' as math;
 
-import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
-import 'package:fitness_exercise_application/features/workout/presentation/utils/activity_consistency_feedback.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/utils/route_display_sanitizer.dart';
+import 'package:fitness_exercise_application/shared/aetron/aetron_logo_paths.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-
-class WorkoutValidityBadge extends StatelessWidget {
-  const WorkoutValidityBadge({
-    super.key,
-    required this.flag,
-    required this.verifiedColor,
-    required this.warningColor,
-    required this.dangerColor,
-  });
-
-  final WorkoutValidityFlag flag;
-  final Color verifiedColor;
-  final Color warningColor;
-  final Color dangerColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = switch (flag) {
-      WorkoutValidityFlag.verified => verifiedColor,
-      WorkoutValidityFlag.partial => warningColor,
-      WorkoutValidityFlag.unverified => dangerColor,
-    };
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withValues(alpha: 0.38)),
-      ),
-      child: Text(
-        workoutValidityLabel(flag),
-        style: KineticTypography.unitLabel.copyWith(
-          color: color,
-          fontWeight: FontWeight.w900,
-        ),
-      ),
-    );
-  }
-}
 
 class WorkoutHeroMetricChip extends StatelessWidget {
   const WorkoutHeroMetricChip({
@@ -187,8 +146,10 @@ class WorkoutRoutePreviewMap extends StatelessWidget {
 
     final latSpan = maxLat - minLat;
     final lngSpan = maxLng - minLng;
-    final latPad = math.max(latSpan * 0.12, 0.00028);
-    final lngPad = math.max(lngSpan * 0.12, 0.00028);
+    // Allow tight ~20m auto-zoom for compact indoor/courtyard walks while
+    // keeping comfortable 14% framing on longer outdoor runs/rides.
+    final latPad = math.max(latSpan * 0.14, 0.00009);
+    final lngPad = math.max(lngSpan * 0.14, 0.00009);
 
     return LatLngBounds(
       LatLng(minLat - latPad, minLng - lngPad),
@@ -215,18 +176,17 @@ class WorkoutRoutePreviewMap extends StatelessWidget {
     return AetronMapTypeBuilder(
       fallbackType: fallbackMapType,
       builder: (context, mapType) {
-        final routeCasing = (isLight || mapType == AppMapType.satellite)
-            ? Colors.white.withValues(alpha: 0.92)
-            : Colors.black.withValues(alpha: 0.55);
-
         return Stack(
           children: [
             FlutterMap(
               options: MapOptions(
                 backgroundColor: colors.surface2,
+                minZoom: 4,
+                maxZoom: 22,
                 initialCameraFit: CameraFit.bounds(
                   bounds: bounds,
                   padding: mapPadding,
+                  maxZoom: 20.5,
                 ),
                 interactionOptions: InteractionOptions(
                   flags: interactive
@@ -236,53 +196,30 @@ class WorkoutRoutePreviewMap extends StatelessWidget {
               ),
               children: [
                 if (showMapTiles) ...buildAetronMapTileLayers(mapType),
-                PolygonLayer(
-                  polygons: [
-                    for (final segment in displaySegments)
-                      if (segment.length >= 3)
-                        Polygon(
-                          points: segment,
-                          color: accentColor.withValues(alpha: 0.08),
-                          borderColor: Colors.transparent,
-                        ),
-                  ],
-                ),
                 PolylineLayer(
-                  polylines: [
-                    for (final segment in displaySegments) ...[
-                      Polyline(
-                        points: segment,
-                        strokeWidth: 8.0,
-                        color: routeCasing,
-                      ),
-                      Polyline(
-                        points: segment,
-                        strokeWidth: 4.5,
-                        color: colors.accentFill,
-                      ),
-                    ],
-                  ],
+                  simplificationTolerance: 0.25,
+                  polylines: buildAetronRoutePolylines(
+                    segments: displaySegments,
+                    mapType: mapType,
+                    isDark: !isLight,
+                    coreWidth: 4.8,
+                  ),
                 ),
                 MarkerLayer(
                   markers: [
                     Marker(
                       point: displayRoute.first,
-                      width: 30,
-                      height: 30,
-                      child: _RouteOrb(
-                        color: colors.success,
-                        icon: Icons.flag_rounded,
-                      ),
+                      width: 24,
+                      height: 24,
+                      alignment: Alignment.center,
+                      child: const _RouteAnchorOrb(isFinish: false),
                     ),
                     Marker(
                       point: displayRoute.last,
-                      width: 34,
-                      height: 34,
-                      child: _RouteOrb(
-                        color: colors.accentFill,
-                        icon: Icons.sports_score_rounded,
-                        large: true,
-                      ),
+                      width: 28,
+                      height: 28,
+                      alignment: Alignment.center,
+                      child: const _RouteAnchorOrb(isFinish: true),
                     ),
                   ],
                 ),
@@ -336,41 +273,60 @@ class WorkoutRoutePreviewMap extends StatelessWidget {
   }
 }
 
-class _RouteOrb extends StatelessWidget {
-  const _RouteOrb({
-    required this.color,
-    required this.icon,
-    this.large = false,
-  });
+/// Minimalist Glassline start/finish route anchor aligned with Aetron's blue palette.
+class _RouteAnchorOrb extends StatelessWidget {
+  const _RouteAnchorOrb({required this.isFinish});
 
-  final Color color;
-  final IconData icon;
-  final bool large;
+  final bool isFinish;
 
   @override
   Widget build(BuildContext context) {
+    final outerSize = isFinish ? 26.0 : 20.0;
+    final innerSize = isFinish ? 18.0 : 12.0;
+    final coreColors = isFinish
+        ? const [
+            AetronLogoPaths.lightAccentColor,
+            AetronLogoPaths.darkAccentColor,
+          ]
+        : const [Color(0xFF10B981), Color(0xFF34D399)];
+    final glowColor = isFinish
+        ? AetronLogoPaths.lightAccentColor
+        : const Color(0xFF10B981);
+
     return Container(
+      width: outerSize,
+      height: outerSize,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: color.withValues(alpha: 0.20),
+        color: glowColor.withValues(alpha: 0.22),
         boxShadow: [
           BoxShadow(
-            color: color.withValues(alpha: 0.42),
-            blurRadius: large ? 24 : 18,
-            spreadRadius: large ? 4 : 2,
+            color: glowColor.withValues(alpha: 0.38),
+            blurRadius: isFinish ? 12 : 8,
+            spreadRadius: 1,
           ),
         ],
       ),
       child: Center(
         child: Container(
-          width: large ? 27 : 23,
-          height: large ? 27 : 23,
+          width: innerSize,
+          height: innerSize,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: color,
-            border: Border.all(color: Colors.white, width: 2),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: coreColors,
+            ),
+            border: Border.all(color: Colors.white, width: isFinish ? 2.2 : 2.0),
           ),
-          child: Icon(icon, color: Colors.white, size: large ? 13 : 11),
+          child: isFinish
+              ? const Icon(
+                  Icons.flag_rounded,
+                  color: Colors.white,
+                  size: 10,
+                )
+              : null,
         ),
       ),
     );

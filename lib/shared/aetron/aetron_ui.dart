@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 export 'app_button.dart';
 export 'app_card.dart';
 export 'app_states.dart';
+export 'aetron_logo_paths.dart';
 export 'aetron_skeleton.dart';
 export 'aetron_globe_orbit_screen.dart';
 

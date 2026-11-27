@@ -1311,25 +1311,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                                       color: colors.borderSubtle,
                                     ),
                                   ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      AetronBrandMark(
-                                        size: 16,
-                                        color: colors.secondary,
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        'AETRON',
-                                        style: KineticTypography.unitLabel
-                                            .copyWith(
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w800,
-                                              color: colors.secondary,
-                                              letterSpacing: 1.0,
-                                            ),
-                                      ),
-                                    ],
+                                  child: const AetronBrandLockup(
+                                    key: ValueKey(
+                                      'settings-version-brand-lockup',
+                                    ),
+                                    markSize: 16,
+                                    wordmarkHeight: 11,
+                                    spacing: 5,
                                   ),
                                 ),
                               ),

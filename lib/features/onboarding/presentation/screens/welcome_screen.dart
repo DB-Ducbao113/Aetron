@@ -466,47 +466,40 @@ class _WelcomeTopBar extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
           children: [
-            // Left Action / Back Button
-            SizedBox(
-              width: 37,
-              height: 37,
-              child: canGoBack
-                  ? KineticGlassIconButton(
-                      size: 37,
-                      visualSize: 37,
-                      label: currentLang == AppLanguage.vi
-                          ? 'Quay lại'
-                          : 'Back',
-                      onPressed: onBack,
-                      icon: BladeIcon(
-                        BladeIconName.chevL,
-                        color: colors.textSecondary,
-                        size: 18,
-                        strokeWidth: 1.7,
-                      ),
-                    )
-                  : const Center(
-                      child: AetronBrandMark(size: 30),
-                    ),
-            ),
-            const SizedBox(width: 10),
+            // Left Back Button (pages 2+)
+            if (canGoBack) ...[
+              KineticGlassIconButton(
+                size: 37,
+                visualSize: 37,
+                label: currentLang == AppLanguage.vi ? 'Quay lại' : 'Back',
+                onPressed: onBack,
+                icon: BladeIcon(
+                  BladeIconName.chevL,
+                  color: colors.textSecondary,
+                  size: 18,
+                  strokeWidth: 1.7,
+                ),
+              ),
+              const SizedBox(width: 10),
+            ],
 
-            // Center Brand Badge
-            ShaderMask(
-              shaderCallback: (bounds) => LinearGradient(
-                colors: [colors.primary, colors.secondary],
-              ).createShader(bounds),
-              child: const Text(
-                'AETRON',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 4.0,
-                  color: Colors.white,
+            // Unified Brand Lockup (startup vector mark + aerodynamic wordmark)
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: AetronBrandLockup(
+                    key: const ValueKey('welcome-brand-lockup'),
+                    markSize: canGoBack ? 24 : 30,
+                    wordmarkHeight: canGoBack ? 15 : 19,
+                    spacing: canGoBack ? 6 : 8,
+                  ),
                 ),
               ),
             ),
-            const Spacer(),
+            const SizedBox(width: 8),
 
             // Language Switcher Capsule
             InkWell(

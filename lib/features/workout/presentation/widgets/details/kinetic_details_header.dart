@@ -48,139 +48,56 @@ class KineticDetailsHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.kinetic;
     final sportColor = _activityColor(workout.activityType, colors);
-    final flag = workout.gpsAnalysis.validityFlag;
 
-    final (badgeColor, badgeText) = switch (flag) {
-      WorkoutValidityFlag.verified => (
-        colors.primary,
-        currentLang == AppLanguage.vi ? 'Hợp lệ' : 'Verified',
-      ),
-      WorkoutValidityFlag.partial => (
-        colors.tertiary,
-        currentLang == AppLanguage.vi ? 'Cảnh báo' : 'Warning',
-      ),
-      WorkoutValidityFlag.unverified => (
-        colors.error,
-        currentLang == AppLanguage.vi ? 'Không hợp lệ' : 'Flagged',
-      ),
-    };
-
-    final flagReason = workout.gpsAnalysis.flaggedSegments.isNotEmpty
-        ? workout.gpsAnalysis.flaggedSegments.first.reason
-        : '';
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
       children: [
-        Row(
-          children: [
-            // Sport Orb
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: sportColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
-                border: Border.all(
-                  color: sportColor.withValues(alpha: 0.35),
-                  width: 1,
+        // Sport Orb
+        Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: sportColor.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(KineticTokens.radiusLG),
+            border: Border.all(
+              color: sportColor.withValues(alpha: 0.35),
+              width: 1,
+            ),
+          ),
+          child: Icon(
+            _activityIcon(workout.activityType),
+            color: sportColor,
+            size: 24,
+          ),
+        ),
+        const SizedBox(width: 12),
+
+        // Sport Title and Date
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                WorkoutFormatters.formatActivityType(
+                  workout.activityType,
+                  currentLang,
+                ),
+                style: KineticTypography.headlineMedium.copyWith(
+                  color: colors.textPrimary,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
-              child: Icon(
-                _activityIcon(workout.activityType),
-                color: sportColor,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 12),
-
-            // Sport Title and Date
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    WorkoutFormatters.formatActivityType(
-                      workout.activityType,
-                      currentLang,
-                    ),
-                    style: KineticTypography.headlineMedium.copyWith(
-                      color: colors.textPrimary,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  if (dateLabel != null && dateLabel!.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      dateLabel!,
-                      style: KineticTypography.bodySmall.copyWith(
-                        color: colors.textMuted,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-
-            // GPS Validity Pill
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: badgeColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    flag == WorkoutValidityFlag.verified
-                        ? Icons.verified_rounded
-                        : Icons.warning_amber_rounded,
-                    size: 13,
-                    color: badgeColor,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    badgeText,
-                    style: KineticTypography.unitLabel.copyWith(
-                      color: badgeColor,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-
-        // Suspicious activity reason banner if any
-        if (flag != WorkoutValidityFlag.verified && flagReason.isNotEmpty) ...[
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: badgeColor.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(KineticTokens.radiusMD),
-              border: Border.all(
-                color: badgeColor.withValues(alpha: 0.25),
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.info_outline_rounded, size: 14, color: badgeColor),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    flagReason,
-                    style: KineticTypography.caption.copyWith(
-                      color: badgeColor,
-                    ),
+              if (dateLabel != null && dateLabel!.isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(
+                  dateLabel!,
+                  style: KineticTypography.bodySmall.copyWith(
+                    color: colors.textMuted,
                   ),
                 ),
               ],
-            ),
+            ],
           ),
-        ],
+        ),
       ],
     );
   }
