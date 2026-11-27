@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -10,62 +10,42 @@
     onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'\\(',right:'\\)',display:false}]});"></script>
   <style>
     :root {
-      --bg: #070b14;
-      --bg-slide: #0c1324;
-      --card: rgba(18, 28, 52, 0.85);
-      --card-soft: rgba(30, 41, 59, 0.55);
-      --border: rgba(56, 189, 248, 0.22);
-      --border-hi: rgba(56, 189, 248, 0.55);
-      --text: #eef4ff;
-      --muted: #94a3b8;
-      --cyan: #38bdf8;
-      --lime: #a3e635;
-      --violet: #a78bfa;
-      --amber: #fbbf24;
-      --emerald: #34d399;
-      --rose: #fb7185;
-      --shadow: 0 28px 70px rgba(0, 0, 0, 0.55);
-    }
-
-    [data-theme="light"] {
-      --bg: #eef2f7;
-      --bg-slide: #ffffff;
-      --card: #f8fafc;
-      --card-soft: #f1f5f9;
-      --border: rgba(15, 23, 42, 0.12);
-      --border-hi: rgba(2, 132, 199, 0.5);
-      --text: #0f172a;
-      --muted: #475569;
-      --cyan: #0284c7;
-      --lime: #4d7c0f;
-      --violet: #6d28d9;
-      --amber: #b45309;
-      --emerald: #047857;
-      --rose: #be123c;
-      --shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
+      --canvas: #F7F6F3;
+      --surface: #FFFFFF;
+      --dark: #14181F;
+      --dark-card: #1E2533;
+      --ink: #14181F;
+      --body: #2F3437;
+      --muted: #787774;
+      --border: #E5E4DF;
+      --navy: #1B365D;
+      --blue-bg: #E1F3FE; --blue-fg: #1F6C9F;
+      --grn-bg: #EDF3EC;  --grn-fg: #2E6132;
+      --red-bg: #FDEBEC;  --red-fg: #9F2F2D;
+      --amb-bg: #FBF3DB;  --amb-fg: #956400;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
+      font-family: "SF Pro Display", "Helvetica Neue", -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #ECEBE6;
+      color: var(--body);
       height: 100vh;
       overflow: hidden;
       display: flex;
       flex-direction: column;
+      -webkit-font-smoothing: antialiased;
     }
 
     .topbar {
-      height: 54px;
-      padding: 0 20px;
+      height: 52px;
+      padding: 0 22px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      background: var(--surface);
       border-bottom: 1px solid var(--border);
-      background: var(--bg-slide);
-      z-index: 20;
       flex-shrink: 0;
     }
 
@@ -73,67 +53,61 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      font-size: 0.88rem;
-      font-weight: 700;
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: var(--ink);
     }
 
-    .badge {
-      padding: 4px 10px;
+    .pill-meta {
+      padding: 3px 9px;
       border-radius: 999px;
-      font-size: 0.72rem;
-      font-weight: 800;
+      font-size: 0.7rem;
+      font-weight: 700;
       letter-spacing: 0.06em;
       text-transform: uppercase;
-      background: rgba(56, 189, 248, 0.14);
-      color: var(--cyan);
+      background: var(--canvas);
       border: 1px solid var(--border);
+      color: var(--muted);
     }
 
-    .controls {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+    .controls { display: flex; align-items: center; gap: 7px; }
 
     .btn {
       cursor: pointer;
       padding: 6px 12px;
-      border-radius: 8px;
+      border-radius: 6px;
       border: 1px solid var(--border);
-      background: var(--card);
-      color: var(--text);
-      font-size: 0.8rem;
+      background: var(--surface);
+      color: var(--ink);
+      font-size: 0.78rem;
       font-weight: 600;
       text-decoration: none;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      transition: all 0.18s ease;
+      gap: 5px;
+      transition: background 0.15s ease, transform 0.1s ease;
     }
 
-    .btn:hover {
-      border-color: var(--border-hi);
-      transform: translateY(-1px);
-    }
+    .btn:hover { background: var(--canvas); }
+    .btn:active { transform: scale(0.98); }
 
-    .btn-primary {
-      background: var(--cyan);
-      color: #06101f;
-      border-color: transparent;
-      font-weight: 800;
+    .btn-dark {
+      background: var(--ink);
+      color: #FFFFFF;
+      border-color: var(--ink);
     }
+    .btn-dark:hover { background: #2D333B; }
 
-    .progress-track {
-      height: 3px;
-      background: rgba(148, 163, 184, 0.16);
+    .progress-bar {
+      height: 2px;
+      background: var(--border);
       width: 100%;
       flex-shrink: 0;
     }
-
     .progress-fill {
       height: 100%;
       width: 7%;
-      background: linear-gradient(90deg, var(--cyan), var(--lime), var(--violet));
+      background: var(--navy);
       transition: width 0.25s ease;
     }
 
@@ -143,13 +117,12 @@
       align-items: center;
       justify-content: center;
       padding: 20px 28px;
-      position: relative;
       overflow: hidden;
     }
 
     .deck {
-      width: min(1240px, 100%);
-      height: min(698px, 100%);
+      width: min(1220px, 100%);
+      height: min(686px, 100%);
       aspect-ratio: 16 / 9;
       position: relative;
     }
@@ -157,947 +130,759 @@
     .slide {
       position: absolute;
       inset: 0;
-      background: var(--bg-slide);
+      background: var(--canvas);
       border: 1px solid var(--border);
-      border-radius: 20px;
-      box-shadow: var(--shadow);
-      padding: 36px 46px 52px;
+      border-radius: 10px;
+      box-shadow: 0 4px 24px rgba(20, 24, 31, 0.06);
+      padding: 34px 48px 48px;
       display: none;
       flex-direction: column;
-      overflow-y: auto;
-      animation: fadeSlide 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow: hidden;
+      animation: fadeIn 0.22s ease-out;
     }
 
     .slide.active { display: flex; }
 
-    @keyframes fadeSlide {
-      from { opacity: 0; transform: translateY(10px) scale(0.992); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
+    .slide.dark {
+      background: var(--dark);
+      color: #E2E8F0;
+      border-color: #252D3D;
     }
 
-    .slide-kicker {
-      font-size: 0.76rem;
-      font-weight: 800;
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .kicker {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.09em;
       text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--cyan);
-      margin-bottom: 6px;
-    }
-
-    .slide h1 {
-      font-size: clamp(1.9rem, 3.2vw, 2.75rem);
-      line-height: 1.14;
-      letter-spacing: -0.03em;
-      margin-bottom: 14px;
-    }
-
-    .slide h2 {
-      font-size: clamp(1.38rem, 2.2vw, 1.85rem);
-      line-height: 1.2;
-      letter-spacing: -0.025em;
-      margin-bottom: 16px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .slide h3 {
-      font-size: 1rem;
-      margin-bottom: 8px;
-      color: var(--cyan);
-    }
-
-    .lead {
-      font-size: 1.02rem;
       color: var(--muted);
-      line-height: 1.55;
+      margin-bottom: 5px;
     }
 
-    .grad {
-      background: linear-gradient(90deg, var(--cyan), var(--lime), var(--violet));
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
+    .slide.dark .kicker { color: #94A3B8; }
+
+    .slide-title {
+      font-size: clamp(1.45rem, 2.3vw, 1.95rem);
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      line-height: 1.16;
+      color: var(--ink);
     }
 
-    .grid-2 {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 18px;
-      margin-top: 6px;
-      flex: 1;
-    }
-
-    .grid-3 {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 14px;
-      margin-top: 6px;
+    .slide-sub {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-top: 5px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
     }
 
     .card {
-      background: var(--card);
+      background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 14px;
+      border-radius: 8px;
       padding: 16px 18px;
     }
 
-    .card.accent-cyan { border-top: 3px solid var(--cyan); }
-    .card.accent-lime { border-top: 3px solid var(--lime); }
-    .card.accent-violet { border-top: 3px solid var(--violet); }
-    .card.accent-amber { border-top: 3px solid var(--amber); }
-    .card.accent-rose { border-top: 3px solid var(--rose); }
-    .card.accent-emerald { border-top: 3px solid var(--emerald); }
+    .card h3 {
+      font-size: 0.96rem;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 8px;
+    }
 
-    ul.pts {
+    .tag {
+      display: inline-block;
+      padding: 2px 9px;
+      border-radius: 999px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .tag.blue { background: var(--blue-bg); color: var(--blue-fg); }
+    .tag.grn  { background: var(--grn-bg);  color: var(--grn-fg); }
+    .tag.red  { background: var(--red-bg);  color: var(--red-fg); }
+    .tag.amb  { background: var(--amb-bg);  color: var(--amb-fg); }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; flex: 1; min-height: 0; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; flex: 1; min-height: 0; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; flex: 1; min-height: 0; }
+
+    ul.list {
       list-style: none;
       display: grid;
-      gap: 8px;
-      font-size: 0.9rem;
-      line-height: 1.48;
+      gap: 7px;
+      font-size: 0.84rem;
+      line-height: 1.44;
     }
-
-    ul.pts li {
-      padding-left: 16px;
-      position: relative;
-    }
-
-    ul.pts li::before {
-      content: "▸";
+    ul.list li { padding-left: 15px; position: relative; }
+    ul.list li::before {
+      content: "—";
       position: absolute;
       left: 0;
-      color: var(--cyan);
-      font-weight: 900;
+      color: var(--navy);
+      font-weight: 700;
     }
 
-    .eq-box {
-      background: var(--card-soft);
-      border-left: 3px solid var(--cyan);
-      border-radius: 10px;
-      padding: 10px 14px;
+    .eq {
+      background: var(--canvas);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 9px 12px;
       margin: 10px 0;
-      font-size: 0.92rem;
-      overflow-x: auto;
+      font-family: "SF Mono", Menlo, monospace;
+      font-size: 0.82rem;
+      color: var(--ink);
     }
 
-    .callout {
-      margin-top: auto;
-      padding: 11px 15px;
-      border-radius: 11px;
-      background: rgba(56, 189, 248, 0.1);
-      border: 1px solid var(--border-hi);
-      font-size: 0.86rem;
-      line-height: 1.45;
+    .kpi-num {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--ink);
+      line-height: 1.1;
+      margin: 4px 0;
     }
 
-    .callout.warn {
-      background: rgba(251, 191, 36, 0.1);
-      border-color: rgba(251, 191, 36, 0.45);
+    .chart-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
     }
 
-    .callout.danger {
-      background: rgba(251, 113, 133, 0.1);
-      border-color: rgba(251, 113, 133, 0.45);
+    .banner {
+      margin-top: 12px;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      line-height: 1.4;
     }
+    .banner.amb { background: var(--amb-bg); color: var(--amb-fg); }
+    .banner.red { background: var(--red-bg); color: var(--red-fg); }
 
-    table.cmp {
+    table.clean {
       width: 100%;
       border-collapse: collapse;
-      font-size: 0.82rem;
-      margin-top: 6px;
+      font-size: 0.78rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
     }
-
-    table.cmp th, table.cmp td {
+    table.clean th, table.clean td {
       text-align: left;
       padding: 8px 10px;
       border-bottom: 1px solid var(--border);
-      vertical-align: top;
-      line-height: 1.4;
+      vertical-align: middle;
+      line-height: 1.38;
     }
-
-    table.cmp th {
-      color: var(--cyan);
-      font-weight: 800;
-      background: var(--card-soft);
-      text-transform: uppercase;
+    table.clean th {
+      background: var(--dark);
+      color: #FFFFFF;
       font-size: 0.72rem;
-      letter-spacing: 0.05em;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
     }
-
-    table.cmp tr.highlight td {
-      background: rgba(56, 189, 248, 0.1);
+    table.clean tr.hi td {
+      background: var(--grn-bg);
       font-weight: 600;
+      color: var(--ink);
     }
 
-    .stat-row {
+    .gap-row {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-      margin: 12px 0;
-    }
-
-    .stat {
-      background: var(--card);
+      grid-template-columns: 52px 1.25fr 24px 76px 1fr;
+      gap: 10px;
+      align-items: center;
+      background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px 14px;
-      text-align: center;
+      border-radius: 7px;
+      padding: 9px 12px;
+      font-size: 0.8rem;
     }
 
-    .stat .num {
-      font-size: 1.5rem;
-      font-weight: 800;
-      color: var(--cyan);
-      letter-spacing: -0.03em;
-    }
-
-    .stat .lbl {
-      font-size: 0.74rem;
-      color: var(--muted);
-      margin-top: 3px;
-    }
-
-    .slide-footer {
+    .footer {
       position: absolute;
-      left: 46px;
-      right: 46px;
+      left: 48px;
+      right: 48px;
       bottom: 14px;
       display: flex;
       justify-content: space-between;
-      font-size: 0.74rem;
+      font-size: 0.72rem;
       color: var(--muted);
       border-top: 1px solid var(--border);
-      padding-top: 8px;
-      pointer-events: none;
+      padding-top: 7px;
     }
+    .slide.dark .footer { border-color: #252D3D; color: #64748B; }
 
-    .notes-drawer {
+    .notes-bar {
       display: none;
-      background: var(--bg-slide);
-      border-top: 1px solid var(--border-hi);
-      padding: 12px 24px;
-      font-size: 0.86rem;
-      color: var(--muted);
-      max-height: 130px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 10px 24px;
+      font-size: 0.84rem;
+      color: var(--body);
+      max-height: 110px;
       overflow-y: auto;
       flex-shrink: 0;
     }
+    .notes-bar.open { display: block; }
 
-    .notes-drawer.open { display: block; }
-    .notes-drawer strong { color: var(--amber); }
-
-    .overview-modal {
+    .overview {
       position: fixed;
       inset: 0;
-      background: rgba(5, 8, 17, 0.9);
-      backdrop-filter: blur(10px);
+      background: rgba(20, 24, 31, 0.82);
       z-index: 100;
       display: none;
       padding: 28px;
       overflow-y: auto;
     }
-
-    .overview-modal.open { display: block; }
-
+    .overview.open { display: block; }
     .overview-grid {
-      max-width: 1200px;
-      margin: 20px auto 0;
+      max-width: 1120px;
+      margin: 18px auto 0;
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-      gap: 14px;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 12px;
     }
-
     .thumb {
       cursor: pointer;
-      background: var(--bg-slide);
+      background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 14px;
-      transition: all 0.18s ease;
-    }
-
-    .thumb:hover, .thumb.current {
-      border-color: var(--cyan);
-      transform: translateY(-2px);
-    }
-
-    .thumb-num {
-      font-size: 0.72rem;
-      font-weight: 800;
-      color: var(--cyan);
-      margin-bottom: 4px;
-    }
-
-    .thumb-title {
-      font-size: 0.88rem;
-      font-weight: 700;
-      line-height: 1.35;
-    }
-
-    .tag {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 999px;
-      font-size: 0.72rem;
-      font-weight: 700;
-      background: rgba(56, 189, 248, 0.14);
-      color: var(--cyan);
-      margin-right: 4px;
-    }
-
-    .tag.lime { background: rgba(163, 230, 53, 0.15); color: var(--lime); }
-    .tag.rose { background: rgba(251, 113, 133, 0.15); color: var(--rose); }
-    .tag.amber { background: rgba(251, 191, 36, 0.15); color: var(--amber); }
-
-    .title-hero {
-      justify-content: center;
-      background: radial-gradient(circle at 85% 15%, rgba(56, 189, 248, 0.14), transparent 45%),
-                  radial-gradient(circle at 15% 85%, rgba(167, 139, 250, 0.12), transparent 45%),
-                  var(--bg-slide);
-    }
-
-    .meta-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 14px;
-      margin-top: 28px;
-      padding-top: 20px;
-      border-top: 1px solid var(--border);
-      font-size: 0.86rem;
-    }
-
-    .gap-item {
-      display: grid;
-      grid-template-columns: 54px 1.2fr 1fr;
-      gap: 12px;
-      align-items: center;
-      padding: 9px 12px;
-      border-radius: 10px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      font-size: 0.84rem;
-    }
-
-    .gap-id {
-      font-weight: 900;
-      color: var(--cyan);
-      font-size: 0.95rem;
-      text-align: center;
-      background: rgba(56, 189, 248, 0.12);
       border-radius: 8px;
-      padding: 6px 0;
+      padding: 13px;
     }
+    .thumb.current { border: 2px solid var(--navy); }
+    .thumb .tn { font-size: 0.7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+    .thumb .tt { font-size: 0.84rem; font-weight: 700; color: var(--ink); margin-top: 4px; }
 
     @media print {
-      body { height: auto; overflow: visible; background: #fff; color: #0f172a; }
-      .topbar, .progress-track, .notes-drawer, .overview-modal { display: none !important; }
+      body { height: auto; overflow: visible; background: #fff; }
+      .topbar, .progress-bar, .notes-bar, .overview { display: none !important; }
       .stage { display: block; padding: 0; }
       .deck { width: 100%; height: auto; aspect-ratio: auto; }
-      .slide {
-        position: static;
-        display: flex !important;
-        page-break-after: always;
-        break-after: page;
-        height: 100vh;
-        border: none;
-        border-radius: 0;
-        box-shadow: none;
-      }
+      .slide { position: static; display: flex !important; height: 100vh; border: none; border-radius: 0; box-shadow: none; page-break-after: always; }
     }
   </style>
 </head>
 <body>
   <header class="topbar">
     <div class="topbar-left">
-      <a class="btn" href="./index.html">← Portal</a>
-      <span class="badge">Chapter 2 • Literature Review</span>
+      <a class="btn" href="./index.html">Back to Portal</a>
+      <span class="pill-meta">Chapter 2 • Literature Review</span>
       <span>Aetron Thesis Presentation</span>
     </div>
     <div class="controls">
-      <span id="counter" style="font-size:0.82rem;color:var(--muted);font-weight:700;margin-right:4px;">1 / 14</span>
-      <button class="btn" id="prev-btn" type="button">◀ Prev</button>
-      <button class="btn btn-primary" id="next-btn" type="button">Next ▶</button>
-      <button class="btn" id="grid-btn" type="button" title="Shortcut: G">⊞ Slides</button>
-      <button class="btn" id="notes-btn" type="button" title="Shortcut: S">📝 Notes</button>
-      <button class="btn" id="theme-btn" type="button">🌗</button>
-      <button class="btn" id="fs-btn" type="button" title="Shortcut: F">⛶</button>
-      <a class="btn" href="../thesis_overleaf/slides_literature_review.pdf" target="_blank">📄 PDF Slides</a>
+      <span id="counter" style="font-size:0.78rem;color:var(--muted);font-weight:700;margin-right:4px;">01 / 14</span>
+      <button class="btn" id="prev-btn" type="button">Prev</button>
+      <button class="btn btn-dark" id="next-btn" type="button">Next</button>
+      <button class="btn" id="grid-btn" type="button">Overview (G)</button>
+      <button class="btn" id="notes-btn" type="button">Notes (S)</button>
+      <button class="btn" id="fs-btn" type="button">Fullscreen (F)</button>
+      <a class="btn btn-dark" href="../thesis_overleaf/Aetron_Literature_Review.pptx" download>Download .PPTX</a>
     </div>
   </header>
 
-  <div class="progress-track"><div class="progress-fill" id="progress"></div></div>
+  <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
 
   <main class="stage">
-    <div class="deck" id="deck">
+    <div class="deck">
 
       <!-- SLIDE 1 -->
-      <section class="slide title-hero active" data-title="Title: Literature Review"
+      <section class="slide dark active" data-title="Title Cover"
         data-notes="Xin chào quý thầy cô Hội đồng. Hôm nay em xin trình bày phần Tổng quan Tài liệu (Literature Review) cho đề tài Khóa luận Tốt nghiệp: Aetron — Ứng dụng theo dõi thể thao di động cho hoạt động trong nhà và ngoài trời chỉ sử dụng cảm biến smartphone.">
-        <div class="slide-kicker">International University — VNU-HCM • School of Computer Science &amp; Engineering</div>
-        <h1>Literature Review:<br><span class="grad">A Mobile Fitness Tracking Application for Indoor and Outdoor Activities</span></h1>
-        <p class="lead">Scientific Foundations of Smartphone-Only GNSS Kinematics, Cross-Platform Indoor/Outdoor Detection, Zero-Velocity Gait Sensing, and 2024 Compendium Calorimetry.</p>
-        <div class="meta-grid">
-          <div>
-            <div style="color:var(--muted);font-size:0.76rem;text-transform:uppercase;font-weight:700;">Presenter</div>
-            <div style="font-weight:800;margin-top:2px;">Nguyen Duc Bao (ITITIU22238)</div>
-            <div style="color:var(--muted);font-size:0.8rem;">Major: Network Engineering</div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex:1;padding-top:14px;">
+          <div style="max-width:74%;border-left:4px solid #38BDF8;padding-left:24px;">
+            <div class="kicker" style="color:#94A3B8;">International University — VNU-HCM  •  Chapter 2 Seminar</div>
+            <div style="font-size:1.15rem;font-weight:700;color:#38BDF8;margin:14px 0 8px;">Literature Review</div>
+            <h1 style="font-size:2.65rem;line-height:1.12;letter-spacing:-0.03em;color:#FFFFFF;font-weight:700;">A Mobile Fitness Tracking Application for Indoor and Outdoor Activities</h1>
+            <p style="margin-top:16px;font-size:0.98rem;line-height:1.55;color:#CBD5E1;max-width:720px;">
+              Scientific Foundations of Smartphone-Only GNSS Kinematics, Cross-Platform Indoor/Outdoor Detection, Zero-Velocity Gait Sensing, and 2024 Compendium Calorimetry.
+            </p>
           </div>
-          <div>
-            <div style="color:var(--muted);font-size:0.76rem;text-transform:uppercase;font-weight:700;">Supervisor</div>
-            <div style="font-weight:800;margin-top:2px;">Assoc. Prof. Vo Thi Luu Phuong</div>
-            <div style="color:var(--muted);font-size:0.8rem;">Thesis Defense / Seminar Deck</div>
-          </div>
-          <div>
-            <div style="color:var(--muted);font-size:0.76rem;text-transform:uppercase;font-weight:700;">Coverage</div>
-            <div style="font-weight:800;margin-top:2px;">68 Peer-Reviewed &amp; Technical Refs</div>
-            <div style="color:var(--muted);font-size:0.8rem;">Aligned with Chapter 2 of Thesis Report</div>
+          <div style="width:146px;height:146px;border-radius:999px;background:#FFFFFF;display:grid;place-items:center;padding:8px;flex-shrink:0;">
+            <img src="../thesis_overleaf/figures/iu_logo.png" alt="HCM-IU Crest" style="width:100%;height:100%;object-fit:contain;" />
           </div>
         </div>
-        <div class="slide-footer"><span>Aetron — Literature Review</span><span>Slide 1 / 14</span></div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px;border-top:1px solid #252D3D;padding-top:18px;margin-bottom:14px;">
+          <div>
+            <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.08em;color:#64748B;">STUDENT</div>
+            <div style="font-size:0.92rem;font-weight:700;color:#FFFFFF;margin-top:3px;">Nguyen Duc Bao (ITITIU22238)</div>
+            <div style="font-size:0.78rem;color:#94A3B8;">Major: Network Engineering</div>
+          </div>
+          <div>
+            <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.08em;color:#64748B;">SUPERVISOR</div>
+            <div style="font-size:0.92rem;font-weight:700;color:#FFFFFF;margin-top:3px;">Assoc. Prof. Vo Thi Luu Phuong</div>
+            <div style="font-size:0.78rem;color:#94A3B8;">School of Computer Science &amp; Engineering</div>
+          </div>
+          <div>
+            <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.08em;color:#64748B;">SCOPE</div>
+            <div style="font-size:0.92rem;font-weight:700;color:#FFFFFF;margin-top:3px;">68 Peer-Reviewed &amp; Technical Refs</div>
+            <div style="font-size:0.78rem;color:#94A3B8;">Aligned with Chapter 2 of Thesis Report</div>
+          </div>
+        </div>
+        <div class="footer"><span>Aetron  |  Literature Review</span><span>01 / 14</span></div>
       </section>
 
       <!-- SLIDE 2 -->
-      <section class="slide" data-title="Agenda & Research Scope"
-        data-notes="Bố cục bài trình bày gồm 6 phần theo đúng mạch Chương 2 của luận văn: từ bối cảnh cảm biến di động, động học GNSS và lọc Kalman, phân loại môi trường Indoor/Outdoor đa nền tảng, cơ chế đếm bước & chiều dài sải chân trong nhà, tính toán năng lượng 2024 Compendium, cho tới đối chiếu ứng dụng thương mại và 5 khoảng trống nghiên cứu.">
-        <div class="slide-kicker">01 • Structure</div>
-        <h2>Literature Review Roadmap &amp; Scope</h2>
-        <div class="grid-3" style="flex:1;align-content:start;margin-top:10px;">
-          <div class="card accent-cyan">
-            <h3>1. Outdoor GNSS &amp; Filtering</h3>
-            <ul class="pts">
-              <li>Smartphone GNSS error physics &amp; multipath</li>
-              <li>Haversine vs. Vincenty &amp; MAPE standards</li>
-              <li>Fixed-Alpha vs. 4-State EKF / Phase 2 AEKF</li>
-              <li>T-DBSCAN, PCHIP reconstruction, HMM snapping</li>
-            </ul>
-          </div>
-          <div class="card accent-violet">
-            <h3>2. Cross-Platform IOD</h3>
-            <ul class="pts">
-              <li>GPS failure indoors &amp; PDR necessity</li>
-              <li>Rule-based, IODetector, DeepIOD, Yoo \(C/N_0\)</li>
-              <li>iOS API sandboxing &amp; HAR-PMD confounding</li>
-              <li>MagIO + Inertial + Straightness + Causal HMM</li>
-            </ul>
-          </div>
-          <div class="card accent-lime">
-            <h3>3. Indoor Gait &amp; Stride</h3>
-            <ul class="pts">
-              <li>Hardware pedometers vs. Oxford WPD / Xu</li>
-              <li>Skog (2010) MV-GLRT stationary rejection</li>
-              <li>Cadence window trilemma (PedEval / OxWalk)</li>
-              <li>Renaudin (2012) adaptive stride length</li>
-            </ul>
-          </div>
-          <div class="card accent-amber">
-            <h3>4. Metabolic Calorimetry</h3>
-            <ul class="pts">
-              <li>Wearable HR error meta-analyses (28–30%+)</li>
-              <li>Legacy distance heuristics vs. physiology</li>
-              <li>2024 Adult Compendium speed-banded MET</li>
-            </ul>
-          </div>
-          <div class="card accent-emerald">
-            <h3>5. Architecture &amp; Systems</h3>
-            <ul class="pts">
-              <li>Offline-first local persistence (Isar + SQLite)</li>
-              <li>Clean Architecture &amp; reactive single-source UI</li>
-              <li>Server-authority auditability (Supabase/Deno)</li>
-            </ul>
-          </div>
-          <div class="card accent-rose">
-            <h3>6. Commercial Survey &amp; Gaps</h3>
-            <ul class="pts">
-              <li>Strava, Nike Run Club, Samsung Health, Google Fit</li>
-              <li>5 synthesized Research Gaps (G1–G5)</li>
-              <li>Direct traceability to Thesis Objectives O1–O5</li>
-            </ul>
-          </div>
+      <section class="slide" data-title="Literature Review Roadmap"
+        data-notes="Bố cục phần Tổng quan Tài liệu gồm 5 mảng chính theo đúng mạch Chương 2 luận văn: từ GNSS và lọc EKF ngoài trời, phân loại môi trường Indoor/Outdoor đa nền tảng, đếm bước và chiều dài sải chân trong nhà, tính calo chuẩn 2024 Compendium và kiến trúc hệ thống, đến đối chiếu ứng dụng thương mại và 5 khoảng trống nghiên cứu.">
+        <div class="kicker">01  •  Structure &amp; Scope</div>
+        <div class="slide-title">Literature Review Roadmap</div>
+        <div class="slide-sub">Five scientific pillars grounded in 68 references, culminating in a commercial audit and 5 research gaps.</div>
+        <div class="grid-5">
+          <div class="card"><span class="tag blue">01</span><h3>Outdoor GNSS &amp; EKF</h3><ul class="list" style="font-size:0.78rem;"><li>Urban multipath &amp; HDOP</li><li>Haversine vs. Vincenty</li><li>Fixed-Alpha vs. 4-State EKF</li><li>NIS, T-DBSCAN &amp; PCHIP</li></ul></div>
+          <div class="card"><span class="tag red">02</span><h3>Cross-Platform IOD</h3><ul class="list" style="font-size:0.78rem;"><li>Rule-based to DeepIOD</li><li>Yoo (2025) C/N0 handover</li><li>Apple iOS API sandboxing</li><li>MagIO + Straightness + HMM</li></ul></div>
+          <div class="card"><span class="tag grn">03</span><h3>Indoor Gait &amp; Stride</h3><ul class="list" style="font-size:0.78rem;"><li>Oxford WPD &amp; Xu Running</li><li>Skog (2010) MV-GLRT ZUPT</li><li>Cadence window trilemma</li><li>Renaudin (2012) LOSO stride</li></ul></div>
+          <div class="card"><span class="tag amb">04</span><h3>Energy &amp; Systems</h3><ul class="list" style="font-size:0.78rem;"><li>Wearable HR error (28–30%+)</li><li>2024 Adult Compendium MET</li><li>Offline-first Isar + SQLite</li><li>Clean Architecture &amp; Deno</li></ul></div>
+          <div class="card"><span class="tag blue">05</span><h3>Survey &amp; Gaps</h3><ul class="list" style="font-size:0.78rem;"><li>Strava &amp; Nike Run Club</li><li>Samsung Health &amp; Google Fit</li><li>5 synthesized gaps (G1–G5)</li><li>Direct mapping to O1–O5</li></ul></div>
         </div>
-        <div class="slide-footer"><span>Aetron — Literature Review</span><span>Slide 2 / 14</span></div>
+        <div class="footer"><span>Aetron  |  Literature Review — Nguyen Duc Bao (ITITIU22238)</span><span>02 / 14</span></div>
       </section>
 
       <!-- SLIDE 3 -->
-      <section class="slide" data-title="Smartphone-Only Sensing Challenges"
-        data-notes="Khác với các hệ thống nghiên cứu dùng đồng hồ chuyên dụng hay dây đeo ngực đo nhịp tim, bài toán của Aetron là chỉ dùng duy nhất smartphone thương mại (iOS và Android). Điều này kéo theo 4 thách thức vật lý và hệ thống rất lớn.">
-        <div class="slide-kicker">02 • Problem Context</div>
-        <h2>Why Smartphone-Only Indoor &amp; Outdoor Tracking Is Hard</h2>
-        <div class="stat-row">
-          <div class="stat"><div class="num">30–50 m</div><div class="lbl">Urban Canyon GNSS Error<br>(Merry &amp; Bettinger, 2019)</div></div>
-          <div class="stat"><div class="num">0 APIs</div><div class="lbl">Public Light / \(C/N_0\) / Cell<br>Exposed on Apple iOS</div></div>
-          <div class="stat"><div class="num">27.96%</div><div class="lbl">Apple Watch Calorie Error<br>(Choe et al., 2025)</div></div>
-          <div class="stat"><div class="num">&lt; 5%</div><div class="lbl">"Good" Distance MAPE<br>(Scott et al., 2016)</div></div>
+      <section class="slide" data-title="Why Smartphone-Only Tracking Is Hard"
+        data-notes="Bốn con số cốt lõi tóm tắt độ khó của bài toán: sai số GNSS đô thị lên tới 30–50m, iOS khóa hoàn toàn 3 nhóm cảm biến ánh sáng/tế bào/C-N0, sai số calo ngay cả trên Apple Watch lên tới 27.96%, trong khi chuẩn khoa học thể thao đòi hỏi sai số quãng đường dưới 5%.">
+        <div class="kicker">02  •  Problem Context</div>
+        <div class="slide-title">Why Smartphone-Only Indoor &amp; Outdoor Tracking Is Hard</div>
+        <div class="slide-sub">Delivering auditable fitness telemetry without chest straps or proprietary watch firmware.</div>
+        <div class="grid-4" style="margin-bottom:14px;">
+          <div class="card"><span class="tag red">Merry &amp; Bettinger 2019</span><div class="kpi-num">30–50 m</div><div style="font-size:0.78rem;color:var(--muted);">Urban Canyon GNSS Error</div></div>
+          <div class="card"><span class="tag amb">Apple iOS Sandbox</span><div class="kpi-num">0 APIs</div><div style="font-size:0.78rem;color:var(--muted);">Public Light / C/N0 on iOS</div></div>
+          <div class="card"><span class="tag red">Choe et al. 2025</span><div class="kpi-num">27.96%</div><div style="font-size:0.78rem;color:var(--muted);">Apple Watch Calorie Error</div></div>
+          <div class="card"><span class="tag grn">Scott et al. 2016</span><div class="kpi-num">&lt; 5%</div><div style="font-size:0.78rem;color:var(--muted);">"Good" Distance MAPE Target</div></div>
         </div>
         <div class="grid-2">
-          <div class="card accent-cyan">
+          <div class="card">
             <h3>Physical Sensor Imperfections</h3>
-            <ul class="pts">
-              <li><strong>Low-gain linear GNSS antennas:</strong> Vulnerable to NLOS building reflections, canopy outages, and phantom drift at traffic lights.</li>
-              <li><strong>Uncalibrated MEMS IMUs:</strong> Handheld/pocket phone motion mixes true gait with arm swing, screen taps, and resting hand tremor.</li>
-              <li><strong>Indoor signal collapse:</strong> Concrete and steel roofs destroy GNSS lock, forcing seamless fallback to Pedestrian Dead Reckoning (PDR).</li>
+            <ul class="list">
+              <li><strong>Low-gain GNSS antennas:</strong> NLOS building reflections cause phantom stationary drift, jumps, and canopy blackouts.</li>
+              <li><strong>Indoor signal collapse:</strong> Steel and concrete roofs destroy satellite lock, forcing Pedestrian Dead Reckoning (PDR).</li>
+              <li><strong>Uncalibrated MEMS IMUs:</strong> Handheld and pocket motion mixes gait with arm swing, screen taps, and idle tremor.</li>
             </ul>
           </div>
-          <div class="card accent-rose">
-            <h3>Systems &amp; Methodological Pitfalls</h3>
-            <ul class="pts">
-              <li><strong>OS Privilege Asymmetry:</strong> DeepIOD papers assume Android raw sensors (Light, RSRP, \(C/N_0\)) that Apple iOS strictly blocks.</li>
-              <li><strong>Lookahead Leakage:</strong> Offline smoothing or bidirectional Stop &amp; Go papers cannot drive real-time 1 Hz workout HUDs.</li>
-              <li><strong>Black-Box Commercial Apps:</strong> Proprietary outlier filtering and undisclosed calorie formulas prevent reproducible scientific auditing.</li>
+          <div class="card">
+            <h3 style="color:var(--red-fg);">Systems &amp; Methodological Pitfalls</h3>
+            <ul class="list">
+              <li><strong>Cross-OS asymmetry:</strong> DeepIOD models rely on Android light, RSRP, and \(C/N_0\) channels blocked by iOS.</li>
+              <li><strong>Lookahead leakage:</strong> Offline smoothing and bidirectional Stop &amp; Go papers cannot drive causal 1 Hz HUDs.</li>
+              <li><strong>Black-box commercial apps:</strong> Proprietary filtering and undisclosed calorie formulas block reproducible auditing.</li>
             </ul>
           </div>
         </div>
-        <div class="slide-footer"><span>Aetron — Literature Review</span><span>Slide 3 / 14</span></div>
+        <div class="footer"><span>Aetron  |  Literature Review — Nguyen Duc Bao (ITITIU22238)</span><span>03 / 14</span></div>
       </section>
 
       <!-- SLIDE 4 -->
-      <section class="slide" data-title="Outdoor GNSS Physics & Validation Benchmarks"
-        data-notes="Về mảng ngoài trời, các nghiên cứu chuẩn như Merry & Bettinger (2019) và Zandbergen (2011) cho thấy sai số GNSS điện thoại tăng vọt từ 3-10m ngoài trời thoáng lên 30-50m trong đô thị. Về công thức tính quãng đường, Haversine sai lệch tối đa 0.55% so với Vincenty elipxoit. Các ngưỡng đánh giá MAPE quốc tế được xác lập bởi Scott (2016) và Gilgen-Ammann (2020).">
-        <div class="slide-kicker">03 • Outdoor GNSS Fundamentals</div>
-        <h2>GNSS Error Physics, Distance Geometry &amp; Validation Targets</h2>
+      <section class="slide" data-title="GNSS Physics & Validation Targets"
+        data-notes="Bên phải là biểu đồ tổng hợp hai ngưỡng chuẩn quốc tế: sai số định vị điện thoại tăng từ 3–10m ngoài trời thoáng lên 30–50m trong đô thị (Merry & Bettinger 2019), và 8 đồng hồ GPS thương mại đạt MAPE 0.9–4.1% trên sân track và 3.2–8.9% trong đô thị (Gilgen-Ammann 2020) so với ngưỡng Good dưới 5% của Scott (2016).">
+        <div class="kicker">03  •  Outdoor GNSS Fundamentals</div>
+        <div class="slide-title">GNSS Error Physics, Geodesy &amp; Validation Targets</div>
+        <div class="slide-sub">Why raw coordinates fail urban benchmarks and how sports science defines acceptable distance error.</div>
         <div class="grid-2">
-          <div class="card accent-cyan">
-            <h3>Geodesy &amp; Path Integration</h3>
-            <ul class="pts">
-              <li><strong>Native Fix Streams:</strong> Android <code>FusedLocationProvider</code> &amp; iOS <code>CoreLocation</code> report 1\(\sigma\) (68%) horizontal accuracy \(\sigma_{\text{acc},k}\), unlike 50% CEP50 snapshot loggers (Beuchert et al., 2023).</li>
-              <li><strong>Haversine Great-Circle</strong> (Sinnott, 1984):</li>
-            </ul>
-            <div class="eq-box">
-              $$d_{\text{seg}} = 2 R_{\text{earth}} \arctan2\!\left(\sqrt{a}, \sqrt{1-a}\right), \quad R_{\text{earth}} \approx 6{,}371\text{ km}$$
+          <div class="card" style="display:flex;flex-direction:column;justify-content:space-between;">
+            <div>
+              <h3>Geodetic Integration &amp; Accuracy Priors</h3>
+              <ul class="list">
+                <li><strong>Native 1\(\sigma\) accuracy:</strong> Android <code>FusedLocationProvider</code> &amp; iOS <code>CoreLocation</code> report 68% radial confidence (vs. 50% CEP50 on snapshot loggers, Beuchert 2023).</li>
+                <li><strong>HDOP amplification:</strong> Poor satellite geometry induces stationary drift, multipath jumps, canopy blackouts, and speed spikes.</li>
+              </ul>
+              <div class="eq">$$d_{\text{seg}} = 2R_{\text{earth}}\arctan2\!\left(\sqrt{a},\sqrt{1-a}\right), \quad R_{\text{earth}} \approx 6{,}371\text{ km}$$</div>
+              <ul class="list">
+                <li><strong>Oblateness bound:</strong> \(\le 0.55\%\) vs. Vincenty's WGS84 ellipsoid (\(1/f = 298.257223563\)); offline RTK audits use full ellipsoidal ENU projections.</li>
+              </ul>
             </div>
-            <ul class="pts">
-              <li><strong>Oblateness Bound:</strong> \(\le 0.55\%\) vs. Vincenty's WGS84 ellipsoid (\(1/f = 298.257223563\)); offline RTK audits use full ellipsoidal ENU projection.</li>
-            </ul>
           </div>
-          <div class="card accent-lime">
-            <h3>Empirical Error &amp; Sports-Science Standards</h3>
-            <ul class="pts">
-              <li><strong>Urban Multipath:</strong> \(\sigma_{\text{pos}} = \text{HDOP}\cdot\sigma_{\text{pr}}\) creates 4 failures: stationary phantom drift, multipath jumps, bridge/canopy blackouts, and speed spikes (Merry &amp; Bettinger 2019; Yun et al. 2022).</li>
-              <li><strong>Scott et al. (2016) MAPE Criteria:</strong>
-                <br><span class="tag lime">Good &lt; 5%</span> <span class="tag amber">Moderate 5–10%</span> <span class="tag rose">Poor &gt; 10%</span>
-              </li>
-              <li><strong>Gilgen-Ammann et al. (2020):</strong> 8 commercial GPS sports watches achieved <strong>0.9–4.1%</strong> MAPE on open tracks and <strong>3.2–8.9%</strong> in urban routes.</li>
-            </ul>
+          <div class="card" style="padding:10px;">
+            <img class="chart-img" src="./assets/chart_gnss_mape.png" alt="Smartphone GNSS Error and Sports-Watch MAPE Benchmarks" />
           </div>
         </div>
-        <div class="callout">
-          <strong>Key Takeaway:</strong> Raw smartphone GNSS fails sports-science standards in cities; achieving \(&lt;5\%\) MAPE requires kinematic preprocessing plus covariance-aware state estimation.
-        </div>
-        <div class="slide-footer"><span>Aetron — Literature Review</span><span>Slide 4 / 14</span></div>
+        <div class="footer"><span>Aetron  |  Literature Review — Nguyen Duc Bao (ITITIU22238)</span><span>04 / 14</span></div>
       </section>
 
       <!-- SLIDE 5 -->
       <section class="slide" data-title="Fixed-Alpha vs 4-State Kinematic EKF"
-        data-notes="Ở giai đoạn Pre-Thesis, Aetron sử dụng bộ lọc Fixed-Alpha chỉ làm mượt tọa độ với 3 mức alpha cố định. Nhược điểm là không có bộ nhớ vận tốc/hướng và không duy trì ma trận hiệp phương sai P, dẫn đến trễ ở khúc cua và dễ đóng băng khi đi bộ 1Hz. Ở bản Thesis đầy đủ, ta nâng lên 4-State EKF trên mặt phẳng tiếp tuyến ENU kèm công thức Joseph đảm bảo ổn định số học.">
-        <div class="slide-kicker">04 • State Estimation</div>
-        <h2>From Pre-Thesis Fixed-Alpha to 4-State Kinematic EKF</h2>
+        data-notes="Ở bản Pre-Thesis, Aetron chỉ làm mượt tọa độ bằng Fixed-Alpha nên dễ trễ ở khúc cua và đóng băng khi đi bộ 1Hz. Bản Thesis nâng cấp lên 4-State EKF trên mặt phẳng ENU kèm công thức Joseph để đảm bảo ma trận hiệp phương sai luôn xác định dương và chống trôi vận tốc bằng ZUPT.">
+        <div class="kicker">04  •  State Estimation</div>
+        <div class="slide-title">From Pre-Thesis Fixed-Alpha to 4-State Kinematic EKF</div>
+        <div class="slide-sub">Replacing scalar coordinate blending with covariance-aware nonlinear estimation on a local ENU plane.</div>
         <div class="grid-2">
-          <div class="card accent-cyan">
-            <h3>4-State Nonlinear EKF (Gelb 1974; Groves 2013)</h3>
-            <p style="font-size:0.84rem;color:var(--muted);margin-bottom:6px;">Local East–North tangent plane state \(\mathbf{x}_k = [p_x, p_y, v, \theta]^T\):</p>
-            <div class="eq-box">
-              $$\mathbf{x}_k^- = \begin{bmatrix} p_{x,k-1} + v\sin\theta\,\Delta t \\ p_{y,k-1} + v\cos\theta\,\Delta t \\ v_{k-1} \\ \theta_{k-1} \end{bmatrix}, \quad \mathbf{P}_k^- = \mathbf{F}_k\mathbf{P}_{k-1}\mathbf{F}_k^T + \mathbf{Q}_k$$
+          <div style="display:flex;flex-direction:column;gap:12px;min-height:0;">
+            <div class="card" style="flex:1;padding:10px;min-height:0;">
+              <img class="chart-img" src="./assets/chart_ekf_trajectory.png" alt="Fixed-Alpha vs 4-State EKF Corner Tracking" />
             </div>
-            <p style="font-size:0.84rem;color:var(--muted);margin-bottom:4px;"><strong>Joseph-Form Covariance Update</strong> (numerical PSD guarantee):</p>
-            <div class="eq-box">
-              $$\mathbf{P}_k = (\mathbf{I}-\mathbf{K}_k\mathbf{H}_k)\mathbf{P}_k^-(\mathbf{I}-\mathbf{K}_k\mathbf{H}_k)^T + \mathbf{K}_k\mathbf{R}_k\mathbf{K}_k^T$$
+            <div class="card" style="padding:11px 14px;">
+              <div style="font-size:0.68rem;font-weight:700;color:var(--blue-fg);letter-spacing:0.06em;">JOSEPH-FORM COVARIANCE UPDATE (GROVES, 2013)</div>
+              <div style="font-size:0.86rem;margin-top:4px;">$$\mathbf{P}_k = (\mathbf{I}-\mathbf{K}_k\mathbf{H}_k)\mathbf{P}_k^-(\mathbf{I}-\mathbf{K}_k\mathbf{H}_k)^T + \mathbf{K}_k\mathbf{R}_k\mathbf{K}_k^T$$</div>
             </div>
           </div>
-          <div class="card accent-violet">
-            <h3>Architectural Contrast (Table 2.1)</h3>
-            <table class="cmp">
-              <thead><tr><th>Dimension</th><th>Fixed-Alpha (Pre-Thesis)</th><th>4-State EKF / AEKF</th></tr></thead>
+          <div class="card" style="display:flex;flex-direction:column;justify-content:center;">
+            <h3>Fixed-Alpha vs. 4-State EKF / AEKF</h3>
+            <table class="clean">
+              <thead><tr><th>Concept</th><th>Fixed-Alpha (Pre)</th><th>4-State EKF / AEKF</th></tr></thead>
               <tbody>
-                <tr><td><strong>State Vector</strong></td><td>Position only \((\phi,\lambda)\)</td><td>\([p_x, p_y, v, \theta]^T\)</td></tr>
-                <tr><td><strong>Noise \(\mathbf{R}_k\)</strong></td><td>3 discrete tiers</td><td>Continuous \(\sigma_{\text{acc},k}^2 + \text{NIS}\)</td></tr>
-                <tr><td><strong>Gain \(\mathbf{K}_k\)</strong></td><td>Fixed \(\alpha \in \{0.34,0.52,0.72\}\)</td><td>Optimal \(\mathbf{P}_k^-\mathbf{H}_k^T\mathbf{S}_k^{-1}\)</td></tr>
-                <tr><td><strong>Uncertainty</strong></td><td>None tracked</td><td>\(4\times 4\) Joseph-form \(\mathbf{P}_k\)</td></tr>
-                <tr><td><strong>Stationary</strong></td><td>Freeze risk at 1 Hz walk</td><td>ZUPT (\(z_v=0\)) + \(\mathbf{Q}_k\) damp</td></tr>
-                <tr><td><strong>Sharp Turns</strong></td><td>Heuristic \(\alpha=0.82\)</td><td>Turn-rate \(\dot{\psi}_k\) scaling</td></tr>
+                <tr><td><strong>State</strong></td><td>Position \((\phi,\lambda)\)</td><td style="background:var(--grn-bg);color:var(--grn-fg);font-weight:600;">\([p_x,p_y,v,\theta]^T\) ENU</td></tr>
+                <tr><td><strong>Noise \(\mathbf{R}_k\)</strong></td><td>3 discrete tiers</td><td style="background:var(--grn-bg);color:var(--grn-fg);font-weight:600;">Continuous \(\sigma^2 + \text{NIS}\)</td></tr>
+                <tr><td><strong>Gain \(\mathbf{K}_k\)</strong></td><td>Fixed \(\alpha \in \{0.34,0.52,0.72\}\)</td><td style="background:var(--grn-bg);color:var(--grn-fg);font-weight:600;">Optimal \(\mathbf{P}_k^-\mathbf{H}_k^T\mathbf{S}_k^{-1}\)</td></tr>
+                <tr><td><strong>Uncertainty</strong></td><td>Not propagated</td><td style="background:var(--grn-bg);color:var(--grn-fg);font-weight:600;">\(4\times 4\) Joseph-form \(\mathbf{P}_k\)</td></tr>
+                <tr><td><strong>Stationary</strong></td><td>1 Hz walk freeze risk</td><td style="background:var(--grn-bg);color:var(--grn-fg);font-weight:600;">ZUPT (\(z_v=0\)) + \(\mathbf{Q}_k\) damp</td></tr>
+                <tr><td><strong>Turns</strong></td><td>Heuristic \(\alpha=0.82\)</td><td style="background:var(--grn-bg);color:var(--grn-fg);font-weight:600;">Centripetal \(\dot{\psi}_k\) scaling</td></tr>
               </tbody>
             </table>
           </div>
         </div>
-        <div class="slide-footer"><span>Aetron — Literature Review</span><span>Slide 5 / 14</span></div>
+        <div class="footer"><span>Aetron  |  Literature Review — Nguyen Duc Bao (ITITIU22238)</span><span>05 / 14</span></div>
       </section>
 
       <!-- SLIDE 6 -->
-      <section class="slide" data-title="Adaptive NIS, T-DBSCAN & Reconstruction"
-        data-notes="Bổ sung cho EKF là lớp sửa lỗi thích nghi Phase 2 sử dụng thống kê chi-bình phương Mahalanobis NIS (2 bậc tự do) để hạ trọng số hoặc loại bỏ nhiễu đa đường đô thị 10-15m, kết hợp gom cụm dừng T-DBSCAN và nội suy PCHIP chỉ dành cho hiển thị bản đồ.">
-        <div class="slide-kicker">05 • Advanced Trajectory Mining</div>
-        <h2>Adaptive NIS Gating, T-DBSCAN &amp; Outage Reconstruction</h2>
-        <div class="grid-2">
-          <div class="card accent-cyan">
-            <h3>Phase 1 &amp; Phase 2 Robustness</h3>
-            <ul class="pts">
-              <li><strong>P01 Preprocessing</strong> (Zheng 2015; Li et al. 2025): Physical speed/accel ceilings, median spike filter, &gt;5 s outage partitioning, stay-point dwell tagging.</li>
-              <li><strong>P02 2-DOF Mahalanobis NIS</strong> (Groves 2013; Sukhenko 2025):</li>
-            </ul>
-            <div class="eq-box">
-              $$d_M^2 = \boldsymbol{\nu}_k^T \mathbf{S}_k^{-1} \boldsymbol{\nu}_k \sim \chi_2^2 \quad (\gamma_1 = 5.991,\; \gamma_2 = 13.816)$$
-            </div>
-            <ul class="pts">
-              <li>\(d_M^2 \in (\gamma_1, \gamma_2]\): inflate \(\sigma_{\text{eff}}\); \(d_M^2 > \gamma_2\): reject jump unless 4 consecutive critical fixes confirm re-anchor.</li>
-              <li><strong>Turn-Rate Scaling</strong> (Rong Li &amp; Jilkov 2003): Inflates heading variance \(\mathbf{Q}_\theta\) quadratically with \(\dot{\psi}_k\) during track bends.</li>
+      <section class="slide" data-title="Three-Stage GNSS Pipeline"
+        data-notes="Toàn bộ chuỗi xử lý GNSS được tách rạch ròi thành 3 lớp: P01 tiền xử lý động học thời gian thực, P02 sửa lỗi thích nghi bằng kiểm định chi-bình phương Mahalanobis NIS 2 bậc tự do, và P03 gom cụm dừng T-DBSCAN / nội suy PCHIP chỉ dùng để vẽ bản đồ, tuyệt đối không làm sai lệch quãng đường trực tiếp.">
+        <div class="kicker">05  •  Trajectory Mining &amp; Hardening</div>
+        <div class="slide-title">Three-Stage GNSS Pipeline: P01, P02 &amp; Post-Processing</div>
+        <div class="slide-sub">Separating causal real-time estimation from offline visual reconstruction.</div>
+        <div class="grid-3">
+          <div class="card">
+            <span class="tag blue">Stage P01</span>
+            <h3>Kinematic Preprocessing</h3>
+            <div style="font-size:0.74rem;color:var(--muted);margin-bottom:10px;">Zheng (2015); Li et al. (2025)</div>
+            <ul class="list">
+              <li>Physical speed &amp; acceleration ceilings per modality.</li>
+              <li>Sliding median spike pruning &amp; bearing-reversal check.</li>
+              <li>&gt; 5 s outage partitioning prevents straight-line chords.</li>
+              <li>Stay-point dwell tagging (Zheng et al., 2009).</li>
             </ul>
           </div>
-          <div class="card accent-emerald">
-            <h3>Post-Processing &amp; Display Boundaries</h3>
-            <ul class="pts">
-              <li><strong>T-DBSCAN Dwell Consolidation</strong> (Ester 1996; Spang et al. STAGA 2022): Collapses traffic-light pauses into zero-distance dwell centroids.</li>
-              <li><strong>Monotone PCHIP Reconstruction</strong> (Fritsch &amp; Carlson 1980; Czerwiński 2026): Bridges 2–15 s canopy gaps with \(C^1\) monotone Hermite curves.</li>
-              <li><strong>HMM Map-Matching &amp; Compression</strong> (Newson &amp; Krumm 2009): Road-graph snapping contract + Google Encoded Polyline delta compression.</li>
+          <div class="card">
+            <span class="tag grn">Stage P02</span>
+            <h3>Adaptive NIS Correction</h3>
+            <div style="font-size:0.74rem;color:var(--muted);margin-bottom:10px;">Groves (2013); Sukhenko (2025); Li &amp; Jilkov (2003)</div>
+            <ul class="list">
+              <li>2-DOF NIS: \(d_M^2 = \boldsymbol{\nu}_k^T\mathbf{S}_k^{-1}\boldsymbol{\nu}_k \sim \chi_2^2\).</li>
+              <li>\(\gamma_1 = 5.991\): inflate \(\sigma_{\text{eff}}\) on mild multipath.</li>
+              <li>\(\gamma_2 = 13.816\): reject jump unless 4 consecutive fixes.</li>
+              <li>Centripetal turn-rate scaling inflates \(\mathbf{Q}_\theta\) on bends.</li>
             </ul>
-            <div class="callout warn" style="margin-top:12px;">
-              <strong>Scientific Guardrail:</strong> Offline PCHIP bridging &amp; bidirectional Stop-and-Go algorithms are <em>never</em> allowed to mutate live distance or 3 s Auto-Pause decisions.
-            </div>
+          </div>
+          <div class="card">
+            <span class="tag amb">Stage P03 &amp; Post</span>
+            <h3>Mining &amp; Display Only</h3>
+            <div style="font-size:0.74rem;color:var(--muted);margin-bottom:10px;">Ester (1996); Fritsch &amp; Carlson (1980); Newson (2009)</div>
+            <ul class="list">
+              <li>T-DBSCAN collapses red-light pauses (STAGA 2022).</li>
+              <li>Monotone PCHIP bridges 2–15 s canopy gaps smoothly.</li>
+              <li>HMM map-matching contract + Google Polyline delta.</li>
+              <li>Strict rule: P03 never mutates live distance or pace.</li>
+            </ul>
           </div>
         </div>
-        <div class="slide-footer"><span>Aetron — Literature Review</span><span>Slide 6 / 14</span></div>
+        <div class="banner amb">Scientific Governance Rule: Offline lookahead algorithms (PCHIP bridging, bidirectional Stop &amp; Go) are strictly isolated from live distance accumulation and 3-second Auto-Pause triggers.</div>
+        <div class="footer"><span>Aetron  |  Literature Review — Nguyen Duc Bao (ITITIU22238)</span><span>06 / 14</span></div>
       </section>
 
       <!-- SLIDE 7 -->
-      <section class="slide" data-title="Indoor/Outdoor Detection (IOD) Evolution"
-        data-notes="Chuyển sang trọng tâm thứ hai của đề tài là phân loại môi trường Indoor/Outdoor (IOD). Các nghiên cứu phát triển từ luật ngưỡng tĩnh, tới IODetector (2014), phân tích tín hiệu GNSS (Bui 2020), đến các mạng học sâu đa kênh như DeepIOD (2024) trên tập Cambridge CIOD và phát hiện chuyển vùng qua cửa dựa vào C/N0 của Yoo (2025).">
-        <div class="slide-kicker">06 • Context-Aware Sensing</div>
-        <h2>Indoor/Outdoor Detection (IOD): Literature Evolution</h2>
-        <div class="grid-3" style="margin-top:10px;">
-          <div class="card accent-amber">
-            <h3>Gen 1: Heuristics &amp; Early Fusion</h3>
-            <ul class="pts">
-              <li><strong>IODetector</strong> (Li et al., 2014): Light, cellular, and magnetic likelihoods with confidence weights.</li>
-              <li><strong>Device Shift</strong> (Radu et al., 2014): Highlighted cross-phone calibration fragility.</li>
-              <li><strong>Pre-Thesis Aetron:</strong> Deterministic 10-fix GPS score (0.45/0.30/0.15/0.10) — transparent, but stalls when iOS drops fixes indoors.</li>
+      <section class="slide" data-title="IOD Literature Evolution"
+        data-notes="Nghiên cứu về phân loại môi trường Indoor/Outdoor đi qua 3 thế hệ từ IODetector (2014), GPS-IOD và chuyển vùng C/N0 của Yoo (2025), đến mạng học sâu DeepIOD (2024). Tuy nhiên có 2 rào cản lớn: Apple iOS khóa 3 cảm biến quan trọng nhất và dữ liệu HAR-PMD cho thấy mạng CNN dễ nhầm vận động mạnh trong nhà thành ngoài trời.">
+        <div class="kicker">06  •  Context-Aware Sensing</div>
+        <div class="slide-title">Indoor/Outdoor Detection (IOD): Literature Evolution</div>
+        <div class="slide-sub">From deterministic heuristics to deep multimodal networks — and their hidden production failure modes.</div>
+        <div class="grid-3">
+          <div class="card">
+            <span class="tag amb">2014 – 2019</span>
+            <h3>Gen 1: Heuristic &amp; Early Fusion</h3>
+            <ul class="list">
+              <li><strong>IODetector (Li 2014):</strong> Optical, cellular, and magnetic likelihoods with confidence weights.</li>
+              <li><strong>Device shift (Radu 2014):</strong> Exposed severe cross-phone sensor calibration fragility.</li>
+              <li><strong>Pre-Thesis Aetron:</strong> 10-fix deterministic score; stalls on iOS when CoreLocation stops indoors.</li>
             </ul>
           </div>
-          <div class="card accent-cyan">
-            <h3>Gen 2: GNSS Quality &amp; Transition</h3>
-            <ul class="pts">
-              <li><strong>GPS-IOD</strong> (Bui et al., 2020): High discrimination using OS-exposed GNSS accuracy and fix availability.</li>
-              <li><strong>Seamless Handover</strong> (Yoo, 2025): Models doorway transitions using satellite \(C/N_0 \in [30, 40]\text{ dB-Hz}\).</li>
-              <li><strong>Reviews</strong> (Feriol 2020; Angelats 2024): Emphasize barometric pressure deltas and multi-sensor resilience.</li>
+          <div class="card">
+            <span class="tag blue">2020 – 2025</span>
+            <h3>Gen 2: GNSS &amp; Handover</h3>
+            <ul class="list">
+              <li><strong>GPS-IOD (Bui 2020):</strong> High discrimination using OS-exposed GNSS accuracy and fix availability.</li>
+              <li><strong>Seamless Handover (Yoo 2025):</strong> Models doorway crossings via satellite \(C/N_0 \in [30, 40]\text{ dB-Hz}\).</li>
+              <li><strong>Surveys (Feriol 2020; Angelats 2024):</strong> Emphasize barometric pressure deltas &amp; multi-sensor resilience.</li>
             </ul>
           </div>
-          <div class="card accent-violet">
+          <div class="card">
+            <span class="tag red">2022 – 2025</span>
             <h3>Gen 3: Deep Multivariate IOD</h3>
-            <ul class="pts">
-              <li><strong>DeepIOD</strong> (Dastagir et al., 2024): 2D-CNN (Model A/B/C) across 8 channels (RSRP, RSRQ, Light, Mag, Acc, Sound, Proximity, Daytime).</li>
-              <li><strong>Cambridge CIOD</strong> (Bakirtzis et al., 2022): &gt;1.47M smartphone epochs benchmark.</li>
-              <li><strong>Key Caveat:</strong> High static epoch accuracy masks doorway flip-flops and cross-OS unavailability.</li>
+            <ul class="list">
+              <li><strong>DeepIOD (Dastagir 2024):</strong> 8-channel 2D-CNN (Light, RSRP, RSRQ, Mag, Acc, Sound, Prox, Time).</li>
+              <li><strong>Cambridge CIOD (Bakirtzis 2022):</strong> &gt; 1.47M smartphone epochs benchmark.</li>
+              <li><strong>HAR-PMD Warning (2025):</strong> Raw-accel CNNs conflate indoor running with outdoors; static accuracy hides doorway flip-flops.</li>
             </ul>
           </div>
         </div>
-        <div class="callout danger" style="margin-top:18px;">
-          <strong>Critical Gap Found in Literature:</strong> DeepIOD's top discriminative channels (ambient light, cellular RSRP/RSRQ, raw satellite \(C/N_0\)) are <strong>inaccessible on iOS</strong>, and raw-accelerometer CNNs suffer locomotion confounding on active indoor workouts (HAR-PMD, 2025).
-        </div>
-        <div class="slide-footer"><span>Aetron — Literature Review</span><span>Slide 7 / 14</span></div>
+        <div class="banner red">Core Gap: DeepIOD's highest-weight sensors (Light, RSRP/RSRQ, raw \(C/N_0\)) are blocked on Apple iOS — making Android-only deep IOD non-portable.</div>
+        <div class="footer"><span>Aetron  |  Literature Review — Nguyen Duc Bao (ITITIU22238)</span><span>07 / 14</span></div>
       </section>
 
       <!-- SLIDE 8 -->
-      <section class="slide" data-title="Light-Free iOS IOD Foundations"
-        data-notes="Để giải quyết bài toán trên iOS nơi Apple khóa cảm biến ánh sáng và C/N0, Aetron tổng hợp 4 cơ sở khoa học đã công bố: MagIO (2018) khai thác nhiễu từ trường sắt thép trong nhà, đặc trưng gia tốc tuyến tính của Kelishomi (2019), chỉ số độ thẳng quỹ đạo của Benhamou (2004), và bộ lọc HMM 2 trạng thái nhân quả của Zhu (2019).">
-        <div class="slide-kicker">07 • Cross-Platform Solution</div>
-        <h2>Light-Free iOS Multi-Sensor IOD: 4 Peer-Reviewed Pillars</h2>
+      <section class="slide" data-title="Overcoming iOS Sandboxing: 4 Light-Free Pillars"
+        data-notes="Bảng bên trái minh họa trực quan 3 cảm biến bị Apple iOS chặn hoàn toàn so với Android. Để giải quyết triệt để trên cả hai hệ điều hành, Aetron kết hợp 4 cơ sở khoa học đã công bố: MagIO từ trường (2018), động học gia tốc & áp suất (2019), chỉ số độ thẳng quỹ đạo Benhamou (2004) và bộ lọc HMM 2 trạng thái nhân quả của Zhu (2019).">
+        <div class="kicker">07  •  Cross-Platform IOD Architecture</div>
+        <div class="slide-title">Overcoming iOS Sandboxing: 4 Light-Free Pillars</div>
+        <div class="slide-sub">Restoring 100% iOS &amp; Android coverage without restricted optical or cellular APIs.</div>
         <div class="grid-2">
-          <div class="card accent-violet">
-            <h3>1. MagIO Geomagnetic Perturbation</h3>
-            <p style="font-size:0.84rem;color:var(--muted);margin-bottom:6px;">Ashraf et al. (2018) — Ferromagnetic building steel distorts \(\|\mathbf{m}\|\):</p>
-            <ul class="pts">
-              <li>10 distributional statistics over a causal 10 s window (mean, SD, range, IQR, skewness, kurtosis, mean \(|\Delta\|\mathbf{m}\||\)).</li>
-              <li>100% accessible via iOS <code>CMMotionManager</code> &amp; Android sensors.</li>
-            </ul>
-            <h3 style="margin-top:14px;">2. Triaxial Inertial Dynamics</h3>
-            <ul class="pts">
-              <li>Esmaeili Kelishomi et al. (2019): Mean, SD, and peak-to-peak excursion of linear acceleration + astronomical daytime + <code>CMAltimeter</code> pressure delta.</li>
-            </ul>
+          <div class="card" style="padding:10px;">
+            <img class="chart-img" src="./assets/chart_iod_matrix.png" alt="Android vs Apple iOS Sensor Availability Matrix" />
           </div>
-          <div class="card accent-cyan">
-            <h3>3. Benhamou Path Straightness (2004)</h3>
-            <div class="eq-box">
-              $$S = \frac{d_{\text{net}}}{\max(d_{\text{path}}, 1.0)} \in [0, 1]$$
+          <div style="display:grid;gap:10px;align-content:space-between;">
+            <div class="card" style="padding:12px 15px;">
+              <h3 style="margin-bottom:3px;font-size:0.88rem;">1. MagIO Geomagnetic Stats (Ashraf et al., 2018)</h3>
+              <p style="font-size:0.8rem;color:var(--body);">Ferromagnetic building steel perturbs \(\|\mathbf{m}\|\) — 10 distributional features over a causal 10 s buffer.</p>
             </div>
-            <ul class="pts">
-              <li>Separates directed outdoor paths (\(S \to 1\)) from tortuous indoor multipath jitter (\(S \to 0\)).</li>
-            </ul>
-            <h3 style="margin-top:14px;">4. Causal 2-State HMM Forward Filter</h3>
-            <p style="font-size:0.84rem;color:var(--muted);">Zhu et al. (2019) — Temporal smoothing in 3–4 s with zero lookahead:</p>
-            <div class="eq-box">
-              $$\alpha_t(s) \propto b_t(s)\sum_{s'} \alpha_{t-1}(s')\, A_{s',s}$$
+            <div class="card" style="padding:12px 15px;">
+              <h3 style="margin-bottom:3px;font-size:0.88rem;">2. Inertial &amp; Barometric Dynamics (Kelishomi 2019; Feriol 2020)</h3>
+              <p style="font-size:0.8rem;color:var(--body);">Triaxial linear acceleration excursion + astronomical daytime + <code>CMAltimeter</code> 10 s pressure deltas.</p>
+            </div>
+            <div class="card" style="padding:12px 15px;">
+              <h3 style="margin-bottom:3px;font-size:0.88rem;">3. Benhamou Path Straightness Index (2004)</h3>
+              <p style="font-size:0.8rem;color:var(--body);">\(S = d_{\text{net}} / \max(d_{\text{path}}, 1.0) \in [0,1]\) separates straight outdoor paths from tortuous indoor jitter.</p>
+            </div>
+            <div class="card" style="padding:12px 15px;">
+              <h3 style="margin-bottom:3px;font-size:0.88rem;">4. Causal 2-State HMM Forward Filter (Zhu et al., 2019)</h3>
+              <p style="font-size:0.8rem;color:var(--body);">\(\alpha_t(s) \propto b_t(s)\sum_{s'}\alpha_{t-1}(s')A_{s',s}\) — stabilizes transitions in 3–4 s with zero lookahead.</p>
             </div>
           </div>
         </div>
-        <div class="slide-footer"><span>Aetron — Literature Review</span><span>Slide 8 / 14</span></div>
+        <div class="footer"><span>Aetron  |  Literature Review — Nguyen Duc Bao (ITITIU22238)</span><span>08 / 14</span></div>
       </section>
 
       <!-- SLIDE 9 -->
-      <section class="slide" data-title="Indoor Step Detection & MV-GLRT ZUPT"
-        data-notes="Đối với hoạt động trong nhà (chạy máy, đi bộ trong nhà), cảm biến đếm bước thường bị lỗi đếm ảo khi người dùng đứng yên cầm điện thoại. Nghiên cứu của Skog (2010) về kiểm định MV-GLRT kết hợp xác nhận chuỗi bước nhịp điệu của Brajdic & Harle (2013) là nền tảng để chặn hoàn toàn bước ảo, song song với 2 bộ phát hiện bước chuẩn là Oxford WPD (2018) và Xu Running (2022).">
-        <div class="slide-kicker">08 • Indoor Inertial Pedometry</div>
-        <h2>Step Counting &amp; Stationary False-Step Rejection (MV-GLRT)</h2>
+      <section class="slide" data-title="Causal Step Detection & MV-GLRT"
+        data-notes="Biểu đồ bên trái giải thích kiểm định phương sai gia tốc MV-GLRT của Skog (2010): các cú chạm màn hình hay rung lắc nhẹ khi đứng yên đều nằm dưới ngưỡng và bị loại bỏ hoàn toàn, chỉ những chuỗi bước nhịp điệu thực sự trong dải 0.65 đến 4.5 Hz mới được xác nhận kết hợp với Oxford WPD cho đi bộ và Xu cho chạy bộ.">
+        <div class="kicker">08  •  Indoor Inertial Pedometry</div>
+        <div class="slide-title">Causal Step Detection &amp; MV-GLRT Ghost-Step Rejection</div>
+        <div class="slide-sub">Combining verified gait detectors with zero-velocity variance gating.</div>
         <div class="grid-2">
-          <div class="card accent-lime">
-            <h3>Causal Step Detection Pipelines</h3>
-            <ul class="pts">
-              <li><strong>Hardware Co-Processors:</strong> Android <code>TYPE_STEP_COUNTER</code> &amp; iOS <code>CMPedometer</code> achieve <strong>&lt;5% error</strong> in normal walking (Brajdic &amp; Harle, 2013).</li>
-              <li><strong>Oxford WPD — Walking</strong> (Salvi et al., EMBC 2018): 100 Hz Gaussian FIR smoothing, 35-sample windowed peak scoring, online Welford mean/SD threshold.</li>
-              <li><strong>Xu Running — Running</strong> (Xu et al., 2022): 50 Hz Hamming LPF + 256-point DFT dominant gait frequency + adaptive threshold.</li>
-            </ul>
+          <div class="card" style="display:flex;flex-direction:column;padding:12px;">
+            <div style="flex:1;min-height:0;"><img class="chart-img" src="./assets/chart_mvglrt.png" alt="Skog MV-GLRT ZUPT Signal Rejection" /></div>
+            <div class="eq" style="margin:8px 0 0;text-align:center;">$$T_{\text{MV}}(n) = \frac{1}{W}\sum_{k=n-W+1}^{n}\bigl(\|\mathbf{a}_k\|_2 - \bar{a}_n\bigr)^2 &lt; \gamma_{\text{MV}} \quad (\text{Skog 2010})$$</div>
           </div>
-          <div class="card accent-rose">
-            <h3>Blocking Ghost Steps While Stationary</h3>
-            <p style="font-size:0.84rem;color:var(--muted);"><strong>Skog et al. (2010) MV-GLRT ZUPT (Eq. 13):</strong></p>
-            <div class="eq-box">
-              $$T_{\text{MV}}(n) = \frac{1}{W}\sum_{k=n-W+1}^{n}\bigl(\|\mathbf{a}_k\|_2 - \bar{a}_n\bigr)^2 &lt; \gamma_{\text{MV}}$$
+          <div style="display:grid;gap:12px;align-content:space-between;">
+            <div class="card">
+              <span class="tag grn">&lt; 5% walk error</span>
+              <h3>Hardware Co-Processors (Brajdic &amp; Harle, 2013)</h3>
+              <p style="font-size:0.82rem;">Android <code>TYPE_STEP_COUNTER</code> &amp; iOS <code>CMPedometer</code> provide low-power baseline step counts.</p>
             </div>
-            <ul class="pts">
-              <li>Brief 50 ms screen taps / pocket shifts stay below \(\gamma_{\text{MV}}\) and are rejected as stationary stance.</li>
-              <li><strong>Rhythmic Walk-Bout Gate</strong> (Brajdic &amp; Harle, 2013): Requires periodic cadence in \([0.65, 4.5]\text{ Hz}\) across consecutive steps before releasing step count.</li>
-            </ul>
+            <div class="card">
+              <span class="tag blue">100 Hz Causal</span>
+              <h3>Oxford WPD — Walking (Salvi et al., EMBC 2018)</h3>
+              <p style="font-size:0.82rem;">13-tap Gaussian FIR smoothing + 35-sample windowed peak scoring + online Welford mean/SD thresholding.</p>
+            </div>
+            <div class="card">
+              <span class="tag amb">50 Hz + DFT</span>
+              <h3>Xu Running — Running (Xu et al., 2022)</h3>
+              <p style="font-size:0.82rem;">Hamming low-pass filter + 256-point DFT dominant gait frequency + adaptive running peak gate.</p>
+            </div>
           </div>
         </div>
-        <div class="slide-footer"><span>Aetron — Literature Review</span><span>Slide 9 / 14</span></div>
+        <div class="footer"><span>Aetron  |  Literature Review — Nguyen Duc Bao (ITITIU22238)</span><span>09 / 14</span></div>
       </section>
 
       <!-- SLIDE 10 -->
-      <section class="slide" data-title="Cadence Trilemma & Renaudin Adaptive Stride"
-        data-notes="Sau khi có bước chân sạch, 2 bài toán tiếp theo là tính nhịp bước (cadence) mượt mà và quy đổi sang quãng đường. Các hằng số tỷ lệ chiều cao cố định (0.415H - 0.67H) bỏ qua việc sải chân dài hơn khi chạy nhanh. Công thức tuyến tính theo tần số bước và chiều cao của Renaudin (2012) cho phép hiệu chỉnh không rò rỉ dữ liệu (LOSO) trên các tập chuẩn quốc tế SLEDataset2 và Fukuchi RBDS.">
-        <div class="slide-kicker">09 • Biomechanics &amp; Stride Estimation</div>
-        <h2>The Cadence Trilemma &amp; Adaptive Stride Length</h2>
+      <section class="slide" data-title="Cadence Trilemma & Renaudin Stride"
+        data-notes="Về nhịp bước, cửa sổ 6 giây cân bằng tối ưu giữa độ mượt hiển thị và tốc độ giảm về 0 khi dừng. Về độ dài sải chân, thay vì nhân hằng số cố định theo chiều cao, công thức tuyến tính theo tần số bước và chiều cao của Renaudin (2012) cho phép kiểm chứng LOSO không rò rỉ dữ liệu trên SLEDataset2 và Fukuchi RBDS.">
+        <div class="kicker">09  •  Gait Biomechanics</div>
+        <div class="slide-title">The Cadence Trilemma &amp; Adaptive Stride Estimation</div>
+        <div class="slide-sub">Translating clean step counts into accurate indoor pace and distance.</div>
         <div class="grid-2">
-          <div class="card accent-amber">
-            <h3>Live Cadence Window Trilemma</h3>
-            <div class="eq-box">
-              $$C_W(t) = \frac{\Delta M_{[t-W,t]}}{W} \times 60 \quad (\text{steps/min})$$
+          <div class="card" style="display:flex;flex-direction:column;justify-content:space-between;">
+            <div>
+              <h3>Live Cadence Window Trade-Off</h3>
+              <div class="eq">$$C_W(t) = \frac{\Delta M_{[t-W,t]}}{W} \times 60 \quad (\text{steps/min})$$</div>
+              <div style="display:grid;gap:10px;margin-top:12px;font-size:0.82rem;">
+                <div><span class="tag red" style="margin:0 8px 0 0;">W = 3 s</span>High quantization flutter (\(\pm 20\text{ spm}\) visual jitter)</div>
+                <div><span class="tag grn" style="margin:0 8px 0 0;">W = 6 s</span>Balanced accuracy, 50% less flutter, fast stop response</div>
+                <div><span class="tag amb" style="margin:0 8px 0 0;">W = 15 s</span>Sluggish stop-decay latency when athlete halts</div>
+              </div>
             </div>
-            <ul class="pts">
-              <li><strong>Too short (\(W=3\text{ s}\)):</strong> High quantization jitter (\(\pm 20\text{ spm}\) visual flutter).</li>
-              <li><strong>Too long (\(W=15\text{ s}\)):</strong> Sluggish stop-decay latency when halting.</li>
-              <li><strong>Validation Corpora:</strong> Video-annotated <strong>PedEval</strong> (Mattfeld et al., 2021) &amp; 39 h free-living <strong>OxWalk</strong> (Small et al., 2022).</li>
-            </ul>
+            <p style="font-size:0.78rem;color:var(--muted);margin-top:14px;">Benchmarked on video-annotated <strong>PedEval</strong> (Mattfeld 2021, 90 sessions) and 39 h free-living <strong>OxWalk</strong> (Small 2022).</p>
           </div>
-          <div class="card accent-cyan">
-            <h3>Static Heuristics vs. Renaudin (2012)</h3>
-            <ul class="pts">
-              <li><strong>Fixed Stature Ratios</strong> (Taborri 2016; Xing 2017): \(L = 0.415H\text{--}0.43H\) (walk), \(0.67H\) (run) — ignores pace/frequency modulation.</li>
-              <li><strong>Renaudin et al. (2012, Eq. 8):</strong></li>
+          <div class="card">
+            <h3>Static Ratios vs. Renaudin (2012) Model</h3>
+            <ul class="list">
+              <li><strong>Fixed stature heuristics:</strong> \(L = 0.415H\text{--}0.43H\) (walk) or \(0.67H\) (run) (Taborri 2016; Xing 2017) ignore stride elongation at higher speeds.</li>
             </ul>
-            <div class="eq-box">
-              $$L_{\text{step}}(H, f) = H \cdot (a f + b) + c, \qquad f = C/60\;\text{(Hz)}$$
+            <div class="eq" style="background:var(--blue-bg);border-color:transparent;">
+              <div style="font-size:0.68rem;font-weight:700;color:var(--blue-fg);margin-bottom:4px;">RENAUDIN ET AL. (2012, EQ. 8)</div>
+              $$L_{\text{step}}(H,f) = H\cdot(a f + b) + c, \qquad f = C / 60\;\text{(Hz)}$$
             </div>
-            <ul class="pts">
-              <li><strong>LOSO Ground-Truth Datasets:</strong> Optical motion-capture walking (<strong>SLEDataset2</strong>, Vezočnik 2021) &amp; force-plate treadmill running (<strong>RBDS</strong>, Fukuchi 2017).</li>
+            <ul class="list">
+              <li><strong>LOSO Walking Validation:</strong> Optical motion-capture <strong>SLEDataset2</strong> (Vezočnik 2021 — 114 sessions).</li>
+              <li><strong>LOSO Running Validation:</strong> Force-plate treadmill <strong>RBDS</strong> (Fukuchi 2017 — 84 sessions) with strict zero subject leakage.</li>
             </ul>
           </div>
         </div>
-        <div class="slide-footer"><span>Aetron — Literature Review</span><span>Slide 10 / 14</span></div>
+        <div class="footer"><span>Aetron  |  Literature Review — Nguyen Duc Bao (ITITIU22238)</span><span>10 / 14</span></div>
       </section>
 
       <!-- SLIDE 11 -->
       <section class="slide" data-title="2024 Adult Compendium Calorimetry"
-        data-notes="Về ước tính năng lượng tiêu thụ, các phân tích tổng hợp gần đây (Choe 2025, Germini 2022) chỉ ra ngay cả đồng hồ đo nhịp tim quang học như Apple Watch cũng sai số gần 28-30%. Thay vì dùng hệ số nhân tùy tiện như Pre-Thesis, Aetron áp dụng chuẩn sinh lý học thể dục mới nhất là 2024 Adult Compendium của Herrmann (2024) giúp đồng bộ chính xác từng bit giữa client và server.">
-        <div class="slide-kicker">10 • Exercise Physiology</div>
-        <h2>Metabolic Energy Expenditure: 2024 Adult Compendium</h2>
+        data-notes="Ngay cả các thiết bị đeo có cảm biến nhịp tim quang học cũng chịu sai số calo 28–30% theo phân tích tổng hợp năm 2022 và 2025. Do đó Aetron áp dụng chuẩn 2024 Adult Compendium theo dải vận tốc và thời gian di chuyển thực, đảm bảo khớp chính xác từng bit giữa app và server.">
+        <div class="kicker">10  •  Exercise Physiology</div>
+        <div class="slide-title">Metabolic Energy Expenditure: 2024 Adult Compendium</div>
+        <div class="slide-sub">Replacing opaque heuristics with standardized speed-banded MET lookup tables.</div>
         <div class="grid-2">
-          <div class="card accent-rose">
-            <h3>Limitations of Heuristics &amp; Optical Wearables</h3>
-            <ul class="pts">
-              <li><strong>Wearable HR Meta-Analyses:</strong> Apple Watch shows <strong>27.96%</strong> caloric error across walk/run/cycle (Choe et al., 2025); cross-brand wearable errors exceed <strong>30%</strong> (Germini et al., 2022).</li>
-              <li><strong>Legacy Distance Multipliers:</strong> Simple formulas (\(0.63\text{--}0.75\text{ kcal/kg/km}\), Hall 2004; or \(W \times D \times k \times g\)) ignore speed intensity bands and diverge across client vs. backend.</li>
-            </ul>
+          <div class="card" style="display:flex;flex-direction:column;padding:12px;">
+            <div style="flex:1;min-height:0;"><img class="chart-img" src="./assets/chart_calorie.png" alt="Wearable HR Calorie Error vs 2024 Compendium" /></div>
+            <p style="font-size:0.78rem;color:var(--muted);margin-top:8px;">Meta-analyses show optical HR wearables still exhibit 28–30%+ caloric error, motivating transparent, auditable MET tables on smartphone-only apps.</p>
           </div>
-          <div class="card accent-emerald">
-            <h3>2024 Adult Compendium (Herrmann et al., 2024)</h3>
-            <p style="font-size:0.84rem;color:var(--muted);">Successor to Ainsworth (2011) with standardized 5-digit speed-band codes:</p>
-            <div class="eq-box">
-              $$E_{\text{kcal}} = \text{MET}(\text{activity}, v_{\text{mph}}) \times W_{\text{kg}} \times \frac{t_{\text{mov}}}{3600}$$
-            </div>
-            <ul class="pts">
-              <li><strong>Moving-Time Gated:</strong> Excludes pauses and stationary dwell intervals.</li>
-              <li><strong>Bit-Exact Parity:</strong> Identical published lookup tables in Dart client and Deno finalize worker.</li>
+          <div class="card">
+            <span class="tag grn">Herrmann et al. (2024)</span>
+            <h3>2024 Adult Compendium of Physical Activities</h3>
+            <div class="eq">$$E_{\text{kcal}} = \text{MET}(\text{activity}, v_{\text{mph}}) \times W_{\text{kg}} \times \frac{t_{\text{mov}}}{3600}$$</div>
+            <ul class="list" style="margin-top:10px;">
+              <li><strong>Exact 5-digit activity codes:</strong> Speed-banded lookup replacing legacy distance multipliers (Hall 2004).</li>
+              <li><strong>Moving-time gated:</strong> Excludes user pauses and stationary traffic-light dwells.</li>
+              <li><strong>Bit-exact client–server parity:</strong> Identical lookup tables in Dart client and Supabase Deno finalize worker.</li>
+              <li><strong>Honest scope disclosure:</strong> Population-average gross MET, not individual laboratory \(\dot{V}\text{O}_2\) calorimetry.</li>
             </ul>
           </div>
         </div>
-        <div class="callout">
-          <strong>Honest Scientific Boundary:</strong> Gross MET lookup reflects healthy adult population averages rather than individualized laboratory \(\dot{V}\text{O}_2\) indirect calorimetry.
-        </div>
-        <div class="slide-footer"><span>Aetron — Literature Review</span><span>Slide 11 / 14</span></div>
+        <div class="footer"><span>Aetron  |  Literature Review — Nguyen Duc Bao (ITITIU22238)</span><span>11 / 14</span></div>
       </section>
 
       <!-- SLIDE 12 -->
       <section class="slide" data-title="Commercial Fitness Application Comparison"
-        data-notes="Bảng đối chiếu với 4 nền tảng thương mại phổ biến gồm Strava, Nike Run Club, Samsung Health và Google Fit cho thấy các app lớn mạnh về hệ sinh thái nhưng đều đóng kín thuật toán lọc nhiễu, công thức calo và không công bố kiểm chứng trên dữ liệu mở RTK/IMU hay cơ chế IOD không cảm biến ánh sáng trên iOS.">
-        <div class="slide-kicker">11 • Market &amp; Platform Survey</div>
-        <h2>Commercial Fitness Applications vs. Aetron (Table 2.2)</h2>
-        <table class="cmp" style="margin-top:8px;">
+        data-notes="So sánh với 4 nền tảng thương mại lớn là Strava, Nike Run Club, Samsung Health và Google Fit cho thấy các ứng dụng này đều đóng kín thuật toán lọc nhiễu, công thức calo và không công bố kiểm chứng trên tập dữ liệu chuẩn mở RTK hay giải pháp IOD không cảm biến ánh sáng trên iOS.">
+        <div class="kicker">11  •  Market &amp; Platform Survey</div>
+        <div class="slide-title">Commercial Fitness Applications vs. Aetron</div>
+        <div class="slide-sub">Comparing documented tracking capabilities, calorie transparency, and scientific auditability.</div>
+        <table class="clean" style="flex:1;">
           <thead>
             <tr>
               <th style="width:16%;">Application</th>
               <th style="width:28%;">Documented Capabilities</th>
               <th style="width:26%;">Calorie Model</th>
-              <th style="width:30%;">Contrast / Limitation vs. Aetron</th>
+              <th style="width:30%;">Contrast / Gap vs. Aetron</th>
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td><strong>Strava</strong> (2026)</td>
-              <td>Outdoor GNSS routes, segments, splits, pace analysis</td>
-              <td>Grade-adjusted speed × weight × moving time (undisclosed)</td>
-              <td>Strong outdoor reference, but proprietary outlier &amp; smoothing internals.</td>
-            </tr>
-            <tr>
-              <td><strong>Nike Run Club</strong> (2024)</td>
-              <td>Explicit outdoor GNSS and indoor motion modes</td>
-              <td>BMR/BMI + weight + distance + pace (undisclosed)</td>
-              <td>Validates dual-mode UX; zero open doorway/IOD transition transparency.</td>
-            </tr>
-            <tr>
-              <td><strong>Samsung Health</strong> (2024)</td>
-              <td>OS hardware step counters, multi-activity tracking</td>
-              <td>Body profile + optional wearable HR (undisclosed)</td>
-              <td>Android sensor benchmark; lacks cross-platform iOS light-free IOD documentation.</td>
-            </tr>
-            <tr>
-              <td><strong>Google Fit</strong> (2026)</td>
-              <td>Sensor/recording APIs, step distance, offline sync</td>
-              <td>Activity + body metrics + BMR (undisclosed)</td>
-              <td>Good API pattern; omits documented RTK/IMU scientific holdout audits.</td>
-            </tr>
-            <tr class="highlight">
-              <td><strong>Aetron (This Work)</strong></td>
-              <td>Open Flutter 4-State EKF/ZUPT, MV-GLRT pedometry, Cross-Platform IOD, Isar + Deno Workers</td>
-              <td>Published 2024 Adult Compendium speed-banded MET (client–server bit-exact)</td>
-              <td>Fully documented, DOI-grounded algorithms with open holdout benchmarks &amp; disclosed negative results.</td>
-            </tr>
+            <tr><td><strong>Strava (2026)</strong></td><td>Outdoor GNSS routes, segments, splits, pace analysis</td><td>Grade-adjusted speed × weight × moving time (undisclosed)</td><td>Strong outdoor reference; proprietary outlier &amp; smoothing internals.</td></tr>
+            <tr><td><strong>Nike Run Club (2024)</strong></td><td>Explicit outdoor GNSS and indoor motion modes</td><td>BMR/BMI + weight + distance + pace (undisclosed)</td><td>Validates dual-mode UX; zero open doorway/IOD transparency.</td></tr>
+            <tr><td><strong>Samsung Health (2024)</strong></td><td>OS hardware step counters, multi-activity tracking</td><td>Body profile + optional wearable HR (undisclosed)</td><td>Android sensor benchmark; lacks iOS light-free IOD docs.</td></tr>
+            <tr><td><strong>Google Fit (2026)</strong></td><td>Sensor/recording APIs, step distance, offline sync</td><td>Activity + body metrics + BMR (undisclosed)</td><td>Clean API pattern; omits RTK/IMU scientific holdout audits.</td></tr>
+            <tr class="hi"><td style="color:var(--grn-fg);"><strong>Aetron (This Work)</strong></td><td>Open Flutter 4-State EKF/ZUPT, MV-GLRT pedometry, Cross-Platform IOD, Isar + Deno</td><td>Published 2024 Adult Compendium speed-banded MET (bit-exact parity)</td><td>Fully documented, DOI-grounded pipeline with open holdout benchmarks &amp; disclosed negative results.</td></tr>
           </tbody>
         </table>
-        <div class="slide-footer"><span>Aetron — Literature Review</span><span>Slide 12 / 14</span></div>
+        <div class="footer"><span>Aetron  |  Literature Review — Nguyen Duc Bao (ITITIU22238)</span><span>12 / 14</span></div>
       </section>
 
       <!-- SLIDE 13 -->
-      <section class="slide" data-title="Five Synthesized Research Gaps"
-        data-notes="Tổng hợp toàn bộ tài liệu học thuật và khảo sát thương mại, luận văn xác định 5 khoảng trống nghiên cứu cụ thể (G1 đến G5) và ánh xạ trực tiếp sang 5 mục tiêu thiết kế O1 đến O5 của hệ thống Aetron.">
-        <div class="slide-kicker">12 • Synthesis</div>
-        <h2>Five Research Gaps Resolved by Aetron</h2>
-        <div style="display:grid;gap:10px;margin-top:8px;">
-          <div class="gap-item">
-            <div class="gap-id">G1</div>
-            <div><strong>Lack of Auditable RTK-Validated Open Trackers</strong> — Student apps use raw fixes; papers rarely preserve negative results on out-of-domain hardware.</div>
-            <div><span class="tag lime">→ O2 &amp; O5</span> 4-State EKF + P01/P02 audited on TU Wien RTK &amp; SnapperGPS (NO-GO disclosed).</div>
-          </div>
-          <div class="gap-item">
-            <div class="gap-id">G2</div>
-            <div><strong>iOS Sandboxing Gap in Cross-Platform IOD</strong> — DeepIOD relies on light, cellular &amp; \(C/N_0\) blocked on iOS.</div>
-            <div><span class="tag lime">→ O1</span> Light-Free iOS IOD (MagIO + Inertial + CoreLocation + Baro + Causal HMM).</div>
-          </div>
-          <div class="gap-item">
-            <div class="gap-id">G3</div>
-            <div><strong>Event-Level Doorway Flip-Flops &amp; HAR-PMD Confounding</strong> — Static epoch accuracy hides unstable transitions and indoor-running false positives.</div>
-            <div><span class="tag lime">→ O1</span> Hardcoded <code>isObservationalOnly = true</code> isolation + transition dwell hysteresis.</div>
-          </div>
-          <div class="gap-item">
-            <div class="gap-id">G4</div>
-            <div><strong>Stationary Ghost Steps &amp; Static Stride Mismatch</strong> — Idle phone handling leaks steps; fixed stride ratios ignore cadence changes.</div>
-            <div><span class="tag lime">→ O2 &amp; O3</span> MV-GLRT ZUPT + <code>StepMotionGate</code> + 6 s cadence + LOSO Renaudin stride.</div>
-          </div>
-          <div class="gap-item">
-            <div class="gap-id">G5</div>
-            <div><strong>Fragmented Persistence, UI &amp; Server Verification</strong> — Academic prototypes rarely unify offline crash safety, Clean Architecture, and server parity.</div>
-            <div><span class="tag lime">→ O3 &amp; O4</span> Isar 5 s checkpoints + SQLite queue + Clean Architecture + 2024 MET Deno workers.</div>
-          </div>
+      <section class="slide" data-title="Five Research Gaps Mapped to Objectives"
+        data-notes="Từ tổng quan tài liệu và khảo sát thị trường, luận văn đúc kết 5 khoảng trống nghiên cứu từ G1 đến G5 và ánh xạ trực tiếp sang 5 mục tiêu O1 đến O5 mà hệ thống Aetron giải quyết ở Chương 3 và kiểm chứng ở Chương 4.">
+        <div class="kicker">12  •  Synthesis</div>
+        <div class="slide-title">Five Research Gaps Mapped to Thesis Objectives</div>
+        <div class="slide-sub">Direct traceability from literature deficiencies (G1–G5) to Aetron engineering deliverables (O1–O5).</div>
+        <div style="display:grid;gap:9px;flex:1;align-content:space-between;">
+          <div class="gap-row"><span class="tag red" style="margin:0;text-align:center;">G1</span><div><strong>Auditable RTK-Validated Open Trackers</strong><div style="color:var(--muted);font-size:0.75rem;">Papers rarely preserve negative results on out-of-domain hardware.</div></div><div style="text-align:center;color:var(--muted);font-weight:700;">→</div><span class="tag grn" style="margin:0;text-align:center;">O2, O5</span><div>4-State EKF + P01/P02 audited on TU Wien RTK &amp; SnapperGPS (NO-GO disclosed).</div></div>
+          <div class="gap-row"><span class="tag red" style="margin:0;text-align:center;">G2</span><div><strong>iOS Sandboxing Gap in Cross-Platform IOD</strong><div style="color:var(--muted);font-size:0.75rem;">DeepIOD depends on light, cellular RSRP &amp; raw C/N0 blocked on iOS.</div></div><div style="text-align:center;color:var(--muted);font-weight:700;">→</div><span class="tag grn" style="margin:0;text-align:center;">O1</span><div>Light-Free iOS IOD (MagIO + Inertial + CoreLocation + Baro + Causal HMM).</div></div>
+          <div class="gap-row"><span class="tag red" style="margin:0;text-align:center;">G3</span><div><strong>Doorway Flip-Flops &amp; HAR-PMD Confounding</strong><div style="color:var(--muted);font-size:0.75rem;">Static accuracy hides unstable transitions and indoor-running false positives.</div></div><div style="text-align:center;color:var(--muted);font-weight:700;">→</div><span class="tag grn" style="margin:0;text-align:center;">O1</span><div>Hardcoded <code>isObservationalOnly = true</code> isolation + dwell hysteresis.</div></div>
+          <div class="gap-row"><span class="tag red" style="margin:0;text-align:center;">G4</span><div><strong>Stationary Ghost Steps &amp; Static Stride Mismatch</strong><div style="color:var(--muted);font-size:0.75rem;">Unguarded counters leak idle handling; fixed ratios ignore cadence.</div></div><div style="text-align:center;color:var(--muted);font-weight:700;">→</div><span class="tag grn" style="margin:0;text-align:center;">O2, O3</span><div>MV-GLRT ZUPT + <code>StepMotionGate</code> + 6 s cadence + LOSO Renaudin stride.</div></div>
+          <div class="gap-row"><span class="tag red" style="margin:0;text-align:center;">G5</span><div><strong>Fragmented Persistence, UI &amp; Server Verification</strong><div style="color:var(--muted);font-size:0.75rem;">Prototypes rarely unify crash-safe local storage, Clean UI, and server parity.</div></div><div style="text-align:center;color:var(--muted);font-weight:700;">→</div><span class="tag grn" style="margin:0;text-align:center;">O3, O4</span><div>Isar 5 s checkpoints + SQLite queue + Clean Architecture + 2024 MET Deno workers.</div></div>
         </div>
-        <div class="slide-footer"><span>Aetron — Literature Review</span><span>Slide 13 / 14</span></div>
+        <div class="footer"><span>Aetron  |  Literature Review — Nguyen Duc Bao (ITITIU22238)</span><span>13 / 14</span></div>
       </section>
 
       <!-- SLIDE 14 -->
-      <section class="slide" data-title="Key References & Q&A"
-        data-notes="Trên đây là toàn bộ phần Tổng quan Tài liệu cho hệ thống Aetron. Các tài liệu tham khảo cốt lõi được trích dẫn đầy đủ theo chuẩn IEEEtran trong references.bib. Em xin cảm ơn quý thầy cô và rất mong nhận được câu hỏi góp ý.">
-        <div class="slide-kicker">13 • References &amp; Discussion</div>
-        <h2>Selected Core References &amp; Q&amp;A</h2>
-        <div class="grid-2" style="font-size:0.8rem;line-height:1.45;">
-          <div class="card">
-            <h3>GNSS, Filtering &amp; Trajectory Mining</h3>
-            <ul class="pts" style="font-size:0.78rem;gap:5px;">
-              <li>Kalman (1960); Gelb (1974); Groves (2013) — <em>Principles of GNSS, Inertial, and Multisensor Integrated Navigation Systems</em>.</li>
-              <li>Rong Li &amp; Jilkov (2003); Sukhenko et al. (2025) — Adaptive maneuvering target tracking &amp; smartphone GNSS error correction.</li>
-              <li>Merry &amp; Bettinger (2019); Scott et al. (2016); Gilgen-Ammann et al. (2020) — Smartphone &amp; sports-watch GPS MAPE standards.</li>
-              <li>Zheng (2009, 2015); Li et al. (2025); Ester et al. (1996); Fritsch &amp; Carlson (1980); Newson &amp; Krumm (2009).</li>
+      <section class="slide dark" data-title="Key References & Q&A"
+        data-notes="Em xin cảm ơn quý thầy cô đã lắng nghe phần trình bày Tổng quan Tài liệu. Em rất mong nhận được các câu hỏi và góp ý của quý thầy cô.">
+        <div class="kicker" style="color:#38BDF8;">13  •  Core References &amp; Discussion</div>
+        <div class="slide-title" style="color:#FFFFFF;margin-bottom:18px;">Key Literature Foundations &amp; Q&amp;A</div>
+        <div class="grid-2" style="flex:0 1 auto;">
+          <div style="background:var(--dark-card);border:1px solid #2D3748;border-radius:8px;padding:18px;">
+            <div style="font-size:0.86rem;font-weight:700;color:#38BDF8;margin-bottom:10px;">GNSS, Filtering &amp; Trajectory Mining</div>
+            <ul class="list" style="color:#E2E8F0;font-size:0.8rem;">
+              <li>Kalman (1960); Gelb (1974); Groves (2013) — GNSS &amp; Inertial Navigation</li>
+              <li>Rong Li &amp; Jilkov (2003); Sukhenko et al. (2025) — Adaptive EKF &amp; NIS</li>
+              <li>Merry &amp; Bettinger (2019); Scott (2016); Gilgen-Ammann (2020) — GPS MAPE</li>
+              <li>Zheng (2009, 2015); Li et al. (2025); Ester (1996); Fritsch &amp; Carlson (1980)</li>
+              <li>Newson &amp; Krumm (2009) — Hidden Markov Map Matching</li>
             </ul>
           </div>
-          <div class="card">
-            <h3>IOD, Inertial Gait &amp; Exercise Physiology</h3>
-            <ul class="pts" style="font-size:0.78rem;gap:5px;">
-              <li>Li et al. (2014) IODetector; Bui et al. (2020) GPS-IOD; Bakirtzis et al. (2022) CIOD; Dastagir et al. (2024) DeepIOD; Yoo (2025).</li>
-              <li>Ashraf et al. (2018) MagIO; Kelishomi et al. (2019); Benhamou (2004); Zhu et al. (2019) Causal HMM; HAR-PMD (2025).</li>
-              <li>Skog et al. (2010) MV-GLRT ZUPT; Brajdic &amp; Harle (2013); Salvi et al. (2018) Oxford WPD; Xu et al. (2022); Renaudin et al. (2012).</li>
-              <li>Herrmann et al. (2024) <em>2024 Adult Compendium of Physical Activities</em>; Choe et al. (2025); Martin (2017) Clean Architecture.</li>
+          <div style="background:var(--dark-card);border:1px solid #2D3748;border-radius:8px;padding:18px;">
+            <div style="font-size:0.86rem;font-weight:700;color:#A3E635;margin-bottom:10px;">IOD, Inertial Gait &amp; Exercise Physiology</div>
+            <ul class="list" style="color:#E2E8F0;font-size:0.8rem;">
+              <li>Li et al. (2014) IODetector; Bui (2020) GPS-IOD; Bakirtzis (2022) CIOD</li>
+              <li>Dastagir et al. (2024) DeepIOD; Yoo (2025); HAR-PMD (2025)</li>
+              <li>Ashraf (2018) MagIO; Kelishomi (2019); Benhamou (2004); Zhu (2019) HMM</li>
+              <li>Skog (2010) MV-GLRT; Brajdic &amp; Harle (2013); Salvi (2018); Xu (2022)</li>
+              <li>Renaudin (2012) Stride; Herrmann (2024) Adult Compendium; Choe (2025)</li>
             </ul>
           </div>
         </div>
-        <div class="callout" style="text-align:center;font-size:0.95rem;margin-top:16px;">
-          <strong>Thank You for Listening!</strong> &nbsp;•&nbsp; Full 57-page HCM-IU Thesis PDF &amp; 16:9 Beamer Slides available via the top bar.
+        <div style="text-align:center;margin-top:auto;padding-bottom:18px;">
+          <div style="font-size:1.35rem;font-weight:700;color:#FFFFFF;">Thank You for Listening — Questions &amp; Feedback</div>
+          <div style="font-size:0.82rem;color:#94A3B8;margin-top:6px;">Nguyen Duc Bao (ITITIU22238)  •  International University — VNU-HCM  •  Editable PowerPoint (.pptx) available in top bar</div>
         </div>
-        <div class="slide-footer"><span>Aetron — Literature Review</span><span>Slide 14 / 14</span></div>
+        <div class="footer"><span>Aetron  |  Literature Review</span><span>14 / 14</span></div>
       </section>
 
     </div>
   </main>
 
-  <aside class="notes-drawer" id="notes-drawer">
+  <aside class="notes-bar" id="notes-bar">
     <strong>Presenter Notes (Vietnamese):</strong> <span id="notes-text"></span>
   </aside>
 
-  <div class="overview-modal" id="overview-modal">
-    <div style="max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;">
-      <h2 style="font-size:1.3rem;">Slide Overview (Click to Jump)</h2>
-      <button class="btn" id="close-overview" type="button">✕ Close (Esc)</button>
+  <div class="overview" id="overview">
+    <div style="max-width:1120px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;">
+      <h2 style="color:#FFFFFF;font-size:1.15rem;">Slide Overview</h2>
+      <button class="btn" id="close-ov" type="button">Close (Esc)</button>
     </div>
-    <div class="overview-grid" id="overview-grid"></div>
+    <div class="overview-grid" id="ov-grid"></div>
   </div>
 
   <script>
     const slides = Array.from(document.querySelectorAll('.slide'));
     const counter = document.getElementById('counter');
     const progress = document.getElementById('progress');
-    const notesDrawer = document.getElementById('notes-drawer');
+    const notesBar = document.getElementById('notes-bar');
     const notesText = document.getElementById('notes-text');
-    const modal = document.getElementById('overview-modal');
-    const grid = document.getElementById('overview-grid');
+    const ov = document.getElementById('overview');
+    const ovGrid = document.getElementById('ov-grid');
     let idx = 0;
 
-    function buildOverview() {
-      grid.innerHTML = '';
+    function buildOv() {
+      ovGrid.innerHTML = '';
       slides.forEach((s, i) => {
-        const div = document.createElement('div');
-        div.className = 'thumb' + (i === idx ? ' current' : '');
-        div.innerHTML = `<div class="thumb-num">Slide ${i + 1}</div><div class="thumb-title">${s.dataset.title || 'Slide'}</div>`;
-        div.addEventListener('click', () => { go(i); modal.classList.remove('open'); });
-        grid.appendChild(div);
+        const d = document.createElement('div');
+        d.className = 'thumb' + (i === idx ? ' current' : '');
+        d.innerHTML = `<div class="tn">Slide ${String(i+1).padStart(2,'0')}</div><div class="tt">${s.dataset.title}</div>`;
+        d.addEventListener('click', () => { go(i); ov.classList.remove('open'); });
+        ovGrid.appendChild(d);
       });
     }
 
-    function go(next) {
-      idx = Math.max(0, Math.min(slides.length - 1, next));
+    function go(n) {
+      idx = Math.max(0, Math.min(slides.length - 1, n));
       slides.forEach((s, i) => s.classList.toggle('active', i === idx));
-      counter.textContent = `${idx + 1} / ${slides.length}`;
+      counter.textContent = `${String(idx+1).padStart(2,'0')} / ${String(slides.length).padStart(2,'0')}`;
       progress.style.width = `${((idx + 1) / slides.length) * 100}%`;
       notesText.textContent = slides[idx].dataset.notes || '';
       window.location.hash = `slide-${idx + 1}`;
-      buildOverview();
+      buildOv();
     }
 
     document.getElementById('prev-btn').addEventListener('click', () => go(idx - 1));
     document.getElementById('next-btn').addEventListener('click', () => go(idx + 1));
-    document.getElementById('grid-btn').addEventListener('click', () => modal.classList.toggle('open'));
-    document.getElementById('close-overview').addEventListener('click', () => modal.classList.remove('open'));
-    document.getElementById('notes-btn').addEventListener('click', () => notesDrawer.classList.toggle('open'));
-
-    const themeBtn = document.getElementById('theme-btn');
-    const savedTheme = localStorage.getItem('aetron_doc_theme');
-    if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
-    themeBtn.addEventListener('click', () => {
-      const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
-      document.documentElement.setAttribute('data-theme', next);
-      localStorage.setItem('aetron_doc_theme', next);
-    });
-
+    document.getElementById('grid-btn').addEventListener('click', () => ov.classList.toggle('open'));
+    document.getElementById('close-ov').addEventListener('click', () => ov.classList.remove('open'));
+    document.getElementById('notes-btn').addEventListener('click', () => notesBar.classList.toggle('open'));
     document.getElementById('fs-btn').addEventListener('click', () => {
       if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
       else document.exitFullscreen?.();
@@ -1106,14 +891,12 @@
     document.addEventListener('keydown', (e) => {
       if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); go(idx + 1); }
       else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); go(idx - 1); }
-      else if (e.key === 'Home') { go(0); }
-      else if (e.key === 'End') { go(slides.length - 1); }
-      else if (e.key.toLowerCase() === 'g') { modal.classList.toggle('open'); }
-      else if (e.key.toLowerCase() === 's') { notesDrawer.classList.toggle('open'); }
+      else if (e.key.toLowerCase() === 'g') ov.classList.toggle('open');
+      else if (e.key.toLowerCase() === 's') notesBar.classList.toggle('open');
       else if (e.key.toLowerCase() === 'f') {
         if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
         else document.exitFullscreen?.();
-      } else if (e.key === 'Escape') { modal.classList.remove('open'); }
+      } else if (e.key === 'Escape') ov.classList.remove('open');
     });
 
     const m = window.location.hash.match(/slide-(\d+)/);
