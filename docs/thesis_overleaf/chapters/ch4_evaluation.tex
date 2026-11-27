@@ -2,7 +2,7 @@
 \label{ch:evaluation}
 
 \section{Evaluation Methodology and Field Contextualization}
-Aetron was evaluated in two complementary tiers: (1)~\textbf{Smartphone Field Contextualization} carried forward from the pre-thesis evaluation~\cite{aetron2026prethesis} to verify real-world distance alignment against established commercial fitness apps and pre-measured urban routes; and (2)~\textbf{Reproducible Public-Dataset Benchmarking} executing every upgraded algorithm (EKF/AEKF, iOS light-free IOD, Model~C-Mobile, MV-GLRT ZUPT, 6-second cadence, LOSO Renaudin stride, P03 reconstruction, T-DBSCAN, and 2024 Compendium parity) on open public datasets with independent physical ground truth. Every offline experiment adheres strictly to an unbroken \textbf{Evidence Provenance Chain} summarized in Table~\ref{tab:evidence_chain}.
+Aetron was evaluated in two complementary tiers: (1)~\textbf{Smartphone Field Contextualization} carried forward from the pre-thesis evaluation~\cite{aetron2026prethesis} to verify real-world distance alignment against established commercial fitness apps and pre-measured urban routes; and (2)~\textbf{Reproducible Public-Dataset Benchmarking} executing both live runtime algorithms (EKF/AEKF, iOS light-free IOD, Model~C-Mobile, adapted MV-GLRT ZUPT, 6-second cadence, LOSO Renaudin stride, P03 reconstruction, and contiguous 2024 Compendium MET tables) and offline research comparators (sequential centroid-radius dwell clustering, linear-CV IGG-III/IAE, causal IMM/Zheng, and CAP-ALSTM + Python SHAP) on open public datasets with independent physical ground truth. Every offline experiment adheres strictly to an unbroken \textbf{Evidence Provenance Chain} summarized in Table~\ref{tab:evidence_chain}.
 
 \begin{table}[htbp]
 \centering
@@ -287,7 +287,7 @@ True Stop Decay / Max Observed Transition Lag & 1.00\,s / 1.00\,s & \textbf{3.0-
 }
 \end{table}
 
-\section{Reconstruction, T-DBSCAN, Compression, and 2024 Compendium Parity}
+\section{Reconstruction, Sequential Dwell Clustering, Compression, and 2024 Compendium Parity}
 \label{sec:eval_calorie_drift}
 On 5-second masked TU~Wien outages (Table~\ref{tab:reconstruction_per_session}), Linear Chord and Fritsch--Carlson Monotone PCHIP~\cite{fritsch1980pchip} differ by $<3$\,cm across all 10 walks (pooled $3.456$\,m vs.\ $3.468$\,m RMSE), justifying strict offline display-only isolation so spline interpolation never inflates distance.
 
@@ -315,7 +315,7 @@ Pooled Pointwise Across All Epochs & $3{,}286$ & $3.456$\,m ($6.43$\,m) & $3.468
 \begin{tabular}{@{}lcccc@{}}
 \toprule
 \textbf{Benchmark / Configuration} & \textbf{Primary Accuracy / Savings} & \textbf{Secondary Metric} & \textbf{Trade-Off / Error} & \textbf{Key Finding} \\ \midrule
-STAGA: \textbf{Aetron T-DBSCAN ($6.5$\,m)} & \textbf{98.97\% Precision} & 68.52\% F1 (52.39\% Rec.) & \textbf{122 False Stops} & $9.2\times$ fewer false pauses \\
+STAGA: \textbf{Sequential Dwell ($6.5$\,m, offline)} & \textbf{98.97\% Precision} & 68.52\% F1 (52.39\% Rec.) & \textbf{122 False Stops} & $9.2\times$ fewer false pauses \\
 STAGA: Zheng ($8.0$\,m) / Speed Gate & 97.03\% / 96.44\% Prec. & 82.10\% / 79.75\% F1 & 598 / 1,117 False Stops & Higher recall, high false-stop rate \\ \midrule
 Polyline Precision $5$ ($10^{-5}$\,deg) & \textbf{94.18\% Saved} ($17.19\times$) & $82{,}523$\,B (vs.\ $1{,}418{,}305$\,B) & $0.375$\,m RMSE ($0.669$\,m max) & Default upload quantization \\
 Polyline Precision $6$ ($10^{-6}$\,deg) & 91.89\% Saved ($12.34\times$) & $114{,}972$\,B & \textbf{0.023\,m RMSE} & Near-lossless archival option \\ \bottomrule
