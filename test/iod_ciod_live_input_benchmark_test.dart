@@ -4,8 +4,8 @@ import 'dart:io';
 import 'package:fitness_exercise_application/features/iod/domain/models/indoor_outdoor_state.dart';
 import 'package:fitness_exercise_application/features/iod/domain/services/iod_composite_classifier.dart';
 import 'package:flutter_test/flutter_test.dart';
-import '../tooling/benchmark/ciod_dataset_adapter.dart';
-import '../tooling/benchmark/iod_benchmark_models.dart';
+import 'helpers/iod/ciod_dataset_adapter.dart';
+import 'helpers/iod/iod_benchmark_models.dart';
 
 void main() {
   final path = Platform.environment['AETRON_CIOD_CSV'];

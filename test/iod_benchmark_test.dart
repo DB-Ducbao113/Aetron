@@ -8,9 +8,9 @@ import 'package:fitness_exercise_application/features/iod/domain/services/iod_co
 import 'package:fitness_exercise_application/features/iod/domain/services/seamless_transition_detector.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../tooling/benchmark/ciod_dataset_adapter.dart';
-import '../tooling/benchmark/iod_benchmark_models.dart';
-import '../tooling/benchmark/mimir_dataset_adapter.dart';
+import 'helpers/iod/ciod_dataset_adapter.dart';
+import 'helpers/iod/iod_benchmark_models.dart';
+import 'helpers/iod/mimir_dataset_adapter.dart';
 
 void main() {
   group('IOD Benchmark Models & Metrics', () {

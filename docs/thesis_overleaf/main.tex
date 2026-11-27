@@ -15,10 +15,14 @@
   \usepackage[T5,T1]{fontenc}
   \usepackage{lmodern}
 \else
-  % Compile with XeLaTeX on Overleaf
+  % Compile with XeLaTeX on Overleaf (uses Noto Serif), falling back cleanly on headless Linux/Docker containers
   \usepackage{fontspec}
   \defaultfontfeatures{Ligatures=TeX}
-  \setmainfont{Noto Serif}
+  \IfFontExistsTF{Noto Serif}{%
+    \setmainfont{Noto Serif}%
+  }{%
+    \setmainfont{DejaVu Serif}%
+  }
 \fi
 
 \usepackage[margin=1in]{geometry}
@@ -44,6 +48,7 @@
 \onehalfspacing
 \setlength{\parindent}{1.5em}
 \setlength{\parskip}{0.5em}
+\emergencystretch=3em
 
 % Custom Colors for Tables and Highlights
 \definecolor{aetronblue}{RGB}{20, 55, 94}

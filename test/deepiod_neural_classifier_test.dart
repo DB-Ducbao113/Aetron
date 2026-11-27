@@ -215,7 +215,7 @@ void main() {
       expect(maxAbsError, lessThan(1e-4));
       expect(meanAbsError, lessThan(1e-6));
       expect(agreementPct, equals(100.0));
-    });
+    }, tags: 'external-data');
 
     test('Parity Verification (Model C-Mobile 4-Sensor): Strict failure if fixtures missing; exact PyTorch agreement', () {
       final parityFile = File('tooling/data/deepiod_weights/parity_test_vectors_mobile.json');
@@ -264,7 +264,7 @@ void main() {
       expect(maxAbsError, lessThan(1e-4));
       expect(meanAbsError, lessThan(1e-6));
       expect(agreementPct, equals(100.0));
-    });
+    }, tags: 'external-data');
 
     test('Parity Verification (Retrained Candidate Model C-Mobile): Strict failure if fixtures missing; genuine PyTorch-Dart VM agreement', () {
       final parityFile = File('tooling/data/deepiod_weights/parity_test_vectors_candidate_mobile.json');
@@ -313,7 +313,7 @@ void main() {
       expect(maxAbsError, lessThan(1e-4));
       expect(meanAbsError, lessThan(1e-6));
       expect(agreementPct, equals(100.0));
-    });
+    }, tags: 'external-data');
 
     test('Parity Verification (HAR-PMD External Benchmark): Strict failure if fixtures missing; exact PyTorch agreement on natural smartphone sensor recordings', () {
       final parityFile = File('tooling/data/deepiod_weights/parity_test_vectors_har_pmd.json');
@@ -362,7 +362,7 @@ void main() {
       expect(maxAbsError, lessThan(1e-4));
       expect(meanAbsError, lessThan(1e-6));
       expect(agreementPct, equals(100.0));
-    });
+    }, tags: 'external-data');
 
     test('Parity Verification (Model A 8-Sensor CNN-LSTM): Strict failure if fixtures missing; exact PyTorch agreement', () {
       final parityFile = File('tooling/data/deepiod_weights/parity_test_vectors_model_a.json');
@@ -399,7 +399,7 @@ void main() {
       expect(maxAbsError, lessThan(1e-4));
       expect(meanAbsError, lessThan(1e-6));
       expect(agreementPct, equals(100.0));
-    });
+    }, tags: 'external-data');
 
     test('Parity Verification (Model B 8-Sensor CNN-MHA): Strict failure if fixtures missing; exact PyTorch agreement', () {
       final parityFile = File('tooling/data/deepiod_weights/parity_test_vectors_model_b.json');
@@ -436,7 +436,7 @@ void main() {
       expect(maxAbsError, lessThan(1e-4));
       expect(meanAbsError, lessThan(1e-6));
       expect(agreementPct, equals(100.0));
-    });
+    }, tags: 'external-data');
 
     test('Parity Verification (AMV Neural Consensus): Strict PyTorch agreement across 500 samples', () {
       final parityFile = File('tooling/data/deepiod_weights/parity_test_vectors_amv.json');
@@ -485,7 +485,7 @@ void main() {
       expect(maxAbsError, lessThan(1e-4));
       expect(meanAbsError, lessThan(1e-6));
       expect(agreementPct, equals(100.0));
-    });
+    }, tags: 'external-data');
 
     test('DeepIOD Full Framework Classifier (AMV Ensemble of A, B, C + Light + GPS) predicts accurately', () {
       final framework = DeepIodFrameworkClassifier();

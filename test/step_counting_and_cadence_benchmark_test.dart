@@ -48,7 +48,7 @@ void main() {
 
       expect(sessionCount, equals(90), reason: 'Must have 90 protocol sessions');
       expect(totalStepsFound, equals(56668), reason: 'Exact reference count from gold standard video');
-    });
+    }, tags: 'external-data');
 
     test('2. Conservation of Step Totals across all 90 sessions (0 drift)', () async {
       final pDirs = dataDir.listSync().whereType<Directory>().toList()
@@ -112,7 +112,7 @@ void main() {
 
       expect(totalMeasured, equals(totalRef));
       expect(totalMeasured, equals(56668));
-    });
+    }, tags: 'external-data');
 
     test('3. Cadence MAE & RMSE evaluation against video ground truth (6s window)', () async {
       // Evaluate on P001 Regular session (935 steps over 567s)
@@ -182,7 +182,7 @@ void main() {
       expect(stepService.currentActiveSteps, equals(935));
 
       stepService.dispose();
-    });
+    }, tags: 'external-data');
 
     test('4. Synthetic Fault Injection Matrix (Baseline, Pause, Reboot, Spike, Decay)', () async {
       final startDate = DateTime(2026, 11, 5, 8, 0, 0);

@@ -4,9 +4,10 @@
 \section{Evaluation Methodology and Evidence Provenance Chain}
 \label{sec:eval_methodology}
 To ensure academic integrity, repeatability, and transparent scientific disclosure, all evaluations in Aetron are conducted against published, peer-reviewed public research datasets featuring independent physical ground truth. Rather than reporting ad-hoc runs or unverified synthetic simulations, every empirical claim presented in this chapter follows a strict, unbroken \textbf{Evidence Provenance Chain}:
-\begin{equation}
-    \text{Paper} \longrightarrow \text{Dataset} \longrightarrow \text{Ground Truth} \longrightarrow \text{Implementation} \longrightarrow \text{Experiment Script} \longrightarrow \text{Raw Results} \longrightarrow \text{Statistical Analysis}
-\end{equation}
+\begin{align}
+    \text{Paper} \rightarrow \text{Dataset} &\rightarrow \text{Ground Truth} \rightarrow \text{Implementation} \nonumber \\
+    &\rightarrow \text{Experiment Script} \rightarrow \text{Raw Results} \rightarrow \text{Statistical Analysis}
+\end{align}
 
 Table~\ref{tab:evidence_chain} details the complete provenance chain across all evaluated modules of the Aetron platform, mapping published research papers, public datasets, production Dart classes, and benchmark harnesses.
 
@@ -265,6 +266,7 @@ Table~\ref{tab:stride_loso_benchmark} audits Renaudin et al.'s Equation~8~\cite{
 \centering
 \caption{Strict Leave-One-Subject-Out (LOSO) Step-Length Benchmark (SLEDataset2 Walking \& Fukuchi RBDS Running).}
 \label{tab:stride_loso_benchmark}
+\resizebox{\textwidth}{!}{
 \begin{tabular}{@{}llrrr@{}}
 \toprule
 \textbf{Cohort ($N$ Sessions)} & \textbf{Estimator (LOSO)} & \textbf{MAE (cm)} & \textbf{RMSE (cm)} & \textbf{MAPE (\%)} \\ \midrule
@@ -279,6 +281,7 @@ Table~\ref{tab:stride_loso_benchmark} audits Renaudin et al.'s Equation~8~\cite{
  & Fallback (Known $H$, Cohort $\mathbb{E}[f]$) & 20.89 & 24.49 & 18.22\% \\
  & Fallback (Missing $H$, Population Mean) & 20.41 & 23.78 & 17.83\% \\ \bottomrule
 \end{tabular}
+}
 \end{table}
 
 Renaudin Eq.~8 lowers walking LOSO MAE from $9.51$\,cm to \textbf{8.61\,cm} (slashing fast-walking MAPE from $14.00\%$ to \textbf{9.97\%}) and lowers running LOSO MAE from $20.42$\,cm to \textbf{17.80\,cm} (cutting $4.5$\,m/s fast-running MAPE from $20.21\%$ to \textbf{14.59\%}). By contrast, an auxiliary file-holdout audit of raw-acceleration cycle models (PCA/CCA) diverged to $20$--$169$\,cm MAE on speed transitions, validating Aetron's bounded stature--cadence support clamps.
@@ -324,6 +327,7 @@ Table~\ref{tab:staga_dbscan_benchmark} evaluates Aetron's post-process \texttt{G
 \centering
 \caption{Stop/Motion Classification Benchmark on the STAGA Mobility Diary ($N = 122{,}808$ Epochs, $\Delta t_{\text{med}} = 10.0$\,s).}
 \label{tab:staga_dbscan_benchmark}
+\resizebox{\textwidth}{!}{
 \begin{tabular}{@{}lrrrrr@{}}
 \toprule
 \textbf{Method} & \textbf{Precision (\%)} & \textbf{Recall (\%)} & \textbf{F1 (\%)} & \textbf{Accuracy (\%)} & \textbf{False Stops (Bouts)} \\ \midrule
@@ -331,6 +335,7 @@ Table~\ref{tab:staga_dbscan_benchmark} evaluates Aetron's post-process \texttt{G
 Zheng Stay-Point ($8.0$\,m)~\cite{zheng2009mining} & 97.03 & \textbf{71.15} & \textbf{82.10} & \textbf{80.07} & 598 \\
 Causal Speed Gate ($v \le 0.8$\,m/s) & 96.44 & 67.98 & 79.75 & 77.83 & 1,117 \\ \bottomrule
 \end{tabular}
+}
 \end{table}
 
 \texttt{T-DBSCAN} achieves \textbf{98.97\%} \textsc{Stop} precision with only \textbf{122} false stop bouts---$9.2\times$ fewer false pauses during slow urban movement than speed-only Auto-Pause ($1{,}117$ bouts)---while its conservative $6.5$\,m centroid radius yields $52.39\%$ recall when multi-hour indoor drift exceeds $6.5$\,m. Complementarily, in a 60-minute physical urban courtyard stationary test, raw GPS accumulated $150$--$284.6$\,m of multipath wander, whereas Aetron's EKF ZUPT + DBSCAN pipeline capped drift to \textbf{4.2\,m} (\textbf{98.5\%} suppression).
@@ -342,12 +347,14 @@ Table~\ref{tab:polyline_compression} quantifies \texttt{PolylineCompressionServi
 \centering
 \caption{Empirical Google Encoded Polyline Compression across $30{,}381$ Coordinates ($1{,}418{,}305$\,B Raw JSON).}
 \label{tab:polyline_compression}
+\resizebox{\textwidth}{!}{
 \begin{tabular}{@{}lrrrrr@{}}
 \toprule
 \textbf{Precision} & \textbf{Encoded Size (B)} & \textbf{Bytes Saved (\%)} & \textbf{Compression Factor} & \textbf{Decode RMSE (m)} & \textbf{Max Error (m)} \\ \midrule
 $10^{-5}$\,deg (p=5) & 82,523 & \textbf{94.18\%} & $\mathbf{17.19\times}$ & 0.375 & 0.669 \\
 $10^{-6}$\,deg (p=6) & 114,972 & 91.89\% & $12.34\times$ & \textbf{0.023} & \textbf{0.066} \\ \bottomrule
 \end{tabular}
+}
 \end{table}
 
 For caloric expenditure, we explicitly distinguish between formulaic agreement with population-average exercise physiology tables and individual $\dot{V}\text{O}_2$ indirect calorimetry. Automated Flutter and Deno tests confirm \textbf{bit-exact parity} between client (\texttt{UserProfile.calculateCalories}) and server (\texttt{compendium\_met.ts}) across all 2024 Adult Compendium~\cite{herrmann2024compendium} walking, running, and cycling speed bands, zero calorie accrual when displacement is zero, and non-promotion of stub map-matching geometry when no OSRM provider is attached.
@@ -368,8 +375,8 @@ Profiled on ARM64 Apple Silicon and Android hardware, all pure-Dart engines oper
 Aetron enforces continuous static analysis and automated regression verification across both its production (\texttt{main}) and research (\texttt{ekf}) branches:
 \begin{itemize}
     \item \textbf{Static Analysis Baseline:} \texttt{flutter analyze} reports \textbf{0 issues found} (clean).
-    \item \textbf{Automated Test Suite:} \textbf{786 tests passing (100\% green, 3 skipped)} covering EKF/AEKF numerical stability, iOS light-free MagIO+HMM IOD, MV-GLRT stationary step rejection, cadence trilemma gates, Renaudin LOSO stride fallback, 2024 Compendium parity, Isar persistence, and iOS/Android OS notification settings deep-linking.
-    \item \textbf{Backend Verification:} Deno test suite validates \texttt{deterministic-finalize-worker} canonical reconciliation and Compendium parity.
+    \item \textbf{Automated Test Suite:} \textbf{776 core CI unit/integration tests passing (3 skipped)}, plus 10 local fixture/dataset parity tests tagged \texttt{external-data} passing when local benchmark weights and PedEval data are present (\textbf{786/786 total}), covering EKF/AEKF numerical stability, iOS light-free MagIO+HMM IOD, MV-GLRT stationary step rejection, cadence trilemma gates, Renaudin LOSO stride fallback, 2024 Compendium parity, Isar persistence, and iOS/Android OS notification settings deep-linking.
+    \item \textbf{Backend Verification:} Deno test suite validates \path{deterministic-finalize-worker} canonical reconciliation and Compendium parity.
 \end{itemize}
 
 \paragraph{Epistemological Boundary Disclosure:}

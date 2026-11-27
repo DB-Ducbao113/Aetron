@@ -10,22 +10,39 @@ import 'package:isar/isar.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  final pubCache = Platform.environment['PUB_CACHE'] ??
+      '${Platform.environment['HOME']}/.pub-cache';
+  final nativeLib = Platform.isMacOS
+      ? File(
+          '$pubCache/hosted/pub.dev/isar_flutter_libs-3.1.0+1/macos/libisar.dylib',
+        )
+      : Platform.isLinux
+          ? File(
+              '$pubCache/hosted/pub.dev/isar_flutter_libs-3.1.0+1/linux/libisar.so',
+            )
+          : null;
+  final hasNativeLib = nativeLib != null && nativeLib.existsSync();
+
   setUpAll(() async {
+    if (!hasNativeLib) return;
     if (Platform.isMacOS) {
-      final pubCacheLib = File(
-        '${Platform.environment['HOME']}/.pub-cache/hosted/pub.dev/isar_flutter_libs-3.1.0+1/macos/libisar.dylib',
+      await Isar.initializeIsarCore(
+        libraries: {
+          Abi.macosArm64: nativeLib.path,
+          Abi.macosX64: nativeLib.path,
+        },
       );
-      if (pubCacheLib.existsSync()) {
-        await Isar.initializeIsarCore(
-          libraries: {
-            Abi.macosArm64: pubCacheLib.path,
-            Abi.macosX64: pubCacheLib.path,
-          },
-        );
-      }
+    } else if (Platform.isLinux) {
+      await Isar.initializeIsarCore(
+        libraries: {
+          Abi.linuxArm64: nativeLib.path,
+          Abi.linuxX64: nativeLib.path,
+        },
+      );
     }
   });
 
+  group('Isar open investigation', () {
   test('Test Isar.open with restored schema IDs succeeds', () async {
     final tempDir = Directory.systemTemp.createTempSync('isar_open_test_success_');
     try {
@@ -84,4 +101,7 @@ void main() {
       }
     }
   });
+  }, skip: !hasNativeLib
+      ? 'Requires local Isar core shared library (no download in CI tests).'
+      : false);
 }

@@ -15,7 +15,7 @@ import 'package:fitness_exercise_application/features/workout/presentation/scree
 import 'package:fitness_exercise_application/features/workout/presentation/screens/record/workout_session_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import '../tooling/benchmark/ciod_dataset_adapter.dart';
+import 'helpers/iod/ciod_dataset_adapter.dart';
 
 class _NoStorageCoordinator implements WorkoutRecordingCoordinator {
   @override

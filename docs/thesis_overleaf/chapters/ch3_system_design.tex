@@ -46,8 +46,8 @@ Aetron is architected as an offline-first, research-grounded mobile fitness appl
 \end{figure}
 
 \begin{enumerate}
-    \item \textbf{Presentation Layer (Kinetic Design System):} Delivers editorial-style athletic HUDs, live route recaps, iOS Live Activities, and direct native OS notification settings deep-linking (\texttt{UNUserNotificationCenter} / \texttt{openNotificationSettingsURLString} on iOS and \texttt{ACTION\_APP\_NOTIFICATION\_SETTINGS} on Android). Experimental IOD overlays are removed from the production recording screen while background telemetry continues non-intrusively.
-    \item \textbf{Application Logic Layer (Riverpod):} Implemented with \texttt{riverpod\_annotation}~\cite{riverpod2024state}, coordinating workout life-cycles, background sensor streams, and environment controllers without blocking the UI thread.
+    \item \textbf{Presentation Layer (Kinetic Design System):} Delivers editorial-style athletic HUDs, live route recaps, iOS Live Activities, and direct native OS notification settings deep-linking (\path{UNUserNotificationCenter} / \path{openNotificationSettingsURLString} on iOS and \path{ACTION_APP_NOTIFICATION_SETTINGS} on Android). Experimental IOD overlays are removed from the production recording screen while background telemetry continues non-intrusively.
+    \item \textbf{Application Logic Layer (Riverpod):} Implemented with \path{riverpod_annotation}~\cite{riverpod2024state}, coordinating workout life-cycles, background sensor streams, and environment controllers without blocking the UI thread.
     \item \textbf{Domain Layer (Pure Dart Algorithmic Services):} Houses all mathematical filtering, neural/probabilistic IOD, MV-GLRT step detection, stride estimation, and calorimetry engines in platform-independent pure Dart, enabling 100\% deterministic execution on headless CI runners.
     \item \textbf{Data and Persistence Layer:} Pairs \textbf{Isar NoSQL}~\cite{isar2024database} (high-throughput time-series GPS and workout logs) with \textbf{SQLite} (user profiles and sync queues) and \textbf{Supabase}~\cite{supabase2024backend} Deno edge workers (\texttt{deterministic-finalize-worker} and \texttt{route-correction-worker}) for canonical post-workout reconciliation.
 \end{enumerate}
@@ -78,7 +78,7 @@ Implemented in \texttt{ExtendedKalmanFilter} (\texttt{lib/features/workout/domai
 To provide seamless indoor--outdoor awareness across both Android and iOS despite asymmetric OS sensor sandboxing, \texttt{IodCompositeClassifier} routes incoming telemetry snapshots (\texttt{IodSensorSnapshot}) dynamically by verified hardware capability.
 
 \subsection{Android Path: Unprivileged 4-Channel Model~C-Mobile \& Yoo $C/N_0$}
-Because unprivileged background apps cannot query cellular RSRP/RSRQ used in full 8-channel DeepIOD~\cite{dastagir2024deepiod}, Android devices with an ambient light photodiode execute \textbf{Model~C-Mobile} (\texttt{lib/features/iod/domain/services/deepiod\_neural\_classifier.dart}), a pure-Dart 2D Depthwise Separable CNN over four unprivileged channels:
+Because unprivileged background apps cannot query cellular RSRP/RSRQ used in full 8-channel DeepIOD~\cite{dastagir2024deepiod}, Android devices with an ambient light photodiode execute \textbf{Model~C-Mobile} (\path{lib/features/iod/domain/services/deepiod_neural_classifier.dart}), a pure-Dart 2D Depthwise Separable CNN over four unprivileged channels:
 \begin{equation}
     \mathbf{X}_{\text{input}} \in \mathbb{R}^{B \times 4 \times W} = \left[\text{Light},\; \text{Mag},\; \text{Acc},\; \text{Daytime}\right]
 \end{equation}
@@ -91,8 +91,8 @@ combining log-scaled illuminance $\log_{10}(1 + \text{lux})$, geomagnetic magnit
 \end{enumerate}
 Where Android \texttt{GnssStatus} exposes satellite $C/N_0$, \texttt{SeamlessTransitionDetector} fuses Yoo's probabilistic $30$--$40$\,dB-Hz transition curve~\cite{yoo2025seamless}.
 
-\subsection{iOS-First Light-Free Multi-Sensor Classifier (\texttt{IosMultiSensorIodClassifier})}
-On iOS, public APIs expose neither ambient light nor raw satellite $C/N_0$, causing light-dependent 4-channel models to abstain completely ($0\%$ coverage). We therefore engineered \texttt{IosMultiSensorIodClassifier} (\texttt{lib/features/iod/domain/services/ios\_multisensor\_iod\_classifier.dart}) strictly from unprivileged cross-platform sensors (\texttt{CMMotionManager}, \texttt{CoreLocation}, and \texttt{CMAltimeter}):
+\subsection{iOS-First Light-Free Multi-Sensor Classifier}
+On iOS, public APIs expose neither ambient light nor raw satellite $C/N_0$, causing light-dependent 4-channel models to abstain completely ($0\%$ coverage). We therefore engineered \texttt{IosMultiSensorIodClassifier} (\path{lib/features/iod/domain/services/ios_multisensor_iod_classifier.dart}) strictly from unprivileged cross-platform sensors (\texttt{CMMotionManager}, \texttt{CoreLocation}, and \texttt{CMAltimeter}):
 \begin{enumerate}
     \item \textbf{MagIO Magnetic Perturbation Vector (Ashraf et al., 2018~\cite{ashraf2018magio}):} Over a causal 10-second sliding buffer of magnetic magnitude $\|\mathbf{m}_k\|$, the service computes 10 distributional features: mean, standard deviation, min, max, range, median, interquartile range (IQR), skewness, kurtosis, and mean absolute first derivative $|\Delta \|\mathbf{m}\||$.
     \item \textbf{Inertial Dynamics \& Diurnal Prior (Esmaeili Kelishomi et al., 2019~\cite{kelishomi2019activities}):} Appends 10-second linear acceleration mean, standard deviation, and peak-to-peak excursion alongside deterministic astronomical daytime, forming a 14-dimensional feature vector passed through a pure-Dart frozen 2-layer MLP trained exclusively on Cambridge CIOD Sessions~00--59 (threshold tuned on Validation Sessions~60--71).
@@ -101,7 +101,7 @@ On iOS, public APIs expose neither ambient light nor raw satellite $C/N_0$, caus
 \end{enumerate}
 
 \subsection{Probabilistic \texttt{EnvironmentClassifier} with Path Straightness}
-To eliminate legacy ad-hoc linear score weights ($0.45/0.30/0.15/0.10$) in the core workout tracker, \texttt{EnvironmentClassifier} (\texttt{lib/core/services/environment\_detector.dart}) now computes calibrated sigmoid GNSS accuracy likelihoods~\cite{bui2020gpsiod,dastagir2024deepiod}, evaluates \textbf{Benhamou's (2004) Path Straightness Index}~\cite{benhamou2004tortuosity}:
+To eliminate legacy ad-hoc linear score weights ($0.45/0.30/0.15/0.10$) in the core workout tracker, \texttt{EnvironmentClassifier} (\path{lib/core/services/environment_detector.dart}) now computes calibrated sigmoid GNSS accuracy likelihoods~\cite{bui2020gpsiod,dastagir2024deepiod}, evaluates \textbf{Benhamou's (2004) Path Straightness Index}~\cite{benhamou2004tortuosity}:
 \begin{equation}
     S = \frac{d_{\text{net}}}{\max(d_{\text{path}}, 1.0)} \in [0, 1]
     \label{eq:benhamou_s}
@@ -184,8 +184,8 @@ Alongside hardware pedometer adapters (\texttt{TYPE\_STEP\_COUNTER} / \texttt{CM
 \begin{equation}
     \text{Cadence}_{\text{live}}(t) =
     \begin{cases}
-        0 & \text{if } t - t_{\text{last\_step}} > 4.0\,\text{s} \text{ or } N_{\text{steps in window}} < 2 \\
-        \min\left(270, \frac{N_{\text{steps in window}} \times 60}{6.0}\right) & \text{otherwise}
+        0 & \text{if } t - t_{\text{last\_step}} > 4.0\,\text{s} \text{ or } N_{\text{window}} < 2 \\
+        \min\!\left(270, \frac{N_{\text{window}} \times 60}{6.0}\right) & \text{otherwise}
     \end{cases}
 \end{equation}
 For indoor or GPS-denied distance estimation, \texttt{ResearchStepLengthFallback} evaluates Renaudin et al.'s linear stature--frequency model (Equation~\ref{eq:renaudin_lit})~\cite{renaudin2012step} using LOSO-validated parameters: $(a, b, c) = (0.1328, 0.0217, 0.2755)$ for walking ($H \in [1.60, 1.88]$\,m, $C \in [94, 144]$\,spm) and $(0.3211, 0.7253, -1.6810)$ for running ($H \in [1.627, 1.872]$\,m, $C \in [143, 223]$\,spm), clamping safely to cohort means outside validated support rather than extrapolating unboundedly.
@@ -198,7 +198,7 @@ Post-workout, \texttt{WorkoutSessionFinalizer} bridges short GNSS dropouts ($2.0
 
 \subsection{2024 Adult Compendium Caloric Expenditure}
 \label{sec:calorie_design}
-Both the Flutter client (\texttt{UserProfile.calculateCalories}) and Supabase edge worker (\texttt{compendium\_met.ts}) compute distance-activity kilocalories via Equation~\ref{eq:compendium_2024} using exact 5-digit speed-banded codes from the \textbf{2024 Adult Compendium of Physical Activities}~\cite{herrmann2024compendium} (walking \texttt{17151--17255}, running \texttt{12028--12145}, cycling \texttt{01010--01060}) converted via $v_{\text{mph}} = v_{\text{km/h}} / 1.609344$ without unverified interpolation across speed-band gaps, returning strictly $0$\,kcal whenever verified moving displacement is zero. Non-distance indoor activities (gym, yoga) fall back to duration-based MET integration with a $0.95$ female adjustment factor.
+Both the Flutter client (\path{UserProfile.calculateCalories}) and Supabase edge worker (\path{compendium_met.ts}) compute distance-activity kilocalories via Equation~\ref{eq:compendium_2024} using exact 5-digit speed-banded codes from the \textbf{2024 Adult Compendium of Physical Activities}~\cite{herrmann2024compendium} (walking \texttt{17151}--\texttt{17255}, running \texttt{12028}--\texttt{12145}, cycling \texttt{01010}--\texttt{01060}) converted via $v_{\text{mph}} = v_{\text{km/h}} / 1.609344$ without unverified interpolation across speed-band gaps, returning strictly $0$\,kcal whenever verified moving displacement is zero. Non-distance indoor activities (gym, yoga) fall back to duration-based MET integration with a $0.95$ female adjustment factor.
 
 \section{System Safety, Feature Flags, and Observational Isolation}
 \label{sec:safety_gating}
