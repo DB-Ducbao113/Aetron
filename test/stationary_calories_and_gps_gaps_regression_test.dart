@@ -168,8 +168,8 @@ void main() {
       () {
         final profile = makeProfile(weightKg: 70.0);
 
-        // 12 km/h ≈ 7.46 mph: no matching Compendium speed band,
-        // therefore PAC 12145 (running, self-selected), 10.5 MET.
+        // 12 km/h ≈ 7.46 mph maps continuously to nearest published band:
+        // PAC 12080 (7.5 mph), 11.8 MET.
         final kcal = WorkoutMetricsCalculator.computeCaloriesKcal(
           profile: profile,
           activityType: 'Running',
@@ -178,16 +178,15 @@ void main() {
           movingDurationSec: 1500,
         );
 
-        // 10.5 MET * 70 kg * 1500 s / 3600 = 306.25 kcal.
-        expect(kcal, equals(306));
+        // 11.8 MET * 70 kg * 1500 s / 3600 = 344.17 kcal.
+        expect(kcal, equals(344));
       },
     );
 
     test('calories do not decrease when athlete stops at a red light', () {
       final profile = makeProfile(weightKg: 70.0);
 
-      // Athlete runs 1 km at 12 km/h in 300s (moving).
-      // PAC 12145 (10.5 MET), as 7.46 mph is outside published bands.
+      // Athlete runs 1 km at 12 km/h (7.46 mph -> PAC 12080, 11.8 MET) in 300s.
       final calWhileMoving = WorkoutMetricsCalculator.computeCaloriesKcal(
         profile: profile,
         activityType: 'Running',
@@ -195,8 +194,8 @@ void main() {
         durationSec: 300,
         movingDurationSec: 300,
       );
-      // 10.5 * 70 * 300 / 3600 = 61.25 kcal.
-      expect(calWhileMoving, equals(61));
+      // 11.8 * 70 * 300 / 3600 = 68.83 kcal.
+      expect(calWhileMoving, equals(69));
 
       // Athlete waits at a red light for 5 minutes (elapsed = 600s, moving = 300s, distance = 1000m)
       final calAfterWaiting = WorkoutMetricsCalculator.computeCaloriesKcal(
@@ -212,7 +211,7 @@ void main() {
         greaterThanOrEqualTo(calWhileMoving),
         reason: 'Calories must not decrease during stationary periods',
       );
-      expect(calAfterWaiting, equals(61));
+      expect(calAfterWaiting, equals(69));
     });
 
     test('finalizer computes consistent calories matching live policy', () {
