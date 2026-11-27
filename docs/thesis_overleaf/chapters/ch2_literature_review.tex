@@ -2,164 +2,173 @@
 \label{ch:literature_review}
 
 \section{Overview}
-Developing an autonomous mobile fitness tracking platform requires mathematical and empirical grounding across multiple interconnected disciplines: satellite geodesy, optimal stochastic state estimation, cross-platform environmental context detection, inertial gait biomechanics, spatial--temporal trajectory mining, and exercise physiology. This chapter reviews the peer-reviewed literature underpinning Aetron's algorithmic architecture, contrasting theoretical models against commodity mobile operating system constraints and formalizing the research gaps that guide our implementation.
+This chapter reviews the technical foundations underpinning Aetron's design as a smartphone-only mobile fitness application for indoor and outdoor activities. Rather than relying on dedicated chest straps or proprietary smartwatch firmware, Aetron derives all motion, location, and metabolic telemetry from consumer smartphone GNSS receivers, micro-electro-mechanical (MEMS) inertial sensors, magnetometers, barometers, and platform OS APIs. The review connects classic mobile systems literature---used to frame our initial pre-thesis baseline---with peer-reviewed research in geodetic Kalman estimation, cross-platform Indoor/Outdoor Detection (IOD), zero-velocity gait gating, adaptive stride biomechanics, and exercise physiology.
 
-\section{Outdoor GNSS Tracking and Geodetic Kinematics}
+\section{Mobile Fitness Tracking Applications}
+Smartphone fitness applications transform raw heterogeneous hardware sensor streams into actionable workout metrics---distance, pace, cadence, steps, elevation, routes, and estimated calorie burn---without requiring external sports accessories. Building an academically transparent mobile tracker presents a systems integration challenge as much as an algorithmic one: sensor noise filtering, environment switching, crash-safe storage, server auditability, and reactive multi-screen presentation must operate coherently on battery-constrained phones.
+
+\section{Outdoor Activity Tracking Using GPS/GNSS}
 \label{sec:gnss_kinematics}
-Outdoor fitness tracking relies on Global Navigation Satellite Systems (GNSS) to estimate geographic coordinates over time. In a local coordinate frame, positions are expressed as geodetic latitude $\phi$, longitude $\lambda$, and ellipsoidal altitude $h$ referenced to the World Geodetic System 1984 (WGS84) reference ellipsoid.
 
-\subsection{Great-Circle and Ellipsoidal Distance Formulations}
-Calculating cumulative distance along a discrete trajectory $\mathcal{T} = \{p_1, p_2, \dots, p_N\}$ requires integrating incremental distances between consecutive coordinate pairs $p_k = (\phi_k, \lambda_k)$ and $p_{k+1} = (\phi_{k+1}, \lambda_{k+1})$. On a spherical earth model of mean radius $R_{\text{earth}} \approx 6{,}371{,}000$\,m, the great-circle distance is computed using the Haversine formula~\cite{sinnott1984virtues}:
+\subsection{GPS/GNSS as the Primary Outdoor Source}
+Outdoor tracking relies on Global Navigation Satellite Systems (GPS, GLONASS, Galileo, BeiDou) exposed in Flutter via \texttt{geolocator}~\cite{geolocator2024} over Android \texttt{FusedLocationProvider} and iOS \texttt{CoreLocation}. Each position fix supplies WGS84 geodetic coordinates $(\phi_k, \lambda_k)$, altitude $h_k$, Doppler or derived ground speed $v_k$, bearing $\theta_k$, and a horizontal accuracy radius estimate $\sigma_{\text{acc}, k}$ (typically a $1\sigma$ / $68\%$ radial confidence estimate on native Android/iOS, in contrast to $50\%$ CEP50 reported by low-cost snapshot loggers~\cite{beuchert2023snappergps}). Native accuracy estimates serve both as noise variance priors inside Kalman filtering and as primary cues for outdoor/indoor classification.
+
+\subsection{GPS Accuracy Limitations and Urban Multipath}
+Commodity smartphone GNSS antennas suffer from low gain, linear polarization, ionospheric/tropospheric propagation delays, and severe non-line-of-sight (NLOS) multipath reflections near tall buildings~\cite{merry2019gps,zandbergen2011gps,yun2022gnss}. Merry and Bettinger~\cite{merry2019gps} observed consumer smartphone horizontal errors of $3$--$10$\,m under open sky escalating to $30$--$50$\,m in urban canyons, while Zandbergen and Barbeau~\cite{zandbergen2011gps} documented median A-GPS errors of $5$--$8.5$\,m outdoors degrading indoors to tens of meters. Poor satellite geometry quantified by Horizontal Dilution of Precision ($\sigma_{\text{pos}} = \text{HDOP} \cdot \sigma_{\text{pr}}$) further induces four classic fitness telemetry failures: stationary phantom drift during traffic-light pauses, transient multipath spikes, temporary blackouts under tree cover or bridges, and physically impossible speed bursts.
+
+\subsection{Distance Calculation: Haversine, Vincenty, and Validation Benchmarks}
+Consecutive validated WGS84 coordinates $p_k = (\phi_k, \lambda_k)$ and $p_{k+1} = (\phi_{k+1}, \lambda_{k+1})$ (in radians) are integrated along a trajectory via the great-circle Haversine formula~\cite{sinnott1984virtues}:
 \begin{align}
-    \Delta \phi &= \phi_{k+1} - \phi_k, \quad \Delta \lambda = \lambda_{k+1} - \lambda_k \\
-    a &= \sin^2\left(\frac{\Delta \phi}{2}\right) + \cos(\phi_k)\cos(\phi_{k+1})\sin^2\left(\frac{\Delta \lambda}{2}\right) \\
-    d_{\text{haversine}}(p_k, p_{k+1}) &= 2 R_{\text{earth}} \cdot \arctan2\left(\sqrt{a}, \sqrt{1 - a}\right)
+    a &= \sin^2\!\left(\frac{\phi_{k+1}-\phi_k}{2}\right) + \cos(\phi_k)\cos(\phi_{k+1})\sin^2\!\left(\frac{\lambda_{k+1}-\lambda_k}{2}\right), \\
+    c &= 2 \arctan2\!\left(\sqrt{a}, \sqrt{1-a}\right), \qquad d_{\text{seg}} = R_{\text{earth}} \cdot c,
+    \label{eq:haversine}
 \end{align}
-While computationally efficient, the spherical assumption introduces a systematic geodetic distortion of up to $0.55\%$ depending on latitude. For surveyor-grade ground-truth validation, geodesics are modeled on the WGS84 oblate spheroid ($a = 6{,}378{,}137.0$\,m, $f = 1/298.257223563$) via Vincenty's inverse algorithm~\cite{vincenty1975direct}. In athletic GPS validation studies, Scott et al.~\cite{scott2016validity} categorize cumulative distance Mean Absolute Percentage Error (MAPE) as \textbf{Good} ($<5\%$), \textbf{Moderate} ($5$--$10\%$), or \textbf{Poor} ($>10\%$), while Gilgen-Ammann et al.~\cite{gilgenammann2020wrist} benchmark commercial sport watches at $0.9$--$4.1\%$ error on open tracks and $3.9$--$8.9\%$ in urban environments.
+with mean Earth radius $R_{\text{earth}} \approx 6{,}371{,}000$\,m and total distance $D_{\text{total}} = \sum_{k=1}^{N-1} d_{\text{seg}}(p_k, p_{k+1})$. While Haversine exhibits up to $0.55\%$ oblateness discrepancy versus Vincenty's inverse WGS84 ellipsoidal solution (semi-major axis $a = 6{,}378{,}137$\,m, inverse flattening $1/f = 298.257223563$)~\cite{vincenty1975direct}, offline RTK benchmarks use ellipsoidal/ENU projections for centimeter fidelity.
 
-\subsection{Sources of GNSS Degradation and Dilution of Precision}
-Consumer smartphone GNSS receivers suffer from ionospheric/tropospheric delay, urban canyon non-line-of-sight (NLOS) multipath reflections ($10$--$50$\,m outliers), and poor satellite constellation geometry quantified by Horizontal Dilution of Precision (HDOP):
-\begin{equation}
-    \sigma_{\text{pos}} = \text{HDOP} \cdot \sigma_{\text{pr}}
-\end{equation}
-When HDOP exceeds $3.0$ in narrow street corridors, horizontal variance escalates rapidly and raw coordinate integration inflates total workout distance.
+In sports-science GPS validation, Scott et al.~\cite{scott2016validity} classify cumulative distance Mean Absolute Percentage Error (MAPE) as \textbf{Good} ($<5\%$), \textbf{Moderate} ($5$--$10\%$), or \textbf{Poor} ($>10\%$), consistent with Tierney and Clarke's smartphone-vs.-device comparisons~\cite{tierney2019gps}. Benchmarking eight commercial GNSS sports watches, Gilgen-Ammann et al.~\cite{gilgenammann2020wrist} measured MAPEs of $0.9$--$4.1\%$ in open-track conditions and $3.2$--$8.9\%$ in urban routes, establishing clear empirical reference targets.
 
-\section{GNSS Filtering, Trajectory Preprocessing, and Optimal Estimation}
+\section{GPS Noise Handling, Kalman Filtering, and Trajectory Mining}
 \label{sec:filtering_theory}
-Raw GNSS streams cannot be directly integrated into athletic telemetry without producing jagged polylines and inflated distances. Modern trajectory pipelines therefore combine kinematic preprocessing with stochastic state estimation~\cite{zheng2015trajectory,li2025trajectory}.
 
-\subsection{Kinematic Preprocessing and Stay-Point Mining}
-Zheng~\cite{zheng2015trajectory} and Li et al.~\cite{li2025trajectory} structure GNSS preprocessing into sequential outlier rejection, median spike suppression, stay-point detection, and outage segmentation. A first-stage kinematic gate discards fixes violating modality-specific physical constraints:
-\begin{equation}
-    \text{Gate}(p_k, p_{k-1}, \Delta t) =
-    \begin{cases}
-        \text{Reject} & \text{if } \sigma_{\text{accuracy}} > \tau_{\text{acc}} \quad (\text{e.g., } 25\,\text{m}) \\
-        \text{Reject} & \text{if } \frac{d(p_k, p_{k-1})}{\Delta t} > v_{\text{max}} \quad (\text{modality-specific}) \\
-        \text{Accept} & \text{otherwise}
-    \end{cases}
-\end{equation}
-For stationary dwell identification, Zheng et al.~\cite{zheng2009mining} define stay points as temporally contiguous sub-trajectories remaining within distance threshold $D_{\max}$ for at least $T_{\min}$, while Ester et al.~\cite{ester1996dbscan} introduce density-based spatial clustering (DBSCAN), which adapts naturally to time-ordered GPS dwell suppression (T-DBSCAN) and can be evaluated on real-world stop/trip diaries such as STAGA~\cite{spang2022staga}.
+\subsection{Validation Gates and Trajectory Preprocessing}
+Deterministic outlier rejection filters raw GNSS streams in negligible CPU time by applying an initial accuracy gate, minimum displacement deadband, and modality-specific speed sanity limits~\cite{harle2013survey}. Zheng~\cite{zheng2015trajectory} and Li et al.~\cite{li2025trajectory} systematize this into four sequential preprocessing stages: physical kinematic outlier pruning, median spike filtering, stay-point dwell consolidation (Zheng et al.~\cite{zheng2009mining}: bounding points within spatial radius $D_{\max}$ for duration $\ge T_{\min}$), and signal-gap partitioning so satellite blackouts never create straight-line distance inflation.
 
-\subsection{Standard Extended Kalman Filter (EKF) Formulation}
-The Kalman Filter~\cite{kalman1960filter} provides the minimum mean-square error (MMSE) estimator for linear Gaussian systems; the Extended Kalman Filter (EKF) extends this framework to nonlinear planar kinematics via first-order Taylor linearization~\cite{gelb1974applied,groves2013principles}. Aetron employs a 4-state kinematic vector in a local Equirectangular tangent plane:
+\subsection{Fixed-Alpha Confidence Blending vs.\ 4-State Extended Kalman Filtering}
+Kalman filtering~\cite{kalman1960filter} provides the recursive minimum mean-square error (MMSE) estimator combining noisy measurements with a kinematic state prior. During Aetron's pre-thesis phase~\cite{aetron2026prethesis}, full covariance propagation was initially approximated by a scalar \textbf{confidence-based Fixed-Alpha smoother}:
 \begin{equation}
-    \mathbf{x} = \begin{bmatrix} p_x & p_y & v & \theta \end{bmatrix}^T \in \mathbb{R}^4
+    \hat{\mathbf{p}}_k = (1 - \alpha_k)\hat{\mathbf{p}}_{k-1} + \alpha_k \mathbf{z}_k, \qquad
+    \alpha_k \in \{0.72\text{ (High)}, \; 0.52\text{ (Medium)}, \; 0.34\text{ (Low)}\},
 \end{equation}
-where $p_x$ and $p_y$ denote local East and North meters, $v$ is ground speed (m/s), and $\theta$ is track heading (radians clockwise from North). Over step $\Delta t$, state prediction and Jacobian propagation follow:
+coupled with a turn-boost override and stationary freeze gate. While lightweight, Fixed-Alpha maintains neither velocity/heading memory nor continuous covariance uncertainty $\mathbf{P}_k$, causing path lag around curves and premature freezing at $1$\,Hz walking cadences.
+
+The nonlinear \textbf{Extended Kalman Filter (EKF)} overcomes these limits via first-order Taylor linearization~\cite{gelb1974applied,groves2013principles}. Modeling motion on a local Equirectangular East--North tangent plane with state vector $\mathbf{x} = [p_x, p_y, v, \theta]^T \in \mathbb{R}^4$, prediction and analytical Jacobian propagation follow:
 \begin{align}
-    \mathbf{x}_k^- &= \mathbf{f}(\mathbf{x}_{k-1}) = \begin{bmatrix}
-        p_{x, k-1} + v_{k-1} \sin(\theta_{k-1}) \Delta t \\
-        p_{y, k-1} + v_{k-1} \cos(\theta_{k-1}) \Delta t \\
+    \mathbf{x}_k^- &= \mathbf{f}(\mathbf{x}_{k-1}) =
+    \begin{bmatrix}
+        p_{x,k-1} + v_{k-1}\sin(\theta_{k-1})\Delta t \\
+        p_{y,k-1} + v_{k-1}\cos(\theta_{k-1})\Delta t \\
         v_{k-1} \\
         \theta_{k-1}
-    \end{bmatrix} \\
-    \mathbf{F}_k &= \left.\frac{\partial \mathbf{f}}{\partial \mathbf{x}}\right|_{\hat{\mathbf{x}}_{k-1}} = \begin{bmatrix}
+    \end{bmatrix}, \\
+    \mathbf{F}_k &= \left.\frac{\partial \mathbf{f}}{\partial \mathbf{x}}\right|_{\hat{\mathbf{x}}_{k-1}} =
+    \begin{bmatrix}
         1 & 0 & \sin(\theta_{k-1})\Delta t & v_{k-1}\cos(\theta_{k-1})\Delta t \\
         0 & 1 & \cos(\theta_{k-1})\Delta t & -v_{k-1}\sin(\theta_{k-1})\Delta t \\
         0 & 0 & 1 & 0 \\
         0 & 0 & 0 & 1
-    \end{bmatrix} \\
-    \mathbf{P}_k^- &= \mathbf{F}_k \mathbf{P}_{k-1} \mathbf{F}_k^T + \mathbf{Q}_k
+    \end{bmatrix}, \qquad
+    \mathbf{P}_k^- = \mathbf{F}_k \mathbf{P}_{k-1} \mathbf{F}_k^T + \mathbf{Q}_k.
 \end{align}
-With observation $\mathbf{z}_k = [z_{px}, z_{py}, z_v]^T$ (or 4-element with Doppler course when above speed deadband), innovation $\boldsymbol{\nu}_k = \mathbf{z}_k - \mathbf{H}_k \mathbf{x}_k^-$, innovation covariance $\mathbf{S}_k = \mathbf{H}_k \mathbf{P}_k^- \mathbf{H}_k^T + \mathbf{R}_k$, and gain $\mathbf{K}_k = \mathbf{P}_k^- \mathbf{H}_k^T \mathbf{S}_k^{-1}$, Aetron updates state covariance strictly via the numerically stable \textbf{Joseph form}:
+Using innovation $\boldsymbol{\nu}_k = \mathbf{z}_k - \mathbf{H}_k\mathbf{x}_k^-$, innovation covariance $\mathbf{S}_k = \mathbf{H}_k\mathbf{P}_k^-\mathbf{H}_k^T + \mathbf{R}_k$, and gain $\mathbf{K}_k = \mathbf{P}_k^-\mathbf{H}_k^T\mathbf{S}_k^{-1}$, covariance stabilization via the \textbf{Joseph form}~\cite{groves2013principles}:
 \begin{equation}
-    \mathbf{P}_k = (\mathbf{I} - \mathbf{K}_k \mathbf{H}_k) \mathbf{P}_k^- (\mathbf{I} - \mathbf{K}_k \mathbf{H}_k)^T + \mathbf{K}_k \mathbf{R}_k \mathbf{K}_k^T
+    \mathbf{P}_k = (\mathbf{I} - \mathbf{K}_k\mathbf{H}_k)\mathbf{P}_k^-(\mathbf{I} - \mathbf{K}_k\mathbf{H}_k)^T + \mathbf{K}_k\mathbf{R}_k\mathbf{K}_k^T,
     \label{eq:joseph_form}
 \end{equation}
-guaranteeing symmetry and positive semi-definiteness across mobile floating-point pipelines. During stationary pauses ($v < 0.3$\,m/s), a Zero-Velocity Update (ZUPT) applies pseudo-measurement $z_v = 0$ and damps $\mathbf{Q}_k$ to arrest multipath creep.
+guarantees symmetry and positive semi-definiteness across finite floating-point arithmetic, while Zero-Velocity Updates (ZUPT) damp velocity drift when stationary. Table~\ref{tab:kalman_vs_blending} contrasts Pre-Thesis confidence blending with the full 4-state EKF/AEKF.
 
-\subsection{Adaptive EKF (AEKF), Mahalanobis Gating, and Turn-Rate Scaling}
-To suppress multipath spikes without rejecting genuine athletic maneuvers, Groves~\cite{groves2013principles} and maneuvering-target tracking surveys~\cite{rongli2003survey} couple innovation-consistency testing with adaptive covariance scaling. Under Gaussian assumptions, the 2-DOF spatial Normalized Innovation Squared (NIS) follows a $\chi^2_2$ distribution:
+\begin{table}[htbp]
+\centering
+\caption{Comparison between Pre-Thesis Confidence-Based Blending and Full Thesis 4-State Kinematic EKF/AEKF.}
+\label{tab:kalman_vs_blending}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Concept} & \textbf{Pre-Thesis Confidence Blending~\cite{aetron2026prethesis}} & \textbf{Full Thesis 4-State EKF / Phase~2 AEKF} \\ \midrule
+State vector & Position only $(\phi, \lambda)$ & Planar East/North position, speed, heading $[p_x, p_y, v, \theta]^T$ \\
+Measurement noise $\mathbf{R}_k$ & Mapped to 3 discrete confidence tiers & Continuous $\sigma_{\text{acc}, k}^2$ + $\chi_2^2$ NIS adaptive scaling \\
+Filter gain $\mathbf{K}_k$ & Fixed discrete scalar $\alpha \in \{0.34, 0.52, 0.72\}$ & Optimal matrix $\mathbf{K}_k = \mathbf{P}_k^-\mathbf{H}_k^T\mathbf{S}_k^{-1}$ \\
+State uncertainty $\mathbf{P}_k$ & Implicit; no covariance propagation & Explicit $4\times 4$ matrix via Joseph form (Eq.~\ref{eq:joseph_form}) \\
+Stationary & Rule-based freeze ($\Delta d \le 2.2$\,m risk at $1$\,Hz) & ZUPT pseudo-observation ($z_v=0$) + $\mathbf{Q}_k$ damping \\
+Corner turns & Heuristic $\alpha \leftarrow 0.82$ boost above $28^\circ$ & Centripetal heading noise scaling via turn rate $\dot{\psi}_k$~\cite{rongli2003survey} \\ \bottomrule
+\end{tabular}
+}
+\end{table}
+
+\subsection{Adaptive EKF, Dwell Clustering, Outage Reconstruction, and Compression}
+Sukhenko et al.~\cite{sukhenko2025gnss} review satellite correction architectures and show why unprivileged smartphones---lacking dual-frequency RTK base links or iOS raw pseudoranges---must reject deceptive $10$--$15$\,m urban multipath at the state-space innovation layer. Grounded in Groves~\cite{groves2013principles} and Rong Li \& Jilkov~\cite{rongli2003survey}, the 2-DOF spatial Normalized Innovation Squared (NIS):
 \begin{equation}
-    \text{NIS}_k = \boldsymbol{\nu}_k^T \mathbf{S}_k^{-1} \boldsymbol{\nu}_k
+    d_M^2 = \text{NIS}_k = \boldsymbol{\nu}_k^T \mathbf{S}_k^{-1} \boldsymbol{\nu}_k
     \label{eq:nis_lit}
 \end{equation}
-Against $\chi^2_{2, 0.95} = 5.991$ and $\chi^2_{2, 0.999} = 13.816$, moderate outliers inflate $\mathbf{R}_k^{\text{adaptive}} = \max(1.0, \text{NIS}_k / 5.991)\,\mathbf{R}_k$ while severe jumps are gated unless consecutive innovations confirm re-anchoring. Complementarily, centripetal turn-rate scaling~\cite{rongli2003survey} inflates heading process noise when circular turn rate $\dot{\psi}_k$ exceeds modality thresholds, preventing corner overshoot. Chapter~\ref{ch:evaluation} rigorously evaluates both isolated NIS scaling and full Phase~1+2 integration on pedestrian RTK~\cite{tuwien2026gnss} and cycling snapshot GNSS~\cite{beuchert2023snappergps}.
+follows a $\chi_2^2$ distribution with $\gamma_1 = \chi_{2,0.95}^2 = 5.991$ and $\gamma_2 = \chi_{2,0.999}^2 = 13.816$, allowing moderate multipath downweighting ($d_M^2 > \gamma_1$), severe jump gating ($d_M^2 > \gamma_2$), and dynamic heading process-noise inflation on sharp athletic turns.
 
-\section{Indoor/Outdoor Detection (IOD) and Cross-Platform Transition Modeling}
-\label{sec:iod_literature}
-Reliable dual-mode fitness tracking requires distinguishing outdoor GNSS-trackable segments from indoor dead-reckoning segments across both Android and iOS hardware~\cite{feriol2020review}.
+For post-hoc stationary pause segmentation, Ester et al.~\cite{ester1996dbscan} introduced density-based clustering (DBSCAN), which adapts naturally into temporal-spatial dwell collapsing (T-DBSCAN) benchmarkable on annotated mobility diaries such as STAGA~\cite{spang2022staga}. When brief $2$--$15$\,s outages fracture map polylines, Fritsch and Carlson's~\cite{fritsch1980pchip} Monotone Piecewise Cubic Hermite Interpolation (PCHIP) and Czerwi{\'n}ski et al.~\cite{czerwinski2026reconstruction} motivate visual gap reconstruction---though strictly for offline route display because multipath-corrupted boundary headings can induce spline overshoot. Finally, Google Encoded Polyline delta compression minimizes network payload while Hidden Markov Model (HMM) road matching~\cite{newson2009hidden} formalizes server map-snapping.
 
-\subsection{Foundational Multi-Sensor IOD: IODetector, Semi-Supervised, and GNSS Schemes}
-Early smartphone IOD frameworks established lightweight multi-sensor fusion without heavy deep networks:
+\section{Indoor Activity Tracking and Environment Classification}
+\label{sec:indoor_and_iod}
+
+\subsection{Limitation of GPS Indoors}
+Inside gymnasiums, residential towers, and underground corridors, attenuated satellite signals lose phase lock or suffer extreme multipath, rendering GNSS unsuitable for distance tracking~\cite{harle2013survey}. Smartphone tracking must therefore switch to Pedestrian Dead Reckoning (PDR) using inertial sensors and step estimation.
+
+\subsection{Environment Classification: Rule-Based, DeepIOD, and Light-Free iOS Fusion}
+Automatically deciding between outdoor GNSS and indoor inertial pipelines is termed \textbf{Indoor/Outdoor Detection (IOD)}~\cite{feriol2020review,angelats2024seamless}:
 \begin{itemize}
-    \item \textbf{IODetector (Li et al., 2014):} Li et al.~\cite{li2014iodetector} formulated a modular service fusing light intensity, cellular RSSI variability, and magnetic field variance via confidence-weighted posterior aggregation, demonstrating that combining orthogonal weak cues substantially outperforms single-sensor thresholding.
-    \item \textbf{Semi-Supervised Smartphone IOD (Radu et al., 2014):} Radu et al.~\cite{radu2014semisupervised} highlighted cross-device and cross-building domain shifts when deploying supervised classifiers trained on a single handset, motivating feature normalization and multi-session disjoint evaluation.
-    \item \textbf{GNSS-Based IOD (Bui et al., 2020):} Bui et al.~\cite{bui2020gpsiod} demonstrated that GNSS signal quality indicators (satellite visibility, SNR, and reported horizontal positioning accuracy / fix availability) provide high-value indoor/outdoor discrimination, even when only OS-level location accuracy and fix silence are exposed.
-    \item \textbf{Multi-Sensor Environmental Context Survey (F{\'e}riol et al., 2020):} F{\'e}riol et al.~\cite{feriol2020review} systematically categorized environmental context cues---including GNSS availability, magnetometers, barometers (pressure deltas across building doors/HVAC envelopes), and inertial dynamics---emphasizing OS privilege constraints in consumer deployment.
+    \item \textbf{Heuristic Rule-Based Classifiers:} Pre-thesis Aetron~\cite{aetron2026prethesis} implemented a rolling 10-fix deterministic classifier over GPS accuracy, displacement, speed, jitter ratio, and step-count deltas. While transparent and training-free, ad-hoc linear weights ignore probabilistic calibration and stall on iOS when \texttt{CoreLocation} stops delivering fixes inside steel buildings.
+    \item \textbf{Foundational Multi-Sensor \& GNSS IOD:} Li et al.~\cite{li2014iodetector} (\textbf{IODetector}) fused optical, cellular, and magnetic likelihoods with confidence weighting; Radu et al.~\cite{radu2014semisupervised} documented device-shift sensitivity; and Bui et al.~\cite{bui2020gpsiod} demonstrated high indoor discrimination from OS-exposed GNSS quality and fix availability.
+    \item \textbf{Deep Learning \& Transition Smoothing (DeepIOD, CIOD, Yoo):} Dastagir et al.~\cite{dastagir2024deepiod} introduced DeepIOD (Model~A/B/C) across 8 channels (\texttt{RSRP}, \texttt{RSRQ}, \texttt{Light}, \texttt{Mag}, \texttt{Acc}, \texttt{Sound}, \texttt{Proximity}, \texttt{Daytime}) evaluated on Cambridge CIOD~\cite{bakirtzis2022ciod} ($>1.47$\,M epochs), while Yoo~\cite{yoo2025seamless} modeled doorway crossings via satellite $C/N_0 \in [30, 40]$\,dB-Hz. However, external audits on HAR-PMD~\cite{harpmd2025dataset} warn that CNNs ingesting raw linear acceleration conflate physical movement with outdoors~\cite{wang2019deep}.
+    \item \textbf{Light-Free iOS Multi-Sensor Solution (MagIO + Dynamics + Straightness + Causal HMM):} Because Apple iOS blocks public ambient light, raw $C/N_0$, and cellular radio APIs, three peer-reviewed mechanisms restore cross-platform coverage: (a)~\textbf{MagIO} (Ashraf et al., 2018~\cite{ashraf2018magio}) quantifies indoor ferromagnetic perturbation statistics on magnetic magnitude $\|\mathbf{m}\|$; (b)~Esmaeili Kelishomi et al.~\cite{kelishomi2019activities} extract triaxial inertial activity features; (c)~Zhu et al.~\cite{zhu2019fast} smooth frame posteriors with a causal 2-state HMM forward filter ($\alpha_t(s) \propto b_t(s)\sum_{s'} \alpha_{t-1}(s') A_{s',s}$, responding in $3$--$4$\,s without lookahead); and (d)~Benhamou's (2004) Path Straightness Index $S = d_{\text{net}}/d_{\text{path}} \in [0, 1]$~\cite{benhamou2004tortuosity} separates straight outdoor paths ($S \to 1$) from tortuous indoor multipath jitter ($S \to 0$).
 \end{itemize}
 
-\subsection{Deep Learning and Transition Frameworks: DeepIOD, CIOD, and Yoo (2025)}
-Dastagir et al.~\cite{dastagir2024deepiod} introduced \textbf{DeepIOD}, combining three 10-second sliding-window neural architectures---Model~A (1D-CNN+LSTM), Model~B (1D-CNN+Multi-Head Attention), and Model~C (2D Depthwise-Separable CNN)---over 8 smartphone channels (\texttt{RSRP}, \texttt{RSRQ}, \texttt{Light}, \texttt{Mag}, \texttt{Acc}, \texttt{Sound}, \texttt{Proximity}, \texttt{Daytime}) via Approximate Majority Voting (AMV):
-\begin{align}
-    P_{\text{AMV}} &= w_A P_A(\mathbf{x}) + w_B P_B(\mathbf{x}) + w_C P_C(\mathbf{x}), \quad (w_A, w_B, w_C) = (0.345, 0.321, 0.334)
-\end{align}
-Bakirtzis et al.~\cite{bakirtzis2022ciod} released the large-scale \textbf{Cambridge CIOD} multivariate time-series benchmark ($>1.47$\,M 1\,Hz epochs across 85 sessions), enabling session-disjoint generalization audits. Focusing on doorway crossings, Yoo~\cite{yoo2025seamless} formulated a probabilistic transition detector driven by GNSS carrier-to-noise density ($30 \le C/N_0 \le 40$\,dB-Hz) and temporal smoothing to prevent boundary flip-flopping.
+\subsection{Step Counting, MV-GLRT ZUPT, Cadence Trilemma, and Adaptive Stride}
+Smartphones expose dedicated hardware step-counter co-processors (Android \texttt{TYPE\_STEP\_COUNTER}, iOS \texttt{CMPedometer}) achieving $<5\%$ error in normal walking~\cite{brajdic2013walk}. For cross-platform software fallback and cadence telemetry, causal accelerometry detectors include \textbf{Oxford WPD} (Salvi et al.~\cite{salvi2018oxford}: $100$\,Hz Gaussian smoothing, windowed peaks, online Welford thresholding) and \textbf{Xu Running} (Xu et al.~\cite{xu2022step}: $50$\,Hz Hamming LPF, 256-point DFT dominant gait frequency, adaptive peak detection).
 
-\subsection{Light-Free iOS-Compatible IOD: MagIO, Activity Dynamics, Straightness, and Causal HMM}
-A critical gap in prior deep IOD deployments is \textbf{Apple iOS sandboxing}: third-party iOS apps cannot read the ambient light photodiode, raw GNSS $C/N_0$, cellular RSRP/RSRQ, or Wi-Fi RSSI scans. Four peer-reviewed works directly enable a light-free, unprivileged iOS/Android sensing pipeline:
-\begin{itemize}
-    \item \textbf{MagIO (Ashraf et al., 2018):} Ashraf, Hur, and Park~\cite{ashraf2018magio} proved that ferromagnetic steel and rebar inside buildings induce strong spatial/temporal distortions in smartphone magnetometer readings ($\|\mathbf{m}\| = \sqrt{m_x^2 + m_y^2 + m_z^2}$), whereas outdoor geomagnetic fields remain smoother and closer to the Earth's local dipole ($\approx 25$--$65\,\mu\text{T}$). Extracting distributional statistics (mean, standard deviation, min/max, range, median, skewness, kurtosis, interquartile range, and magnetic energy/derivative) over sliding windows separates indoor and outdoor states using only the magnetometer.
-    \item \textbf{Physical Activity Dynamics (Esmaeili Kelishomi et al., 2019):} Esmaeili Kelishomi et al.~\cite{kelishomi2019activities} showed that smartphone triaxial accelerometer features capture distinct indoor vs.\ outdoor locomotor kinematics (gait cadence, sustained velocity variance, and stationary posture distribution), complementing magnetic cues when a user walks outside near metallic vehicles or fences.
-    \item \textbf{Causal Hidden Markov Model Smoothing (Zhu et al., 2019):} Zhu et al.~\cite{zhu2019fast} introduced a lightweight 2-state Hidden Markov Model (HMM) forward filter over frame-level IOD posteriors:
-    \begin{equation}
-        \alpha_t(s) \propto b_t(s) \sum_{s' \in \{\text{In},\text{Out}\}} \alpha_{t-1}(s')\, A_{s',s}
-        \label{eq:hmm_lit}
-    \end{equation}
-    which suppresses single-second urban-canyon or pocket-swing flickers while achieving $3$--$4$\,s transition responsiveness without lookahead delay.
-    \item \textbf{Path Straightness Index (Benhamou, 2004):} For GPS-assisted environment classification, Benhamou~\cite{benhamou2004tortuosity} formalized the path straightness index $S = d_{\text{net}} / d_{\text{path}} \in [0, 1]$, where $d_{\text{net}}$ is beeline displacement and $d_{\text{path}}$ is cumulative path length. Outdoor locomotion exhibits high straightness ($S \to 1$), whereas indoor multipath wander traces tortuous star-like loops ($S \to 0$).
-\end{itemize}
-
-\section{Inertial Step Detection, Stationary ZUPT, Cadence, and Stride Length}
-\label{sec:cadence_literature}
-When GNSS is unavailable or degraded (indoors, treadmills, tunnels), inertial pedometry provides primary distance and cadence telemetry.
-
-\subsection{Causal Accelerometry Step Detection: Oxford WPD and Xu Running}
-While native hardware step counters (\texttt{TYPE\_STEP\_COUNTER} on Android; \texttt{CMPedometer} on iOS) operate at ultra-low power, fallback and cross-platform validation require transparent causal software detectors:
-\begin{itemize}
-    \item \textbf{Oxford Windowed Peak Detection (Salvi et al., 2018):} Salvi et al.~\cite{salvi2018oxford} resample triaxial acceleration magnitude $\|\mathbf{a}\|$ to $100$\,Hz, smooth with a Gaussian FIR filter, score local peaks over a sliding window, and gate detections using online Welford mean and standard deviation.
-    \item \textbf{Unconstrained Running Step Detection (Xu et al., 2022):} Xu et al.~\cite{xu2022step} target high-impact running gaits by combining $50$\,Hz Hamming low-pass filtering with 256-point DFT dominant-frequency extraction and variable sliding-window adaptive peak thresholding.
-\end{itemize}
-
-\subsection{Stationary Stance Rejection (MV-GLRT ZUPT) and Walk Detection}
-A major failure mode of pure peak detectors on handheld smartphones is accumulating phantom steps during stationary screen taps or idle arm sway. Two classical papers provide statistically principled defenses:
-\begin{itemize}
-    \item \textbf{MV-GLRT Zero-Velocity Detection (Skog et al., 2010):} Evaluating four zero-velocity detectors on inertial gait streams, Skog et al.~\cite{skog2010zupt} derived the Magnitude-Variance Generalized Likelihood Ratio Test (MV-GLRT, Eq.~13):
-    \begin{equation}
-        T_{\text{MV}}(n) = \frac{1}{W}\sum_{k=n-W+1}^{n} \bigl(\|\mathbf{a}_k\|_2 - \bar{a}_n\bigr)^2 < \gamma_{\text{MV}}
-        \label{eq:mv_glrt_lit}
-    \end{equation}
-    Because $T_{\text{MV}}(n)$ averages squared variance across the full window $W$ rather than relying on a single peak-to-peak excursion, isolated $50$\,ms screen taps or brief pocket bumps stay strictly below $\gamma_{\text{MV}}$ while sustained locomotion exceeds it cleanly.
-    \item \textbf{Unconstrained Smartphone Walk Detection (Brajdic \& Harle, 2013):} Brajdic and Harle~\cite{brajdic2013walk} benchmarked walk-detection and step-counting algorithms across unconstrained smartphone placements, showing that combining an acceleration standard-deviation floor with rhythmic step-periodicity confirmation ($[0.65, 4.5]$\,Hz) eliminates spurious non-walking bursts.
-\end{itemize}
-
-\subsection{The Cadence Sliding-Window Trilemma and Adaptive Step Length}
-Computing live cadence $C_W(t) = (\Delta M_{[t-W,t]} / W)\times 60$ from discrete steps embodies a trilemma across accuracy (evaluated against video-annotated PedEval~\cite{mattfeld2021pedeval} and OxWalk~\cite{oxwalk2022oxford}), visual display flutter, and stop decay latency. Once step frequency $f = C/60$ (Hz) is known, static stature rules ($L = kH$) systematically misestimate brisk walking and fast running. Renaudin et al.~\cite{renaudin2012step} (Eq.~8) formulate a linear height--frequency model:
+However, naive peak detectors accumulate false steps during stationary smartphone handling or screen taps. \textbf{Skog et al.~\cite{skog2010zupt}} formalized the Magnitude-Variance Generalized Likelihood Ratio Test (\textbf{MV-GLRT ZUPT}, Eq.~13):
 \begin{equation}
-    L_{\text{step}}(H, f) = H \cdot (a f + b) + c
+    T_{\text{MV}}(n) = \frac{1}{W}\sum_{k=n-W+1}^{n} \bigl(\|\mathbf{a}_k\|_2 - \bar{a}_n\bigr)^2 < \gamma_{\text{MV}},
+    \label{eq:mv_glrt_lit}
+\end{equation}
+allowing transient $50$\,ms impulses to remain cleanly below $\gamma_{\text{MV}}$ while paired with Brajdic \& Harle's~\cite{brajdic2013walk} rhythmic walk-bout confirmation ($[0.65, 4.5]$\,Hz).
+
+Downstream, live cadence $C_W(t) = (\Delta M_{[t-W,t]}/W)\times 60$ faces a three-way trade-off across accuracy (auditable on video-annotated PedEval~\cite{mattfeld2021pedeval} and OxWalk~\cite{oxwalk2022oxford}), visual flutter, and stop-decay latency. Furthermore, converting steps to distance via $D_{\text{indoor}} = N_{\text{steps}} \times L_{\text{step}}$ using fixed stature fractions ($L = 0.43H$ or $0.415H$ walk; $0.67H$ run)~\cite{taborri2016gait,xing2017stride} ignores cadence modulation. \textbf{Renaudin et al.~\cite{renaudin2012step}} (Eq.~8) formulated the linear stature--frequency relationship:
+\begin{equation}
+    L_{\text{step}}(H, f) = H \cdot (a f + b) + c, \qquad f = C/60\;\text{(Hz)},
     \label{eq:renaudin_lit}
 \end{equation}
-which can be calibrated via Leave-One-Subject-Out (LOSO) cross-validation on public walking (\texttt{SLEDataset2}~\cite{vezocnik2021sle}) and force-plate treadmill running (Fukuchi et al.~\cite{fukuchi2017public} RBDS) datasets.
+which can be Leave-One-Subject-Out (LOSO) validated against motion-capture walking (\texttt{SLEDataset2}~\cite{vezocnik2021sle}) and force-plate running (Fukuchi RBDS~\cite{fukuchi2017public}).
 
-\section{Sparse Trajectory Reconstruction and Map Compression}
-\label{sec:reconstruction_literature}
-Short GNSS outages ($2$--$15$\,s under overpasses or tree canopies) fracture visual route polylines. Czerwi{\'n}ski et al.~\cite{czerwinski2026reconstruction} present multi-stage offline wearable trajectory reconstruction, while Fritsch and Carlson~\cite{fritsch1980pchip} define shape-preserving Monotone Piecewise Cubic Hermite Interpolation (PCHIP) using boundary velocity derivatives, contrasted against simple Linear Chord interpolation. When outage boundary headings are corrupted by multipath, cubic splines can introduce lateral overshoot; Chapter~\ref{ch:evaluation} compares both methods against RTK truth. For compact client--server route transmission, variable-length delta-quantized Google Encoded Polylines reduce JSON bandwidth while bounding quantization error, and Hidden Markov Model road-network map matching~\cite{newson2009hidden} establishes formal server-side route correction contracts.
+\section{Workout Metric Estimation}
+\label{sec:metric_estimation}
 
-\section{Caloric Expenditure Models: 2024 Adult Compendium}
-\label{sec:calorie_literature}
-Standard exercise physiology estimates gross metabolic energy expenditure via Metabolic Equivalent of Task (MET) coefficients. Building upon the 2011 Compendium~\cite{ainsworth2011compendium}, Herrmann et al.~\cite{herrmann2024compendium} published the \textbf{2024 Adult Compendium of Physical Activities}, assigning exact 5-digit activity codes to discrete speed bands (in miles per hour) for walking, running, and cycling:
+\subsection{Duration, Moving Time, Speed, and Pace}
+Total workout duration measures wall-clock span between start and completion, whereas moving time excludes user-triggered pauses and stationary idle intervals, driving moving speed $v_{\text{mov}} = D / t_{\text{mov}}$ and pace $p = t_{\text{mov}} / D$ (min/km).
+
+\subsection{Calorie Estimation and 2024 Adult Compendium}
+Consumer wearables with dedicated optical heart-rate sensors still exhibit substantial caloric error---systematic meta-analyses report $27.96\%$ error for Apple Watch across walking/running/cycling~\cite{choe2025apple} and $>30\%$ across wearable brands~\cite{germini2022wearables}. Earlier distance-only heuristics ($0.63$--$0.75$\,kcal/kg/km net active approximation~\cite{hall2004energy} or fixed $W \times D \times k \times g$~\cite{aetron2026prethesis}) lack activity-intensity adaptation and break alignment with modern exercise physiology. Building on Ainsworth et al.~\cite{ainsworth2011compendium}, Herrmann et al.~\cite{herrmann2024compendium} established the \textbf{2024 Adult Compendium of Physical Activities}, defining exact 5-digit activity codes mapped to speed bands (mph) for gross energy expenditure:
 \begin{equation}
-    E_{\text{kcal}} = \text{MET}(\text{activity}, v_{\text{mph}}) \times M_{\text{kg}} \times \frac{t_{\text{mov}}}{3600}
+    E_{\text{kcal}} = \text{MET}(\text{activity}, v_{\text{mph}}) \times W_{\text{kg}} \times \frac{t_{\text{mov}}}{3600}.
     \label{eq:compendium_2024}
 \end{equation}
-Using exact speed-band lookup tables gated strictly by active moving time $t_{\text{mov}}$ avoids unverified heuristic interpolation and enables bit-exact client--server reconciliation, while honestly acknowledging that Compendium values represent population-average estimates rather than individual $\dot{V}\text{O}_2$ indirect calorimetry.
+Using deterministic published lookup bands ensures bit-exact client--server parity without unverified heuristic extrapolation, while disclosing that estimates reflect healthy adult population averages rather than individual $\dot{V}\text{O}_2$ indirect calorimetry.
 
-\section{Research Gaps and Synthesis}
-Synthesizing the literature reveals five concrete gaps addressed by Aetron:
+\section{Offline-First Persistence, Cloud Sync, and Application Architecture}
+Workout sessions cannot assume continuous connectivity. An offline-first design writes every active checkpoint and completed session to local embedded storage (Isar NoSQL and SQLite~\cite{isar2024database,sqflite2024}) before attempting asynchronous uploads to Supabase PostgreSQL~\cite{supabase2024backend} and background edge workers. To maintain cross-screen consistency across live recording, summaries, calendar, history, and analytics, Aetron follows Clean Architecture~\cite{martin2017clean} paired with reactive Riverpod~\cite{riverpod2024state} providers and immutable Freezed~\cite{freezed2024} domain entities.
+
+\section{Commercial Fitness Application Comparison}
+Table~\ref{tab:commercial_comparison} updates the commercial platform benchmark from Aetron's pre-thesis audit~\cite{aetron2026prethesis}, highlighting publicly documented capabilities relative to our open research pipeline.
+
+\begin{table}[htbp]
+\centering
+\caption{Comparison of Commercial Fitness Applications and Aetron.}
+\label{tab:commercial_comparison}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{@{}p{2.6cm}p{4.3cm}p{3.9cm}p{4.2cm}@{}}
+\toprule
+\textbf{Application} & \textbf{Documented Tracking Capabilities} & \textbf{Calorie Model} & \textbf{Relevance / Contrast vs.\ Aetron} \\ \midrule
+Strava~\cite{strava2026docs} & Outdoor GNSS routes, segments, splits, pace analysis & Grade-adjusted speed $\times$ weight $\times$ moving time (undisclosed) & Outdoor polyline reference; proprietary outlier \& smoothing internals. \\
+Nike Run Club~\cite{nrc2024indoor} & Explicit outdoor GNSS and indoor motion modes & BMR/BMI + weight + distance + pace (undisclosed) & Confirms dual-mode UX; no open doorway/IOD transition transparency. \\
+Samsung Health~\cite{samsunghealth2024} & OS hardware step counters, multi-activity tracking & Body profile + optional wearable HR (undisclosed) & Android sensor benchmark; lacks cross-platform iOS light-free IOD documentation. \\
+Google Fit~\cite{googlefit2026docs} & Sensor/recording APIs, step distance, offline sync & Activity + body metrics + BMR (undisclosed formula) & Reference API pattern; omits documented RTK/IMU scientific holdout audits. \\
+\textbf{Aetron (This Work)} & Open Flutter GNSS (4-state EKF/ZUPT), MV-GLRT pedometry, Cross-Platform IOD, Offline Isar + Edge Workers & Published 2024 Adult Compendium~\cite{herrmann2024compendium} speed-banded MET (client--server bit-exact) & Fully documented, DOI-grounded algorithms with open holdout benchmarks and disclosed negative results. \\ \bottomrule
+\end{tabular}
+}
+\end{table}
+
+\section{Research Gaps}
+Synthesizing the literature and commercial survey identifies five research gaps resolved in this full thesis:
 \begin{enumerate}
-    \item \textbf{Lack of Independent RTK Holdout and Negative-Result Disclosure:} Complex filters (e.g., AEKF) are rarely audited across both pedestrian smartphone RTK and non-Doppler cycling snapshots under shared epoch masks with transparent \textit{NO-GO} decisions.
-    \item \textbf{iOS Sensor Sandboxing Gap in Mobile IOD:} Published deep IOD architectures rely on cellular RSRP/RSRQ, raw $C/N_0$, or ambient light unavailable on iOS, leaving iPhone users with zero active IOD coverage unless light-free MagIO + inertial + CoreLocation + barometer + HMM fusion is engineered.
-    \item \textbf{Uncalibrated Event-Level Doorway Transitions:} Static epoch accuracy obscures high hourly false-transition rates; both epoch Macro-F1 and event-level doorway F1 must be reported side by side.
-    \item \textbf{Unconstrained Stationary False Steps and Uncalibrated Cadence Windows:} Peak-only step counters leak false steps during idle phone handling, and live cadence windows are rarely audited against causal video-annotated stride oracles.
-    \item \textbf{Ad-Hoc Heuristics Replacing Probabilistic Models:} Legacy linear scoring weights and static stride/calorie rules drift across speeds and devices; replacing them with DOI-verified statistical formulations (MV-GLRT, Benhamou straightness, Causal HMM, Renaudin LOSO, 2024 Compendium) bridges academic rigor and production reliability.
+    \item \textbf{Lack of Auditable, RTK-Validated Open Trackers:} Student projects use unvalidated coordinates~\cite{aetron2026prethesis}, while complex adaptive Kalman filters in academic papers are rarely audited against both co-located smartphone RTK and snapshot cycling datasets with explicit \textit{NO-GO} negative-result preservation.
+    \item \textbf{The iOS Sandboxing Gap in Cross-Platform IOD:} Deep neural IOD models depend on light, cellular, or raw $C/N_0$ sensors unavailable on iOS, requiring a light-free MagIO + inertial + CoreLocation + barometer + HMM architecture.
+    \item \textbf{Uncalibrated Event-Level Transitions and Activity Confounding:} Evaluating only static epoch accuracy hides massive hourly doorway flip-flops and locomotion confounding on active indoor workouts (HAR-PMD).
+    \item \textbf{Stationary False Steps and Cadence/Stride Mismatch:} Unguarded mobile step counters leak idle phone-handling steps, and live cadence windows plus height-frequency stride curves require empirical calibration on video-verified cohorts.
+    \item \textbf{End-to-End Integration of Persistence, Server Authority, and Scientific Standards:} Few academic prototypes unify crash-resilient multi-account local storage, Clean Architecture single-source UI consistency, and bit-exact 2024 Compendium cloud verification in a single reproducible codebase.
 \end{enumerate}

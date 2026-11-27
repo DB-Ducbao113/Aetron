@@ -3,210 +3,545 @@
 
 \section{System Overview and Architecture}
 \label{sec:system_overview}
-Aetron is architected as an offline-first, research-grounded mobile fitness application implemented in Flutter and Dart~\cite{flutter2024framework} targeting native Android and iOS devices. To guarantee separation of concerns, headless testability, and deterministic behavior, Aetron adopts a four-tier clean layered architecture, illustrated in Figure~\ref{fig:aetron_architecture}.
+Aetron is a Flutter mobile application~\cite{flutter2024framework} engineered to record indoor and outdoor workouts offline-first, process multi-sensor telemetry in real time using pure-Dart peer-reviewed algorithms, persist checkpoints safely on-device, and synchronize canonical metrics to a Supabase cloud backend~\cite{supabase2024backend}. Figure~\ref{fig:system_dataflow} summarizes the end-to-end data flow from session initiation to cloud finalization.
 
 \begin{figure}[htbp]
 \centering
+\noindent\resizebox{0.92\textwidth}{!}{%
 \begin{tikzpicture}[
-    layer/.style={rectangle, draw=aetronblue, fill=blue!5, rounded corners=4pt, thick, text width=13.8cm, align=left, inner sep=7pt, font=\small},
-    arrow/.style={-{Stealth[length=2.5mm]}, thick, color=aetronblue}
+    node distance=0.6cm and 1.0cm,
+    stage/.style={rectangle, rounded corners=4pt, draw=aetronblue, fill=blue!5, thick, text width=6.4cm, align=center, inner sep=6pt, font=\footnotesize},
+    substage/.style={rectangle, rounded corners=4pt, draw=aetroncyan, fill=cyan!5, thick, text width=5.2cm, align=center, inner sep=6pt, font=\footnotesize},
+    sync/.style={rectangle, rounded corners=4pt, draw=codegreen, fill=green!5, thick, text width=6.6cm, align=center, inner sep=6pt, font=\footnotesize},
+    arrow/.style={-{Stealth[length=2.3mm]}, thick, color=aetronblue}
 ]
-    % Layer 1: Presentation
-    \node[layer, fill=cyan!6, draw=aetroncyan] (l1) {
-        \textbf{\large 1. Presentation Layer (Kinetic Design System \& Native OS Bridges)}\\[2pt]
-        $\bullet$ Athletic HUD Cockpit $\bullet$ Live Map Polylines $\bullet$ iOS Live Activities $\bullet$ Two-Way iOS/Android Notification Settings Bridge
-    };
+    \node[stage] (start) {\textbf{User Starts Workout}\\(\texttt{WorkoutSessionStarter})};
+    \node[stage, below=of start] (env) {\textbf{Environment Classifier \& Passive IOD Monitor}\\(\texttt{EnvironmentClassifier} + \texttt{IodCompositeClassifier} [Observational])};
 
-    % Layer 2: Application Logic
-    \node[layer, fill=blue!6, draw=aetronblue, below=0.48cm of l1] (l2) {
-        \textbf{\large 2. Application Logic Layer (Riverpod Code-Generated State Management)}\\[2pt]
-        $\bullet$ Workout Life-Cycle Controllers (\texttt{recording}, \texttt{paused}, \texttt{finalized}) $\bullet$ \texttt{WorkoutEnvironmentController} $\bullet$ Sensor Isolates
-    };
+    \node[substage, below left=0.85cm and -0.45cm of env] (gps) {\textbf{Outdoor GPS Stream}\\(\texttt{geolocator} $\rightarrow$ \texttt{P01} Gate + 4-State EKF + ZUPT)};
+    \node[substage, below right=0.85cm and -0.45cm of env] (step) {\textbf{Indoor / Fallback Pedometer}\\(OS Counter / Oxford \& Xu + MV-GLRT + \texttt{StepMotionGate})};
 
-    % Layer 3: Domain
-    \node[layer, fill=green!6, draw=codegreen, below=0.48cm of l2] (l3) {
-        \textbf{\large 3. Domain Layer (Pure Dart Research-Grounded Algorithmic Engines)}\\[2pt]
-        $\bullet$ P01/P02 4-State EKF/AEKF + ZUPT + T-DBSCAN $\bullet$ Cross-Platform IOD (Android Model~C-Mobile \& iOS Light-Free MagIO+HMM)\\
-        $\bullet$ Probabilistic \texttt{EnvironmentClassifier} $\bullet$ Oxford/Xu MV-GLRT Step Detectors + \texttt{StepMotionGate} $\bullet$ Renaudin SLE \& 2024 Compendium
-    };
+    \node[substage, below=0.6cm of gps] (route) {\textbf{Spatial Post-Processing}\\(\texttt{GpsDbscanService} T-DBSCAN + Polyline Compression)};
+    \node[substage, below=0.6cm of step] (stride) {\textbf{Cadence \& Stride Length}\\(6\,s \texttt{CadenceCalculator} + Renaudin Eq.~8)};
 
-    % Layer 4: Data Persistence
-    \node[layer, fill=gray!8, draw=codegray, below=0.48cm of l3] (l4) {
-        \textbf{\large 4. Data and Persistence Layer (Dual Local Storage \& Cloud Reconciliation)}\\[2pt]
-        $\bullet$ \textbf{Isar NoSQL:} Time-series GPS \& raw telemetry $\bullet$ \textbf{SQLite:} Profiles \& sync queues $\bullet$ \textbf{Supabase Edge Workers}
-    };
+    \node[stage, below=0.95cm of $(route.south)!0.5!(stride.south)$] (metrics) {\textbf{Unified Telemetry \& Caloric Accounting}\\(Moving Time, Distance, Pace, Cadence, 2024 Compendium MET)};
+    \node[stage, below=of metrics] (ui) {\textbf{Real-Time Presentation \& OS Surface}\\(Kinetic HUD, Live Map, iOS Live Activity)};
+    \node[sync, below=of ui] (isar) {\textbf{Offline-First Local Persistence}\\(Isar 5\,s Checkpoints + Final Session Commit; \texttt{sqflite} Sync Queue)};
+    \node[sync, below=of isar] (views) {\textbf{Cross-Screen Shared Repository}\\(\texttt{WorkoutRepository} $\rightarrow$ Home, History, Calendar, Analytics, Details)};
+    \node[sync, below=of views] (supa) {\textbf{Supabase Cloud Sync \& Finalization}\\(\texttt{workout\_sessions}, Raw Batches, \texttt{deterministic-finalize-worker})};
 
-    % Connections
-    \draw[arrow] (l1.south) -- (l2.north);
-    \draw[arrow] (l2.south) -- (l3.north);
-    \draw[arrow] (l3.south) -- (l4.north);
-\end{tikzpicture}
-\caption{Layered Architecture of the Aetron Mobile Fitness Tracking Platform.}
-\label{fig:aetron_architecture}
+    \draw[arrow] (start) -- (env);
+    \draw[arrow] (env.south) -- ++(0,-0.4) -| (gps.north);
+    \draw[arrow] (env.south) -- ++(0,-0.4) -| (step.north);
+    \draw[arrow] (gps) -- (route);
+    \draw[arrow] (step) -- (stride);
+    \draw[arrow] (route.south) -- ++(0,-0.35) -| ([xshift=-1.4cm]metrics.north);
+    \draw[arrow] (stride.south) -- ++(0,-0.35) -| node[pos=0.25, above, font=\scriptsize]{step fallback} ([xshift=1.4cm]metrics.north);
+    \draw[arrow] (metrics) -- (ui);
+    \draw[arrow] (ui) -- (isar);
+    \draw[arrow] (isar) -- (views);
+    \draw[arrow] (views) -- (supa);
+\end{tikzpicture}%
+}
+\caption{System-level end-to-end workout data flow across outdoor GNSS filtering, indoor step tracking, offline Isar persistence, shared UI modules, and Supabase cloud finalization.}
+\label{fig:system_dataflow}
 \end{figure}
 
+To enforce clear separation of concerns across sensor ingestion, algorithmic computation, local persistence, and UI rendering, Aetron follows Clean Architecture~\cite{martin2017clean} backed by Riverpod~\cite{riverpod2024state} and Freezed~\cite{freezed2024}, illustrated in Figure~\ref{fig:clean_architecture}. Compile-time dependencies strictly point inward: pure-Dart domain entities and tracking/filtering engines import zero Flutter widget or platform channel code, enabling deterministic execution on headless CI runners.
+
+\begin{figure}[htbp]
+\centering
+\noindent\resizebox{0.96\textwidth}{!}{%
+\begin{tikzpicture}[
+    col/.style={rectangle, rounded corners=5pt, draw=aetronblue, fill=blue!4, thick, text width=4.85cm, minimum height=4.75cm, align=left, inner sep=8pt, font=\scriptsize},
+    infra/.style={rectangle, rounded corners=5pt, draw=codegray, fill=gray!8, thick, text width=7.2cm, align=center, inner sep=7pt, font=\scriptsize},
+    arrow/.style={-{Stealth[length=2.3mm]}, thick, color=aetronblue}
+]
+    \node[col, fill=cyan!5, draw=aetroncyan] (pres) {
+        \textbf{\small Presentation Layer}\\[4pt]
+        $\bullet$ \path{HomeScreen}, \path{ActivityScreen}\\
+        $\bullet$ \path{RecordScreen}, \path{CalendarScreen}\\
+        $\bullet$ \path{StatsScreen}, \path{ProfileScreen}\\
+        $\bullet$ \path{NotificationSettingsScreen}\\
+        $\bullet$ Kinetic UI + iOS Live Activity\\
+        $\bullet$ Riverpod Controllers
+    };
+
+    \node[col, right=1.55cm of pres.north east, anchor=north west, fill=green!5, draw=codegreen] (dom) {
+        \textbf{\small Domain Layer (Pure Dart)}\\[4pt]
+        $\bullet$ Entities: \path{WorkoutSession}, \path{UserProfile}\\
+        $\bullet$ \path{ExtendedKalmanFilter} (P01/P02)\\
+        $\bullet$ \path{GpsDbscanService}, P03 Splines\\
+        $\bullet$ \path{IosMultiSensorIodClassifier}\\
+        $\bullet$ \path{DeepIodNeuralClassifier}\\
+        $\bullet$ \path{OxfordStepDetector} / \path{XuRunningStepDetector}\\
+        $\bullet$ \path{StepMotionGate}, Renaudin, 2024 MET
+    };
+
+    \node[col, right=1.55cm of dom.north east, anchor=north west, fill=blue!5, draw=aetronblue] (data) {
+        \textbf{\small Data Layer}\\[4pt]
+        $\bullet$ \path{WorkoutRepositoryImpl}\\
+        $\bullet$ \path{UserProfileRepositoryImpl}\\
+        $\bullet$ \path{LocalDB} (Isar NoSQL)\\
+        $\bullet$ \path{DatabaseHelper} (SQLite)\\
+        $\bullet$ \path{RawTrackingRemoteDatasource}\\
+        $\bullet$ \path{SupabaseClient} + Sync Queue
+    };
+
+    \node[infra, below=1.25cm of $(pres.south)!0.5!(dom.south)$, anchor=north] (sensors) {
+        \textbf{\small Hardware \& OS Sensor Services (Injected Data Sources)}\\
+        \path{LocationTrackingService} (\texttt{geolocator}) $\cdot$ \path{StepTrackingService} (\texttt{pedometer})\\
+        \path{IodSensorAcquisitionService} (\texttt{CMMotionManager} / \texttt{CMAltimeter} / Android Sensors)\\
+        \path{EnvironmentClassifier} $\cdot$ Native OS Notification Settings Bridge
+    };
+
+    \node[infra, below=1.25cm of data.south, anchor=north, text width=4.85cm, draw=codegreen, fill=green!5] (cloud) {
+        \textbf{\small Supabase Backend}\\
+        PostgreSQL + PostGIS + RLS\\
+        Deno Finalize \& Route Workers
+    };
+
+    \draw[arrow] (pres) -- node[above=2pt, font=\scriptsize]{depends on} (dom);
+    \draw[arrow] (data) -- node[above=2pt, font=\scriptsize]{implements} (dom);
+    \draw[arrow, dashed] ([xshift=1.4cm]sensors.north) -- ([xshift=1.4cm]sensors.north |- dom.south);
+    \draw[arrow, dashed] ([xshift=2.4cm]sensors.north) -- ++(0,0.62cm) -| ([xshift=-1.0cm]data.south);
+    \draw[arrow] (data.south) -- (cloud.north);
+\end{tikzpicture}%
+}
+\caption{Clean Architecture layer boundaries of Aetron~\cite{martin2017clean}. Solid arrows represent compile-time dependencies; dashed lines denote runtime telemetry injection.}
+\label{fig:clean_architecture}
+\end{figure}
+
+\section{Database Schema}
+Aetron separates high-frequency workout telemetry from relational profile and sync-queue state across two complementary local databases~\cite{isar2024database,sqflite2024}:
 \begin{enumerate}
-    \item \textbf{Presentation Layer (Kinetic Design System):} Delivers editorial-style athletic HUDs, live route recaps, iOS Live Activities, and direct native OS notification settings deep-linking (\path{UNUserNotificationCenter} / \path{openNotificationSettingsURLString} on iOS and \path{ACTION_APP_NOTIFICATION_SETTINGS} on Android). Experimental IOD overlays are removed from the production recording screen while background telemetry continues non-intrusively.
-    \item \textbf{Application Logic Layer (Riverpod):} Implemented with \path{riverpod_annotation}~\cite{riverpod2024state}, coordinating workout life-cycles, background sensor streams, and environment controllers without blocking the UI thread.
-    \item \textbf{Domain Layer (Pure Dart Algorithmic Services):} Houses all mathematical filtering, neural/probabilistic IOD, MV-GLRT step detection, stride estimation, and calorimetry engines in platform-independent pure Dart, enabling 100\% deterministic execution on headless CI runners.
-    \item \textbf{Data and Persistence Layer:} Pairs \textbf{Isar NoSQL}~\cite{isar2024database} (high-throughput time-series GPS and workout logs) with \textbf{SQLite} (user profiles and sync queues) and \textbf{Supabase}~\cite{supabase2024backend} Deno edge workers (\texttt{deterministic-finalize-worker} and \texttt{route-correction-worker}) for canonical post-workout reconciliation.
+    \item \textbf{Isar NoSQL Store (\texttt{LocalDB}):} Persists three collections---\texttt{LocalWorkout} (Table~\ref{tab:isar_local_workout}), \texttt{LocalGPSPoint}, and \texttt{LocalStepInterval} (Table~\ref{tab:isar_local_points_steps})---with \texttt{relaxedDurability: false}. Every 5 seconds after meaningful workout progress (and on manual pause), an incremental crash-recovery checkpoint is written with \texttt{recording\_checkpoint: true} inside \texttt{routeMatchMetricsJson}. Checkpoints never upload as completed sessions and remain available for explicit user recovery or discard after unexpected OS termination. Crucially, sign-out and account switching preserve local records on disk while enforcing owner checks across repository reads, writes, deletes, and uploads.
+    \item \textbf{SQLite Profile \& Sync Queue (\texttt{DatabaseHelper}, DB version~6):} Maintains \texttt{user\_profile} (body weight, height, date of birth, gender, avatar URL) and \texttt{pending\_workout\_sync\_operations} (\texttt{operation\_key}, \texttt{user\_id}, \texttt{session\_id}, payload metadata) so deferred offline uploads retry safely after connectivity restoration.
 \end{enumerate}
 
-\section{Outdoor GPS Pipeline and Kinematic State Estimation}
-\label{sec:gps_pipeline_design}
-The outdoor tracking pipeline converts raw mobile location fixes into a smoothed, geodetically consistent trajectory.
+\begin{table}[htbp]
+\centering
+\caption{Isar \texttt{LocalWorkout} collection schema (\texttt{local\_workout.dart}).}
+\label{tab:isar_local_workout}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Field} & \textbf{Type} & \textbf{Description} \\ \midrule
+\texttt{id} & \texttt{Id} & Auto-increment Isar local record identifier. \\
+\texttt{sessionId} & \texttt{String} & Unique indexed client UUID synchronized with Supabase. \\
+\texttt{userId} & \texttt{String} & Authenticated Supabase owner UUID for multi-account isolation. \\
+\texttt{activityType}, \texttt{mode} & \texttt{String} & Activity modality (\texttt{running}, \texttt{walking}, \texttt{cycling}, etc.) and \texttt{outdoor}/\texttt{indoor}. \\
+\texttt{startedAt}, \texttt{endedAt}, \texttt{createdAt} & \texttt{DateTime} & Normalized UTC session timestamps. \\
+\texttt{durationSec}, \texttt{movingTimeSec} & \texttt{int} & Total elapsed duration and active moving duration (seconds). \\
+\texttt{distanceKm}, \texttt{avgSpeedKmh}, \texttt{caloriesKcal} & \texttt{double} & Cumulative session distance, average moving speed, and Compendium kcal. \\
+\texttt{steps}, \texttt{isSynced} & \texttt{int}, \texttt{bool} & Verified session step count and cloud acknowledgement flag. \\
+\texttt{lapSplitsJson}, \texttt{gpsAnalysisJson} & \texttt{String} & Serialized per-km splits and segment GPS quality breakdown. \\
+\texttt{filteredRouteJson}, \texttt{matchedRouteJson} & \texttt{String} & Filtered display polyline and optional matched route geometry. \\
+\texttt{routeMatchStatus}, \texttt{routeDistanceSource} & \texttt{String} & Route processing status and distance provenance (\texttt{filtered}). \\
+\texttt{routeMatchMetricsJson} & \texttt{String} & Checkpoint/live snapshot metadata (\texttt{recording\_checkpoint}). \\ \bottomrule
+\end{tabular}
+}
+\end{table}
 
-\subsection{Planar Coordinate Projection and Phase~1 Preprocessing}
-To avoid repeated spherical trigonometry inside the $1$\,Hz Kalman loop, Aetron projects incoming coordinates $(\phi, \lambda)$ onto a local Equirectangular tangent plane anchored at $(\phi_0, \lambda_0)$:
-\begin{align}
-    p_x &= R_{\text{earth}} \cdot (\lambda - \lambda_0) \cdot \cos\left(\frac{\phi_0 \cdot \pi}{180}\right) \cdot \frac{\pi}{180} \\
-    p_y &= R_{\text{earth}} \cdot (\phi - \phi_0) \cdot \frac{\pi}{180}
-\end{align}
-Introducing $<0.01\%$ distortion for workout radii $<50$\,km, this representation enables closed-form matrix operations. Upstream Phase~1 preprocessing (\cite{zheng2015trajectory,li2025trajectory}) applies modality-specific speed/acceleration limits, sliding-window median outlier rejection, Zheng~\cite{zheng2009mining} stay-point detection, and outage segmentation before fixes enter the filter.
+\begin{table}[htbp]
+\centering
+\caption{Isar \texttt{LocalGPSPoint} and \texttt{LocalStepInterval} telemetry schemas.}
+\label{tab:isar_local_points_steps}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Collection} & \textbf{Field} & \textbf{Type} & \textbf{Description} \\ \midrule
+\multirow{5}{*}{\texttt{LocalGPSPoint}} & \texttt{id}, \texttt{sessionId} & \texttt{Id}, \texttt{String} & Local ID and indexed parent workout UUID join key. \\
+ & \texttt{timestamp} & \texttt{DateTime} & Fix acquisition timestamp aligned with raw upload conflict key. \\
+ & \texttt{latitude}, \texttt{longitude} & \texttt{double} & WGS84 coordinates in decimal degrees. \\
+ & \texttt{altitude}, \texttt{speed}, \texttt{accuracy}, \texttt{heading} & \texttt{double?} & GNSS metadata used for EKF, ZUPT, and server finalization. \\
+ & \texttt{deviceSource}, \texttt{confidence}, \texttt{isSynced} & \texttt{String?}, \texttt{String}, \texttt{bool} & Telemetry provenance tier and raw upload state. \\ \midrule
+\multirow{4}{*}{\texttt{LocalStepInterval}} & \texttt{id}, \texttt{sessionId} & \texttt{Id}, \texttt{String} & Local ID and indexed parent workout UUID join key. \\
+ & \texttt{intervalStart}, \texttt{intervalEnd} & \texttt{DateTime} & Active step-accumulation window bounds. \\
+ & \texttt{stepsCount} & \texttt{int} & Gated step delta recorded in interval. \\
+ & \texttt{deviceSource}, \texttt{isSynced} & \texttt{String?}, \texttt{bool} & Sensor source tag and batch sync flag. \\ \bottomrule
+\end{tabular}
+}
+\end{table}
 
-\subsection{4-State Kinematic EKF, Joseph Stabilization, and Phase~2 Gating}
-Implemented in \texttt{ExtendedKalmanFilter} (\texttt{lib/features/workout/domain/services/ekf/}), the state vector $\mathbf{x} = [p_x, p_y, v, \theta]^T$ maintains local position, ground speed, and heading:
+\subsection{Cloud Database Schema (Supabase PostgreSQL)}
+While local Isar ensures uninterrupted offline recording, Supabase PostgreSQL with PostGIS serves as the canonical cloud store protected by Row-Level Security (RLS) policies and server-authority SQL triggers (\path{guard_scientific_workout_retry} and \path{guard_client_workout_job}), ensuring client retries never overwrite canonical finalized verdicts. Figure~\ref{fig:cloud_erd} depicts the implemented cloud schema across profile management, core sessions, raw telemetry ingestion, AI insights, and backend job auditing.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{0.98\textwidth}{!}{%
+\begin{tikzpicture}[
+    node distance=0.85cm and 0.9cm,
+    tbl/.style={rectangle, draw=aetronblue, fill=white, rounded corners=3pt, thick, align=left, font=\tiny, inner sep=4pt},
+    rel/.style={-{Stealth[length=2mm]}, thick, color=aetroncyan}
+]
+    \node[tbl] (users) {
+        {\color{aetronblue}\textbf{\texttt{auth.users / public.users}}}\\[-2pt]
+        {\color{aetronblue!40}\rule{2.8cm}{0.4pt}}\\[2pt]
+        \textbf{id}: uuid (PK)\\
+        name, gender, age\\
+        weight\_kg, height\_cm
+    };
+
+    \node[tbl, left=1.4cm of users] (prof) {
+        {\color{aetronblue}\textbf{\texttt{user\_profiles}}}\\[-2pt]
+        {\color{aetronblue!40}\rule{2.8cm}{0.4pt}}\\[2pt]
+        \textbf{id}: uuid (PK)\\
+        user\_id: uuid (FK, UQ)\\
+        weight\_kg, height\_cm, date\_of\_birth\\
+        gender, avatar\_url
+    };
+
+    \node[tbl, below=1.0cm of prof] (goals) {
+        {\color{aetronblue}\textbf{\texttt{user\_goals}}}\\[-2pt]
+        {\color{aetronblue!40}\rule{2.8cm}{0.4pt}}\\[2pt]
+        \textbf{id}: uuid (PK)\\
+        user\_id: uuid (FK)\\
+        goal\_type, target\_value, period
+    };
+
+    \node[tbl, right=1.5cm of users] (ws) {
+        {\color{aetronblue}\textbf{\texttt{workout\_sessions}}}\\[-2pt]
+        {\color{aetronblue!40}\rule{3.8cm}{0.4pt}}\\[2pt]
+        \textbf{id}: uuid (PK)\\
+        user\_id: uuid (FK)\\
+        activity\_type, mode, started\_at, ended\_at\\
+        duration\_sec, moving\_time\_sec, distance\_km\\
+        avg\_speed\_kmh, steps, calories\_kcal, lap\_splits\\
+        processing\_status, data\_quality\_score, metrics\_version\\
+        filtered\_route\_json, matched\_route\_json, client\_research\_result\_json
+    };
+
+    \node[tbl, below=1.2cm of users] (gps) {
+        {\color{aetronblue}\textbf{\texttt{raw\_gps\_points}}}\\[-2pt]
+        {\color{aetronblue!40}\rule{3.0cm}{0.4pt}}\\[2pt]
+        \textbf{id}: bigint (PK), workout\_id: uuid (FK)\\
+        timestamp, latitude, longitude\\
+        altitude, speed, accuracy, heading, device\_source
+    };
+
+    \node[tbl, below=0.7cm of gps] (steps) {
+        {\color{aetronblue}\textbf{\texttt{raw\_step\_intervals}}}\\[-2pt]
+        {\color{aetronblue!40}\rule{3.0cm}{0.4pt}}\\[2pt]
+        \textbf{id}: bigint (PK), workout\_id: uuid (FK)\\
+        interval\_start, interval\_end\\
+        steps\_count, device\_source
+    };
+
+    \node[tbl, below right=1.0cm and -2.2cm of ws] (jobs) {
+        {\color{aetronblue}\textbf{\texttt{workout\_processing\_jobs}}}\\[-2pt]
+        {\color{aetronblue!40}\rule{3.4cm}{0.4pt}}\\[2pt]
+        \textbf{id}: uuid (PK), workout\_id: uuid (FK)\\
+        job\_type, status, attempt\_count, dispatch\_attempt\_count\\
+        started\_at, finished\_at, error\_message
+    };
+
+    \node[tbl, below=0.6cm of jobs] (logs) {
+        {\color{aetronblue}\textbf{\texttt{workout\_processing\_logs}}}\\[-2pt]
+        {\color{aetronblue!40}\rule{3.4cm}{0.4pt}}\\[2pt]
+        \textbf{id}: bigint (PK), workout\_id (FK), job\_id (FK)\\
+        log\_level, event\_type, source, message, payload
+    };
+
+    \node[tbl, right=1.0cm of jobs] (audits) {
+        {\color{aetronblue}\textbf{\texttt{workout\_segment\_audits}}}\\[-2pt]
+        {\color{aetronblue!40}\rule{3.4cm}{0.4pt}}\\[2pt]
+        \textbf{id}: bigint (PK), workout\_id: uuid (FK)\\
+        segment\_index, started\_at, ended\_at\\
+        duration\_sec, distance\_m, avg\_accuracy\_m\\
+        status (\texttt{valid}/\texttt{suspicious}/\texttt{invalid}), reason
+    };
+
+    \node[tbl, above=0.9cm of audits] (ai) {
+        {\color{aetronblue}\textbf{\texttt{workout\_ai\_insights}}}\\[-2pt]
+        {\color{aetronblue!40}\rule{3.2cm}{0.4pt}}\\[2pt]
+        \textbf{id}: uuid (PK), workout\_id (FK), user\_id (FK)\\
+        source, confidence, insight\_json, fallback\_reason
+    };
+
+    \draw[rel] (users.west) -- node[above, font=\tiny]{1:1} (prof.east);
+    \draw[rel] (users.south west) -- node[above left, font=\tiny]{1:N} (goals.north east);
+    \draw[rel] (users.east) -- node[above, font=\tiny]{1:N} (ws.west);
+    \draw[rel] (ws.south west) -| (gps.east);
+    \draw[rel] (ws.south west) -| (steps.east);
+    \draw[rel] (ws.south) -- (jobs.north);
+    \draw[rel] (jobs.south) -- (logs.north);
+    \draw[rel] (ws.south east) -| (audits.north);
+    \draw[rel] (ws.east) -| (ai.north);
+\end{tikzpicture}%
+}
+\caption{Entity-Relationship Diagram (ERD) of Aetron's Supabase PostgreSQL backend schema synchronizing \texttt{workout\_sessions}, raw telemetry ingestion, AI insights, and worker audit logs.}
+\label{fig:cloud_erd}
+\end{figure}
+
+\section{Cross-Platform Environment Classification and IOD}
+\label{sec:environment_classifier_design}
+
+\subsection{Probabilistic \texorpdfstring{\texttt{EnvironmentClassifier}}{EnvironmentClassifier} with Path Straightness and Causal HMM}
+Replacing the pre-thesis classifier's ad-hoc weighted linear scores ($0.45/0.30/0.15/0.10$)~\cite{aetron2026prethesis}, Aetron's core \path{EnvironmentClassifier} (\path{lib/core/services/environment_detector.dart}) maintains a causal rolling window of $3$--$10$ GPS fixes alongside incoming pedometer step deltas and executes four scientifically grounded stages:
+\begin{enumerate}
+    \item \textbf{Continuous Sigmoid GNSS Likelihoods:} Rather than brittle step functions, horizontal accuracy $\bar{\sigma}_{\text{acc}}$, net displacement $d_{\text{net}}$, and speed $\bar{v}$ are transformed into smooth likelihoods $p_{\text{acc}}^{\text{Out}}$, $p_{\text{disp}}^{\text{Out}}$, and $p_{\text{speed}}^{\text{Out}}$ following Bui et al.~\cite{bui2020gpsiod} and DeepIOD~\cite{dastagir2024deepiod}.
+    \item \textbf{Benhamou Path Straightness Index ($S$):} Evaluating tortuosity via~\cite{benhamou2004tortuosity}:
+    \begin{equation}
+        S = \frac{d_{\text{net}}}{\max(d_{\text{path}}, 1.0)} \in [0, 1], \qquad p_{\text{straight}}^{\text{Out}} = \sigma\bigl(5.0\,(S - 0.35)\bigr),
+        \label{eq:benhamou_s}
+    \end{equation}
+    separates linear outdoor trajectories ($S \to 1$) from indoor multipath star patterns ($S \to 0$).
+    \item \textbf{Pedometer--GPS Discordance and iPhone Blackout Gate:} Multi-cue fusion combines $(0.45, 0.25, 0.15, 0.15)$ likelihood weights, adding strong indoor emission ($0.05$, weight $0.45$) whenever poor GPS accuracy, small displacement, and increasing steps coincide. Furthermore, because \texttt{CoreLocation} on iPhones often ceases emitting fixes inside steel gyms before $3$ samples arrive, observing $\ge 8$\,s of GPS silence alongside $\ge 10$ verified steps emits an immediate indoor fallback state.
+    \item \textbf{Causal 2-State HMM Forward Filter:} Following Zhu et al.~\cite{zhu2019fast}, emission probability $b_t(\text{Out}) \in [0.02, 0.98]$ updates the posterior state belief $\alpha_{\text{Out}}(t)$ with self-transition retention $p_{\text{stay}} = 0.90$ under strong cues ($|b_t - 0.5| \ge 0.30$) and $0.97$ otherwise.
+\end{enumerate}
+Table~\ref{tab:env_classifier_params} summarizes the production parameters verified in code, and Figure~\ref{fig:env_classifier_flow} depicts the decision flow.
+
+\begin{table}[htbp]
+\centering
+\caption[Parameters of Aetron's probabilistic \texttt{EnvironmentClassifier}]{Parameters of Aetron's probabilistic \texttt{EnvironmentClassifier} (\texttt{environment\_detector.dart}).}
+\label{tab:env_classifier_params}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Signal / Parameter} & \textbf{Production Value (Walk / Run / Cycle)} & \textbf{Scientific Rationale} \\ \midrule
+Accuracy inflection $a_{\text{mid}}$ & $30$\,m / $26$\,m / $22$\,m & Continuous sigmoid center (Merry \& Bettinger~\cite{merry2019gps}; Bui et al.~\cite{bui2020gpsiod}) \\
+Outdoor min displacement & $6.0$\,m / $10.0$\,m / $18.0$\,m & Exceeds nominal consumer A-GPS error floor (Zandbergen~\cite{zandbergen2011gps}) \\
+Outdoor min speed & $0.35$ / $0.85$ / $1.80$\,m/s & Above household ambulation threshold~\cite{brajdic2013walk} \\
+Indoor accuracy / disp.\ gate & $\ge 45/40/35$\,m and $\le 5.0/6.5/10.0$\,m & Confirms GPS degradation + step-delta discordance ($\Delta \text{steps} > 2$) \\
+Benhamou Straightness $S$ & Midpoint $0.35$ in $[0, 1]$ & Separates outdoor paths ($S \to 1$) from multipath loops~\cite{benhamou2004tortuosity} \\
+iOS GPS blackout indoor gate & Outage $\ge 8$\,s and $\ge 10$ active steps & Prevents iPhone gyms from stalling indefinitely in \texttt{detecting} \\
+Causal HMM self-transition & $p_{\text{stay}} = 0.90$ (strong) / $0.97$ (weak) & $3$--$4$\,s causal smoothing without lookahead lag (Zhu et al.~\cite{zhu2019fast}) \\ \bottomrule
+\end{tabular}
+}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\noindent\resizebox{0.90\textwidth}{!}{%
+\begin{tikzpicture}[
+    node distance=0.6cm and 1.1cm,
+    block/.style={rectangle, rounded corners=4pt, draw=aetronblue, fill=blue!5, thick, text width=3.6cm, align=center, inner sep=5pt, font=\footnotesize},
+    dec/.style={diamond, aspect=1.9, draw=aetroncyan, fill=cyan!6, thick, text width=2.4cm, align=center, font=\scriptsize, inner sep=1pt},
+    outbox/.style={rectangle, rounded corners=4pt, draw=codegreen, fill=green!6, thick, text width=2.9cm, align=center, inner sep=5pt, font=\footnotesize},
+    arrow/.style={-{Stealth[length=2.3mm]}, thick, color=aetronblue}
+]
+    \node[block] (in) {New GPS Fix or Step Delta};
+    \node[dec, below=0.55cm of in] (blk) {GPS silence $\ge 8$\,s\\\& steps $\ge 10$?};
+    \node[dec, below=0.6cm of blk] (win) {Window $\ge 3$\\GPS fixes?};
+    \node[block, below=0.6cm of win] (hmm) {Compute Sigmoid Cues,\\Straightness $S$, \& Update HMM $\alpha_{\text{Out}}$};
+    \node[dec, below=0.55cm of hmm] (post) {$\alpha_{\text{Out}} \ge 0.5$?};
+
+    \node[outbox, left=1.6cm of post] (outdoor) {\textbf{Outdoor Mode}\\(GNSS / EKF primary)};
+    \node[outbox, right=1.6cm of post] (indoor) {\textbf{Indoor Mode}\\(Step fallback ready)};
+    \node[outbox, left=1.4cm of win, draw=codegray, fill=gray!8] (det) {\textbf{Detecting Mode}\\(Warming window)};
+
+    \draw[arrow] (in) -- (blk);
+    \draw[arrow] (blk.east) -| node[pos=0.2, above, font=\scriptsize]{yes ($b_{\text{Out}}\approx 0.05$)} (indoor.north);
+    \draw[arrow] (blk.south) -- node[right, font=\scriptsize]{no} (win.north);
+    \draw[arrow] (win.west) -- node[above, font=\scriptsize]{no} (det.east);
+    \draw[arrow] (win.south) -- node[right, font=\scriptsize]{yes} (hmm.north);
+    \draw[arrow] (hmm) -- (post);
+    \draw[arrow] (post.west) -- node[above, font=\scriptsize]{yes} (outdoor.east);
+    \draw[arrow] (post.east) -- node[above, font=\scriptsize]{no} (indoor.west);
+\end{tikzpicture}
+}
+\caption{Decision logic of Aetron's probabilistic \texttt{EnvironmentClassifier} integrating Benhamou straightness, iOS blackout step gating, and Zhu et al.'s causal 2-state HMM.}
+\label{fig:env_classifier_flow}
+\end{figure}
+
+\subsection{Android Model~C-Mobile and iOS-First Light-Free IOD (\texorpdfstring{\texttt{IodCompositeClassifier}}{IodCompositeClassifier})}
+Beyond the core tracker hint, \texttt{IodCompositeClassifier} dispatches multi-sensor context windows (\texttt{IodSensorSnapshot}) according to verified OS sensor hardware:
 \begin{itemize}
-    \item \textbf{Heading Phase Normalization \& Low-Speed Deadband:} Heading $\theta$ wraps continuously to $[0, 2\pi)$ with shortest-arc angular residuals; noisy GNSS course readings are suppressed below modality speed deadbands ($0.8 / 1.2 / 1.8$\,m/s for walk/run/cycle).
-    \item \textbf{Joseph-Form Covariance Stabilizer:} Covariance $\mathbf{P}_k$ is updated exclusively via Equation~\ref{eq:joseph_form} on flat \texttt{Float64List} buffers with Cauchy--Schwarz off-diagonal clamping ($|P_{EN}| \le 0.99\sqrt{P_{EE}P_{NN}}$).
-    \item \textbf{2-DOF Mahalanobis Gating \& Centripetal Scaling:} Under Phase~2 GNSS correction~\cite{groves2013principles,rongli2003survey}, spatial NIS $d_M^2 = \boldsymbol{\nu}_k^T \mathbf{S}_k^{-1} \boldsymbol{\nu}_k$ is compared against $\chi^2_2$ quantiles ($\gamma_1 = 5.991$, $\gamma_2 = 13.816$): moderate innovations inflate $\sigma_{\text{eff}} = \sigma_k \sqrt{d_M^2/\gamma_1}$, severe jumps ($d_M^2 > \gamma_2$) are rejected unless $N_{\text{reanchor}} = 4$ consecutive fixes confirm a genuine shift, and sharp turns scale heading process noise by $\mu_\theta = \min(\mu_{\max}, 1 + 0.8(\dot{\psi}_k/\omega_{\text{th}})^2)$.
-    \item \textbf{Stationary ZUPT \& T-DBSCAN Dwell Clustering:} When $v < 0.3$\,m/s for $\ge 3$\,s, ZUPT clamps velocity to zero and scales $\mathbf{Q}_k$ by $0.01$. Complementarily, \texttt{GpsDbscanService}~\cite{ester1996dbscan} scans sequential low-speed fixes ($v_k \le 1.0$\,m/s), expanding a dwell cluster while $d_{\text{geo}}(\bar{\mathbf{c}}_{i:j-1}, p_j) \le \varepsilon = 6.5$\,m and confirming stationary stops when $\mathrm{MinPts} \ge 4$ and duration $\ge 10.0$\,s (collapsing courtyard dwell clouds to their centroid).
+    \item \textbf{Android Path (4-Channel Model~C-Mobile \& Adaptive Transition Engine):} Devices exposing an ambient photodiode run \path{DeepIodNeuralClassifier}, a pure-Dart 2D Depthwise-Separable CNN over $\mathbf{X} \in \mathbb{R}^{4 \times W} = [\text{Light}, \text{Mag}, \text{Acc}, \text{Daytime}]$ ($54.0$\,KB folded weights, $<0.8$\,ms inference)~\cite{dastagir2024deepiod}, fused optionally with Yoo's $30$--$40$\,dB-Hz GNSS $C/N_0$ transition detector~\cite{yoo2025seamless} and stabilized inside \texttt{IndoorOutdoorTransitionEngine} (Algorithm~\ref{alg:transition_engine}).
+    \item \textbf{iOS-First Light-Free Path (\texttt{IosMultiSensorIodClassifier}):} Because Apple iOS blocks ambient light, raw $C/N_0$, and cellular radio APIs, Aetron executes \texttt{IosMultiSensorIodClassifier} inside \path{lib/features/iod/domain/services/}:
+    (1)~extracts 10 distributional MagIO~\cite{ashraf2018magio} features (mean, SD, min, max, range, median, IQR, skewness, kurtosis, mean $|\Delta \|\mathbf{m}\||$) over a causal $10$\,s magnetometer buffer; (2)~appends 3 linear acceleration features~\cite{kelishomi2019activities} (mean, SD, peak-to-peak excursion) plus astronomical daytime into a frozen 14-feature pure-Dart 2-layer MLP ($<4$\,KB, $<50$\,$\mu$s); (3)~fuses runtime \texttt{CoreLocation} accuracy/blackout likelihoods~\cite{bui2020gpsiod} and \texttt{CMAltimeter} $10$\,s pressure deltas ($|\Delta P_{10\text{s}}| \ge 0.35$\,hPa~\cite{feriol2020review}); and (4)~filters predictions via Zhu et al.'s causal 2-state HMM ($A_{ss} = 0.90$)~\cite{zhu2019fast}.
 \end{itemize}
 
-\section{Cross-Platform Indoor/Outdoor Detection Architecture}
-\label{sec:deepiod_impl}
-To provide seamless indoor--outdoor awareness across both Android and iOS despite asymmetric OS sensor sandboxing, \texttt{IodCompositeClassifier} routes incoming telemetry snapshots (\texttt{IodSensorSnapshot}) dynamically by verified hardware capability.
-
-\subsection{Android Path: Unprivileged 4-Channel Model~C-Mobile \& Yoo $C/N_0$}
-Because unprivileged background apps cannot query cellular RSRP/RSRQ used in full 8-channel DeepIOD~\cite{dastagir2024deepiod}, Android devices with an ambient light photodiode execute \textbf{Model~C-Mobile} (\path{lib/features/iod/domain/services/deepiod_neural_classifier.dart}), a pure-Dart 2D Depthwise Separable CNN over four unprivileged channels:
-\begin{equation}
-    \mathbf{X}_{\text{input}} \in \mathbb{R}^{B \times 4 \times W} = \left[\text{Light},\; \text{Mag},\; \text{Acc},\; \text{Daytime}\right]
-\end{equation}
-combining log-scaled illuminance $\log_{10}(1 + \text{lux})$, geomagnetic magnitude $\|\mathbf{m}\|$ and rolling variance, linear acceleration variance, and deterministic astronomical daytime. Its architecture executes:
-\begin{enumerate}
-    \item \textbf{Input Preprocessing Layer:} Population standardization ($\mu=0, \sigma=1$) over 10-second windows.
-    \item \textbf{2D Depthwise Separable Convolution:} Channel-wise $3\times 3$ filtering followed by $1\times 1$ pointwise projection, cutting parameters by 78\%.
-    \item \textbf{Batch Normalization and LeakyReLU Activation:} Folded statically into convolutional weights.
-    \item \textbf{Global Average Pooling and Sigmoid Head:} Emits instantaneous $P(\text{Outdoor}) \in [0, 1]$ using only \textbf{54.0\,KB} of weights in $<0.8$\,ms per window without TFLite/ONNX native bloat.
-\end{enumerate}
-Where Android \texttt{GnssStatus} exposes satellite $C/N_0$, \texttt{SeamlessTransitionDetector} fuses Yoo's probabilistic $30$--$40$\,dB-Hz transition curve~\cite{yoo2025seamless}.
-
-\subsection{iOS-First Light-Free Multi-Sensor Classifier}
-On iOS, public APIs expose neither ambient light nor raw satellite $C/N_0$, causing light-dependent 4-channel models to abstain completely ($0\%$ coverage). We therefore engineered \texttt{IosMultiSensorIodClassifier} (\path{lib/features/iod/domain/services/ios_multisensor_iod_classifier.dart}) strictly from unprivileged cross-platform sensors (\texttt{CMMotionManager}, \texttt{CoreLocation}, and \texttt{CMAltimeter}):
-\begin{enumerate}
-    \item \textbf{MagIO Magnetic Perturbation Vector (Ashraf et al., 2018~\cite{ashraf2018magio}):} Over a causal 10-second sliding buffer of magnetic magnitude $\|\mathbf{m}_k\|$, the service computes 10 distributional features: mean, standard deviation, min, max, range, median, interquartile range (IQR), skewness, kurtosis, and mean absolute first derivative $|\Delta \|\mathbf{m}\||$.
-    \item \textbf{Inertial Dynamics \& Diurnal Prior (Esmaeili Kelishomi et al., 2019~\cite{kelishomi2019activities}):} Appends 10-second linear acceleration mean, standard deviation, and peak-to-peak excursion alongside deterministic astronomical daytime, forming a 14-dimensional feature vector passed through a pure-Dart frozen 2-layer MLP trained exclusively on Cambridge CIOD Sessions~00--59 (threshold tuned on Validation Sessions~60--71).
-    \item \textbf{CoreLocation \& Barometer Runtime Likelihood Fusion (Bui et al., 2020~\cite{bui2020gpsiod}; Li et al., 2014~\cite{li2014iodetector}; F{\'e}riol et al., 2020~\cite{feriol2020review}):} When live GNSS horizontal accuracy $\sigma_{\text{acc}}$, raw GPS fix silence age $\Delta t_{\text{silence}}$, or \texttt{CMAltimeter} 10-second pressure delta $\Delta P_{10\text{s}}$ (acquired via \texttt{IodSensorAcquisitionService}) are present, emission probability $b_t(\text{Out})$ combines the neural MagIO+Acc posterior with sigmoid CoreLocation accuracy/outage likelihoods and barometric doorway/elevator step evidence ($|\Delta P_{10\text{s}}| \ge 0.35$\,hPa) using IODetector confidence weighting~\cite{li2014iodetector}.
-    \item \textbf{Causal 2-State HMM Forward Filter (Zhu et al., 2019~\cite{zhu2019fast}):} Frame emissions are smoothed recursively via Equation~\ref{eq:hmm_lit} with diagonal self-transition retention ($A_{ss} = 0.90$), preventing single-epoch urban-canyon flickers while responding to genuine building entries within $3$--$4$\,s.
-\end{enumerate}
-
-\subsection{Probabilistic \texttt{EnvironmentClassifier} with Path Straightness}
-To eliminate legacy ad-hoc linear score weights ($0.45/0.30/0.15/0.10$) in the core workout tracker, \texttt{EnvironmentClassifier} (\path{lib/core/services/environment_detector.dart}) now computes calibrated sigmoid GNSS accuracy likelihoods~\cite{bui2020gpsiod,dastagir2024deepiod}, evaluates \textbf{Benhamou's (2004) Path Straightness Index}~\cite{benhamou2004tortuosity}:
-\begin{equation}
-    S = \frac{d_{\text{net}}}{\max(d_{\text{path}}, 1.0)} \in [0, 1]
-    \label{eq:benhamou_s}
-\end{equation}
-over recent GPS trajectories to separate straight outdoor paths ($S \to 1$) from tortuous indoor multipath clouds ($S \to 0$), enforces an 8-second GPS-blackout + active-step indoor gate for iPhone gymnasiums, and filters posterior state through the same causal 2-state HMM~\cite{zhu2019fast}.
-
-\section{Adaptive Transition Engine Architecture}
-\label{sec:transition_engine_design}
-To suppress boundary jitter on instantaneous neural outputs, Aetron encapsulates Model~C-Mobile within an \textbf{Adaptive Transition Engine} (\texttt{IndoorOutdoorTransitionEngine}), formalized in Algorithm~\ref{alg:transition_engine}.
+Crucially, because external benchmarks reveal locomotion confounding on HAR-PMD and modest doorway transition recall (Chapter~\ref{ch:evaluation}), all IOD subsystems hardcode \texttt{isObservationalOnly = true}. In \path{WorkoutEnvironmentController.resolveIodAdvice}, predictions older than $2$\,s are expired and advisory hints can never override active distance tracking or contradict resolved GNSS/step state.
 
 \begin{algorithm}[htbp]
-\KwIn{Sensor Snapshot $\mathbf{s}_t$, Previous State $S_{t-1}$, Hysteresis Thresholds $\theta_{\text{high}}=0.65, \theta_{\text{low}}=0.35$, Minimum Dwell Epochs $N_{\text{dwell}}=5$}
-\KwOut{Committed State $S_t \in \{\text{Indoor}, \text{Outdoor}\}$, Uncertainty Flag $U_t$}
-
+\KwIn{Sensor Snapshot $\mathbf{s}_t$, Prior State $S_{t-1}$, Hysteresis $(\theta_{\text{high}}=0.65, \theta_{\text{low}}=0.35)$, Dwell Epochs $N_{\text{dwell}}=5$}
+\KwOut{Committed Observational State $S_t \in \{\text{Indoor}, \text{Outdoor}\}$, Uncertainty Flag $U_t$}
 $P_t \leftarrow \text{ModelC\_Mobile}(\mathbf{s}_t)$\;
-$U_t \leftarrow (P_t \ge 0.40 \land P_t \le 0.60)$ \tcp*{Epistemic uncertainty band}
-
-\tcp{Schmitt Trigger Dual-Threshold Evaluation}
+$U_t \leftarrow (0.40 \le P_t \le 0.60)$\;
 \eIf{$S_{t-1} == \text{Indoor}$}{
-    \eIf{$P_t \ge \theta_{\text{high}}$}{
-        $C_t \leftarrow \text{Outdoor}$ \tcp*{Candidate transition}
-    }{
-        $C_t \leftarrow \text{Indoor}$\;
-    }
+    $C_t \leftarrow (P_t \ge \theta_{\text{high}})\; ?\; \text{Outdoor} : \text{Indoor}$\;
 }{
-    \eIf{$P_t \le \theta_{\text{low}}$}{
-        $C_t \leftarrow \text{Indoor}$ \tcp*{Candidate transition}
-    }{
-        $C_t \leftarrow \text{Outdoor}$\;
-    }
+    $C_t \leftarrow (P_t \le \theta_{\text{low}})\; ?\; \text{Indoor} : \text{Outdoor}$\;
 }
-
-\tcp{Minimum Dwell-Time Debouncing State Machine}
 \eIf{$C_t \ne S_{t-1}$}{
-    \eIf{$C_t == \text{PendingState}_{t-1}$}{
-        $\text{PendingDwell}_t \leftarrow \text{PendingDwell}_{t-1} + 1$\;
-        \eIf{$\text{PendingDwell}_t \ge N_{\text{dwell}}$}{
-            $S_t \leftarrow C_t$ \tcp*{Commit handover}
-            $\text{Dwell}_t \leftarrow \text{PendingDwell}_t$\;
-            $\text{PendingState}_t \leftarrow \text{None}$\;
-            $\text{EmitHandoverEvent}(S_{t-1} \to S_t)$\;
-        }{
-            $S_t \leftarrow S_{t-1}$\;
-            $\text{Dwell}_t \leftarrow \text{Dwell}_{t-1} + 1$\;
-            $\text{PendingState}_t \leftarrow C_t$\;
-        }
+    $\text{PendingDwell}_t \leftarrow (C_t == \text{PendingState}_{t-1})\; ?\; \text{PendingDwell}_{t-1}+1 : 1$\;
+    $\text{PendingState}_t \leftarrow C_t$\;
+    \eIf{$\text{PendingDwell}_t \ge N_{\text{dwell}}$}{
+        $S_t \leftarrow C_t$; $\text{PendingState}_t \leftarrow \text{None}$; $\text{EmitHandover}(S_{t-1} \to S_t)$\;
     }{
-        $\text{PendingState}_t \leftarrow C_t$\;
-        $\text{PendingDwell}_t \leftarrow 1$\;
         $S_t \leftarrow S_{t-1}$\;
-        $\text{Dwell}_t \leftarrow \text{Dwell}_{t-1} + 1$\;
     }
 }{
-    $S_t \leftarrow S_{t-1}$\;
-    $\text{Dwell}_t \leftarrow \text{Dwell}_{t-1} + 1$\;
-    $\text{PendingState}_t \leftarrow \text{None}$\;
-    $\text{PendingDwell}_t \leftarrow 0$\;
+    $S_t \leftarrow S_{t-1}$; $\text{PendingState}_t \leftarrow \text{None}$; $\text{PendingDwell}_t \leftarrow 0$\;
 }
 \Return{$(S_t, U_t)$}\;
-\caption{Adaptive Transition Debouncing and Handover Algorithm}
+\caption{Adaptive Transition Engine Debouncing (\texttt{IndoorOutdoorTransitionEngine})}
 \label{alg:transition_engine}
 \end{algorithm}
 
-The engine enforces Schmitt-trigger hysteresis ($\theta_{\text{high}} = 0.65, \theta_{\text{low}} = 0.35$), minimum persistence debouncing ($N_{\text{dwell}} = 5$\,s), and epistemic uncertainty flagging ($P_t \in [0.40, 0.60]$).
+\section{Outdoor GPS Tracking Pipeline}
+\label{sec:gps_pipeline_design}
+Figure~\ref{fig:tracking_engine_detail} illustrates the interaction between the live GNSS validation/EKF pipeline and step fallback inside \texttt{WorkoutSessionNotifier} and \texttt{WorkoutTrackingEngine}. Step fallback activates only when GNSS yields no accepted fix for $12$\,s while $\ge 8$ verified steps accrue (never during cycling).
 
-\section{Inertial Step Detection, MV-GLRT Gating, Cadence, and Stride Length}
-\label{sec:cadence_engine_design}
+\begin{figure}[htbp]
+\centering
+\resizebox{0.78\textwidth}{!}{
+\begin{tikzpicture}[
+    node distance=0.55cm and 1.1cm,
+    box/.style={rectangle, rounded corners=4pt, draw=aetronblue, fill=blue!5, thick, text width=4.4cm, align=center, inner sep=6pt, font=\footnotesize},
+    dec/.style={diamond, aspect=1.8, draw=aetroncyan, fill=cyan!6, thick, text width=2.4cm, align=center, font=\scriptsize, inner sep=1pt},
+    sync/.style={rectangle, rounded corners=4pt, draw=codegreen, fill=green!5, thick, text width=5.6cm, align=center, inner sep=6pt, font=\footnotesize},
+    arrow/.style={-{Stealth[length=2.3mm]}, thick, color=aetronblue}
+]
+    \node[box] (start) {\textbf{Start Workout Session}};
+    \node[box, below=of start] (clf) {\textbf{EnvironmentClassifier}\\Updates hint: \texttt{outdoor} / \texttt{indoor} / \texttt{detecting}};
+    \node[box, below left=0.65cm and 0.4cm of clf] (gps) {\textbf{GPS Primary Stream}\\(\texttt{geolocator} 1\,Hz)};
+    \node[box, below right=0.65cm and 0.4cm of clf] (step) {\textbf{Motion Stream}\\(Hardware Pedometer + IMU)};
+    \node[box, below=of gps] (val) {\textbf{P01 Gate + 4-State EKF}\\Accuracy, Deadband, $80$\,m/s Spike,\\Mahalanobis NIS ($\gamma_1,\gamma_2$) + ZUPT};
+    \node[dec, below=0.5cm of step] (gap) {GPS gap $\ge 12$\,s\\\& $\ge 8$ steps?};
+    \node[box, below=0.55cm of gap] (fb) {\textbf{Step Fallback Active}\\Renaudin / Static Stride $\times \Delta\text{steps}$};
+    \node[sync, below=1.0cm of fb.south -| clf, anchor=north] (notif) {\textbf{WorkoutSessionNotifier} (Live State Update $\le 1$\,s)};
+    \node[sync, below=of notif] (isar) {Persist to Isar (\texttt{LocalWorkout}, \texttt{LocalGPSPoint}, \texttt{LocalStepInterval})};
 
-\subsection{Causal Step Detectors with Skog MV-GLRT ZUPT and Bout Gating}
-Alongside hardware pedometer adapters (\texttt{TYPE\_STEP\_COUNTER} / \texttt{CMPedometer} with reboot-safe baseline anchoring), Aetron implements two causal pure-Dart inertial detectors hardened against stationary false steps:
+    \draw[arrow] (start) -- (clf);
+    \draw[arrow] (clf.south) -| (gps.north);
+    \draw[arrow] (clf.south) -| (step.north);
+    \draw[arrow] (gps) -- (val);
+    \draw[arrow] (step) -- (gap);
+    \draw[arrow] (gap) -- node[right, font=\scriptsize]{yes} (fb);
+    \draw[arrow] (val.south) |- (notif.west);
+    \draw[arrow] (fb.south) |- node[pos=0.76, below=2pt, font=\scriptsize]{fallback distance} (notif.east);
+    \draw[arrow] (notif) -- (isar);
+\end{tikzpicture}
+}
+\caption{Tracking-engine detail showing concurrent GNSS validation/EKF filtering and conditional step-count fallback activation.}
+\label{fig:tracking_engine_detail}
+\end{figure}
+
+Each incoming fix passes four gating stages in \texttt{WorkoutTrackingEngine} (Table~\ref{tab:gps_validation_params}) alongside Phase~1 kinematic preprocessing~\cite{zheng2015trajectory,li2025trajectory}, before entering \texttt{ExtendedKalmanFilter} on a local Equirectangular East--North tangent plane:
+\begin{align}
+    p_x &= R_{\text{earth}} (\lambda - \lambda_0) \cos\!\left(\frac{\phi_0\pi}{180}\right)\frac{\pi}{180}, \qquad
+    p_y = R_{\text{earth}} (\phi - \phi_0)\frac{\pi}{180}.
+\end{align}
+The EKF resolves the pre-thesis Fixed-Alpha freeze failure via: (1)~heading phase normalization with modality Doppler deadbands ($0.8/1.2/1.8$\,m/s); (2)~flat \texttt{Float64List} Joseph-form covariance updates (Eq.~\ref{eq:joseph_form}) with Cauchy--Schwarz clamping ($|P_{EN}| \le 0.99\sqrt{P_{EE}P_{NN}}$); (3)~Phase~2 2-DOF Mahalanobis NIS gating ($\gamma_1 = 5.991$, $\gamma_2 = 13.816$, consecutive re-anchoring $N_{\text{reanchor}}=4$) and centripetal turn-rate scaling ($\mu_\theta = \min(\mu_{\max}, 1 + 0.8(\dot{\psi}_k/\omega_{\text{th}})^2)$)~\cite{groves2013principles,rongli2003survey,sukhenko2025gnss}; (4)~stationary ZUPT clamping when $v < 0.3$\,m/s for $\ge 3$\,s; and (5)~post-session \texttt{GpsDbscanService} T-DBSCAN dwell consolidation ($v_k \le 1.0$\,m/s, $\varepsilon = 6.5$\,m, $\mathrm{MinPts} \ge 4$, duration $\ge 10$\,s)~\cite{ester1996dbscan}. Debug overrides and research flags reside cleanly in \path{lib/core/constants/debug_config.dart} (Table~\ref{tab:gps_validation_params}).
+
+\begin{table}[htbp]
+\centering
+\caption{Outdoor GNSS validation thresholds (\texttt{workout\_tracking\_engine.dart}) and compile-time flags (\texttt{debug\_config.dart}).}
+\label{tab:gps_validation_params}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Parameter / Flag} & \textbf{Production Value} & \textbf{Purpose} \\ \midrule
+Initial fix accuracy gate & Walk: $18$\,m; Run: $16$\,m; Cycle: $20$\,m & Prevents starting routes on cold-start weak fixes. \\
+Route accuracy gate & Walk: $50$\,m; Run: $42$\,m; Cycle: $32$\,m & Soft-rejects noisy fixes before distance accumulation. \\
+Minimum segment & Walk: $0.35$\,m; Run: $0.30$\,m; Cycle: $1.5$\,m & Suppresses static GNSS jitter. \\
+Hard GPS spike speed & $80$\,m/s & Physical impossibility ceiling above human speed. \\
+Stale signal gap & $> 5.0$\,s & Breaks live polyline and avoids straight-line gap inflation. \\
+Heading spike check & Bearing $\Delta > 120^\circ$ \& segment $< 20$\,m & Rejects tight GPS zig-zag backtracks. \\ \midrule
+\texttt{FLOWFIT\_GPS\_FILTER\_ALGO} & \texttt{'ekf4State'} (default) & Active 4-state EKF (\texttt{'fixedAlpha'} kept only for replay). \\
+\texttt{FLOWFIT\_ENABLE\_TRAJECTORY\_PREPROCESSING} & \texttt{true} (default) & Phase~1 speed/acceleration/stay-point preprocessing. \\
+\texttt{FLOWFIT\_ENABLE\_GNSS\_CORRECTION} & \texttt{true} (default) & Phase~2 NIS Mahalanobis gating \& turn-rate scaling. \\
+\texttt{FLOWFIT\_TRAJECTORY\_RECONSTRUCTION\_METHOD} & \texttt{'monotonePchip'} (display-only) & P03 pairwise Hermite gap bridging; never mutates distance. \\
+\texttt{FLOWFIT\_DEBUG\_LOCATION} & \texttt{kDebugMode} (\texttt{false} in release) & Relaxes dev mock-GPS gates (default off in production). \\ \bottomrule
+\end{tabular}
+}
+\end{table}
+
+\subsection{Distance, Pace, and Speed Calculation}
+Segment displacement between validated fixes uses \texttt{Geolocator.distanceBetween} (Eq.~\ref{eq:haversine}), keeping cumulative distance accumulation strictly separate from smoothed visual display coordinates (Listing~\ref{lst:gps_distance}). Average speed and pace exclude active pauses using moving time $t_{\text{mov}}$.
+
+\begin{lstlisting}[caption={Separation of accumulated route distance and smoothed visual display in \texttt{WorkoutTrackingEngine}.},label={lst:gps_distance}]
+// rawDistanceAnchor = last accepted point or distance anchor after resume
+final rawSegmentMeters = Geolocator.distanceBetween(
+  rawDistanceAnchor.latitude, rawDistanceAnchor.longitude,
+  livePoint.latitude, livePoint.longitude,
+);
+// routeSegmentMeters drives display continuity independently
+final routeSegmentMeters = Geolocator.distanceBetween(
+  lastPoint.latitude, lastPoint.longitude,
+  livePoint.latitude, livePoint.longitude,
+);
+final segmentMeters = rawSegmentMeters;
+\end{lstlisting}
+
+\subsection{Display-Only Outage Reconstruction, Sanitization, and Compression}
+To render smooth visual summaries without fabricating unmeasured mileage, \texttt{WorkoutSessionFinalizer} bridges short $2.0$--$15.0$\,s gaps in display geometry only (via Fritsch--Carlson Monotone PCHIP or Linear Chord), never adding synthetic vertices to saved distance or server raw audits, while \path{route_display_sanitizer.dart} removes residual sharp display artifacts on recap cards. Before cloud persistence, \texttt{PolylineCompressionService} applies Google Encoded Polyline delta zigzag encoding ($10^{-5}$ or $10^{-6}$\,deg).
+
+\section{Indoor Step Tracking and Cadence Pipeline}
+\label{sec:indoor_pipeline_design}
+Indoors or during GNSS blackouts, \texttt{StepTrackingService} anchors hardware pedometer counts across device reboots ($N_{\text{steps}} = C_{\text{current}} - C_{\text{baseline}}$), while Aetron's pure-Dart inertial stack prevents idle false steps and stabilizes cadence:
+\begin{enumerate}
+    \item \textbf{Causal Accelerometry Detectors:} \texttt{OxfordStepDetector}~\cite{salvi2018oxford} (100\,Hz Gaussian smoothing, Welford online variance, $200$\,ms refractory confirmation) handles walking, while \texttt{XuRunningStepDetector}~\cite{xu2022step} (50\,Hz Hamming LPF, 256-pt real DFT dominant frequency, adaptive window peaks) handles running.
+    \item \textbf{Skog MV-GLRT ZUPT \& Brajdic--Harle \texttt{StepMotionGate}:} Evaluating Eq.~\ref{eq:mv_glrt_lit} over $1.0$\,s sliding windows rejects isolated impulsive shocks ($\gamma_{\text{MV}} = 0.36\text{ (m/s}^2)^2$ walk; $0.64\text{ (m/s}^2)^2$ run)~\cite{skog2010zupt}. Downstream, \texttt{StepMotionGate} (\path{lib/features/workout/domain/services/step_motion_gate.dart}) buffers unconfirmed steps until $N_{\text{bout}} = 5$ consecutive steps occur within $[0.65, 4.5]$\,Hz (max gap $2.2$\,s), expires stale bouts after $3.5$\,s, and purges buffered impulses when outdoor GNSS proves stationary position past a $3.5$\,s onset grace window---eliminating stationary step inflation when users stand still checking their screen~\cite{brajdic2013walk}.
+    \item \textbf{6-Second Cadence Window \& Renaudin Adaptive Stride Length:} \texttt{CadenceCalculatorService} computes live cadence over a $6.0$\,s sliding FIFO buffer with a $4.0$\,s silence timeout, capped at $270$\,spm via $N_{\text{window}}\times 60 / 6.0$. For indoor distance estimation, \texttt{ResearchStepLengthFallback} applies LOSO-validated Renaudin Eq.~\ref{eq:renaudin_lit} coefficients---$(a, b, c) = (0.1328, 0.0217, 0.2755)$ walking and $(0.3211, 0.7253, -1.6810)$ running~\cite{renaudin2012step}---clamping to validated training bounds before invoking deterministic profile height/gender defaults (Listing~\ref{lst:stride_length})~\cite{taborri2016gait}.
+\end{enumerate}
+
+\begin{lstlisting}[caption={Adaptive stride-length dispatch with height-based fallback in \texttt{record\_providers.dart}.},label={lst:stride_length}]
+double computeStrideLength({
+  required String activityType, double? heightCm, String? gender,
+}) {
+  final research = ResearchStepLengthFallback.estimateMeters(
+    activityType: activityType, heightCm: heightCm,
+  );
+  if (research != null) return research;
+  if (heightCm == null || !heightCm.isFinite || heightCm <= 0) {
+    return _defaultStrideLength(activityType, gender);
+  }
+  final isRunning = activityType.toLowerCase().contains('run');
+  final female = _normalizeGender(gender) == 'female';
+  final factor = isRunning ? (female ? 0.62 : 0.67) : (female ? 0.40 : 0.43);
+  return (heightCm * factor / 100).clamp(0.50, 1.50);
+}
+\end{lstlisting}
+
+\section{Calorie Estimation (2024 Adult Compendium)}
+Upgrading the pre-thesis distance-multiplier heuristic ($W \times D_{\text{km}} \times k \times g$)~\cite{aetron2026prethesis}, both \path{UserProfile.calculateCalories} (Dart) and \path{compendium_met.ts} (Supabase Deno edge worker) implement Eq.~\ref{eq:compendium_2024} using exact 5-digit speed-banded lookup tables from the \textbf{2024 Adult Compendium of Physical Activities}~\cite{herrmann2024compendium}: walking (\texttt{17151}--\texttt{17255}, general fallback \texttt{17255} at $4.0$\,MET), running (\texttt{12028}--\texttt{12145}, self-selected \texttt{12145} at $10.5$\,MET), and cycling (\texttt{01010}--\texttt{01060}, general \texttt{01014} at $7.0$\,MET) via $v_{\text{mph}} = v_{\text{km/h}}/1.609344$. Speed values falling in unmapped gaps never interpolate heuristic METs, and ambulatory sessions with zero verified displacement return strictly $0$\,kcal. Non-distance indoor activities (gym, yoga) retain legacy duration MET estimation.
+
+\section{Synchronisation Strategy}
+On session completion, \texttt{WorkoutRepositoryImpl} persists pending raw telemetry and writes the finalized \texttt{LocalWorkout} to Isar (\texttt{isSynced = false}) prior to network transmission. Failed uploads queue in SQLite \texttt{pending\_workout\_sync\_operations}; remote history pulls paginate by stable ID, check active account ownership, protect unsynced local edits, and acknowledge sync via full-snapshot value comparison (\texttt{sameSnapshot}) including UTC instants and serialized splits/routes.
+
+\section{Backend Processing Pipeline}
+Beyond proof-of-concept endpoints established at the pre-thesis stage (\texttt{workouts-start}, \texttt{gps-track}, \texttt{workouts-end}), Supabase Deno edge workers enforce canonical server metrics:
 \begin{itemize}
-    \item \textbf{Walking (\texttt{OxfordStepDetector}):} Adapts Salvi et al.~\cite{salvi2018oxford} ($100$\,Hz resampling, 13-tap Gaussian FIR, 35-sample midpoint prominence $s_k$, online Welford threshold $s_n - \mu_n > \max(1.2\sigma_n, 0.35)$, and causal $200$\,ms refractory confirmation so terminal steps are not dropped).
-    \item \textbf{Running (\texttt{XuRunningStepDetector}):} Adapts Xu et al.~\cite{xu2022step} ($50$\,Hz resampling, 11-tap Hamming LPF at $5$\,Hz, 256-point real DFT dominant gait frequency extraction, and adaptive peak gating).
-    \item \textbf{Skog et al. (2010) MV-GLRT Stance Rejection:} Replacing ad-hoc min-max amplitude spans vulnerable to single screen taps, both detectors evaluate Equation~\ref{eq:mv_glrt_lit} over a $1.0$\,s rolling magnitude window against Brajdic \& Harle-calibrated variance floors~\cite{skog2010zupt,brajdic2013walk}: $\gamma_{\text{MV}} = 0.36\text{ (m/s}^2)^2$ for walking ($\sigma \ge 0.60$\,m/s$^2$) and $\gamma_{\text{MV}} = 0.64\text{ (m/s}^2)^2$ for running ($\sigma \ge 0.80$\,m/s$^2$).
-    \item \textbf{Rhythmic Bout \& GNSS Lock (\texttt{StepMotionGate}):} Grounded in Brajdic \& Harle~\cite{brajdic2013walk}, \texttt{StepMotionGate} buffers candidate steps until $N_{\text{bout}} = 5$ consecutive steps arrive within physiological gait cadence ($[0.65, 4.5]$\,Hz; inter-step gap $\le 2.2$\,s), and purges buffered in-place impulses whenever high-accuracy outdoor GNSS proves zero displacement past a $3.5$\,s onset grace window.
+    \item \texttt{deterministic-finalize-worker}: Recomputes canonical distance, moving speed, 2024 Compendium calories (\texttt{METRICS\_VERSION = 2}), and per-segment \texttt{workout\_segment\_audits} from uploaded \texttt{raw\_gps\_points} and \texttt{raw\_step\_intervals}, retaining unverified client-mixed claims in a separate audit archive.
+    \item \texttt{route-correction-worker}: Implements the chunked HMM map-matching contract~\cite{newson2009hidden} while returning \texttt{routeMatchingAvailable() = false} honestly whenever no live OSRM road-graph provider is attached, preventing fake geometry promotion.
 \end{itemize}
 
-\subsection{6-Second Sliding-Window Cadence and Renaudin Adaptive Step Length}
-\texttt{CadenceCalculatorService} resolves the Cadence Trilemma with a 6-second circular FIFO buffer and $4.0$\,s auto-decay inactivity timeout:
-\begin{equation}
-    \text{Cadence}_{\text{live}}(t) =
-    \begin{cases}
-        0 & \text{if } t - t_{\text{last\_step}} > 4.0\,\text{s} \text{ or } N_{\text{window}} < 2 \\
-        \min\!\left(270, \frac{N_{\text{window}} \times 60}{6.0}\right) & \text{otherwise}
-    \end{cases}
-\end{equation}
-For indoor or GPS-denied distance estimation, \texttt{ResearchStepLengthFallback} evaluates Renaudin et al.'s linear stature--frequency model (Equation~\ref{eq:renaudin_lit})~\cite{renaudin2012step} using LOSO-validated parameters: $(a, b, c) = (0.1328, 0.0217, 0.2755)$ for walking ($H \in [1.60, 1.88]$\,m, $C \in [94, 144]$\,spm) and $(0.3211, 0.7253, -1.6810)$ for running ($H \in [1.627, 1.872]$\,m, $C \in [143, 223]$\,spm), clamping safely to cohort means outside validated support rather than extrapolating unboundedly.
+\section{Cross-Screen Data Consistency}
+All five shell tabs (\texttt{MainShell}: Home, Activity/Record, History/Calendar, Analytics/Stats, Profile) along with Summary and Details screens consume workout streams and entities exclusively through \texttt{WorkoutRepository}. Lap splits, filtered routes, moving duration, steps, and calories are saved once at finalization and rendered identically without view-local recalculation.
 
-\section{Offline Trajectory Reconstruction, Compression, and Calorimetry}
-\label{sec:reconstruction_design}
+\section{Workout Recording UX Flow and Native Platform Integration}
+The redesigned Kinetic UI organizes user journeys across a clean 5-tab bar (Figure~\ref{fig:ux_flow}): Home displays daily/weekly progress and active streak rings; Activity offers outdoor/indoor mode selection and target configuration; Record renders a clean satellite/street polyline HUD stripped of distracting experimental IOD debug pills, backed on iOS by Lock Screen \textbf{Live Activities}; History/Calendar groups workouts chronologically by local date; Analytics summarizes weekly volume trends; and \texttt{NotificationSettingsScreen} provides direct bidirectional deep-linking with iOS (\texttt{UNUserNotificationCenter} / \path{openNotificationSettingsURLString}) and Android (\path{ACTION_APP_NOTIFICATION_SETTINGS}) OS settings.
 
-\subsection{Display-Only Outage Reconstruction and Polyline Compression}
-Post-workout, \texttt{WorkoutSessionFinalizer} bridges short GNSS dropouts ($2.0\,\text{s} < \Delta t_{\text{gap}} \le 15.0\,\text{s}$) via either Linear Chord or Fritsch--Carlson Monotone PCHIP~\cite{fritsch1980pchip} (configured by \texttt{kTrajectoryReconstructionMethod}), while isolating blackouts $>15.0$\,s without fabrication. \textbf{Strict offline isolation} guarantees that zero synthetic points ever enter the live EKF, saved distance accumulator, or server segment audits. Before cloud synchronization, \texttt{PolylineCompressionService} applies Google Encoded Polyline delta quantization ($10^{-5}$ or $10^{-6}$\,deg), and \texttt{deterministic-finalize-worker} + \texttt{route-correction-worker} reconcile canonical server metrics (\texttt{METRICS\_VERSION = 2}), explicitly reporting \texttt{routeMatchingAvailable() = false} when no OSRM road-graph provider is attached~\cite{newson2009hidden}.
+\begin{figure}[htbp]
+\centering
+\noindent\resizebox{0.96\textwidth}{!}{%
+\begin{tikzpicture}[
+    node distance=0.45cm and 0.75cm,
+    scr/.style={rectangle, rounded corners=5pt, draw=aetronblue, fill=blue!5, thick, text width=2.8cm, minimum height=1.35cm, align=center, font=\scriptsize},
+    arrow/.style={-{Stealth[length=2.1mm]}, thick, color=aetroncyan}
+]
+    \node[scr] (home) {\textbf{Home Tab}\\Daily/Weekly\\Goal Rings};
+    \node[scr, right=of home] (act) {\textbf{Activity Tab}\\Pick Mode \&\\Signal Readiness};
+    \node[scr, right=of act] (rec) {\textbf{Record Screen}\\Live Map, HUD,\\iOS Live Activity};
+    \node[scr, right=of rec] (sum) {\textbf{Summary Screen}\\Route Recap, Splits,\\2024 Comp.\ MET};
 
-\subsection{2024 Adult Compendium Caloric Expenditure}
-\label{sec:calorie_design}
-Both the Flutter client (\path{UserProfile.calculateCalories}) and Supabase edge worker (\path{compendium_met.ts}) compute distance-activity kilocalories via Equation~\ref{eq:compendium_2024} using exact 5-digit speed-banded codes from the \textbf{2024 Adult Compendium of Physical Activities}~\cite{herrmann2024compendium} (walking \texttt{17151}--\texttt{17255}, running \texttt{12028}--\texttt{12145}, cycling \texttt{01010}--\texttt{01060}) converted via $v_{\text{mph}} = v_{\text{km/h}} / 1.609344$ without unverified interpolation across speed-band gaps, returning strictly $0$\,kcal whenever verified moving displacement is zero. Non-distance indoor activities (gym, yoga) fall back to duration-based MET integration with a $0.95$ female adjustment factor.
+    \node[scr, below=0.95cm of home] (stats) {\textbf{Analytics Tab}\\Weekly Volume\\\& Trends};
+    \node[scr, below=0.95cm of act] (hist) {\textbf{History / Calendar}\\Local Date Groups\\\& Details View};
+    \node[scr, below=0.95cm of sum] (prof) {\textbf{Profile / Settings}\\Anthropometrics \&\\OS Notif.\ Link};
 
-\section{System Safety, Feature Flags, and Observational Isolation}
-\label{sec:safety_gating}
-All research pipeline switches are governed by compile-time \texttt{--dart-define} constants in \texttt{lib/core/constants/debug\_config.dart}:
-\begin{itemize}
-    \item \texttt{kGpsFilterAlgoConfig = 'ekf4State'} (4-state kinematic EKF default; \texttt{fixedAlpha} preserved only for A/B replay).
-    \item \texttt{kEnableTrajectoryPreprocessing = true} and \texttt{kEnableGnssCorrection = true} (Phase~1 kinematic preprocessing and Phase~2 Mahalanobis/turn-rate EKF guards).
-    \item \texttt{kEnableTrajectoryReconstruction = true} (strictly offline display-only; never mutates distance or pace).
-    \item \texttt{kEnableGpsQualityGate = false} (guarded behind explicit opt-in until further multi-device validation).
-\end{itemize}
-Crucially, every IOD classifier (\texttt{DeepIodNeuralClassifier}, \texttt{IosMultiSensorIodClassifier}, \texttt{IodCompositeClassifier}, \texttt{SeamlessTransitionDetector}) hardcodes \texttt{isObservationalOnly = true}. Experimental environment predictions are logged for scientific auditing without ever overriding the primary workout persistence state machine.
+    \draw[arrow] (home) -- (act);
+    \draw[arrow] (act) -- node[above, font=\tiny]{start} (rec);
+    \draw[arrow] (rec) -- node[above, font=\tiny]{finish} (sum);
+    \draw[arrow] ([xshift=-0.65cm]sum.south) -- ++(0,-0.47cm) -| (hist.north);
+    \draw[arrow] (hist) -- (stats);
+    \draw[arrow] (home.south) -- (stats.north);
+    \draw[arrow] ([xshift=0.35cm]prof.north) -- node[right, font=\tiny]{weights/height} ([xshift=0.35cm]prof.north |- sum.south);
+\end{tikzpicture}%
+}
+\caption{Application navigation and workout recording UX flow sharing \texttt{WorkoutRepository} as the single source of truth.}
+\label{fig:ux_flow}
+\end{figure}

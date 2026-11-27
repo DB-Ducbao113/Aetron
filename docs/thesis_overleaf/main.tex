@@ -15,13 +15,13 @@
   \usepackage[T5,T1]{fontenc}
   \usepackage{lmodern}
 \else
-  % Compile with XeLaTeX on Overleaf (uses Noto Serif), falling back cleanly on headless Linux/Docker containers
+  % Compile with XeLaTeX on Overleaf (uses Noto Serif), keeping default Latin Modern on headless containers
   \usepackage{fontspec}
   \defaultfontfeatures{Ligatures=TeX}
   \IfFontExistsTF{Noto Serif}{%
     \setmainfont{Noto Serif}%
   }{%
-    \setmainfont{DejaVu Serif}%
+    % Keep default Latin Modern Roman from fontspec/lmodern with full Italic/Bold styles
   }
 \fi
 
@@ -29,6 +29,7 @@
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{booktabs}
 \usepackage{array}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
 \usepackage{multirow}
 \usepackage{graphicx}
 \usepackage{xcolor}
@@ -38,105 +39,212 @@
 \usepackage{microtype}
 \usepackage{setspace}
 \usepackage{titlesec}
+\usepackage{fancyhdr}
 \usepackage{enumitem}
 \usepackage[ruled,vlined,linesnumbered]{algorithm2e}
 \usepackage{tikz}
-\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc, backgrounds, fit}
 \usepackage[hidelinks,breaklinks=true,pdfencoding=auto]{hyperref}
 
 % Typography & Spacing
 \onehalfspacing
 \setlength{\parindent}{1.5em}
-\setlength{\parskip}{0.5em}
+\setlength{\parskip}{0.45em}
 \emergencystretch=3em
 
-% Custom Colors for Tables and Highlights
+% Custom Colors
 \definecolor{aetronblue}{RGB}{20, 55, 94}
 \definecolor{aetroncyan}{RGB}{47, 138, 175}
 \definecolor{codegreen}{RGB}{40, 140, 70}
-\definecolor{codegray}{RGB}{120, 120, 120}
+\definecolor{codegray}{RGB}{110, 110, 110}
+\definecolor{codebg}{RGB}{247, 248, 250}
 
-% Title Formatting
+% Dart Listings Style (matching pre-thesis readability)
+\lstdefinelanguage{Dart}{
+  morekeywords={abstract,as,assert,async,await,break,case,catch,class,const,continue,default,deferred,do,dynamic,else,enum,export,extends,external,factory,false,final,finally,for,Function,get,hide,if,implements,import,in,interface,is,late,library,mixin,new,null,on,operator,part,required,rethrow,return,set,show,static,super,switch,sync,this,throw,true,try,typedef,var,void,while,with,yield,double,int,bool,String,DateTime,Position,LatLng},
+  sensitive=true,
+  morecomment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]',
+  morestring=[b]",
+}
+
+\lstset{
+  language=Dart,
+  basicstyle=\ttfamily\footnotesize,
+  backgroundcolor=\color{codebg},
+  keywordstyle=\color{aetronblue}\bfseries,
+  commentstyle=\color{codegreen}\itshape,
+  stringstyle=\color{aetroncyan},
+  numberstyle=\tiny\color{codegray},
+  numbers=left,
+  stepnumber=1,
+  numbersep=8pt,
+  frame=tb,
+  framerule=0.5pt,
+  rulecolor=\color{codegray!40},
+  breaklines=true,
+  breakatwhitespace=true,
+  showstringspaces=false,
+  captionpos=t,
+  xleftmargin=1.5em,
+  framexleftmargin=1.2em
+}
+
+% Header & Footer matching Pre-Thesis IU template
+\setlength{\headheight}{15pt}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textrm{Aetron: Mobile Fitness Tracking for Indoor and Outdoor Activities}}
+\fancyhead[R]{\small\textrm{\thepage}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\fancypagestyle{plain}{
+  \fancyhf{}
+  \fancyfoot[C]{\small\textrm{\thepage}}
+  \renewcommand{\headrulewidth}{0pt}
+  \renewcommand{\footrulewidth}{0pt}
+}
+
+% Chapter Header Styling (clean IU pre-thesis academic style)
 \titleformat{\chapter}[display]
-  {\normalfont\bfseries\color{aetronblue}}
-  {\filleft\fontsize{14}{14}\selectfont CHAPTER \thechapter}
-  {1ex}
-  {\titlerule\vspace{1ex}\LARGE}
-  [\vspace{1ex}\titlerule]
-
-\titlespacing*{\chapter}{0pt}{20pt}{25pt}
+  {\normalfont\huge\bfseries}
+  {\chaptertitlename\ \thechapter}
+  {20pt}
+  {\Huge}
+\titlespacing*{\chapter}{0pt}{10pt}{25pt}
 
 % ---------------------------------------------------------
 % Document Metadata
 % ---------------------------------------------------------
-\title{\textbf{AETRON: A RESEARCH-DRIVEN MULTI-MODAL MOBILE FITNESS TRACKING PLATFORM WITH EMPIRICAL ALGORITHMIC BENCHMARKING}}
-\author{Nguyễn Đức Bảo (Student ID: ITITIU22238)}
+\title{\textbf{A MOBILE FITNESS TRACKING APPLICATION FOR INDOOR AND OUTDOOR ACTIVITIES}}
+\author{Nguyen Duc Bao -- ITITIU22238}
 \date{November 2026}
 
 \begin{document}
 
 % ---------------------------------------------------------
-% Front Matter
+% Title Page (Preserving Pre-Thesis IU Cover Format)
 % ---------------------------------------------------------
+\hypersetup{pageanchor=false}
 \begin{titlepage}
-    \centering
-    \vspace*{0.5cm}
+    \thispagestyle{empty}
+    \begin{center}
+    \vspace*{0.4cm}
 
-    {\fontsize{13}{15}\selectfont \textbf{VIETNAM NATIONAL UNIVERSITY -- HO CHI MINH CITY}}\\
-    {\fontsize{13}{15}\selectfont \textbf{INTERNATIONAL UNIVERSITY}}\\
-    {\fontsize{12}{14}\selectfont \textbf{SCHOOL OF COMPUTER SCIENCE AND ENGINEERING}}\\
-    {\fontsize{11}{13}\selectfont \textbf{DEPARTMENT OF INFORMATION TECHNOLOGY}}\\[1.8cm]
+    {\fontsize{13}{16}\selectfont \textbf{VIETNAM NATIONAL UNIVERSITY HO CHI MINH CITY}}\par\vspace{0.15cm}
+    {\fontsize{13}{16}\selectfont \textbf{THE INTERNATIONAL UNIVERSITY}}\par\vspace{0.15cm}
+    {\fontsize{12}{15}\selectfont \textbf{SCHOOL OF COMPUTER SCIENCE AND ENGINEERING}}\par\vspace{1.4cm}
 
-    % University Logo / Crest (Gracefully handles absence of local image)
     \IfFileExists{figures/iu_logo.png}{%
-        \includegraphics[width=0.22\textwidth]{figures/iu_logo.png}\\[1.5cm]
+        \includegraphics[width=0.20\textwidth]{figures/iu_logo.png}\par\vspace{1.4cm}
     }{%
-        \vspace{3.5cm}%
+        \vspace{3.2cm}%
     }
 
-    {\fontsize{16}{20}\selectfont \textbf{GRADUATION THESIS}}\\[0.8cm]
+    {\fontsize{17}{23}\selectfont \textbf{A MOBILE FITNESS TRACKING APPLICATION FOR INDOOR AND OUTDOOR ACTIVITIES}}\par\vspace{2.0cm}
 
-    {\fontsize{15}{19}\selectfont \textbf{AETRON: A RESEARCH-DRIVEN MULTI-MODAL MOBILE FITNESS TRACKING PLATFORM WITH EMPIRICAL ALGORITHMIC BENCHMARKING}}\\[2.0cm]
+    {\large By}\par\vspace{0.5cm}
+    {\large \textbf{Nguyen Duc Bao -- ITITIU22238}}\par\vspace{1.8cm}
 
-    \begin{minipage}{0.85\textwidth}
-        \begin{tabular}{ll}
-            \textbf{Author:} & Nguyễn Đức Bảo (ITITIU22238) \\
-            \textbf{Program:} & Bachelor of Science in Information Technology \\
-            \textbf{Department:} & School of Computer Science and Engineering \\
-            \textbf{Academic Year:} & 2022 -- 2026 \\
-        \end{tabular}
-    \end{minipage}
+    \parbox{0.84\textwidth}{\centering\large
+      A thesis submitted to the School of Computer Science and Engineering\\
+      in partial fulfillment of the requirements for the degree of\\
+      Bachelor of Information Technology (Major: Network Engineering)
+    }\par
 
     \vfill
-    {\fontsize{11}{13}\selectfont Ho Chi Minh City, November 2026}
+    {\large Ho Chi Minh City, Vietnam}\par\vspace{0.1cm}
+    {\large November 2026}\par
+    \end{center}
 \end{titlepage}
 
-\newpage
-\pagenumbering{roman}
+\clearpage
+\hypersetup{pageanchor=true}
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+% ---------------------------------------------------------
+% Approval Page (Matching Old Pre-Thesis Structure)
+% ---------------------------------------------------------
+\thispagestyle{plain}
+\addcontentsline{toc}{chapter}{Approval}
+{\raggedright
+\vspace*{1.0cm}
+APPROVED BY:\par\vspace{1.3cm}
+
+\rule{7.5cm}{0.5pt},\par\vspace{0.25cm}
+Vo Thi Luu Phuong, Assoc.\ Prof.\par
+Supervisor\par\vspace{1.2cm}
+
+\rule{7.5cm}{0.5pt}\par\vspace{0.15cm}
+(Typed Committee name here)\par\vspace{0.9cm}
+
+\rule{7.5cm}{0.5pt}\par\vspace{0.15cm}
+(Typed Committee name here)\par\vspace{0.9cm}
+
+\rule{7.5cm}{0.5pt}\par\vspace{0.15cm}
+(Typed Committee name here)\par\vspace{0.9cm}
+
+\rule{7.5cm}{0.5pt}\par\vspace{0.15cm}
+(Typed Committee name here)\par\vspace{1.6cm}
+}
+
+\begin{center}
+  \textbf{THESIS COMMITTEE}\\
+  (Whichever applies)\par\vspace{1.1cm}
+  Nguyen Duc Bao
+\end{center}
+
+\clearpage
+
+% ---------------------------------------------------------
+% Acknowledgements (Matching Old Pre-Thesis Structure)
+% ---------------------------------------------------------
+\chapter*{Acknowledgements}
+\addcontentsline{toc}{chapter}{Acknowledgements}
+\thispagestyle{plain}
+
+I would like to express my sincere gratitude to my supervisor, Assoc.\ Prof.\ Vo Thi Luu Phuong, and the lecturers at the School of Computer Science and Engineering, International University, Vietnam National University Ho Chi Minh City, for their continuous guidance, constructive feedback, and academic support from the initial pre-thesis prototype through the completion of this full graduation thesis. Their critical questions encouraged me to replace initial heuristic rules with peer-reviewed mathematical models and validate every design decision against independent public ground-truth datasets.
+
+I would also like to thank my family for their constant encouragement, patience, and support throughout my university years, which motivated me to persevere through complex debugging cycles, hardware limitations, and extensive empirical benchmarking.
+
+Finally, I am grateful to my friends and classmates who assisted in early field trials and usability reviews, providing candid feedback on workout telemetry, cross-screen consistency, and mobile user experience. This thesis represents the culmination of building, auditing, and validating Aetron across native mobile engineering, statistical sensor fusion, and reproducible empirical evaluation.
+
+\clearpage
+
+% ---------------------------------------------------------
+% Table of Contents, List of Figures, List of Tables
+% ---------------------------------------------------------
+\tableofcontents
+\clearpage
+
+\addcontentsline{toc}{chapter}{List of Figures}
+\listoffigures
+\clearpage
+
+\addcontentsline{toc}{chapter}{List of Tables}
+\listoftables
+\clearpage
 
 % ---------------------------------------------------------
 % Abstract
 % ---------------------------------------------------------
 \chapter*{Abstract}
 \addcontentsline{toc}{chapter}{Abstract}
-Modern mobile fitness applications require robust, real-time sensory telemetry across heterogeneous indoor and outdoor physical environments. However, consumer smartphones face severe sensing constraints: satellite signal degradation and multipath errors in urban canyons, mobile operating system sandboxing that blocks ambient light and raw radio APIs on iOS, rapid state oscillation across indoor--outdoor boundaries, false step counts triggered by stationary device handling, and display jitter during live biomechanical cadence feedback. While commercial platforms (e.g., Strava, Nike Run Club) deliver polished user experiences, their core filtering and sensing pipelines remain proprietary black boxes.
+\thispagestyle{plain}
 
-This thesis presents \textbf{Aetron}, an open, research-grounded, multi-modal mobile fitness tracking platform built on Flutter and Dart for native Android and iOS devices. Aetron unifies real-time sensor fusion with rigorous offline scientific validation across six algorithmic subsystems grounded in peer-reviewed literature: (1)~an outdoor 4-state 2D kinematic Extended Kalman Filter (EKF) with Joseph-form covariance stabilization, Zero-Velocity Update (ZUPT), and Phase~1/2 kinematic preprocessing and Mahalanobis gating; (2)~a cross-platform Indoor--Outdoor Detection (IOD) architecture pairing an Android 4-channel 2D Depthwise Separable CNN (Model~C-Mobile) and an Adaptive Transition Engine with an \textbf{iOS-first light-free multi-sensor classifier} combining MagIO geomagnetic perturbation features, linear acceleration dynamics, CoreLocation accuracy/outage likelihoods, \texttt{CMAltimeter} barometric pressure deltas, and a causal 2-state Hidden Markov Model (HMM) alongside a probabilistic path-straightness \texttt{EnvironmentClassifier}; (3)~causal inertial step detectors (Oxford WPD for walking and Xu FFT-adaptive detection for running) hardened with Skog et al.'s Magnitude-Variance Generalized Likelihood Ratio Test (MV-GLRT) ZUPT, Brajdic \& Harle rhythmic bout gating, a 6-second sliding-window cadence engine, and Leave-One-Subject-Out (LOSO) Renaudin adaptive step-length estimation; (4)~offline display-only trajectory reconstruction comparing Linear Chord and Monotone PCHIP interpolation; (5)~T-DBSCAN spatial--temporal dwell clustering and Google Encoded Polyline compression; and (6)~2024 Adult Compendium speed-banded metabolic expenditure modeling with client--server parity.
+Smartphone fitness tracking has become widely adopted for monitoring physical activity, with commercial platforms such as Strava, Nike Run Club, Samsung Health, and Google Fit demonstrating the practical convenience of dual-mode outdoor and indoor workout recording. However, commercial platforms rely on proprietary, undisclosed algorithms, while existing student and open-source prototypes often fail to unify outdoor satellite filtering, cross-platform indoor/outdoor context awareness, stationary false-step rejection, offline-first durability, and cross-screen data consistency into a single documented system. Extending the deterministic pre-thesis baseline established in \textbf{Aetron}, this thesis resolves the research gaps identified during pre-thesis evaluation by designing, implementing, and empirically benchmarking a complete Flutter/Dart mobile fitness application targeting both Android and iOS.
 
-All subsystems are audited against published public datasets with independent physical ground truth: TU~Wien Leica GS18 phase-RTK pedestrian walks, Oxford SnapperGPS~2 cycling tracks, Cambridge CIOD and HAR-PMD environmental traces ($>490{,}000$ epochs), STAGA mobility diaries ($122{,}808$ epochs), Clemson PedEval and Oxford OxWalk ($119{,}572$ video-annotated steps), Oxford WPD and Xu Group~3 accelerometry, and SLEDataset2 / Fukuchi RBDS stride-length cohorts. Rigorous holdout testing yields actionable and transparent findings: on TU~Wien RTK walks, isolating NIS scaling alone over a tuned EKF fails the predefined $10\%$ acceptance gate ($+0.21\%$ RMSE change, 95\% cluster bootstrap CI $[-0.0233, +0.0034]$\,m), whereas coupling Phase~1 preprocessing with Phase~2 Mahalanobis-gated 4-state AEKF resolves the legacy Fixed-Alpha stationary-freeze pathology ($8.753$\,m $\to 3.432$\,m RMSE; $1.34\%$ contiguous distance error), while SnapperGPS cycling under CEP50 without Doppler exposes a critical negative result ($138.226$\,m RMSE). On held-out Cambridge CIOD (Sessions~72--84, $N=201{,}731$), our iOS-compatible light-free \texttt{[MagIO+Acc+Daytime]} MLP achieves \textbf{77.07\% accuracy} and \textbf{74.97\% Macro-F1} ($75.65\%$ / $74.77\%$ with causal HMM and $69.48\%$ outdoor recall), outperforming the Android-only 4-channel baseline ($73.64\%$ / $69.59\%$) while restoring 100\% sensor coverage on iOS; meanwhile, event-level doorway transition F1 remains modest ($4.39\%$, $15/46$ physical transits), enforcing \texttt{isObservationalOnly: true} in production. Finally, MV-GLRT ZUPT eliminates 100\% of stationary hand-sway and $2.2$\,m/s$^2$ screen-tap false steps ($0$ false steps over $60$\,s) while preserving $4{,}225/4{,}107$ steps on Oxford WPD and $1{,}265/1{,}280$ on Xu Group~3, and the 6-second cadence window cuts display flutter by $50.0\%$ with $8.41$\,spm steady-state MAE.
+At the tracking and algorithmic layers, Aetron replaces heuristic confidence blending with a 4-state kinematic Extended Kalman Filter (EKF) using Joseph-form covariance stabilization, stationary Zero-Velocity Updates (ZUPT), Phase~1 kinematic preprocessing, and Phase~2 Normalized Innovation Squared (NIS) gating alongside post-workout T-DBSCAN dwell clustering and Google Encoded Polyline compression. For environmental transitions, we pair Android's unprivileged 4-channel 2D Depthwise-Separable CNN (Model~C-Mobile) and Adaptive Transition Engine with a novel \textbf{iOS-first light-free multi-sensor classifier} combining MagIO geomagnetic statistics, linear acceleration dynamics, \texttt{CoreLocation} outage/accuracy likelihoods, \texttt{CMAltimeter} pressure shifts, and a causal 2-state Hidden Markov Model (HMM), alongside a probabilistic \texttt{EnvironmentClassifier} enhanced with Benhamou's path straightness index---while keeping experimental classifiers strictly observational (\texttt{isObservationalOnly: true}). Indoors, causal Oxford WPD walking and Xu running step detectors and hardware step counters are hardened with Skog et al.'s Magnitude-Variance Generalized Likelihood Ratio Test (MV-GLRT) ZUPT, Brajdic \& Harle rhythmic bout gating, a 6-second sliding-window cadence calculator, Leave-One-Subject-Out (LOSO) Renaudin adaptive stride estimation, and 2024 Adult Compendium speed-banded caloric accounting with client--server parity. Sessions are protected locally by 5-second crash-recovery checkpoints in account-isolated Isar/SQLite storage prior to asynchronous Supabase reconciliation and server-side worker finalization.
 
-\vspace{0.8cm}
-\noindent\textbf{Keywords:} Mobile Fitness Tracking, Extended Kalman Filter (EKF), Indoor/Outdoor Detection (IOD), MagIO, Hidden Markov Model, Zero-Velocity Update (MV-GLRT), Biomechanical Cadence, Reproducible Benchmarking.
+Beyond comparative field trials against five commercial applications (where Aetron matched peers at $0.52$\,km within $0.51$--$0.56$\,km) and an $800$\,m outdoor MAPE trial ($2.5\%$), exhaustive holdout evaluations on open ground-truth datasets demonstrate rigorous empirical discipline and negative-result transparency. On TU~Wien Leica GS18 phase-RTK walks, isolated NIS scaling over a calibrated EKF yields $+0.21\%$ RMSE change and fails the $10\%$ gate (\textit{NO-GO}), whereas the integrated Phase~1+2 4-state AEKF resolves legacy stationary-freeze distortion ($8.753$\,m $\to 3.432$\,m RMSE; $1.34\%$ contiguous distance error); conversely, non-Doppler CEP50 SnapperGPS~2 cycling exposes NIS gating divergence ($138.226$\,m RMSE) as a preserved negative result. On held-out Cambridge CIOD ($N=201{,}731$), our light-free iOS \texttt{[MagIO+Acc+Daytime]} MLP achieves \textbf{77.07\% accuracy} and \textbf{74.97\% Macro-F1} ($69.48\%$ outdoor recall with HMM), outperforming 4-channel Model~C-Mobile ($73.64\%$ / $69.59\%$) while restoring 100\% iOS coverage, whereas modest doorway event F1 ($4.39\%$, $15/46$ transits) and HAR-PMD locomotion confounding ($55.36\%$ Macro-F1 across 120 subjects) verify the necessity of observational isolation. Finally, MV-GLRT ZUPT eliminates $100\%$ of idle sway and $2.2$\,m/s$^2$ screen-tap false steps, 6-second cadence cuts flutter by $50.0\%$ ($8.41$\,spm MAE), T-DBSCAN achieves $98.97\%$ stop precision with $9.2\times$ fewer false pauses than speed gating on STAGA, and automated CI passes with $0$ analyzer issues and $776$ passing unit/integration tests ($786$ locally with external datasets).
 
-% ---------------------------------------------------------
-% Table of Contents & Lists
-% ---------------------------------------------------------
-\tableofcontents
-\listoffigures
-\listoftables
+\vspace{0.6cm}
+\noindent\textbf{Keywords:} Mobile Fitness Tracking, Indoor and Outdoor Activities, Extended Kalman Filter (EKF), Indoor/Outdoor Detection (IOD), MagIO, Hidden Markov Model, MV-GLRT ZUPT, Cadence Estimation, Offline-First Architecture.
 
-\newpage
-\pagenumbering{arabic}
+\clearpage
 
 % ---------------------------------------------------------
 % Chapters Inclusion
@@ -150,6 +258,8 @@ All subsystems are audited against published public datasets with independent ph
 % ---------------------------------------------------------
 % Bibliography
 % ---------------------------------------------------------
+\clearpage
+\addcontentsline{toc}{chapter}{Bibliography}
 \bibliographystyle{IEEEtran}
 \bibliography{references}
 
