@@ -4,726 +4,913 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Aetron — Literature Review & 2-Tier Benchmark (Simplified Deck)</title>
+  <title>Aetron — Literature Review & 2-Tier Benchmark</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --canvas: #F7F6F3;
+      --paper: #FAF8F4;
       --surface: #FFFFFF;
-      --dark: #14181F;
-      --dark-card: #1F2633;
-      --ink: #14181F;
-      --body: #333840;
-      --muted: #6E6D6A;
-      --border: #E2E0D8;
-      --navy: #1B365D;
-      --blue-bg: #E6F2FA;
-      --blue-fg: #1A5E8A;
-      --grn-bg: #E8F3EA;
-      --grn-fg: #1F6232;
-      --amb-bg: #FBF3DC;
-      --amb-fg: #8C5A00;
-      --red-bg: #FDEAEB;
-      --red-fg: #9E2A2B;
+      --surface-soft: #F1EEE7;
+      --espresso: #161513;
+      --ink: #1C1B19;
+      --body: #3E3C38;
+      --muted: #787269;
+      --hairline: rgba(22, 21, 19, 0.09);
+      --hairline-dark: rgba(255, 255, 255, 0.12);
+
+      --sage-bg: #E8F1E8;
+      --sage-fg: #225429;
+      --sky-bg: #E3F0F8;
+      --sky-fg: #18577D;
+      --ochre-bg: #F9EED4;
+      --ochre-fg: #8B5700;
+      --rose-bg: #FBE7E8;
+      --rose-fg: #992626;
+
+      --serif: 'Newsreader', Georgia, serif;
+      --sans: 'Plus Jakarta Sans', 'SF Pro Display', -apple-system, sans-serif;
+      --mono: 'JetBrains Mono', 'SF Mono', monospace;
+      --ease: cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    body {
-      font-family: "SF Pro Display", "Helvetica Neue", -apple-system, BlinkMacSystemFont, sans-serif;
-      background: #ECEBE6;
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #E6E2D9;
       color: var(--body);
-      height: 100vh;
+      font-family: var(--sans);
       overflow: hidden;
-      display: flex;
-      flex-direction: column;
       -webkit-font-smoothing: antialiased;
     }
 
-    .topbar {
-      height: 50px;
-      padding: 0 22px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
+    .grain {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 40;
+      opacity: 0.024;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
     }
 
-    .topbar-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--ink);
-    }
-
-    .pill-meta {
-      padding: 3px 9px;
-      border-radius: 999px;
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      background: var(--canvas);
-      border: 1px solid var(--border);
-      color: var(--muted);
-    }
-
-    .controls { display: flex; align-items: center; gap: 7px; }
-
-    .btn {
-      cursor: pointer;
-      padding: 6px 12px;
-      border-radius: 6px;
-      border: 1px solid var(--border);
-      background: var(--surface);
-      color: var(--ink);
-      font-size: 0.78rem;
-      font-weight: 600;
-      text-decoration: none;
-    }
-    .btn:hover { background: var(--canvas); }
-    .btn-dark { background: var(--ink); color: #FFF; border-color: var(--ink); }
-
-    .stage-wrap {
-      flex: 1;
+    .viewport {
+      width: 100%;
+      height: 100dvh;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 18px 24px;
-      overflow: hidden;
+      padding: 14px 20px 66px;
+    }
+
+    .deck-shell {
+      width: min(1320px, 100%);
+      aspect-ratio: 16 / 9;
+      max-height: 100%;
+      padding: 6px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.6);
+      border: 1px solid rgba(22, 21, 19, 0.07);
+      box-shadow: 0 20px 50px rgba(22, 21, 19, 0.08);
     }
 
     .deck {
-      width: min(1240px, 100%);
-      aspect-ratio: 16 / 9;
-      max-height: 100%;
+      width: 100%;
+      height: 100%;
       position: relative;
-      box-shadow: 0 18px 50px rgba(20, 24, 31, 0.14);
-      border-radius: 10px;
+      border-radius: 15px;
       overflow: hidden;
-      background: var(--canvas);
+      background: var(--paper);
+      border: 1px solid var(--hairline);
     }
 
     .slide {
       position: absolute;
       inset: 0;
-      padding: 36px 46px 32px;
-      display: none;
-      flex-direction: column;
-      background: var(--canvas);
-    }
-    .slide.active { display: flex; }
-    .slide.dark { background: var(--dark); color: #E0E5EC; }
-
-    .eyebrow {
-      font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--blue-fg);
-      margin-bottom: 4px;
-    }
-
-    h1 {
-      font-size: 2.35rem;
-      line-height: 1.15;
-      color: #FFF;
-      font-weight: 700;
-      margin: 14px 0 12px;
-    }
-
-    h2 {
-      font-size: 1.55rem;
-      line-height: 1.2;
-      color: var(--ink);
-      font-weight: 700;
-      padding-bottom: 10px;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 16px;
-    }
-
-    .slide.dark h2 { color: #FFF; border-color: #2E3748; }
-
-    .subtitle { font-size: 1.02rem; line-height: 1.45; color: #C7CED8; max-width: 820px; }
-
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 15px 18px;
-    }
-    .slide.dark .card {
-      background: var(--dark-card);
-      border-color: #323C4E;
-    }
-
-    .card h3 {
-      font-size: 0.95rem;
-      font-weight: 700;
-      color: var(--navy);
-      margin-bottom: 8px;
-    }
-    .slide.dark .card h3 { color: #7DC4F0; }
-
-    .card ul {
-      padding-left: 17px;
-      font-size: 0.84rem;
-      line-height: 1.46;
+      padding: 34px 44px 26px;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      background: var(--paper);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(8px);
+      transition: opacity 380ms var(--ease), transform 480ms var(--ease);
     }
+    .slide.active { opacity: 1; pointer-events: auto; transform: translateY(0); }
+    .slide.dark { background: var(--espresso); color: #DDD8CF; }
 
-    .ref-line {
-      font-size: 0.74rem;
+    .slide .rv {
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 460ms var(--ease), transform 540ms var(--ease);
+      transition-delay: calc(var(--i, 0) * 60ms);
+    }
+    .slide.active .rv { opacity: 1; transform: translateY(0); }
+
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 11px;
       font-weight: 600;
-      color: var(--blue-fg);
-      margin-bottom: 7px;
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 3px 10px;
-      border-radius: 999px;
-      font-size: 0.68rem;
-      font-weight: 700;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
-      margin-bottom: 8px;
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
     }
-    .b-blue { background: var(--blue-bg); color: var(--blue-fg); }
-    .b-grn { background: var(--grn-bg); color: var(--grn-fg); }
-    .b-amb { background: var(--amb-bg); color: var(--amb-fg); }
-    .b-red { background: var(--red-bg); color: var(--red-fg); }
-    .b-dark { background: var(--dark-card); color: #7DC4F0; border: 1px solid #323C4E; }
+    .eyebrow::before { content: ""; width: 18px; height: 1px; background: currentColor; opacity: 0.45; }
+    .slide.dark .eyebrow { color: #9C958B; }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 14px;
-      font-size: 0.78rem;
+    .h-hero {
+      font-family: var(--serif);
+      font-weight: 400;
+      font-size: clamp(2.8rem, 4.7vw, 4.2rem);
+      line-height: 1.03;
+      letter-spacing: -0.03em;
+      color: var(--ink);
+    }
+    .slide.dark .h-hero { color: #FAF8F4; }
+
+    .h-slide {
+      font-family: var(--serif);
+      font-weight: 400;
+      font-size: clamp(1.85rem, 2.7vw, 2.5rem);
+      line-height: 1.08;
+      letter-spacing: -0.025em;
+      color: var(--ink);
+      margin-top: 6px;
+    }
+    .slide.dark .h-slide { color: #FAF8F4; }
+
+    .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 11px;
+      border-radius: 999px;
+      font-family: var(--mono);
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .t-sage  { background: var(--sage-bg); color: var(--sage-fg); }
+    .t-sky   { background: var(--sky-bg); color: var(--sky-fg); }
+    .t-ochre { background: var(--ochre-bg); color: var(--ochre-fg); }
+    .t-rose  { background: var(--rose-bg); color: var(--rose-fg); }
+    .t-dark  { background: rgba(255,255,255,0.09); color: #E5E0D8; border: 1px solid var(--hairline-dark); }
+
+    .bezel {
+      padding: 4px;
+      border-radius: 14px;
+      background: rgba(22, 21, 19, 0.03);
+      border: 1px solid var(--hairline);
+    }
+    .bezel-core {
+      height: 100%;
       background: var(--surface);
-      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 22px;
+      border: 1px solid rgba(22, 21, 19, 0.04);
+    }
+
+    .rule-top { border-top: 1px solid var(--hairline); padding-top: 14px; }
+
+    .bar-track {
+      width: 100%;
+      height: 32px;
+      background: var(--surface-soft);
       border-radius: 6px;
       overflow: hidden;
     }
-    th {
-      background: var(--navy);
-      color: #FFF;
-      text-align: left;
-      padding: 8px 10px;
-      font-weight: 700;
+    .bar-fill {
+      height: 100%;
+      border-radius: 6px;
+      transform-origin: left center;
+      transform: scaleX(0);
+      transition: transform 800ms var(--ease);
+      transition-delay: calc(var(--d, 1) * 95ms);
     }
-    td {
-      padding: 8px 10px;
-      border-top: 1px solid var(--border);
-      vertical-align: middle;
-      line-height: 1.38;
+    .slide.active .bar-fill { transform: scaleX(1); }
+
+    .vbar-fill {
+      width: 100%;
+      border-radius: 6px 6px 2px 2px;
+      transform-origin: bottom center;
+      transform: scaleY(0);
+      transition: transform 800ms var(--ease);
+      transition-delay: calc(var(--d, 1) * 85ms);
     }
-    tr:nth-child(even) td { background: #F5F4F0; }
-    td:first-child { font-weight: 700; color: var(--ink); }
+    .slide.active .vbar-fill { transform: scaleY(1); }
 
-    .v-win { background: var(--grn-bg) !important; color: var(--grn-fg); font-weight: 700; }
-    .v-eq  { background: var(--blue-bg) !important; color: var(--blue-fg); font-weight: 700; }
-    .v-neg { background: var(--red-bg) !important; color: var(--red-fg); font-weight: 700; }
-    .v-wip { background: var(--amb-bg) !important; color: var(--amb-fg); font-weight: 700; }
-
-    .callout {
-      margin-top: auto;
-      padding: 11px 15px;
-      border-radius: 8px;
-      font-size: 0.82rem;
-      line-height: 1.42;
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.82); }
     }
-    .c-blue { background: var(--blue-bg); color: var(--blue-fg); font-weight: 600; }
-    .c-amb { background: var(--amb-bg); color: var(--ink); border: 1px solid var(--amb-fg); }
+    .dot-wip { width: 7px; height: 7px; border-radius: 50%; background: var(--ochre-fg); animation: pulseDot 2s infinite; }
 
-    .footer {
+    .s-foot {
       margin-top: auto;
       padding-top: 10px;
       display: flex;
       justify-content: space-between;
-      font-size: 0.72rem;
+      align-items: center;
+      font-family: var(--mono);
+      font-size: 10.5px;
       color: var(--muted);
+      border-top: 1px solid var(--hairline);
     }
-    .slide.dark .footer { color: #8F99A8; }
+    .slide.dark .s-foot { color: #878077; border-color: var(--hairline-dark); }
+
+    .island {
+      position: fixed;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(22, 21, 19, 0.09);
+      box-shadow: 0 8px 24px rgba(22, 21, 19, 0.08);
+    }
+    .isl-btn {
+      cursor: pointer;
+      height: 30px;
+      padding: 0 12px;
+      border-radius: 999px;
+      border: none;
+      background: transparent;
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      text-decoration: none;
+      transition: background 160ms ease, transform 120ms ease;
+    }
+    .isl-btn:hover { background: rgba(22, 21, 19, 0.06); }
+    .isl-btn:active { transform: scale(0.96); }
+    .isl-btn.primary { background: var(--espresso); color: #FAF8F4; }
+    .isl-sep { width: 1px; height: 15px; background: var(--hairline); margin: 0 2px; }
+    .isl-counter { font-family: var(--mono); font-size: 11.5px; font-weight: 700; color: var(--ink); padding: 0 6px; }
+    .isl-title { font-size: 11.5px; color: var(--muted); padding: 0 6px 0 2px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* Compact key-value pill row */
+    .kv-strip {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    .kv-chip {
+      background: var(--surface);
+      border: 1px solid var(--hairline);
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-size: 12.5px;
+      color: var(--body);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .kv-chip strong { color: var(--ink); font-weight: 700; }
   </style>
 </head>
 
 <body>
-  <div class="topbar">
-    <div class="topbar-left">
-      <span>Aetron · Literature Review</span>
-      <span class="pill-meta" id="slideCounter">1 / 10</span>
-      <span class="pill-meta" id="slideTitle">Cover</span>
-    </div>
-    <div class="controls">
-      <button class="btn" id="prevBtn">← Trước</button>
-      <button class="btn btn-dark" id="nextBtn">Sau →</button>
-      <a class="btn" href="../thesis_overleaf/Aetron_Literature_Review.pptx" download>Tải .PPTX</a>
-      <a class="btn" href="index.html">Portal</a>
+  <div class="grain"></div>
+
+  <div class="viewport">
+    <div class="deck-shell">
+      <div class="deck">
+
+        <!-- SLIDE 1 · COVER -->
+        <section class="slide active" data-title="Cover">
+          <div style="display:grid; grid-template-columns:1.45fr 1fr; gap:36px; flex:1; align-items:center;">
+            <div>
+              <div class="eyebrow rv" style="--i:0">Literature Review · 2-Tier Benchmark</div>
+              <h1 class="h-hero rv" style="--i:1; margin-top:16px;">
+                Aetron: Indoor &amp; Outdoor<br><em style="font-style:italic; color:var(--sky-fg);">Mobile Fitness</em> Tracking
+              </h1>
+              <div class="rv" style="--i:2; display:flex; gap:10px; margin-top:26px; flex-wrap:wrap;">
+                <span class="tag t-sage">Tầng 1 · 8 Datasets (Xong)</span>
+                <span class="tag t-ochre"><span class="dot-wip"></span>Tầng 2 · Thực địa (Đang đo)</span>
+                <span class="tag t-sky">Không làm HAR</span>
+              </div>
+            </div>
+
+            <div class="rv" style="--i:2; border-left:1px solid var(--hairline); padding-left:30px; display:flex; flex-direction:column; gap:20px;">
+              <svg viewBox="0 0 280 94" width="100%">
+                <path d="M8,72 C48,70 62,22 106,28 C142,33 154,64 196,44 C224,30 246,16 272,20" fill="none" stroke="#D5D0C5" stroke-width="2" stroke-dasharray="4 5" />
+                <path d="M8,70 C52,64 74,26 112,32 C146,37 162,54 198,40 C226,29 248,20 272,20" fill="none" stroke="#18577D" stroke-width="2.6" stroke-linecap="round" />
+                <circle cx="8" cy="70" r="5" fill="#18577D" />
+                <circle cx="144" cy="42" r="5.5" fill="#FAF8F4" stroke="#8B5700" stroke-width="2.4" />
+                <circle cx="272" cy="20" r="5" fill="#225429" />
+                <text x="6" y="90" font-family="JetBrains Mono" font-size="9.5" font-weight="600" fill="#787269">OUTDOOR GNSS</text>
+                <text x="110" y="16" font-family="JetBrains Mono" font-size="9.5" font-weight="600" fill="#8B5700">IOD SWITCH</text>
+                <text x="210" y="40" font-family="JetBrains Mono" font-size="9.5" font-weight="600" fill="#225429">INDOOR PDR</text>
+              </svg>
+
+              <div class="rule-top">
+                <div class="mono" style="font-size:10px; color:var(--muted); letter-spacing:0.1em;">HƯỚNG NGHIÊN CỨU</div>
+                <div style="font-size:0.98rem; font-weight:700; color:var(--ink); margin-top:4px;">Seamless Indoor–Outdoor Navigation</div>
+              </div>
+
+              <div class="rule-top">
+                <div class="mono" style="font-size:10px; color:var(--muted); letter-spacing:0.1em;">TÁC GIẢ &amp; GVHD</div>
+                <div style="font-size:0.9rem; color:var(--ink); margin-top:4px; line-height:1.45;">
+                  <strong>Nguyen Duc Bao</strong> · ITITIU22238<br>
+                  <span style="color:var(--muted);">Assoc. Prof. Vo Thi Luu Phuong · HCM-IU</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="s-foot"><span>AETRON · LITERATURE REVIEW</span><span>01 / 10</span></div>
+        </section>
+
+        <!-- SLIDE 2 · ARCHITECTURE & 2 TIERS -->
+        <section class="slide" data-title="Hướng nghiên cứu & 2 Tầng">
+          <div class="eyebrow rv" style="--i:0">01 · Tổng quan</div>
+          <h2 class="h-slide rv" style="--i:1">Seamless Indoor–Outdoor Navigation &amp; 2 Tầng Benchmark</h2>
+
+          <div style="display:grid; grid-template-rows:1fr 1.15fr; gap:14px; flex:1; margin-top:14px;">
+            <!-- Top: 3 Pillars Flow -->
+            <div class="bezel rv" style="--i:1">
+              <div class="bezel-core" style="display:flex; flex-direction:column; justify-content:space-between;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-weight:700; color:var(--ink); font-size:0.92rem;">Định vị đa cảm biến tích hợp (Không làm HAR → Future Work)</span>
+                  <span class="mono" style="font-size:11px; color:var(--muted);">Groves 2013 · Harle 2013 · Fériol 2020 · Bai 2022 · Yoo 2025</span>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr auto 1fr auto 1fr; align-items:center; gap:12px;">
+                  <div style="background:var(--sky-bg); border-radius:10px; padding:16px; text-align:center;">
+                    <div class="mono" style="font-size:10.5px; font-weight:700; color:var(--sky-fg);">OUTDOOR</div>
+                    <div style="font-family:var(--serif); font-size:1.35rem; color:var(--ink); margin-top:2px;">GNSS + AEKF / IGG-III</div>
+                  </div>
+                  <div style="font-size:1.4rem; color:var(--muted);">↔</div>
+                  <div style="background:var(--sage-bg); border-radius:10px; padding:16px; text-align:center;">
+                    <div class="mono" style="font-size:10.5px; font-weight:700; color:var(--sage-fg);">CẦU NỐI CHUYỂN MẠCH</div>
+                    <div style="font-family:var(--serif); font-size:1.35rem; color:var(--ink); margin-top:2px;">IOD · CAP-ALSTM + HMM</div>
+                  </div>
+                  <div style="font-size:1.4rem; color:var(--muted);">↔</div>
+                  <div style="background:var(--ochre-bg); border-radius:10px; padding:16px; text-align:center;">
+                    <div class="mono" style="font-size:10.5px; font-weight:700; color:var(--ochre-fg);">INDOOR</div>
+                    <div style="font-family:var(--serif); font-size:1.35rem; color:var(--ink); margin-top:2px;">PDR · Step + Stride</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottom: 2 Tiers side-by-side -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+              <div class="bezel rv" style="--i:2">
+                <div class="bezel-core" style="display:flex; flex-direction:column; justify-content:space-between;">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span class="tag t-sage">Tầng 1 · Khoa học (Đã xong)</span>
+                    <span class="mono" style="font-size:20px; font-weight:700; color:var(--sage-fg);">8 Datasets</span>
+                  </div>
+                  <div style="font-family:var(--serif); font-size:1.55rem; color:var(--ink);">So trực tiếp với bài báo gốc</div>
+                  <div class="mono" style="font-size:11.5px; color:var(--muted);">RTK 1–2 cm · Vicon · Video 60 fps · CIOD · STAGA</div>
+                </div>
+              </div>
+              <div class="bezel rv" style="--i:3">
+                <div class="bezel-core" style="display:flex; flex-direction:column; justify-content:space-between;">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span class="tag t-ochre"><span class="dot-wip"></span>Tầng 2 · Thực địa (Đang đo)</span>
+                    <span class="mono" style="font-size:20px; font-weight:700; color:var(--ochre-fg);">3 Bài test</span>
+                  </div>
+                  <div style="font-family:var(--serif); font-size:1.55rem; color:var(--ink);">Tự record trên app Aetron</div>
+                  <div class="mono" style="font-size:11.5px; color:var(--muted);">Sân 400 m (GPS) · Đoạn 100 m (Bước) · Qua cửa (IOD)</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="s-foot"><span>01 · KIẾN TRÚC &amp; KHUNG ĐÁNH GIÁ</span><span>02 / 10</span></div>
+        </section>
+
+        <!-- SLIDE 3 · TẦNG 1 · GNSS OUTDOOR -->
+        <section class="slide" data-title="Tầng 1 · Outdoor GNSS">
+          <div class="eyebrow rv" style="--i:0">02 · Tầng 1 · Outdoor GNSS</div>
+          <h2 class="h-slide rv" style="--i:1">GNSS Ngoài trời: Giảm sai số quãng đường về <em style="color:var(--sage-fg); font-style:italic;">1.34%</em></h2>
+
+          <div class="kv-strip rv" style="--i:1">
+            <div class="kv-chip"><strong>Vấn đề:</strong> Multipath 3–50 m → AEKF (Groves 2013) &amp; IGG-III (Yang 2001)</div>
+            <div class="kv-chip"><strong>Cách đo họ:</strong> Máy thu RTK 1–2 cm · Common Epoch Mask · Good &lt; 5% (Scott 2016)</div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1.15fr 1fr; gap:16px; flex:1; margin-top:14px;">
+            <!-- Chart 1: TU Wien -->
+            <div class="bezel rv" style="--i:2">
+              <div class="bezel-core" style="display:flex; flex-direction:column; justify-content:space-between;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-weight:700; color:var(--ink);">TU Wien Walk · Sai số quãng đường (%)</span>
+                  <span class="tag t-sage">Vượt hơn</span>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:16px; position:relative; padding:12px 0;">
+                  <div style="position:absolute; left:calc(112px + (100% - 178px)*0.454); top:0; bottom:0; border-left:1.5px dashed #8B5700; z-index:2;">
+                    <span class="mono" style="position:absolute; top:-14px; left:4px; font-size:9.5px; color:#8B5700;">Good 5%</span>
+                  </div>
+                  <div style="display:grid; grid-template-columns:104px 1fr 56px; align-items:center; gap:10px;">
+                    <span style="font-size:12.5px; color:var(--muted);">Fixed-Alpha</span>
+                    <div class="bar-track"><div class="bar-fill" style="--d:1; width:88.8%; background:#C7C2B8;"></div></div>
+                    <span class="mono" style="font-size:13px; color:var(--muted); text-align:right;">9.77%</span>
+                  </div>
+                  <div style="display:grid; grid-template-columns:104px 1fr 56px; align-items:center; gap:10px;">
+                    <span style="font-size:12.5px; color:var(--muted);">Raw GNSS</span>
+                    <div class="bar-track"><div class="bar-fill" style="--d:2; width:37.7%; background:#9B968C;"></div></div>
+                    <span class="mono" style="font-size:13px; color:var(--body); text-align:right;">4.15%</span>
+                  </div>
+                  <div style="display:grid; grid-template-columns:104px 1fr 56px; align-items:center; gap:10px;">
+                    <span style="font-size:13px; font-weight:700; color:var(--sage-fg);">Aetron AEKF</span>
+                    <div class="bar-track"><div class="bar-fill" style="--d:3; width:12.2%; background:var(--sage-fg);"></div></div>
+                    <span class="mono" style="font-size:14px; font-weight:700; color:var(--sage-fg); text-align:right;">1.34%</span>
+                  </div>
+                </div>
+                <div class="mono" style="font-size:11px; color:var(--muted);">N = 2,694 mốc Leica RTK · Giảm 67.8% so với Raw</div>
+              </div>
+            </div>
+
+            <!-- Chart 2: SnapperGPS -->
+            <div class="bezel rv" style="--i:3">
+              <div class="bezel-core" style="display:flex; flex-direction:column; justify-content:space-between;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-weight:700; color:var(--ink);">SnapperGPS Cycling · RMSE (m)</span>
+                  <span class="tag t-sage">IGG-III #1</span>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:16px; padding:12px 0;">
+                  <div style="display:grid; grid-template-columns:96px 1fr 58px; align-items:center; gap:10px;">
+                    <span style="font-size:12.5px; color:var(--muted);">Raw GNSS</span>
+                    <div class="bar-track"><div class="bar-fill" style="--d:4; width:92%; background:#C7C2B8;"></div></div>
+                    <span class="mono" style="font-size:13px; color:var(--muted); text-align:right;">29.5 m</span>
+                  </div>
+                  <div style="display:grid; grid-template-columns:96px 1fr 58px; align-items:center; gap:10px;">
+                    <span style="font-size:12.5px; color:var(--muted);">Fixed-Alpha</span>
+                    <div class="bar-track"><div class="bar-fill" style="--d:5; width:60%; background:#9B968C;"></div></div>
+                    <span class="mono" style="font-size:13px; color:var(--body); text-align:right;">19.1 m</span>
+                  </div>
+                  <div style="display:grid; grid-template-columns:96px 1fr 58px; align-items:center; gap:10px;">
+                    <span style="font-size:13px; font-weight:700; color:var(--sage-fg);">IGG-III</span>
+                    <div class="bar-track"><div class="bar-fill" style="--d:6; width:46.4%; background:var(--sage-fg);"></div></div>
+                    <span class="mono" style="font-size:14px; font-weight:700; color:var(--sage-fg); text-align:right;">14.9 m</span>
+                  </div>
+                </div>
+                <div style="background:var(--rose-bg); border-radius:7px; padding:7px 10px; font-size:11.5px; color:var(--rose-fg); font-weight:600;">
+                  Kết quả âm: AEKF thuần lỗi 138 m (thiếu Doppler) → dùng IGG-III.
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="s-foot"><span>TẦNG 1 · TU WIEN &amp; OXFORD SNAPPERGPS 2</span><span>03 / 10</span></div>
+        </section>
+
+        <!-- SLIDE 4 · TẦNG 1 · STOP & AUTO-PAUSE -->
+        <section class="slide" data-title="Tầng 1 · Stop & Auto-Pause">
+          <div class="eyebrow rv" style="--i:0">02 · Tầng 1 · Stop Detection &amp; Auto-Pause</div>
+          <h2 class="h-slide rv" style="--i:1">Auto-Pause: Giảm <em style="color:var(--sage-fg); font-style:italic;">9.2×</em> dừng giả &amp; đạt <em style="color:var(--sage-fg); font-style:italic;">95.68%</em> F1</h2>
+
+          <div class="kv-strip rv" style="--i:1">
+            <div class="kv-chip"><strong>Thuật toán:</strong> T-DBSCAN (Ester 1996) · Zheng (2009) · 2-Mode IMM (Blom 1988)</div>
+            <div class="kv-chip"><strong>Cách đo họ:</strong> Nhật ký dừng/đi STAGA (122k full · 20k held-out) → F1 &amp; False Stops</div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; flex:1; margin-top:14px;">
+            <!-- Left: False Stops -->
+            <div class="bezel rv" style="--i:2">
+              <div class="bezel-core" style="display:flex; flex-direction:column; justify-content:space-between;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-weight:700; color:var(--ink);">Số lần dừng giả (STAGA 122k)</span>
+                  <span class="tag t-sage">98.97% Prec</span>
+                </div>
+                <div style="display:flex; align-items:baseline; gap:14px;">
+                  <span style="font-family:var(--serif); font-size:4.4rem; line-height:0.95; color:var(--sage-fg);">9.2×</span>
+                  <span style="font-size:0.95rem; font-weight:600; color:var(--ink);">ít dừng giả hơn Speed Gate</span>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                  <div>
+                    <div style="display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:4px;">
+                      <span style="color:var(--muted);">Speed Gate (v ≤ 0.8 m/s)</span>
+                      <span class="mono" style="color:var(--muted);">1,117</span>
+                    </div>
+                    <div class="bar-track"><div class="bar-fill" style="--d:1; width:100%; background:#C7C2B8;"></div></div>
+                  </div>
+                  <div>
+                    <div style="display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:4px;">
+                      <span style="font-weight:700; color:var(--sage-fg);">Aetron T-DBSCAN</span>
+                      <span class="mono" style="font-weight:700; color:var(--sage-fg);">122</span>
+                    </div>
+                    <div class="bar-track"><div class="bar-fill" style="--d:2; width:11%; background:var(--sage-fg);"></div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Real-time F1 -->
+            <div class="bezel rv" style="--i:3">
+              <div class="bezel-core" style="display:flex; flex-direction:column; justify-content:space-between;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-weight:700; color:var(--ink);">Real-time F1 (STAGA Held-Out 20k)</span>
+                  <span class="tag t-sage">+12.9% F1</span>
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:24px; align-items:end; height:220px; padding:14px 16px 0; border-bottom:1px solid var(--hairline);">
+                  <div style="display:flex; flex-direction:column; align-items:center; height:100%; justify-content:flex-end;">
+                    <span class="mono" style="font-size:13px; color:var(--muted); margin-bottom:6px;">82.81%</span>
+                    <div class="vbar-fill" style="--d:1; height:64%; background:#C7C2B8;"></div>
+                  </div>
+                  <div style="display:flex; flex-direction:column; align-items:center; height:100%; justify-content:flex-end;">
+                    <span class="mono" style="font-size:13px; font-weight:700; color:var(--sky-fg); margin-bottom:6px;">93.74%</span>
+                    <div class="vbar-fill" style="--d:2; height:84%; background:var(--sky-fg);"></div>
+                  </div>
+                  <div style="display:flex; flex-direction:column; align-items:center; height:100%; justify-content:flex-end;">
+                    <span class="mono" style="font-size:14px; font-weight:700; color:var(--sage-fg); margin-bottom:6px;">95.68%</span>
+                    <div class="vbar-fill" style="--d:3; height:93%; background:var(--sage-fg);"></div>
+                  </div>
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:24px; text-align:center; font-size:12.5px;">
+                  <span style="color:var(--muted);">Speed Gate</span>
+                  <span style="font-weight:700; color:var(--sky-fg);">Aetron IMM</span>
+                  <span style="font-weight:700; color:var(--sage-fg);">Causal Zheng</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="s-foot"><span>TẦNG 1 · STAGA DIARY · KHÔNG SO F1 VỚI RMSE</span><span>04 / 10</span></div>
+        </section>
+
+        <!-- SLIDE 5 · TẦNG 1 · IOD -->
+        <section class="slide" data-title="Tầng 1 · Indoor/Outdoor (IOD)">
+          <div class="eyebrow rv" style="--i:0">02 · Tầng 1 · Indoor / Outdoor Detection (IOD)</div>
+          <h2 class="h-slide rv" style="--i:1">IOD Macro-F1: Vượt baseline cả Android &amp; iOS Light-Free</h2>
+
+          <div class="kv-strip rv" style="--i:1; justify-content:space-between; align-items:center;">
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <div class="kv-chip"><strong>Thách thức:</strong> iOS chặn Light &amp; C/N0 → CAP-ALSTM + SHAP (Bakirtzis 2022) + HMM</div>
+              <div class="kv-chip"><strong>Cách đo:</strong> CIOD 201k (chia theo phiên) · HAR-PMD</div>
+            </div>
+            <div class="mono" style="display:flex; gap:12px; font-size:11px;">
+              <span><i style="display:inline-block;width:10px;height:10px;background:#C7C2B8;border-radius:2px;margin-right:5px;"></i>Bài báo</span>
+              <span><i style="display:inline-block;width:10px;height:10px;background:var(--sage-fg);border-radius:2px;margin-right:5px;"></i>Aetron</span>
+              <span><i style="display:inline-block;width:10px;height:10px;background:var(--rose-fg);border-radius:2px;margin-right:5px;"></i>Âm</span>
+            </div>
+          </div>
+
+          <div class="bezel rv" style="--i:2; flex:1; margin-top:14px;">
+            <div class="bezel-core" style="display:grid; grid-template-columns:1fr 1fr 1fr 0.85fr; gap:26px; align-items:stretch;">
+              <div style="display:flex; flex-direction:column; justify-content:flex-end;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:end; height:255px; border-bottom:1px solid var(--hairline); padding:0 10px;">
+                  <div style="display:flex; flex-direction:column; align-items:center; height:100%; justify-content:flex-end;">
+                    <span class="mono" style="font-size:12px; color:var(--muted); margin-bottom:5px;">~95%</span>
+                    <div class="vbar-fill" style="--d:1; height:95%; background:#C7C2B8;"></div>
+                  </div>
+                  <div style="display:flex; flex-direction:column; align-items:center; height:100%; justify-content:flex-end;">
+                    <span class="mono" style="font-size:12.5px; font-weight:700; color:var(--sky-fg); margin-bottom:5px;">93.87%</span>
+                    <div class="vbar-fill" style="--d:2; height:93.8%; background:var(--sky-fg);"></div>
+                  </div>
+                </div>
+                <div style="text-align:center; margin-top:10px;">
+                  <div style="font-size:13px; font-weight:700; color:var(--ink);">CIOD 7-ch</div>
+                  <span class="tag t-sky" style="margin-top:5px;">Ngang bài báo</span>
+                </div>
+              </div>
+
+              <div style="display:flex; flex-direction:column; justify-content:flex-end;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:end; height:255px; border-bottom:1px solid var(--hairline); padding:0 10px;">
+                  <div style="display:flex; flex-direction:column; align-items:center; height:100%; justify-content:flex-end;">
+                    <span class="mono" style="font-size:12px; color:var(--muted); margin-bottom:5px;">69.59%</span>
+                    <div class="vbar-fill" style="--d:3; height:69.6%; background:#C7C2B8;"></div>
+                  </div>
+                  <div style="display:flex; flex-direction:column; align-items:center; height:100%; justify-content:flex-end;">
+                    <span class="mono" style="font-size:12.5px; font-weight:700; color:var(--sage-fg); margin-bottom:5px;">78.63%</span>
+                    <div class="vbar-fill" style="--d:4; height:78.6%; background:var(--sage-fg);"></div>
+                  </div>
+                </div>
+                <div style="text-align:center; margin-top:10px;">
+                  <div style="font-size:13px; font-weight:700; color:var(--ink);">Android 4-ch</div>
+                  <span class="tag t-sage" style="margin-top:5px;">Vượt +9.04</span>
+                </div>
+              </div>
+
+              <div style="display:flex; flex-direction:column; justify-content:flex-end;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:end; height:255px; border-bottom:1px solid var(--hairline); padding:0 10px;">
+                  <div style="display:flex; flex-direction:column; align-items:center; height:100%; justify-content:flex-end;">
+                    <span class="mono" style="font-size:12px; color:var(--muted); margin-bottom:5px;">70.67%</span>
+                    <div class="vbar-fill" style="--d:5; height:70.7%; background:#C7C2B8;"></div>
+                  </div>
+                  <div style="display:flex; flex-direction:column; align-items:center; height:100%; justify-content:flex-end;">
+                    <span class="mono" style="font-size:12.5px; font-weight:700; color:var(--sage-fg); margin-bottom:5px;">75.54%</span>
+                    <div class="vbar-fill" style="--d:6; height:75.5%; background:var(--sage-fg);"></div>
+                  </div>
+                </div>
+                <div style="text-align:center; margin-top:10px;">
+                  <div style="font-size:13px; font-weight:700; color:var(--ink);">iOS 3-ch (Light-Free)</div>
+                  <span class="tag t-sage" style="margin-top:5px;">Vượt +4.87</span>
+                </div>
+              </div>
+
+              <div style="display:flex; flex-direction:column; justify-content:flex-end; border-left:1px dashed var(--hairline); padding-left:20px;">
+                <div style="display:flex; justify-content:center; align-items:end; height:255px; border-bottom:1px solid var(--hairline); padding:0 16px;">
+                  <div style="display:flex; flex-direction:column; align-items:center; width:58%; height:100%; justify-content:flex-end;">
+                    <span class="mono" style="font-size:12px; font-weight:700; color:var(--rose-fg); margin-bottom:5px;">35–42%</span>
+                    <div class="vbar-fill" style="--d:7; height:39%; background:var(--rose-fg);"></div>
+                  </div>
+                </div>
+                <div style="text-align:center; margin-top:10px;">
+                  <div style="font-size:13px; font-weight:700; color:var(--ink);">HAR-PMD</div>
+                  <span class="tag t-rose" style="margin-top:5px;">Shift 46× Acc</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="s-foot"><span>TẦNG 1 · CAMBRIDGE CIOD (201,731) · DART–PYTHON PARITY ≤ 1E-5</span><span>05 / 10</span></div>
+        </section>
+
+        <!-- SLIDE 6 · TẦNG 1 · INDOOR PDR -->
+        <section class="slide" data-title="Tầng 1 · Indoor PDR & Calo">
+          <div class="eyebrow rv" style="--i:0">02 · Tầng 1 · Indoor PDR &amp; Calorimetry</div>
+          <h2 class="h-slide rv" style="--i:1">Đếm bước ngang bài báo, Stride vượt công thức tĩnh.</h2>
+
+          <div class="kv-strip rv" style="--i:1">
+            <div class="kv-chip"><strong>Thuật toán:</strong> Oxford (2018) · Xu (2022) · MV-GLRT (2010) · Renaudin (2012) · Compendium 2024</div>
+            <div class="kv-chip"><strong>Cách đo:</strong> Video 60 fps &amp; Thảm lực LOSO</div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; flex:1; margin-top:14px;">
+            <div class="bezel rv" style="--i:2">
+              <div class="bezel-core" style="display:flex; flex-direction:column; justify-content:space-between;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-weight:700; color:var(--ink);">Step Accuracy (%)</span>
+                  <span class="tag t-sky">Ngang bài báo</span>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:18px;">
+                  <div>
+                    <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:5px;">
+                      <strong>Oxford Walk</strong>
+                      <span class="mono"><span style="color:var(--muted);">93.36%</span> · <strong style="color:var(--sky-fg);">93.16%</strong></span>
+                    </div>
+                    <div class="bar-track"><div class="bar-fill" style="--d:1; width:93.16%; background:var(--sky-fg);"></div></div>
+                  </div>
+                  <div>
+                    <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:5px;">
+                      <strong>Xu Run (1,279/1,280)</strong>
+                      <span class="mono"><span style="color:var(--muted);">98.94%</span> · <strong style="color:var(--sky-fg);">98.69%</strong></span>
+                    </div>
+                    <div class="bar-track"><div class="bar-fill" style="--d:2; width:98.69%; background:var(--sky-fg);"></div></div>
+                  </div>
+                </div>
+                <div class="rule-top" style="display:flex; justify-content:space-between; font-size:12.5px;">
+                  <span>MV-GLRT chống bước giả</span>
+                  <strong class="mono" style="color:var(--sage-fg);">0 / 20 xung giả (100%)</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="bezel rv" style="--i:3">
+              <div class="bezel-core" style="display:flex; flex-direction:column; justify-content:space-between;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-weight:700; color:var(--ink);">Stride MAPE (%) · LOSO</span>
+                  <span class="tag t-sage">Vượt tĩnh cũ</span>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:18px;">
+                  <div>
+                    <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:5px;">
+                      <strong>Walk (SLEDataset2)</strong>
+                      <span class="mono"><span style="color:var(--muted);">12.99%</span> → <strong style="color:var(--sage-fg);">12.01%</strong></span>
+                    </div>
+                    <div class="bar-track"><div class="bar-fill" style="--d:3; width:60%; background:var(--sage-fg);"></div></div>
+                  </div>
+                  <div>
+                    <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:5px;">
+                      <strong>Run (Fukuchi RBDS)</strong>
+                      <span class="mono"><span style="color:var(--muted);">17.30%</span> → <strong style="color:var(--sage-fg);">15.29%</strong></span>
+                    </div>
+                    <div class="bar-track"><div class="bar-fill" style="--d:4; width:76%; background:var(--sage-fg);"></div></div>
+                  </div>
+                </div>
+                <div class="rule-top" style="display:flex; justify-content:space-between; font-size:12.5px;">
+                  <span>Calo · 2024 Compendium</span>
+                  <strong class="mono" style="color:var(--sage-fg);">100% Parity Client–Server</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="s-foot"><span>TẦNG 1 · OXFORD · XU · SLEDATASET2 · RBDS · COMPENDIUM</span><span>06 / 10</span></div>
+        </section>
+
+        <!-- SLIDE 7 · TIER 1 BENTO SCORECARD -->
+        <section class="slide" data-title="Tổng kết Tầng 1">
+          <div class="eyebrow rv" style="--i:0">02 · Tổng kết Tầng 1</div>
+          <h2 class="h-slide rv" style="--i:1">Scorecard Tầng 1 trên 8 bộ dữ liệu công khai</h2>
+
+          <div style="display:grid; grid-template-columns:1.3fr 1fr 1fr; grid-template-rows:1fr 1fr; gap:14px; flex:1; margin-top:14px;">
+            <div class="bezel rv" style="--i:1; grid-row:span 2;">
+              <div class="bezel-core" style="display:flex; flex-direction:column; justify-content:space-between; background:var(--espresso); color:#FAF8F4;">
+                <span class="tag t-dark" style="align-self:flex-start;">Outdoor GNSS · Vượt hơn</span>
+                <div>
+                  <div style="font-family:var(--serif); font-size:5rem; line-height:0.92; color:#FAF8F4;">1.34%</div>
+                  <div style="font-size:1rem; color:#C8C2B8; margin-top:12px;">TU Wien RTK · Đạt chuẩn <strong>Good (&lt; 5%)</strong></div>
+                </div>
+                <div class="mono" style="border-top:1px solid var(--hairline-dark); padding-top:12px; font-size:11.5px; color:#A8A298;">
+                  Cycling: IGG-III #1 (14.86 m RMSE)
+                </div>
+              </div>
+            </div>
+
+            <div class="bezel rv" style="--i:2">
+              <div class="bezel-core" style="display:flex; flex-direction:column; justify-content:space-between;">
+                <div style="display:flex; justify-content:space-between;"><strong style="font-size:13px;">Stop / Auto-Pause</strong><span class="tag t-sage">Vượt hơn</span></div>
+                <div style="font-family:var(--serif); font-size:3.2rem; line-height:1; color:var(--sage-fg);">95.68%</div>
+                <div class="mono" style="font-size:11px; color:var(--muted);">Causal Zheng F1 · T-DBSCAN -9.2× giả</div>
+              </div>
+            </div>
+
+            <div class="bezel rv" style="--i:3">
+              <div class="bezel-core" style="display:flex; flex-direction:column; justify-content:space-between;">
+                <div style="display:flex; justify-content:space-between;"><strong style="font-size:13px;">Indoor / Outdoor</strong><span class="tag t-sage">Vượt hơn</span></div>
+                <div style="font-family:var(--serif); font-size:3.2rem; line-height:1; color:var(--sage-fg);">+9.04</div>
+                <div class="mono" style="font-size:11px; color:var(--muted);">Android MF1 · iOS +4.87 · 7-ch 93.87%</div>
+              </div>
+            </div>
+
+            <div class="bezel rv" style="--i:4">
+              <div class="bezel-core" style="display:flex; flex-direction:column; justify-content:space-between;">
+                <div style="display:flex; justify-content:space-between;"><strong style="font-size:13px;">Indoor PDR &amp; MET</strong><span class="tag t-sky">Ngang &amp; Vượt</span></div>
+                <div style="font-family:var(--serif); font-size:3.2rem; line-height:1; color:var(--sky-fg);">98.69%</div>
+                <div class="mono" style="font-size:11px; color:var(--muted);">Run Step · Walk 93.16% · 100% MET</div>
+              </div>
+            </div>
+
+            <div class="bezel rv" style="--i:5">
+              <div class="bezel-core" style="background:var(--rose-bg); display:flex; flex-direction:column; justify-content:space-between;">
+                <span class="tag t-rose" style="align-self:flex-start; background:rgba(153,38,38,0.12);">2 Kết quả âm minh bạch</span>
+                <div style="font-size:12px; color:var(--ink); line-height:1.5;">
+                  <strong>1)</strong> SnapperGPS AEKF: 138 m<br>
+                  <strong>2)</strong> HAR-PMD IOD: 35–42% (46× Acc)
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="s-foot"><span>TẦNG 1 · ĐÃ CHỐT SỐ LIỆU KHOA HỌC</span><span>07 / 10</span></div>
+        </section>
+
+        <!-- SLIDE 8 · TIER 2 OF SOURCE PAPERS -->
+        <section class="slide" data-title="Tầng 2 của Bài báo">
+          <div class="eyebrow rv" style="--i:0">03 · Benchmark Tầng 2 của Bài báo</div>
+          <h2 class="h-slide rv" style="--i:1">4 Giao thức Đo Thực địa chuẩn ngoài phòng Lab</h2>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px 40px; flex:1; align-content:center;">
+            <div class="rv rule-top" style="--i:1; display:flex; gap:18px; align-items:flex-start;">
+              <div style="font-family:var(--serif); font-size:3rem; line-height:0.9; color:var(--muted); opacity:0.45;">01</div>
+              <div>
+                <div style="font-size:1.1rem; font-weight:700; color:var(--ink);">Sân điền kinh 400 m</div>
+                <div class="mono" style="font-size:11px; color:var(--sky-fg); margin:3px 0 6px;">Scott (2016) · Gilgen-Ammann (2020)</div>
+                <div style="font-size:0.88rem;">Chạy lặp làn 1 → <strong>MAPE &lt; 5% (Good)</strong> &amp; Bland-Altman 95%.</div>
+              </div>
+            </div>
+
+            <div class="rv rule-top" style="--i:2; display:flex; gap:18px; align-items:flex-start;">
+              <div style="font-family:var(--serif); font-size:3rem; line-height:0.9; color:var(--muted); opacity:0.45;">02</div>
+              <div>
+                <div style="font-size:1.1rem; font-weight:700; color:var(--ink);">Dừng đèn đỏ bấm giờ</div>
+                <div class="mono" style="font-size:11px; color:var(--sky-fg); margin:3px 0 6px;">Zheng (2009) · Spang (2022)</div>
+                <div style="font-size:0.88rem;">Ghi mốc dừng 30 s → đếm <strong>False Stops</strong> &amp; độ trễ Auto-Pause.</div>
+              </div>
+            </div>
+
+            <div class="rv rule-top" style="--i:3; display:flex; gap:18px; align-items:flex-start;">
+              <div style="font-family:var(--serif); font-size:3rem; line-height:0.9; color:var(--muted); opacity:0.45;">03</div>
+              <div>
+                <div style="font-size:1.1rem; font-weight:700; color:var(--ink);">Đoạn thẳng 100 m &amp; 60 s</div>
+                <div class="mono" style="font-size:11px; color:var(--sky-fg); margin:3px 0 6px;">Salvi (2018) · Renaudin (2012)</div>
+                <div style="font-size:0.88rem;">Đi &amp; chạy 100 m đếm bước thật + 60 s lắc máy (<strong>0 bước giả</strong>).</div>
+              </div>
+            </div>
+
+            <div class="rv rule-top" style="--i:4; display:flex; gap:18px; align-items:flex-start;">
+              <div style="font-family:var(--serif); font-size:3rem; line-height:0.9; color:var(--muted); opacity:0.45;">04</div>
+              <div>
+                <div style="font-size:1.1rem; font-weight:700; color:var(--ink);">Bước qua cửa IOD</div>
+                <div class="mono" style="font-size:11px; color:var(--sky-fg); margin:3px 0 6px;">Zhu (2019) · Yoo (2025)</div>
+                <div style="font-size:0.88rem;">Bấm mốc qua cửa Nhà ↔ Ngoài trời → <strong>Macro-F1</strong> &amp; trễ <strong>3–5 s</strong>.</div>
+              </div>
+            </div>
+          </div>
+          <div class="s-foot"><span>TẦNG 2 · CHUẨN THỰC ĐỊA CỦA BÀI BÁO GỐC</span><span>08 / 10</span></div>
+        </section>
+
+        <!-- SLIDE 9 · TIER 2 OF AETRON -->
+        <section class="slide" data-title="Tầng 2 của Aetron (Đang đo)">
+          <div class="eyebrow rv" style="--i:0">04 · Benchmark Tầng 2 của Aetron</div>
+          <h2 class="h-slide rv" style="--i:1">Tiến độ tự đo thực địa trên App Aetron</h2>
+
+          <div style="display:flex; flex-direction:column; gap:12px; flex:1; justify-content:center;">
+            <div class="bezel rv" style="--i:1">
+              <div class="bezel-core" style="display:grid; grid-template-columns:96px 1.4fr 1fr auto; align-items:center; gap:16px; padding:18px 22px;">
+                <span class="mono" style="font-size:12px; font-weight:700; color:var(--ink);">TEST A</span>
+                <div><strong style="font-size:1rem; color:var(--ink);">GPS Sân 400 m &amp; Dừng 30 s</strong><div class="mono" style="font-size:11px; color:var(--muted); margin-top:2px;">3–5 buổi × 2.0 km · field-gps / track-suite</div></div>
+                <div class="mono" style="font-size:12px; color:var(--body);">MAPE &lt; 5% · 0 dừng giả</div>
+                <span class="tag t-ochre"><span class="dot-wip"></span>Đang đo</span>
+              </div>
+            </div>
+
+            <div class="bezel rv" style="--i:2">
+              <div class="bezel-core" style="display:grid; grid-template-columns:96px 1.4fr 1fr auto; align-items:center; gap:16px; padding:18px 22px;">
+                <span class="mono" style="font-size:12px; font-weight:700; color:var(--ink);">TEST B</span>
+                <div><strong style="font-size:1rem; color:var(--ink);">Đoạn 100 m &amp; 60 s MV-GLRT</strong><div class="mono" style="font-size:11px; color:var(--muted); margin-top:2px;">Walk + Run 100 m trên iPhone · field-gait</div></div>
+                <div class="mono" style="font-size:12px; color:var(--body);">Step &lt; 5% · 0 bước giả</div>
+                <span class="tag t-ochre"><span class="dot-wip"></span>Đang đo</span>
+              </div>
+            </div>
+
+            <div class="bezel rv" style="--i:3">
+              <div class="bezel-core" style="display:grid; grid-template-columns:96px 1.4fr 1fr auto; align-items:center; gap:16px; padding:18px 22px;">
+                <span class="mono" style="font-size:12px; font-weight:700; color:var(--ink);">TEST C</span>
+                <div><strong style="font-size:1rem; color:var(--ink);">Qua cửa Indoor ↔ Outdoor</strong><div class="mono" style="font-size:11px; color:var(--muted); margin-top:2px;">3–5 lượt bấm Ground Truth trên iPhone · field-iod</div></div>
+                <div class="mono" style="font-size:12px; color:var(--body);">F1 &gt; 75% · trễ 3–5 s</div>
+                <span class="tag t-ochre"><span class="dot-wip"></span>Đang đo</span>
+              </div>
+            </div>
+
+            <div class="rv" style="--i:4; background:var(--sage-bg); border-radius:10px; padding:14px 22px; display:flex; justify-content:space-between; align-items:center;">
+              <strong style="font-size:0.88rem; color:var(--sage-fg);">Code nhánh <code>main</code> &amp; script chấm điểm xuất LaTeX đã sẵn sàng 100%.</strong>
+              <span class="tag" style="background:var(--sage-fg); color:#FAF8F4;">Ready</span>
+            </div>
+          </div>
+          <div class="s-foot"><span>TẦNG 2 · ĐANG RECORD THỰC ĐỊA</span><span>09 / 10</span></div>
+        </section>
+
+        <!-- SLIDE 10 · CLOSING -->
+        <section class="slide dark" data-title="Tổng kết & Q&A">
+          <div class="eyebrow rv" style="--i:0">Tổng kết &amp; Q&amp;A</div>
+          <div style="display:grid; grid-template-columns:1.35fr 1fr; gap:36px; flex:1; align-items:center;">
+            <div>
+              <h1 class="h-hero rv" style="--i:1;">Cảm ơn Thầy/Cô<br><em style="font-style:italic; color:#B7D5E8;">đã lắng nghe.</em></h1>
+            </div>
+            <div class="rv" style="--i:2; display:flex; flex-direction:column; gap:18px; border-left:1px solid var(--hairline-dark); padding-left:30px;">
+              <div>
+                <div class="mono" style="font-size:10.5px; color:#9C958B;">01 · HƯỚNG NGHIÊN CỨU</div>
+                <div style="font-size:0.96rem; margin-top:4px; font-weight:600;">Seamless Indoor–Outdoor Navigation (GNSS + IOD + PDR)</div>
+              </div>
+              <div style="border-top:1px solid var(--hairline-dark); padding-top:14px;">
+                <div class="mono" style="font-size:10.5px; color:#9C958B;">02 · TẦNG 1 (XONG)</div>
+                <div style="font-size:0.96rem; margin-top:4px; font-weight:600;">Ngang &amp; vượt bài báo trên 8 tập dữ liệu công khai</div>
+              </div>
+              <div style="border-top:1px solid var(--hairline-dark); padding-top:14px;">
+                <div class="mono" style="font-size:10.5px; color:#9C958B;">03 · TẦNG 2 (ĐANG ĐO)</div>
+                <div style="font-size:0.96rem; margin-top:4px; font-weight:600;">Record Test A, B, C trên iPhone để chốt Chương 4</div>
+              </div>
+            </div>
+          </div>
+          <div class="s-foot"><span>NGUYEN DUC BAO (ITITIU22238) · HCM-IU</span><span>10 / 10</span></div>
+        </section>
+
+      </div>
     </div>
   </div>
 
-  <div class="stage-wrap">
-    <div class="deck">
-
-      <!-- SLIDE 1 -->
-      <section class="slide dark active" data-title="Cover">
-        <div><span class="badge b-dark">Literature Review &amp; 2-Tier Benchmark Audit</span></div>
-        <h1>Aetron: Mobile Fitness Tracking<br>for Indoor and Outdoor Activities</h1>
-        <p class="subtitle">
-          Hướng nghiên cứu lớn: <strong>Smartphone-Based Seamless Indoor–Outdoor Navigation</strong><br>
-          (Multisensor Integrated Positioning: GNSS + IOD + PDR)
-        </p>
-        <div class="grid-3" style="margin-top: 32px;">
-          <div class="card">
-            <h3>Tầng 1 (Khoa học)</h3>
-            <p style="font-size:0.82rem; line-height:1.45;">8 Public Datasets · <strong>Đã hoàn tất</strong><br>So sánh trực tiếp với bài báo gốc</p>
-          </div>
-          <div class="card">
-            <h3>Tầng 2 (Thực địa)</h3>
-            <p style="font-size:0.82rem; line-height:1.45;">Field Protocol chuẩn bài báo<br><strong>Đang đo</strong> trên app Aetron</p>
-          </div>
-          <div class="card">
-            <h3>Phạm vi rõ ràng</h3>
-            <p style="font-size:0.82rem; line-height:1.45;">GNSS + IOD + PDR + Compendium<br>Không làm HAR (Future Work)</p>
-          </div>
-        </div>
-        <div class="footer">
-          <span>Nguyen Duc Bao (ITITIU22238) · Supervisor: Assoc. Prof. Vo Thi Luu Phuong · HCM-IU</span>
-          <span>11/2026</span>
-        </div>
-      </section>
-
-      <!-- SLIDE 2 -->
-      <section class="slide" data-title="Hướng nghiên cứu & 2 Tầng">
-        <div class="eyebrow">1. Tổng quan</div>
-        <h2>Hướng Nghiên cứu Lớn &amp; Khung Đánh giá 2 Tầng</h2>
-        <div class="grid-2" style="flex:1;">
-          <div class="card">
-            <span class="badge b-blue">Hướng nghiên cứu chính thống (có Reference)</span>
-            <h3 style="font-size:1.05rem; color:var(--ink);">Smartphone-based Seamless Indoor–Outdoor Navigation (Multisensor Integrated Positioning)</h3>
-            <div class="ref-line">Groves (2013), Harle (2013), Fériol et al. (2020), Bai et al. (2022), Yoo (2025)</div>
-            <ul>
-              <li><strong>Ngoài trời (GNSS):</strong> Lọc nhiễu multipath &amp; phát hiện dừng (4-State AEKF, IGG-III, T-DBSCAN).</li>
-              <li><strong>Trong nhà (PDR):</strong> Đếm bước, loại bước giả &amp; độ dài bước (Oxford WPD, Xu, MV-GLRT, Renaudin).</li>
-              <li><strong>Cầu nối chuyển cảnh (IOD):</strong> Phân biệt Trong nhà / Ngoài trời trên Android &amp; iOS (CAP-ALSTM + SHAP, MagIO, Causal HMM).</li>
-              <li><strong>Không làm HAR:</strong> Người dùng tự chọn môn tập (Walk/Run/Cycle) → HAR đưa vào Future Work.</li>
-            </ul>
-          </div>
-          <div style="display:flex; flex-direction:column; gap:14px;">
-            <div class="card" style="border-color:var(--grn-fg); flex:1;">
-              <span class="badge b-grn">Tầng 1: Benchmark Khoa học · ĐÃ XONG</span>
-              <h3>Chạy offline trên 8 bộ dữ liệu công khai</h3>
-              <ul>
-                <li>Dùng đúng Ground Truth cấp phòng lab của bài báo (RTK 1–2 cm, thảm lực Vicon, video, CIOD, STAGA).</li>
-                <li>Chạy trực tiếp code Aetron để so sánh: <strong>Ngang bằng / Vượt hơn / Minh bạch kết quả âm</strong>.</li>
-              </ul>
-            </div>
-            <div class="card" style="border-color:var(--amb-fg); flex:1;">
-              <span class="badge b-amb">Tầng 2: Benchmark Thực địa · ĐANG ĐO</span>
-              <h3>Tự record ngoài đời bằng app Aetron</h3>
-              <ul>
-                <li>Không có trạm RTK / Vicon → áp dụng đúng giao thức thực địa của bài báo thể thao (sân 400 m, đoạn 100 m, qua cửa).</li>
-                <li>Chứng minh hệ thống chạy ổn định end-to-end trên điện thoại thật.</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-        <div class="footer"><span>Aetron · Literature Review &amp; 2-Tier Benchmark Audit</span><span>2 / 10</span></div>
-      </section>
-
-      <!-- SLIDE 3 -->
-      <section class="slide" data-title="Tầng 1 · Outdoor GNSS">
-        <div class="eyebrow">2. Tầng 1 · Trụ cột 1 — Outdoor GNSS</div>
-        <h2>Lọc Quỹ đạo GNSS: Bài báo nói gì &amp; Aetron so với họ</h2>
-        <div class="grid-2">
-          <div class="card">
-            <h3>Bài báo giải quyết vấn đề gì?</h3>
-            <ul>
-              <li>GPS điện thoại bị nhiễu phản xạ đô thị (3–50 m) gây nhảy vị trí và phồng quãng đường.</li>
-              <li>Thay Fixed-Alpha cũ bằng <strong>4-State EKF + cổng NIS χ²</strong> (Groves 2013) và mở rộng cổng bền vững <strong>IGG-III</strong> (Yang 2001) / <strong>IAE</strong> (Mohamed–Schwarz 1999).</li>
-            </ul>
-          </div>
-          <div class="card">
-            <h3>Cách bài báo đo Benchmark Tầng 1</h3>
-            <ul>
-              <li>Gắn điện thoại chung máy thu <strong>RTK 1–2 cm</strong> (TU Wien Leica RTK, Oxford SnapperGPS u-blox RTK).</li>
-              <li>Khớp giây UTC trên <em>Common Epoch Mask</em> → đo RMSE (m) &amp; sai số quãng đường (%) (Scott 2016: <strong>&lt; 5% = Good</strong>).</li>
-            </ul>
-          </div>
-        </div>
-        <table>
-          <thead>
-            <tr><th>Bộ dữ liệu (RTK)</th><th>Baseline / Bài báo gốc</th><th>Kết quả chạy trên Aetron</th><th>So sánh</th></tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>TU Wien Walk (2,694 RTK)</td>
-              <td>Raw: 2.11 m RMSE, 4.15% Dist<br>Fixed-Alpha cũ: 8.75 m RMSE, 9.77% Dist</td>
-              <td>P01+P02 AEKF: <strong>3.43 m RMSE, 1.34% Dist Err</strong> (Good &lt; 5%)</td>
-              <td class="v-win">VƯỢT HƠN (-67.8% sai số)</td>
-            </tr>
-            <tr>
-              <td>TU Wien Pixel 9a (1,346 RTK)</td>
-              <td>AEKF-NIS: 2.285 m RMSE (0.36% Dist)</td>
-              <td>IGG-III: <strong>1.881 m</strong> · IGG-III+IAE: <strong>1.859 m RMSE</strong></td>
-              <td class="v-win">VƯỢT HƠN (RMSE)</td>
-            </tr>
-            <tr>
-              <td>SnapperGPS Cycling (nhiễu nặng)</td>
-              <td>Raw Median 14.5 m, 360.34% Dist<br>Fixed-Alpha: 19.13 m RMSE</td>
-              <td>IGG-III (#1): <strong>14.86 m RMSE, 43.2% Dist</strong><br>AEKF thuần: 138.2 m RMSE (thất bại)</td>
-              <td class="v-win">VƯỢT (IGG-III) / ÂM MINH BẠCH (AEKF)</td>
-            </tr>
-          </tbody>
-        </table>
-        <div class="footer"><span>Aetron · Literature Review &amp; 2-Tier Benchmark Audit</span><span>3 / 10</span></div>
-      </section>
-
-      <!-- SLIDE 4 -->
-      <section class="slide" data-title="Tầng 1 · Stop Detection">
-        <div class="eyebrow">2. Tầng 1 · Trụ cột 2 — Stop Detection</div>
-        <h2>Phát hiện Dừng &amp; Auto-Pause: Bài báo vs Aetron</h2>
-        <div class="grid-2">
-          <div class="card">
-            <h3>Bài báo giải quyết vấn đề gì?</h3>
-            <ul>
-              <li>Khi đứng đèn đỏ, GPS vẫn trôi 2–5 m/giây khiến app cộng sai quãng đường và không tự tạm dừng.</li>
-              <li>Văn liệu dùng <strong>T-DBSCAN</strong> (Ester 1996), <strong>Zheng Stay-Point</strong> (2009), và <strong>2-Mode IMM</strong> (Blom &amp; Bar-Shalom 1988).</li>
-            </ul>
-          </div>
-          <div class="card">
-            <h3>Cách bài báo đo Benchmark Tầng 1</h3>
-            <ul>
-              <li>Dữ liệu GPS kèm nhật ký dừng/đi (<strong>STAGA</strong>: 122,808 mẫu; tách 20k Val / 20k Held-Out).</li>
-              <li>Chấm Precision, Recall, F1 và đặc biệt là <strong>số lần dừng giả (False Stops)</strong> khi đi chậm.</li>
-            </ul>
-          </div>
-        </div>
-        <table>
-          <thead>
-            <tr><th>Kịch bản / Tập test</th><th>Baseline / Bài báo gốc</th><th>Kết quả chạy trên Aetron</th><th>So sánh</th></tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>STAGA Full (122,808, hậu xử lý)</td>
-              <td>Speed Gate (v ≤ 0.8 m/s): 96.44% Prec · 1,117 dừng giả</td>
-              <td>Aetron T-DBSCAN (ε = 6.5 m): <strong>98.97% Prec · chỉ 122 dừng giả</strong></td>
-              <td class="v-win">VƯỢT HƠN (ít hơn 9.2× giả)</td>
-            </tr>
-            <tr>
-              <td>STAGA Held-Out (20k, real-time)</td>
-              <td>Speed Gate Baseline: 82.81% F1</td>
-              <td>Causal Zheng Stay-Point (SDD-01): <strong>95.68% F1</strong> (0.23 false/h)</td>
-              <td class="v-win">VƯỢT HƠN (+12.87% F1)</td>
-            </tr>
-            <tr>
-              <td>STAGA Held-Out (20k, real-time)</td>
-              <td>Speed Gate Baseline: 82.81% F1</td>
-              <td>2-Mode IMM Detector (SDD-01): <strong>93.74% F1</strong></td>
-              <td class="v-win">VƯỢT HƠN (+10.93% F1)</td>
-            </tr>
-          </tbody>
-        </table>
-        <div class="footer"><span>Aetron · Literature Review &amp; 2-Tier Benchmark Audit</span><span>4 / 10</span></div>
-      </section>
-
-      <!-- SLIDE 5 -->
-      <section class="slide" data-title="Tầng 1 · Indoor/Outdoor (IOD)">
-        <div class="eyebrow">2. Tầng 1 · Trụ cột 3 — Indoor/Outdoor Detection (IOD)</div>
-        <h2>Nhận diện Trong nhà / Ngoài trời: Bài báo vs Aetron</h2>
-        <div class="grid-2">
-          <div class="card">
-            <h3>Bài báo giải quyết vấn đề gì?</h3>
-            <ul>
-              <li>Tự động biết người dùng đang ở trong nhà hay ngoài trời để chuyển mạch GNSS ↔ PDR.</li>
-              <li>iOS chặn Light, cellular RSRP/RSRQ và raw C/N0 → cần mô hình nhẹ &amp; Light-Free (<strong>CAP-ALSTM + SHAP</strong>, <strong>MagIO</strong>, <strong>Causal HMM</strong>).</li>
-            </ul>
-          </div>
-          <div class="card">
-            <h3>Cách bài báo đo Benchmark Tầng 1</h3>
-            <ul>
-              <li><strong>Cambridge CIOD</strong> (201,731 mẫu held-out, bắt buộc <em>session-disjoint</em> để không rò rỉ) + <strong>HAR-PMD</strong> (test domain shift).</li>
-              <li>Chỉ số chính: Accuracy và <strong>Macro-F1</strong> (tránh lệch lớp 59% Indoor).</li>
-            </ul>
-          </div>
-        </div>
-        <table>
-          <thead>
-            <tr><th>Cấu hình &amp; Tập test</th><th>Bài báo / Baseline gốc</th><th>Kết quả Aetron (Dart parity ≤ 1e-5)</th><th>So sánh</th></tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>CIOD 7-ch (no sound)</td>
-              <td>DeepIOD / Bakirtzis (2022): &gt;95% in-domain</td>
-              <td>CAP-ALSTM + Exact Shapley: <strong>94.07% Acc · 93.87% MF1</strong></td>
-              <td class="v-eq">NGANG BẰNG</td>
-            </tr>
-            <tr>
-              <td>CIOD 4-ch Android</td>
-              <td>DeepIOD C-Mobile: 73.64% Acc · 69.59% MF1</td>
-              <td>Aetron CAP-ALSTM 4-ch: <strong>78.82% Acc · 78.63% MF1</strong></td>
-              <td class="v-win">VƯỢT HƠN (+9.04 MF1)</td>
-            </tr>
-            <tr>
-              <td>CIOD 3-ch iOS (Light-Free)</td>
-              <td>MagIO GNB+HMM (2018): 73.38% Acc · 70.67% MF1</td>
-              <td>Aetron CAP-ALSTM 3-ch: <strong>76.14% Acc · 75.54% MF1</strong></td>
-              <td class="v-win">VƯỢT HƠN (+4.87 MF1)</td>
-            </tr>
-            <tr>
-              <td>HAR-PMD Cross-Domain</td>
-              <td>Không fine-tune lại trên máy mới</td>
-              <td>35.3%–42.5% MF1 (lệch thang đo gia tốc 46×)</td>
-              <td class="v-neg">KẾT QUẢ ÂM MINH BẠCH</td>
-            </tr>
-          </tbody>
-        </table>
-        <div class="footer"><span>Aetron · Literature Review &amp; 2-Tier Benchmark Audit</span><span>5 / 10</span></div>
-      </section>
-
-      <!-- SLIDE 6 -->
-      <section class="slide" data-title="Tầng 1 · Indoor PDR">
-        <div class="eyebrow">2. Tầng 1 · Trụ cột 4 — Indoor PDR &amp; Calorimetry</div>
-        <h2>Đếm bước, Độ dài bước &amp; Calo: Bài báo vs Aetron</h2>
-        <div class="grid-2">
-          <div class="card">
-            <h3>Bài báo giải quyết vấn đề gì?</h3>
-            <ul>
-              <li>Đo quãng đường trong nhà khi mất GPS: đếm bước (<strong>Oxford WPD</strong>, <strong>Xu Running</strong>) + chống bước giả đứng yên (<strong>MV-GLRT ZUPT</strong>, Skog 2010).</li>
-              <li>Tính độ dài bước thích ứng (<strong>Renaudin Eq. 8</strong>) và calo chuẩn <strong>2024 Adult Compendium</strong>.</li>
-            </ul>
-          </div>
-          <div class="card">
-            <h3>Cách bài báo đo Benchmark Tầng 1</h3>
-            <ul>
-              <li>Bước chân: So video 60 fps / foot-switch (Oxford, PedEval, Xu) → Accuracy, WAPE, 6s Cadence MAE.</li>
-              <li>Độ dài bước: Thảm lực Vicon / máy chạy bộ (SLEDataset2, RBDS), bắt buộc <strong>LOSO</strong>.</li>
-            </ul>
-          </div>
-        </div>
-        <table>
-          <thead>
-            <tr><th>Hạng mục &amp; Tập test</th><th>Bài báo / Baseline gốc</th><th>Kết quả chạy trên Aetron</th><th>So sánh</th></tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Đi bộ (Oxford 12 phiên)</td>
-              <td>Java tác giả (Salvi 2018): 93.36% Acc</td>
-              <td>OxfordStepDetector: <strong>93.16% Acc</strong> · MV-GLRT loại <strong>0/20</strong> xung giả</td>
-              <td class="v-eq">NGANG BẰNG</td>
-            </tr>
-            <tr>
-              <td>Chạy bộ (Xu Group 3)</td>
-              <td>Xu (2022) offline: 98.94% · StepCount cũ: 89.92%</td>
-              <td>XuRunningStepDetector: <strong>98.69% Acc</strong> (1,279/1,280 bước)</td>
-              <td class="v-eq">NGANG BẰNG (+8.77% vs cũ)</td>
-            </tr>
-            <tr>
-              <td>Độ dài bước (LOSO)</td>
-              <td>Hằng số tĩnh cũ: Walk 12.99% · Run 17.30% MAPE</td>
-              <td>Renaudin Eq. 8: <strong>Walk 12.01% (8.61 cm) · Run 15.29% (17.8 cm)</strong></td>
-              <td class="v-win">VƯỢT HƠN</td>
-            </tr>
-            <tr>
-              <td>Cadence &amp; Calo</td>
-              <td>Step-interval median: 15.55–23.45 spm</td>
-              <td>Cadence 6s: <strong>11.20 spm</strong> · 2024 Compendium: <strong>100% parity</strong></td>
-              <td class="v-win">VƯỢT HƠN &amp; KHỚP 100%</td>
-            </tr>
-          </tbody>
-        </table>
-        <div class="footer"><span>Aetron · Literature Review &amp; 2-Tier Benchmark Audit</span><span>6 / 10</span></div>
-      </section>
-
-      <!-- SLIDE 7 -->
-      <section class="slide" data-title="Tổng kết Tầng 1">
-        <div class="eyebrow">2. Tổng kết Tầng 1</div>
-        <h2>Bảng Đối chiếu Tầng 1: Aetron đứng ở đâu so với Bài báo?</h2>
-        <table>
-          <thead>
-            <tr><th>Trụ cột</th><th>Nguồn gốc (Provenance)</th><th>Con số Bài báo / Baseline</th><th>Con số Aetron (Tầng 1)</th><th>Kết luận</th></tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>1. GNSS Outdoor</td>
-              <td>Adapted (AEKF/NIS) · Reproduced (IGG-III)</td>
-              <td>TU Wien Raw 4.15% / Alpha 9.77%<br>Snapper Raw 29.5 m / Alpha 19.1 m</td>
-              <td>TU Wien AEKF: <strong>1.34% Dist Err</strong><br>Snapper IGG-III: <strong>14.86 m RMSE</strong></td>
-              <td class="v-win">VƯỢT HƠN</td>
-            </tr>
-            <tr>
-              <td>2. Stop / Auto-Pause</td>
-              <td>Reproduced (T-DBSCAN, Zheng, IMM)</td>
-              <td>STAGA Speed Gate: 82.81% F1 · 1,117 giả</td>
-              <td>T-DBSCAN: <strong>98.97% Prec (122 giả)</strong><br>Causal Zheng: <strong>95.68% F1</strong></td>
-              <td class="v-win">VƯỢT HƠN</td>
-            </tr>
-            <tr>
-              <td>3. Indoor/Outdoor</td>
-              <td>Reproduced (CAP-ALSTM + SHAP + HMM)</td>
-              <td>CIOD 4-ch: 69.59% MF1<br>CIOD iOS 3-ch (MagIO): 70.67% MF1</td>
-              <td>4-ch: <strong>78.63% MF1 (+9.04)</strong><br>3-ch iOS: <strong>75.54% MF1 (+4.87)</strong></td>
-              <td class="v-win">VƯỢT HƠN (HAR-PMD: ÂM)</td>
-            </tr>
-            <tr>
-              <td>4. Step &amp; Cadence</td>
-              <td>Reproduced (Oxford, MV-GLRT) · Adapted (Xu)</td>
-              <td>Oxford Java: 93.36% · Xu offline: 98.94%</td>
-              <td>Oxford Dart: <strong>93.16%</strong> (0 xung giả)<br>Xu Dart: <strong>98.69%</strong> · Cadence 6s #1</td>
-              <td class="v-eq">NGANG BẰNG</td>
-            </tr>
-            <tr>
-              <td>5. Stride &amp; Calories</td>
-              <td>Adapted (Renaudin) · Reproduced (Compendium)</td>
-              <td>Static stride: 12.99% / 17.30% MAPE</td>
-              <td>Renaudin: <strong>12.01% / 15.29%</strong><br>Compendium 2024: <strong>100% parity</strong></td>
-              <td class="v-win">VƯỢT HƠN</td>
-            </tr>
-          </tbody>
-        </table>
-        <div class="callout c-blue">
-          Kết luận Tầng 1: Toàn bộ thuật toán cốt lõi của Aetron đạt mức NGANG BẰNG hoặc VƯỢT HƠN baseline/bài báo trên 8 bộ dữ liệu công khai, đồng thời công bố trung thực 2 kết quả âm (SnapperGPS AEKF thuần &amp; HAR-PMD cross-domain).
-        </div>
-        <div class="footer"><span>Aetron · Literature Review &amp; 2-Tier Benchmark Audit</span><span>7 / 10</span></div>
-      </section>
-
-      <!-- SLIDE 8 -->
-      <section class="slide" data-title="Tầng 2 của Bài báo">
-        <div class="eyebrow">3. Benchmark Tầng 2 của Bài báo</div>
-        <h2>Ngoài phòng Lab, các Bài báo đo Thực địa (Tầng 2) thế nào?</h2>
-        <div class="grid-2" style="flex:1;">
-          <div class="card">
-            <h3>1. GPS Sân 400 m &amp; Đô thị</h3>
-            <div class="ref-line">Scott et al. (2016) · Gilgen-Ammann et al. (2020)</div>
-            <ul>
-              <li>Chạy lặp nhiều vòng trên sân điền kinh 400 m làn 1 (quãng đường chuẩn đã biết chính xác).</li>
-              <li>Đo MAPE quãng đường &amp; Bland-Altman 95% LoA.</li>
-              <li>Tham chiếu: <strong>&lt; 5% = Good</strong> (đồng hồ thể thao: 0.9–4.1% sân mở; 3.2–8.9% đô thị).</li>
-            </ul>
-          </div>
-          <div class="card">
-            <h3>2. Dừng đèn đỏ / Auto-Pause</h3>
-            <div class="ref-line">Zheng et al. (2009) · Spang et al. (2022)</div>
-            <ul>
-              <li>Ghi chính xác mốc giây dừng (ví dụ 30 s mỗi lần đứng yên) trong buổi tập thực tế.</li>
-              <li>Đếm số lần dừng giả (False Stops) khi chạy chậm và đo độ trễ kích hoạt Auto-Pause.</li>
-            </ul>
-          </div>
-          <div class="card">
-            <h3>3. Đoạn thẳng 100 m (Bước &amp; Stride)</h3>
-            <div class="ref-line">Salvi et al. (2018) · Renaudin et al. (2012)</div>
-            <ul>
-              <li>Đi bộ &amp; chạy bộ trên đoạn thẳng đo sẵn 100 m; đếm tay hoặc quay video đếm lại số bước thật.</li>
-              <li>Thêm bài test đứng yên 60 s lắc tay / bấm màn hình kiểm tra <strong>0 bước giả</strong>.</li>
-            </ul>
-          </div>
-          <div class="card">
-            <h3>4. Bước qua cửa Trong nhà ↔ Ngoài trời</h3>
-            <div class="ref-line">Zhu et al. (2019) · Yoo (2025)</div>
-            <ul>
-              <li>Cầm điện thoại thật đi từ trong tòa nhà ra ngoài trời và ngược lại nhiều lượt liên tiếp.</li>
-              <li>Bấm mốc giây bước qua cửa làm Ground Truth → đo Macro-F1 &amp; độ trễ chuyển cảnh (3–5 s).</li>
-            </ul>
-          </div>
-        </div>
-        <div class="footer"><span>Aetron · Literature Review &amp; 2-Tier Benchmark Audit</span><span>8 / 10</span></div>
-      </section>
-
-      <!-- SLIDE 9 -->
-      <section class="slide" data-title="Tầng 2 của Aetron (Đang đo)">
-        <div class="eyebrow">4. Benchmark Tầng 2 của Aetron</div>
-        <h2>Kế hoạch &amp; Trạng thái Đo Thực địa trên App Aetron (Đang đo)</h2>
-        <table>
-          <thead>
-            <tr><th>Bài test Tầng 2</th><th>Kịch bản tự đo bằng app Aetron</th><th>Chỉ tiêu mục tiêu (bài báo)</th><th>Trạng thái &amp; Số liệu Aetron</th></tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Test A · GPS 400 m &amp; Dừng đèn đỏ</td>
-              <td>3–5 buổi × 5 vòng sân 400 m (2.0 km) + 2–3 lần dừng 30 s bấm giờ</td>
-              <td>MAPE &lt; 5% (Scott Good) · 0 dừng giả</td>
-              <td class="v-wip">ĐANG ĐO (field-gps / track-suite)</td>
-            </tr>
-            <tr>
-              <td>Test B · Gait 100 m (Bước &amp; Stride)</td>
-              <td>Đi bộ 100 m + Chạy 100 m (đếm bước thật) + 60 s đứng yên lắc máy</td>
-              <td>Step Err &lt; 5% · Stride &lt; 10% · 0 bước giả</td>
-              <td class="v-wip">ĐANG ĐO (field-gait)</td>
-            </tr>
-            <tr>
-              <td>Test C · Qua cửa Indoor ↔ Outdoor</td>
-              <td>3–5 lượt đi qua cửa Nhà ↔ Ngoài trời (bấm mốc giây qua cửa)</td>
-              <td>Macro-F1 &gt; 75% · Độ trễ 3–5 s</td>
-              <td class="v-wip">ĐANG ĐO (build nhánh ekf → field-iod)</td>
-            </tr>
-            <tr>
-              <td>Bộ công cụ chấm điểm tự động</td>
-              <td><code>tool/export_workout.dart</code> + <code>aetron_field_and_paper_evaluator_test.dart</code></td>
-              <td>Tự tính MAPE, Bland-Altman, Macro-F1 &amp; xuất bảng LaTeX</td>
-              <td class="v-win">SẴN SÀNG 100%</td>
-            </tr>
-          </tbody>
-        </table>
-        <div class="callout c-amb">
-          <strong>Lưu ý khi cầm máy đi record:</strong> Bản build nhánh <code>main</code> hôm qua <strong>record được ngay Test A &amp; Test B</strong> (GPS 400 m &amp; 100 m đi/chạy, đồng bộ Supabase để xuất CSV). Riêng <strong>Test C (IOD qua cửa + Ground Truth overlay + CAP-ALSTM / iOS Light-Free)</strong> và bản vá MV-GLRT mới nhất cần build từ nhánh <code>ekf</code>.
-        </div>
-        <div class="footer"><span>Aetron · Literature Review &amp; 2-Tier Benchmark Audit</span><span>9 / 10</span></div>
-      </section>
-
-      <!-- SLIDE 10 -->
-      <section class="slide dark" data-title="Tổng kết & Q&A">
-        <div><span class="badge b-dark">Tổng kết &amp; Bước tiếp theo</span></div>
-        <h2>Tóm tắt Tiến độ &amp; Q&amp;A</h2>
-        <div style="display:flex; flex-direction:column; gap:14px; margin-top:6px;">
-          <div class="card">
-            <h3>1. Hướng nghiên cứu rõ ràng (có Reference chuẩn)</h3>
-            <p style="font-size:0.86rem; line-height:1.45;">Smartphone-based Seamless Indoor–Outdoor Navigation (GNSS + IOD + PDR), đầy đủ DOI tham chiếu. Không ôm HAR (đưa vào Future Work).</p>
-          </div>
-          <div class="card">
-            <h3>2. Tầng 1 đã chốt xong</h3>
-            <p style="font-size:0.86rem; line-height:1.45;">Đủ benchmark khoa học trên 8 bộ dữ liệu công khai: ngang bằng hoặc vượt baseline/bài báo gốc, công bố trung thực 2 kết quả âm.</p>
-          </div>
-          <div class="card">
-            <h3>3. Tầng 2 đang đo thực địa</h3>
-            <p style="font-size:0.86rem; line-height:1.45;">Thực hiện 3 bài test nhỏ (Sân 400 m, Đoạn 100 m, Qua cửa IOD) và chạy script chấm điểm tự động để điền Chương 4.</p>
-          </div>
-        </div>
-        <div style="margin-top:auto; text-align:center; font-size:1.05rem; font-weight:700; color:#FFF; padding-top:16px;">
-          Thank you for listening · Questions &amp; Feedback
-        </div>
-        <div class="footer"><span>Aetron · Literature Review &amp; 2-Tier Benchmark Audit</span><span>10 / 10</span></div>
-      </section>
-
-    </div>
-  </div>
+  <nav class="island" aria-label="Slide navigation">
+    <button class="isl-btn" id="prevBtn">← Trước</button>
+    <span class="isl-counter" id="slideCounter">01 / 10</span>
+    <span class="isl-title" id="slideTitle">Cover</span>
+    <button class="isl-btn primary" id="nextBtn">Sau →</button>
+    <span class="isl-sep"></span>
+    <button class="isl-btn" id="fsBtn">Toàn màn hình</button>
+    <a class="isl-btn" href="index.html">Portal</a>
+  </nav>
 
   <script>
     const slides = Array.from(document.querySelectorAll('.slide'));
     const counter = document.getElementById('slideCounter');
     const titleEl = document.getElementById('slideTitle');
     let idx = 0;
-
     function show(n) {
       idx = Math.max(0, Math.min(slides.length - 1, n));
       slides.forEach((s, i) => s.classList.toggle('active', i === idx));
-      counter.textContent = `${idx + 1} / ${slides.length}`;
+      counter.textContent = `${String(idx + 1).padStart(2, '0')} / ${slides.length}`;
       titleEl.textContent = slides[idx].dataset.title || '';
     }
-
     document.getElementById('prevBtn').addEventListener('click', () => show(idx - 1));
     document.getElementById('nextBtn').addEventListener('click', () => show(idx + 1));
+    document.getElementById('fsBtn').addEventListener('click', () => {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+      else document.exitFullscreen?.();
+    });
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') show(idx + 1);
-      if (e.key === 'ArrowLeft' || e.key === 'PageUp') show(idx - 1);
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); show(idx + 1); }
+      if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); show(idx - 1); }
+      if (e.key === 'f' || e.key === 'F') {
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+        else document.exitFullscreen?.();
+      }
     });
     show(0);
   </script>
