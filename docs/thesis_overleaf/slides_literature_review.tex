@@ -1,0 +1,434 @@
+\documentclass[aspectratio=169,10pt]{beamer}
+
+\usetheme{Madrid}
+\usecolortheme{default}
+
+\usepackage{fontspec}
+\IfFontExistsTF{Noto Sans}{\setsansfont{Noto Sans}}{}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning}
+
+\definecolor{iuBlue}{HTML}{1B365D}
+\definecolor{iuCyan}{HTML}{0284C7}
+\definecolor{iuSoft}{HTML}{F1F5F9}
+\definecolor{iuGreen}{HTML}{047857}
+\definecolor{iuAmber}{HTML}{B45309}
+\definecolor{iuRose}{HTML}{BE123C}
+
+\setbeamercolor{structure}{fg=iuBlue}
+\setbeamercolor{palette primary}{bg=iuBlue,fg=white}
+\setbeamercolor{palette secondary}{bg=iuCyan,fg=white}
+\setbeamercolor{palette tertiary}{bg=iuBlue!85!black,fg=white}
+\setbeamercolor{frametitle}{bg=iuBlue,fg=white}
+\setbeamercolor{title}{bg=iuBlue,fg=white}
+\setbeamercolor{block title}{bg=iuBlue!90,fg=white}
+\setbeamercolor{block body}{bg=iuSoft,fg=black}
+\setbeamercolor{block title alerted}{bg=iuRose,fg=white}
+\setbeamercolor{block body alerted}{bg=iuRose!8,fg=black}
+\setbeamercolor{block title example}{bg=iuGreen,fg=white}
+\setbeamercolor{block body example}{bg=iuGreen!8,fg=black}
+
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{blocks}[rounded][shadow=false]
+
+\title[Aetron Literature Review]{Literature Review:\\A Mobile Fitness Tracking Application for Indoor and Outdoor Activities}
+\subtitle{Smartphone-Only GNSS Kinematics, Cross-Platform IOD, Inertial Gait Sensing \& 2024 Compendium MET}
+\author[Nguyen Duc Bao (ITITIU22238)]{Nguyen Duc Bao (ITITIU22238)\\\small Supervisor: Assoc. Prof. Vo Thi Luu Phuong}
+\institute[HCM-IU]{School of Computer Science and Engineering\\International University -- VNU-HCM}
+\date{November 2026}
+
+\begin{document}
+
+% SLIDE 1
+\begin{frame}[plain]
+  \begin{columns}[c]
+    \begin{column}{0.22\textwidth}
+      \centering
+      \includegraphics[width=2.6cm]{figures/iu_logo.png}
+    \end{column}
+    \begin{column}{0.76\textwidth}
+      \titlepage
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% SLIDE 2
+\begin{frame}{Literature Review Roadmap}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{1. Outdoor GNSS \& State Estimation}
+        \begin{itemize}\footnotesize\itemsep 1pt
+          \item Smartphone GNSS error physics \& urban multipath
+          \item Haversine vs.\ Vincenty \& sports-science MAPE targets
+          \item Pre-Thesis Fixed-Alpha vs.\ 4-State EKF / Phase~2 AEKF
+          \item T-DBSCAN, PCHIP reconstruction \& HMM snapping
+        \end{itemize}
+      \end{block}
+      \vspace{0.08cm}
+      \begin{block}{2. Cross-Platform Indoor/Outdoor Detection}
+        \begin{itemize}\footnotesize\itemsep 1pt
+          \item Rule-based, IODetector, DeepIOD \& Yoo $C/N_0$
+          \item Apple iOS sensor sandboxing \& HAR-PMD confounding
+          \item Light-Free iOS fusion: MagIO + Inertial + Straightness + HMM
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{block}{3. Indoor Pedometry, Stride \& Calorimetry}
+        \begin{itemize}\footnotesize\itemsep 1pt
+          \item Hardware pedometers vs.\ Oxford WPD \& Xu Running
+          \item Skog (2010) MV-GLRT ZUPT stationary rejection
+          \item Cadence trilemma \& Renaudin (2012) adaptive stride
+          \item 2024 Adult Compendium speed-banded MET parity
+        \end{itemize}
+      \end{block}
+      \vspace{0.08cm}
+      \begin{exampleblock}{4. Architecture, Commercial Survey \& Gaps}
+        \begin{itemize}\footnotesize\itemsep 1pt
+          \item Offline-first Clean Architecture (Isar + SQLite + Deno)
+          \item Strava, Nike Run Club, Samsung Health, Google Fit
+          \item 5 Research Gaps (\textbf{G1--G5}) mapped to \textbf{O1--O5}
+        \end{itemize}
+      \end{exampleblock}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% SLIDE 3
+\begin{frame}{Why Smartphone-Only Indoor \& Outdoor Tracking Is Hard}
+  \begin{columns}[T]
+    \begin{column}{0.49\textwidth}
+      \begin{block}{Physical Sensor Imperfections}
+        \begin{itemize}\small
+          \item \textbf{GNSS Urban Multipath:} Consumer phone error escalates from $3$--$10$\,m (open sky) to $30$--$50$\,m in urban canyons (Merry \& Bettinger, 2019).
+          \item \textbf{Indoor Signal Collapse:} Concrete and steel roofs destroy GNSS lock, forcing fallback to Pedestrian Dead Reckoning (PDR).
+          \item \textbf{MEMS Inertial Noise:} Uncalibrated accelerometers mix true gait with arm swing, screen taps, and idle phone tremor.
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.49\textwidth}
+      \begin{alertblock}{Systems \& Scientific Pitfalls}
+        \begin{itemize}\small
+          \item \textbf{iOS API Sandboxing:} Public ambient light, raw $C/N_0$, and cellular RSRP/RSRQ used in DeepIOD are blocked by Apple iOS.
+          \item \textbf{Lookahead Leakage:} Offline smoothing or bidirectional Stop \& Go papers cannot drive causal $1$\,Hz live workout HUDs.
+          \item \textbf{Proprietary Black Boxes:} Commercial apps hide filtering and calorie formulas; optical wearables still incur $28$--$30\%+$ calorie error (Choe 2025; Germini 2022).
+        \end{itemize}
+      \end{alertblock}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% SLIDE 4
+\begin{frame}{Outdoor GNSS Physics, Geodesy \& Validation Targets}
+  \begin{columns}[T]
+    \begin{column}{0.52\textwidth}
+      \begin{block}{Geodesy \& Path Integration}
+        \small
+        Android \texttt{FusedLocationProvider} \& iOS \texttt{CoreLocation} supply WGS84 fixes with $1\sigma$ (68\%) radial accuracy $\sigma_{\text{acc},k}$ (vs.\ 50\% CEP50 on snapshot loggers, Beuchert 2023).
+        \[
+          d_{\text{seg}} = 2R_{\text{earth}}\arctan2\!\left(\sqrt{a},\sqrt{1-a}\right)
+        \]
+        \begin{itemize}\small
+          \item Haversine exhibits $\le 0.55\%$ oblateness error vs.\ Vincenty's WGS84 ellipsoid ($1/f = 298.257223563$).
+          \item Offline RTK audits use full ellipsoidal/ENU projections for centimeter fidelity.
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \begin{exampleblock}{Sports-Science MAPE Standards}
+        \begin{itemize}\small
+          \item \textbf{Scott et al.\ (2016):} Cumulative distance MAPE classified as:
+            \begin{itemize}\footnotesize
+              \item \textbf{Good:} $<5\%$
+              \item \textbf{Moderate:} $5$--$10\%$
+              \item \textbf{Poor:} $>10\%$
+            \end{itemize}
+          \item \textbf{Gilgen-Ammann et al.\ (2020):} 8 commercial GPS sports watches measured $0.9$--$4.1\%$ MAPE on open tracks and $3.2$--$8.9\%$ in urban routes.
+          \item \textbf{Zandbergen \& Barbeau (2011):} Median A-GPS error $5$--$8.5$\,m outdoors degrading to tens of meters indoors.
+        \end{itemize}
+      \end{exampleblock}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% SLIDE 5
+\begin{frame}{State Estimation: Fixed-Alpha vs.\ 4-State Kinematic EKF}
+  \begin{columns}[T]
+    \begin{column}{0.47\textwidth}
+      \begin{block}{4-State EKF on Local ENU Plane}
+        \footnotesize State $\mathbf{x}_k = [p_x, p_y, v, \theta]^T$ (Gelb 1974; Groves 2013):
+        \[
+          \mathbf{x}_k^- = \begin{bmatrix} p_{x,k-1} + v\sin\theta\,\Delta t \\ p_{y,k-1} + v\cos\theta\,\Delta t \\ v_{k-1} \\ \theta_{k-1} \end{bmatrix}
+        \]
+        \textbf{Joseph-Form Covariance Update} (PSD guarantee):
+        \[
+          \mathbf{P}_k = (\mathbf{I}-\mathbf{K}_k\mathbf{H}_k)\mathbf{P}_k^-(\mathbf{I}-\mathbf{K}_k\mathbf{H}_k)^T + \mathbf{K}_k\mathbf{R}_k\mathbf{K}_k^T
+        \]
+      \end{block}
+    \end{column}
+    \begin{column}{0.51\textwidth}
+      \centering\scriptsize
+      \begin{tabular}{@{}p{1.6cm}p{2.3cm}p{2.7cm}@{}}
+        \toprule
+        \textbf{Concept} & \textbf{Fixed-Alpha (Pre-Thesis)} & \textbf{4-State EKF / AEKF} \\ \midrule
+        State & Position $(\phi,\lambda)$ & $[p_x, p_y, v, \theta]^T$ \\
+        Noise $\mathbf{R}_k$ & 3 discrete tiers & Continuous $\sigma_{\text{acc},k}^2 + \text{NIS}$ \\
+        Gain $\mathbf{K}_k$ & $\alpha \in \{0.34, 0.52, 0.72\}$ & Optimal $\mathbf{P}_k^-\mathbf{H}_k^T\mathbf{S}_k^{-1}$ \\
+        Uncertainty & None tracked & $4\times 4$ Joseph-form $\mathbf{P}_k$ \\
+        Stationary & Freeze risk ($1$\,Hz walk) & ZUPT ($z_v=0$) + $\mathbf{Q}_k$ damp \\
+        Turns & Heuristic $\alpha\leftarrow 0.82$ & Centripetal $\dot{\psi}_k$ scaling \\ \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% SLIDE 6
+\begin{frame}{Adaptive NIS Gating, T-DBSCAN \& Trajectory Reconstruction}
+  \begin{columns}[T]
+    \begin{column}{0.49\textwidth}
+      \begin{block}{Phase 1 \& Phase 2 GNSS Hardening}
+        \begin{itemize}\small
+          \item \textbf{P01 Preprocessing} (Zheng 2015; Li et al.\ 2025): Physical speed/accel bounds, median spike filter, $>5$\,s outage break, stay-point tagging.
+          \item \textbf{P02 2-DOF Mahalanobis NIS} (Groves 2013; Sukhenko 2025):
+            \[
+              d_M^2 = \boldsymbol{\nu}_k^T \mathbf{S}_k^{-1}\boldsymbol{\nu}_k \sim \chi_2^2 \quad (\gamma_1 = 5.991,\; \gamma_2 = 13.816)
+            \]
+          \item Downweights moderate multipath ($d_M^2 > \gamma_1$), rejects severe jumps ($d_M^2 > \gamma_2$), and scales heading noise on sharp turns (Rong Li \& Jilkov 2003).
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.49\textwidth}
+      \begin{block}{Post-Hoc Mining \& Strict Display Boundary}
+        \begin{itemize}\small
+          \item \textbf{T-DBSCAN Dwell Clustering} (Ester 1996; STAGA 2022): Collapses traffic-light stops into zero-distance dwell centroids.
+          \item \textbf{Monotone PCHIP} (Fritsch \& Carlson 1980; Czerwi\'nski 2026): Bridges $2$--$15$\,s canopy gaps smoothly for \emph{visual map display only}.
+          \item \textbf{HMM Map-Matching} (Newson \& Krumm 2009) + Google Encoded Polyline delta compression.
+        \end{itemize}
+      \end{block}
+      \begin{alertblock}{Causal Governance Rule}
+        \footnotesize Offline spline bridging and future-lookahead Stop \& Go methods never mutate live distance or 3\,s Auto-Pause triggers.
+      \end{alertblock}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% SLIDE 7
+\begin{frame}{Indoor/Outdoor Detection (IOD): Literature Evolution}
+  \begin{columns}[T]
+    \begin{column}{0.32\textwidth}
+      \begin{block}{1. Heuristics \& Early Fusion}
+        \begin{itemize}\footnotesize
+          \item \textbf{IODetector} (Li 2014): Optical, cellular, and magnetic likelihoods.
+          \item \textbf{Radu et al.\ (2014):} Exposed device-shift fragility.
+          \item \textbf{Pre-Thesis Aetron:} Deterministic 10-fix score; stalls when iOS drops fixes indoors.
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.32\textwidth}
+      \begin{block}{2. GNSS \& Transitions}
+        \begin{itemize}\footnotesize
+          \item \textbf{GPS-IOD} (Bui 2020): OS GNSS quality \& availability cues.
+          \item \textbf{Yoo (2025):} Doorway handover via $C/N_0 \in [30, 40]$\,dB-Hz.
+          \item \textbf{Feriol (2020) / Angelats (2024):} Pressure deltas \& multi-sensor resilience.
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.32\textwidth}
+      \begin{block}{3. Deep Multivariate IOD}
+        \begin{itemize}\footnotesize
+          \item \textbf{DeepIOD} (Dastagir 2024): 8-channel 2D-CNN evaluated on Cambridge \textbf{CIOD} (Bakirtzis 2022, $>1.47$\,M epochs).
+          \item \textbf{Critical Warning:} High static accuracy hides doorway flip-flops \& HAR-PMD (2025) locomotion confounding.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vspace{0.25cm}
+  \begin{alertblock}{Why Android DeepIOD Alone Fails Cross-Platform Production}
+    \small Apple iOS restricts ambient light, cellular RSRP/RSRQ, and raw satellite $C/N_0$ APIs---requiring a scientifically grounded \textbf{light-free multi-sensor fallback}.
+  \end{alertblock}
+\end{frame}
+
+% SLIDE 8
+\begin{frame}{Light-Free iOS Multi-Sensor IOD: 4 Peer-Reviewed Pillars}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{1. MagIO Geomagnetic Stats (Ashraf 2018)}
+        \begin{itemize}\small
+          \item Indoor ferromagnetic structures distort $\|\mathbf{m}\|$.
+          \item 10 distributional features over a causal $10$\,s window (mean, SD, range, IQR, skewness, kurtosis, mean $|\Delta\|\mathbf{m}\||$).
+        \end{itemize}
+      \end{block}
+      \vspace{0.15cm}
+      \begin{block}{2. Inertial Dynamics (Kelishomi 2019)}
+        \begin{itemize}\small
+          \item Triaxial linear acceleration features (mean, SD, peak-to-peak) + astronomical daytime + \texttt{CMAltimeter} pressure deltas.
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{block}{3. Benhamou Path Straightness (2004)}
+        \[
+          S = \frac{d_{\text{net}}}{\max(d_{\text{path}}, 1.0)} \in [0, 1]
+        \]
+        \footnotesize Separates straight outdoor trajectories ($S\to 1$) from tortuous indoor multipath jitter ($S\to 0$).
+      \end{block}
+      \vspace{0.15cm}
+      \begin{block}{4. Causal 2-State HMM (Zhu et al., 2019)}
+        \[
+          \alpha_t(s) \propto b_t(s)\sum_{s'} \alpha_{t-1}(s')\, A_{s',s}
+        \]
+        \footnotesize Stabilizes transitions in $3$--$4$\,s without future lookahead.
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% SLIDE 9
+\begin{frame}{Indoor Step Detection \& MV-GLRT Stationary Rejection}
+  \begin{columns}[T]
+    \begin{column}{0.49\textwidth}
+      \begin{block}{Causal Step Detectors}
+        \begin{itemize}\small
+          \item \textbf{Hardware Pedometers:} Android \texttt{TYPE\_STEP\_COUNTER} \& iOS \texttt{CMPedometer} achieve $<5\%$ error in normal walking (Brajdic \& Harle, 2013).
+          \item \textbf{Oxford WPD (Salvi et al., EMBC 2018):} $100$\,Hz Gaussian smoothing, 35-sample windowed peak scoring, online Welford thresholding.
+          \item \textbf{Xu Running (Xu et al., 2022):} $50$\,Hz Hamming LPF + 256-point DFT dominant gait frequency + adaptive peaks.
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.49\textwidth}
+      \begin{alertblock}{Eliminating Idle Ghost Steps (Skog et al., 2010)}
+        \small Magnitude-Variance Generalized Likelihood Ratio Test (\textbf{MV-GLRT ZUPT}, Eq.~13):
+        \[
+          T_{\text{MV}}(n) = \frac{1}{W}\sum_{k=n-W+1}^{n}\bigl(\|\mathbf{a}_k\|_2 - \bar{a}_n\bigr)^2 < \gamma_{\text{MV}}
+        \]
+        \begin{itemize}\small
+          \item Rejects $50$\,ms screen taps and resting phone shakes.
+          \item Paired with Brajdic \& Harle's rhythmic walk-bout confirmation ($[0.65, 4.5]$\,Hz).
+        \end{itemize}
+      \end{alertblock}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% SLIDE 10
+\begin{frame}{Cadence Trilemma \& Adaptive Stride Length (Renaudin 2012)}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Live Cadence Window Trade-Off}
+        \[
+          C_W(t) = \frac{\Delta M_{[t-W,t]}}{W} \times 60 \quad (\text{steps/min})
+        \]
+        \begin{itemize}\small
+          \item Short windows ($W=3$\,s) suffer heavy visual quantization flutter.
+          \item Long windows ($W=15$\,s) incur sluggish stop-decay latency.
+          \item Audited on video-verified \textbf{PedEval} (Mattfeld 2021) and 39\,h free-living \textbf{OxWalk} (Small 2022).
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{exampleblock}{Adaptive Height--Frequency Stride}
+        \footnotesize Fixed stature ratios ($0.415H$--$0.67H$, Taborri 2016; Xing 2017) ignore speed modulation. \textbf{Renaudin et al.\ (2012, Eq.~8)}:
+        \[
+          L_{\text{step}}(H, f) = H\cdot(af + b) + c, \quad f = C/60\;\text{(Hz)}
+        \]
+        \begin{itemize}\small
+          \item Validated via Leave-One-Subject-Out (LOSO) on \textbf{SLEDataset2} (Vezo\v{c}nik 2021) and force-plate \textbf{RBDS} (Fukuchi 2017).
+        \end{itemize}
+      \end{exampleblock}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% SLIDE 11
+\begin{frame}{Metabolic Energy Expenditure: 2024 Adult Compendium}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{alertblock}{Why Optical HR \& Heuristics Are Insufficient}
+        \begin{itemize}\small
+          \item Systematic meta-analyses show \textbf{27.96\%} error on Apple Watch across walk/run/cycle (Choe et al., 2025) and \textbf{$>30\%$} across wearable brands (Germini et al., 2022).
+          \item Legacy distance heuristics ($0.63$--$0.75$\,kcal/kg/km, Hall 2004) lack speed-band intensity adaptation and diverge between client and server.
+        \end{itemize}
+      \end{alertblock}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{exampleblock}{2024 Adult Compendium (Herrmann et al., 2024)}
+        \[
+          E_{\text{kcal}} = \text{MET}(\text{activity}, v_{\text{mph}}) \times W_{\text{kg}} \times \frac{t_{\text{mov}}}{3600}
+        \]
+        \begin{itemize}\small
+          \item Standardized 5-digit activity codes mapped to exact speed bands (mph).
+          \item Moving-time gated ($t_{\text{mov}}$) with \textbf{bit-exact client--server parity}.
+          \item Discloses population-average scope vs.\ lab $\dot{V}\text{O}_2$ calorimetry.
+        \end{itemize}
+      \end{exampleblock}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% SLIDE 12
+\begin{frame}{Commercial Fitness Application Comparison (Table 2.2)}
+  \centering\scriptsize
+  \renewcommand{\arraystretch}{1.28}
+  \begin{tabular}{@{}p{2.1cm}p{3.8cm}p{3.3cm}p{3.9cm}@{}}
+    \toprule
+    \textbf{Application} & \textbf{Documented Capabilities} & \textbf{Calorie Model} & \textbf{Contrast vs.\ Aetron} \\ \midrule
+    Strava (2026) & Outdoor GNSS routes, segments, splits, pace & Grade-adjusted speed $\times$ weight $\times$ moving time (undisclosed) & Outdoor reference; proprietary outlier \& smoothing internals. \\
+    Nike Run Club (2024) & Explicit outdoor GNSS \& indoor motion modes & BMR/BMI + weight + distance + pace (undisclosed) & Confirms dual-mode UX; no open doorway/IOD transparency. \\
+    Samsung Health (2024) & Hardware step counters, multi-activity tracking & Body profile + optional HR (undisclosed) & Android benchmark; lacks iOS light-free IOD docs. \\
+    Google Fit (2026) & Sensor/recording APIs, step distance, sync & Activity + body metrics + BMR (undisclosed) & API pattern; omits RTK/IMU holdout audits. \\ \midrule
+    \textbf{Aetron (This Work)} & Open Flutter 4-State EKF/ZUPT, MV-GLRT pedometry, Cross-Platform IOD, Isar + Deno & Published 2024 Adult Compendium speed-banded MET (bit-exact parity) & Fully documented, DOI-grounded pipeline with open holdout benchmarks \& disclosed negative results. \\ \bottomrule
+  \end{tabular}
+\end{frame}
+
+% SLIDE 13
+\begin{frame}{Five Synthesized Research Gaps (\textbf{G1--G5})}
+  \small
+  \begin{enumerate}\itemsep 6pt
+    \item \textbf{G1 -- Lack of Auditable, RTK-Validated Open Trackers:} Student apps use raw fixes; papers rarely preserve negative results on out-of-domain hardware $\Rightarrow$ \textbf{O2, O5}.
+    \item \textbf{G2 -- iOS Sandboxing Gap in Cross-Platform IOD:} DeepIOD relies on light, cellular, and raw $C/N_0$ blocked on Apple iOS $\Rightarrow$ \textbf{O1}.
+    \item \textbf{G3 -- Uncalibrated Doorway Transitions \& Activity Confounding:} Static epoch accuracy masks flip-flops and indoor-running false positives on HAR-PMD $\Rightarrow$ \textbf{O1}.
+    \item \textbf{G4 -- Stationary Ghost Steps \& Cadence/Stride Mismatch:} Unguarded counters leak idle steps; fixed stride ratios ignore gait frequency $\Rightarrow$ \textbf{O2, O3}.
+    \item \textbf{G5 -- Fragmented Persistence, UI \& Server Authority:} Few prototypes unify crash-safe Isar/SQLite storage, Clean Architecture UI, and bit-exact 2024 MET workers $\Rightarrow$ \textbf{O3, O4}.
+  \end{enumerate}
+\end{frame}
+
+% SLIDE 14
+\begin{frame}{Key References \& Discussion}
+  \begin{columns}[T]
+    \begin{column}{0.49\textwidth}
+      \begin{block}{GNSS, Filtering \& Trajectory Mining}
+        \scriptsize
+        \begin{itemize}\itemsep 2pt
+          \item Kalman (1960); Gelb (1974); Groves (2013)
+          \item Rong Li \& Jilkov (2003); Sukhenko et al.\ (2025)
+          \item Merry \& Bettinger (2019); Zandbergen \& Barbeau (2011)
+          \item Scott et al.\ (2016); Gilgen-Ammann et al.\ (2020)
+          \item Zheng (2009, 2015); Li et al.\ (2025); Ester et al.\ (1996)
+          \item Fritsch \& Carlson (1980); Czerwi\'nski et al.\ (2026); Newson \& Krumm (2009)
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.49\textwidth}
+      \begin{block}{IOD, Inertial Gait \& Physiology}
+        \scriptsize
+        \begin{itemize}\itemsep 2pt
+          \item Li et al.\ (2014); Bui et al.\ (2020); Bakirtzis et al.\ (2022)
+          \item Dastagir et al.\ (2024) DeepIOD; Yoo (2025); HAR-PMD (2025)
+          \item Ashraf et al.\ (2018) MagIO; Kelishomi (2019); Benhamou (2004); Zhu et al.\ (2019)
+          \item Skog et al.\ (2010) MV-GLRT; Brajdic \& Harle (2013)
+          \item Salvi et al.\ (2018); Xu et al.\ (2022); Renaudin et al.\ (2012)
+          \item Herrmann et al.\ (2024) 2024 Adult Compendium; Choe et al.\ (2025)
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vspace{0.35cm}
+  \centering\large\textbf{\color{iuBlue}Thank You for Listening! Questions \& Feedback}
+\end{frame}
+
+\end{document}
