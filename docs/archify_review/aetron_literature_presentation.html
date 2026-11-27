@@ -355,18 +355,18 @@
                 </div>
                 <div style="display:grid; grid-template-columns:1fr auto 1fr auto 1fr; align-items:center; gap:12px;">
                   <div style="background:var(--sky-bg); border-radius:10px; padding:16px; text-align:center;">
-                    <div class="mono" style="font-size:10.5px; font-weight:700; color:var(--sky-fg);">OUTDOOR</div>
-                    <div style="font-family:var(--serif); font-size:1.35rem; color:var(--ink); margin-top:2px;">GNSS + AEKF / IGG-III</div>
+                    <div class="mono" style="font-size:10.5px; font-weight:700; color:var(--sky-fg);">OUTDOOR (LIVE)</div>
+                    <div style="font-family:var(--serif); font-size:1.35rem; color:var(--ink); margin-top:2px;">GNSS · 4-State EKF + NIS</div>
                   </div>
                   <div style="font-size:1.4rem; color:var(--muted);">↔</div>
                   <div style="background:var(--sage-bg); border-radius:10px; padding:16px; text-align:center;">
-                    <div class="mono" style="font-size:10.5px; font-weight:700; color:var(--sage-fg);">CẦU NỐI CHUYỂN MẠCH</div>
-                    <div style="font-family:var(--serif); font-size:1.35rem; color:var(--ink); margin-top:2px;">IOD · CAP-ALSTM + HMM</div>
+                    <div class="mono" style="font-size:10.5px; font-weight:700; color:var(--sage-fg);">IOD SWITCH (LIVE)</div>
+                    <div style="font-family:var(--serif); font-size:1.35rem; color:var(--ink); margin-top:2px;">C-Mobile · MagIO + HMM</div>
                   </div>
                   <div style="font-size:1.4rem; color:var(--muted);">↔</div>
                   <div style="background:var(--ochre-bg); border-radius:10px; padding:16px; text-align:center;">
-                    <div class="mono" style="font-size:10.5px; font-weight:700; color:var(--ochre-fg);">INDOOR</div>
-                    <div style="font-family:var(--serif); font-size:1.35rem; color:var(--ink); margin-top:2px;">PDR · Step + Stride</div>
+                    <div class="mono" style="font-size:10.5px; font-weight:700; color:var(--ochre-fg);">INDOOR (LIVE)</div>
+                    <div style="font-family:var(--serif); font-size:1.35rem; color:var(--ink); margin-top:2px;">PDR · Oxford/Xu + Stride</div>
                   </div>
                 </div>
               </div>
@@ -405,8 +405,8 @@
           <h2 class="h-slide rv" style="--i:1">GNSS Ngoài trời: Giảm sai số quãng đường về <em style="color:var(--sage-fg); font-style:italic;">1.34%</em></h2>
 
           <div class="kv-strip rv" style="--i:1">
-            <div class="kv-chip"><strong>Vấn đề:</strong> Multipath 3–50 m → AEKF (Groves 2013) &amp; IGG-III (Yang 2001)</div>
-            <div class="kv-chip"><strong>Cách đo họ:</strong> Máy thu RTK 1–2 cm · Common Epoch Mask · Good &lt; 5% (Scott 2016)</div>
+            <div class="kv-chip"><strong>Live trong App:</strong> 4-State EKF [x,y,v,θ] + NIS (Adapted)</div>
+            <div class="kv-chip"><strong>Offline Mở rộng:</strong> IGG-III (CV [e,n,vₑ,vₙ], chưa wire live) · RTK 1–2 cm</div>
           </div>
 
           <div style="display:grid; grid-template-columns:1.15fr 1fr; gap:16px; flex:1; margin-top:14px;">
@@ -445,8 +445,8 @@
             <div class="bezel rv" style="--i:3">
               <div class="bezel-core" style="display:flex; flex-direction:column; justify-content:space-between;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <span style="font-weight:700; color:var(--ink);">SnapperGPS Cycling · RMSE (m)</span>
-                  <span class="tag t-sage">IGG-III #1</span>
+                  <span style="font-weight:700; color:var(--ink);">SnapperGPS Cycling · RMSE (m) · Offline CV</span>
+                  <span class="tag t-sky">Mở rộng (Offline)</span>
                 </div>
                 <div style="display:flex; flex-direction:column; gap:16px; padding:12px 0;">
                   <div style="display:grid; grid-template-columns:96px 1fr 58px; align-items:center; gap:10px;">
@@ -480,8 +480,8 @@
           <h2 class="h-slide rv" style="--i:1">Auto-Pause: Giảm <em style="color:var(--sage-fg); font-style:italic;">9.2×</em> dừng giả &amp; đạt <em style="color:var(--sage-fg); font-style:italic;">95.68%</em> F1</h2>
 
           <div class="kv-strip rv" style="--i:1">
-            <div class="kv-chip"><strong>Thuật toán:</strong> T-DBSCAN (Ester 1996) · Zheng (2009) · 2-Mode IMM (Blom 1988)</div>
-            <div class="kv-chip"><strong>Cách đo họ:</strong> Nhật ký dừng/đi STAGA (122k full · 20k held-out) → F1 &amp; False Stops</div>
+            <div class="kv-chip"><strong>Offline Comparators (chưa wire live):</strong> Sequential Dwell (GpsDbscanService) · Zheng (2009) · IMM (1988)</div>
+            <div class="kv-chip"><strong>Cách đo:</strong> STAGA (122k full · 20k held-out) → F1 &amp; False Stops</div>
           </div>
 
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; flex:1; margin-top:14px;">
@@ -506,7 +506,7 @@
                   </div>
                   <div>
                     <div style="display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:4px;">
-                      <span style="font-weight:700; color:var(--sage-fg);">Aetron T-DBSCAN</span>
+                      <span style="font-weight:700; color:var(--sage-fg);">Sequential Dwell (Offline)</span>
                       <span class="mono" style="font-weight:700; color:var(--sage-fg);">122</span>
                     </div>
                     <div class="bar-track"><div class="bar-fill" style="--d:2; width:11%; background:var(--sage-fg);"></div></div>
@@ -554,8 +554,8 @@
 
           <div class="kv-strip rv" style="--i:1; justify-content:space-between; align-items:center;">
             <div style="display:flex; gap:10px; flex-wrap:wrap;">
-              <div class="kv-chip"><strong>Thách thức:</strong> iOS chặn Light &amp; C/N0 → CAP-ALSTM + SHAP (Bakirtzis 2022) + HMM</div>
-              <div class="kv-chip"><strong>Cách đo:</strong> CIOD 201k (chia theo phiên) · HAR-PMD</div>
+              <div class="kv-chip"><strong>Live App:</strong> C-Mobile (Android) · MagIO+HMM (iOS)</div>
+              <div class="kv-chip"><strong>Offline Benchmark:</strong> CAP-ALSTM + Python SHAP (CIOD 201k)</div>
             </div>
             <div class="mono" style="display:flex; gap:12px; font-size:11px;">
               <span><i style="display:inline-block;width:10px;height:10px;background:#C7C2B8;border-radius:2px;margin-right:5px;"></i>Bài báo</span>
@@ -640,8 +640,8 @@
           <h2 class="h-slide rv" style="--i:1">Đếm bước ngang bài báo, Stride vượt công thức tĩnh.</h2>
 
           <div class="kv-strip rv" style="--i:1">
-            <div class="kv-chip"><strong>Thuật toán:</strong> Oxford (2018) · Xu (2022) · MV-GLRT (2010) · Renaudin (2012) · Compendium 2024</div>
-            <div class="kv-chip"><strong>Cách đo:</strong> Video 60 fps &amp; Thảm lực LOSO</div>
+            <div class="kv-chip"><strong>Live (Adapted):</strong> Oxford (2018) · Xu (2022) · MV-GLRT (Skog 2010) · Renaudin (2012)</div>
+            <div class="kv-chip"><strong>Calo (Live):</strong> 2024 Compendium (bin liên tục, đơn điệu)</div>
           </div>
 
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; flex:1; margin-top:14px;">
@@ -697,8 +697,8 @@
                   </div>
                 </div>
                 <div class="rule-top" style="display:flex; justify-content:space-between; font-size:12.5px;">
-                  <span>Calo · 2024 Compendium</span>
-                  <strong class="mono" style="color:var(--sage-fg);">100% Parity Client–Server</strong>
+                  <span>Calo · 2024 Compendium (bin liên tục)</span>
+                  <strong class="mono" style="color:var(--sage-fg);">Đơn điệu 0.1–25 mph · Parity</strong>
                 </div>
               </div>
             </div>
@@ -729,7 +729,7 @@
               <div class="bezel-core" style="display:flex; flex-direction:column; justify-content:space-between;">
                 <div style="display:flex; justify-content:space-between;"><strong style="font-size:13px;">Stop / Auto-Pause</strong><span class="tag t-sage">Vượt hơn</span></div>
                 <div style="font-family:var(--serif); font-size:3.2rem; line-height:1; color:var(--sage-fg);">95.68%</div>
-                <div class="mono" style="font-size:11px; color:var(--muted);">Causal Zheng F1 · T-DBSCAN -9.2× giả</div>
+                <div class="mono" style="font-size:11px; color:var(--muted);">Offline: Zheng F1 · Sequential Dwell -9.2× giả</div>
               </div>
             </div>
 
@@ -737,7 +737,7 @@
               <div class="bezel-core" style="display:flex; flex-direction:column; justify-content:space-between;">
                 <div style="display:flex; justify-content:space-between;"><strong style="font-size:13px;">Indoor / Outdoor</strong><span class="tag t-sage">Vượt hơn</span></div>
                 <div style="font-family:var(--serif); font-size:3.2rem; line-height:1; color:var(--sage-fg);">+9.04</div>
-                <div class="mono" style="font-size:11px; color:var(--muted);">Android MF1 · iOS +4.87 · 7-ch 93.87%</div>
+                <div class="mono" style="font-size:11px; color:var(--muted);">Offline CAP-ALSTM · Live: C-Mobile &amp; MagIO+HMM</div>
               </div>
             </div>
 

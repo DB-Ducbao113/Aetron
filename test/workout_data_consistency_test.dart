@@ -88,28 +88,47 @@ void main() {
       );
     });
 
-    test('unlisted speed gaps do not invent published bands', () {
+    test('intermediate speeds map monotonically to nearest published bands', () {
       expect(
         UserProfile.compendiumDistanceMet(
           activityType: 'Running',
           speedKmh: 4.9 * 1.609344,
-        )?.code,
-        '12145',
+        ),
+        (code: '12030', met: 8.5),
       );
       expect(
         UserProfile.compendiumDistanceMet(
           activityType: 'Walking',
           speedKmh: 2.6 * 1.609344,
-        )?.code,
-        '17255',
+        ),
+        (code: '17170', met: 3.0),
       );
       expect(
         UserProfile.compendiumDistanceMet(
           activityType: 'Cycling',
           speedKmh: 19.5 * 1.609344,
-        )?.code,
-        '01014',
+        ),
+        (code: '01050', met: 12.0),
       );
+
+      // Strict monotonicity sweep across 0.1..25.0 mph in 0.1 mph increments
+      for (final activity in ['Walking', 'Running', 'Cycling']) {
+        var prevMet = 0.0;
+        for (var tenths = 1; tenths <= 250; tenths++) {
+          final mph = tenths / 10.0;
+          final entry = UserProfile.compendiumDistanceMet(
+            activityType: activity,
+            speedKmh: mph * 1.609344,
+          );
+          expect(entry, isNotNull);
+          expect(
+            entry!.met,
+            greaterThanOrEqualTo(prevMet),
+            reason: '$activity MET inverted at $mph mph: ${entry.met} < $prevMet',
+          );
+          prevMet = entry.met;
+        }
+      }
     });
 
     test('1 MET = 1 kcal/kg/hour, duration is moving not elapsed', () {
@@ -257,8 +276,8 @@ void main() {
 
         final distKm = distanceMeters / 1000.0;
         final avgSpeedKmh = distKm / (durationSec / 3600.0);
-        // 6.34 mph is between published running bands: 12145, 10.5 MET.
-        final liveCalories = (10.5 * weightKg * durationSec / 3600).round();
+        // 6.34 mph maps continuously to nearest published running band: 12050, 9.3 MET.
+        final liveCalories = (9.3 * weightKg * durationSec / 3600).round();
 
         final readBack = simulateStopAndPersist(
           durationSec: durationSec,

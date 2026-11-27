@@ -181,7 +181,7 @@ class AdaptiveGnssCorrectionEngine implements IGnssCorrectionEngine {
       effectiveHeading = null;
     }
 
-    // 5. Turn-Rate Centripetal Process Noise Scaling [Reproduced: Rong Li & Jilkov 2003]
+    // 5. Turn-Rate Centripetal Process Noise Scaling [Aetron-Adapted heuristic inspired by Rong Li & Jilkov 2003]
     // Heading wrap-around across 359° -> 1° handled via circular shortest difference.
     double headingMultiplier = 1.0;
     bool isTurnAdapted = false;
@@ -229,7 +229,7 @@ class AdaptiveGnssCorrectionEngine implements IGnssCorrectionEngine {
         headingProcessNoiseMultiplier: headingMultiplier,
       );
     } else if (isInflated) {
-      // Degraded observation: inflate measurement covariance R adaptively [Reproduced: Groves 2013, Sec 11.4]
+      // Degraded observation: inflate measurement covariance R adaptively [Aetron-Adapted heuristic inspired by Groves 2013, Sec 11.4]
       _consecutiveOutlierCount = 0;
       final inflationFactor = math.sqrt(dMSq / gammaNominal);
       final effectiveAcc = safeAcc * inflationFactor;

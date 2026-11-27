@@ -40,13 +40,15 @@ class DwellCluster {
   double get durationSeconds => duration.inMilliseconds / 1000.0;
 }
 
-/// Temporal DBSCAN Service for post-process GPS dwell clustering.
+/// Sequential Centroid-Radius Dwell Clustering Service for offline GPS stop analysis.
 ///
-/// Implements density-based spatial-temporal clustering (T-DBSCAN) specifically
-/// tailored for workout traces (Slide 10 of Aetron thesis):
-/// - Applied radius: ε ≈ 5–8 m (default 6.5 m)
+/// NOTE: Despite the legacy class/file name (`GpsDbscanService`), this is a
+/// sequential sliding-centroid dwell detector (NOT density-reachable DBSCAN
+/// from Ester et al. 1996, and NOT wired into live workout tracking — used
+/// strictly for offline stop-detection benchmarks and unit tests):
+/// - Centroid radius: ε ≈ 5–8 m (default 6.5 m)
 /// - Minimum dwell duration: t ≥ 10 s
-/// - MinPts: minimum consecutive points in cluster
+/// - MinPts: minimum consecutive low-speed points in cluster
 class GpsDbscanService {
   final double epsilonMeters;
   final double minDurationSeconds;

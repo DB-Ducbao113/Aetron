@@ -200,7 +200,8 @@ Deno.test("Compendium MET uses moving time, not elapsed time or gender", () => {
       rawStepIntervals: [],
       userProfile: { weight_kg: 70, gender: "female" },
     });
-    assertEquals(metrics.caloriesKcal, 306);
+    // 5 km in 1500s moving = 12 km/h ≈ 7.46 mph -> PAC 12080 (11.8 MET): 11.8 * 70 * 1500/3600 = 344 kcal
+    assertEquals(metrics.caloriesKcal, 344);
     assertEquals(metrics.movingTimeSec, 1500);
   }
 });

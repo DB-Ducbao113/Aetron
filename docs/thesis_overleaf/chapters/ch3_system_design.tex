@@ -21,7 +21,7 @@ Aetron is a Flutter mobile application~\cite{flutter2024framework} engineered to
     \node[substage, below left=0.85cm and -0.45cm of env] (gps) {\textbf{Outdoor GPS Stream}\\(\texttt{geolocator} $\rightarrow$ \texttt{P01} Gate + 4-State EKF + ZUPT)};
     \node[substage, below right=0.85cm and -0.45cm of env] (step) {\textbf{Indoor / Fallback Pedometer}\\(OS Counter / Oxford \& Xu + MV-GLRT + \texttt{StepMotionGate})};
 
-    \node[substage, below=0.6cm of gps] (route) {\textbf{Spatial Post-Processing}\\(\texttt{GpsDbscanService} T-DBSCAN + Polyline Compression)};
+    \node[substage, below=0.6cm of gps] (route) {\textbf{Spatial Post-Processing}\\(P03 PCHIP Display + Polyline Compression)};
     \node[substage, below=0.6cm of step] (stride) {\textbf{Cadence \& Stride Length}\\(6\,s \texttt{CadenceCalculator} + Renaudin Eq.~8)};
 
     \node[stage, below=0.95cm of $(route.south)!0.5!(stride.south)$] (metrics) {\textbf{Unified Telemetry \& Caloric Accounting}\\(Moving Time, Distance, Pace, Cadence, 2024 Compendium MET)};
@@ -425,7 +425,7 @@ Each incoming fix passes four gating stages in \texttt{WorkoutTrackingEngine} (T
     p_x &= R_{\text{earth}} (\lambda - \lambda_0) \cos\!\left(\frac{\phi_0\pi}{180}\right)\frac{\pi}{180}, \qquad
     p_y = R_{\text{earth}} (\phi - \phi_0)\frac{\pi}{180}.
 \end{align}
-The EKF resolves the pre-thesis Fixed-Alpha freeze failure via: (1)~heading phase normalization with modality Doppler deadbands ($0.8/1.2/1.8$\,m/s); (2)~flat \texttt{Float64List} Joseph-form covariance updates (Eq.~\ref{eq:joseph_form}) with Cauchy--Schwarz clamping ($|P_{EN}| \le 0.99\sqrt{P_{EE}P_{NN}}$); (3)~Phase~2 2-DOF Mahalanobis NIS gating ($\gamma_1 = 5.991$, $\gamma_2 = 13.816$, consecutive re-anchoring $N_{\text{reanchor}}=4$) and centripetal turn-rate scaling ($\mu_\theta = \min(\mu_{\max}, 1 + 0.8(\dot{\psi}_k/\omega_{\text{th}})^2)$)~\cite{groves2013principles,rongli2003survey,sukhenko2025gnss}; (4)~stationary ZUPT clamping when $v < 0.3$\,m/s for $\ge 3$\,s; and (5)~post-session \texttt{GpsDbscanService} T-DBSCAN dwell consolidation ($v_k \le 1.0$\,m/s, $\varepsilon = 6.5$\,m, $\mathrm{MinPts} \ge 4$, duration $\ge 10$\,s)~\cite{ester1996dbscan}. Debug overrides and research flags reside cleanly in \path{lib/core/constants/debug_config.dart} (Table~\ref{tab:gps_validation_params}).
+The EKF resolves the pre-thesis Fixed-Alpha freeze failure via: (1)~heading phase normalization with modality Doppler deadbands ($0.8/1.2/1.8$\,m/s); (2)~flat \texttt{Float64List} Joseph-form covariance updates (Eq.~\ref{eq:joseph_form}) with Cauchy--Schwarz clamping ($|P_{EN}| \le 0.99\sqrt{P_{EE}P_{NN}}$); (3)~Phase~2 2-DOF Mahalanobis NIS gating ($\gamma_1 = 5.991$, $\gamma_2 = 13.816$, consecutive re-anchoring $N_{\text{reanchor}}=4$) and Aetron-adapted centripetal turn-rate scaling ($\mu_\theta = \min(\mu_{\max}, 1 + 0.8(\dot{\psi}_k/\omega_{\text{th}})^2)$)~\cite{groves2013principles,rongli2003survey,sukhenko2025gnss}; and (4)~stationary ZUPT clamping when $v < 0.3$\,m/s for $\ge 3$\,s. Separately, an offline sequential centroid-radius dwell clustering module (\texttt{GpsDbscanService}: $v_k \le 1.0$\,m/s, $\varepsilon = 6.5$\,m, $\mathrm{MinPts} \ge 4$, duration $\ge 10$\,s) is retained for offline stop-detection benchmarks and is not wired into the live tracking loop. Debug overrides and research flags reside cleanly in \path{lib/core/constants/debug_config.dart} (Table~\ref{tab:gps_validation_params}).
 
 \begin{table}[htbp]
 \centering
@@ -546,28 +546,29 @@ The redesigned Kinetic UI organizes user journeys across a clean 5-tab bar (Figu
 \label{fig:ux_flow}
 \end{figure}
 
-\section{Algorithm Provenance and Unified Bayesian Architecture}
+\section{Algorithm Provenance: Production Runtime vs.\ Offline Comparators}
 \label{sec:algo_provenance}
-To maintain strict scientific traceability and avoid conflating peer-reviewed reproductions with project-specific engineering safeguards, Table~\ref{tab:algo_provenance} classifies every algorithmic module in Aetron by its exact provenance. Architecturally, Aetron follows a \emph{Context-Aware Hybrid Time-Series and Recursive Bayesian State Estimation} design: indoor/outdoor context is inferred via a pure-Dart reproduction of Bakirtzis et al.'s \texttt{CAP-ALSTM}~\cite{bakirtzis2022ciod} (\texttt{CapAlstmModel} / \texttt{CapAlstmIodClassifier}, $84{,}737$ parameters, Conv1D $\to$ ASPP $r\in\{1,2,3,4\}$ $\to$ 2-layer LSTM with Bahdanau self-attention $\to$ MLP) paired with a causal 2-state HMM~\cite{zhu2019fast}; outdoor trajectory estimation uses recursive Kalman filtering alongside verified scientific comparators implementing Yang et al.'s IGG-III robust weighting~\cite{yang2001igg3}, Mohamed \& Schwarz's Innovation-Based Adaptive Estimation (IAE)~\cite{mohamed1999iae}, Blom \& Bar-Shalom's 2-mode Interacting Multiple Model (IMM)~\cite{blom1988imm}, causal Zheng stay-point detection~\cite{zheng2009mining}, and a standalone Deno Viterbi HMM map matcher following Newson \& Krumm~\cite{newson2009hidden}.
+To maintain strict scientific traceability and avoid conflating shipped mobile runtime code with offline research benchmarks, Table~\ref{tab:algo_provenance} explicitly distinguishes \textbf{Live Production} modules from \textbf{Offline Comparator / Future Work} modules. In live mobile execution, Aetron runs: (i)~the 4-state nonlinear kinematic EKF ($[x, y, v, \theta]$) with NIS gating; (ii)~\texttt{IodCompositeClassifier.liveMobile()} (DeepIOD Model~C-Mobile on Android and light-free MagIO + IMU + CoreLocation + barometer + causal HMM on iOS); (iii)~causal adaptations of Oxford WPD, Xu Running, MV-GLRT ZUPT, and Renaudin LOSO stride; and (iv)~contiguous monotonic 2024 Compendium MET tables. Separately, \texttt{CapAlstmModel} (with Python-computed Exact Shapley Eq.~6~\cite{bakirtzis2022ciod} and gitignored JSON checkpoints), the linear constant-velocity ($[e, n, v_e, v_n]$) IGG-III/IAE filter~\cite{yang2001igg3,mohamed1999iae}, the 2-mode IMM and causal Zheng stop detectors~\cite{blom1988imm,zheng2009mining}, the sequential centroid-radius dwell clusterer (\texttt{GpsDbscanService}), and the Deno Viterbi HMM map matcher~\cite{newson2009hidden} exist as standalone offline benchmark and future-work modules rather than live runtime defaults.
 
 \begin{table}[htbp]
 \centering
-\caption{Algorithm provenance matrix distinguishing peer-reviewed reproductions, adaptations, engineering designs, and safety-isolated stubs.}
+\caption{Algorithm provenance matrix separating shipped live runtime modules from offline research comparators.}
 \label{tab:algo_provenance}
 \resizebox{\textwidth}{!}{
-\begin{tabular}{@{}L{3.1cm}L{3.2cm}L{2.7cm}L{6.4cm}@{}}
+\begin{tabular}{@{}L{3.0cm}L{3.1cm}L{2.8cm}L{6.5cm}@{}}
 \toprule
-\textbf{Subsystem} & \textbf{Code Module} & \textbf{Provenance Class} & \textbf{Published Basis \& Explicit Disclosure} \\ \midrule
-Indoor/Outdoor Detection (IOD) & \path{cap_alstm_model.dart}, \path{cap_alstm_iod_classifier.dart} & Reproduced + Bayes HMM & Exact CAP-ALSTM + Eq.~6 Shapley~\cite{bakirtzis2022ciod} on CIOD; HMM~\cite{zhu2019fast} tuned on validation only; \texttt{isObservationalOnly: true}. \\
-GNSS Filtering (P01--P02) & \path{gps_smoothing_service.dart}, \path{innovation_adaptive_filter.dart} & Adapted + Comparators & Production 4-state AEKF-NIS; scientific comparators for IGG-III~\cite{yang2001igg3} and IAE~\cite{mohamed1999iae}. \\
-Gap Reconstruction (P03) & \path{trajectory_reconstruction/} & Reproduced (Numerical) & Fritsch--Carlson monotone PCHIP for display/archive only; never overrides distance. \\
-Auto-Pause / Dwell & \path{gps_dbscan_service.dart}, \path{stop_detection/} & Reproduced / Adapted & Production T-DBSCAN; causal IMM~\cite{blom1988imm} and causal Zheng~\cite{zheng2009mining} benchmarked on STAGA. \\
-Step Detection (Walk/Run) & \path{oxford_step_detector.dart}, \path{xu_running_step_detector.dart} & Reproduced / Adapted & Oxford Table~III params ($M=13$, $N=35$, $c=1.2$, $200$\,ms) + Skog MV-GLRT; Xu 2022 running adaptation. \\
-Step Motion Gate & \path{step_motion_gate.dart} & Hybrid (Published + Eng.) & MV-GLRT from Skog; bout constants ($5$ steps, $2200/3500$\,ms, $2.5$\,m) are Aetron engineering parameters verified via A/B ablation. \\
-Cadence Calculator & \path{cadence_calculator_service.dart} & Engineering Design & $6$\,s sliding window verified via A/B ablation against $60/\Delta t_{\text{step}}$ median. \\
-Step Length & \path{research_*_step_length.dart} & Adapted & Renaudin Eq.~8 structure with LOSO coefficients fit on SLEDataset2 \& RBDS. \\
-Calorie Accounting & \path{workout_metrics_calculator.dart} & Reproduced (Lookup) & 2024 Adult Compendium MET tables with client--server bit-exact parity. \\
-Route Map Matching & \path{route-correction-worker/} & Honest Stub + HMM Engine & Standalone Newson--Krumm HMM~\cite{newson2009hidden} unit-tested in Deno; production stub returns \texttt{false} until OSM graph is connected. \\ \bottomrule
+\textbf{Subsystem} & \textbf{Code Module} & \textbf{Runtime / Provenance} & \textbf{Published Basis \& Explicit Disclosure} \\ \midrule
+Live IOD (Android/iOS) & \path{iod_composite_classifier.dart} (\texttt{liveMobile}) & \textbf{Live} · Adapted & DeepIOD 4-ch C-Mobile (Android) \& light-free MagIO + IMU + CoreLocation + barometer + causal HMM (iOS); \texttt{isObservationalOnly: true}. \\
+CAP-ALSTM + SHAP & \path{cap_alstm_model.dart}, \path{train_cap_alstm_iod.py} & \textbf{Offline} · Reproduced & Offline CAP-ALSTM + Python Exact Shapley~\cite{bakirtzis2022ciod} on CIOD with Dart parity $\le 10^{-5}$; weights gitignored, not wired as live default. \\
+GNSS Live EKF (P01--P02) & \path{extended_kalman_filter.dart}, \path{adaptive_gnss_correction_engine.dart} & \textbf{Live} · Adapted + Eng. & Shipped 4-state nonlinear EKF $[x, y, v, \theta]$ + NIS gate; turn-rate scaling ($1+0.8r^2$) and $\sqrt{d^2/\gamma}$ inflation are Aetron heuristics. \\
+GNSS IGG-III / IAE & \path{innovation_adaptive_filter.dart}, \path{unified_bayesian_estimator.dart} & \textbf{Offline} · Adapted & Separate linear CV $[e, n, v_e, v_n]$ comparator for IGG-III~\cite{yang2001igg3} and IAE~\cite{mohamed1999iae}; not wired into live app. \\
+Gap Display (P03) & \path{trajectory_reconstruction/} & \textbf{Live (Display)} · Reproduced & Fritsch--Carlson monotone PCHIP for display/archive only; never overrides distance. \\
+Stop / Dwell Comparators & \path{gps_dbscan_service.dart}, \path{stop_detection/} & \textbf{Offline} · Eng. / Adapted & \texttt{GpsDbscanService} is sequential centroid-radius dwell grouping (not Ester 1996 DBSCAN); IMM~\cite{blom1988imm} \& Zheng~\cite{zheng2009mining} are offline STAGA comparators. \\
+Step Detection (Walk/Run) & \path{oxford_step_detector.dart}, \path{xu_running_step_detector.dart} & \textbf{Live} · Adapted & Causal streaming adaptations of Oxford WPD~\cite{salvi2018oxford} and Xu Running~\cite{xu2022step}. \\
+Step Motion Gate & \path{step_motion_gate.dart} & \textbf{Live} · Adapted + Eng. & Skog~\cite{skog2010zupt} foot-IMU MV-GLRT adapted to handheld smartphone ($\gamma=0.36$ from~\cite{brajdic2013walk}) + Aetron bout gate ($k=5$). \\
+Cadence \& Stride & \path{cadence_calculator_service.dart}, \path{research_*_step_length.dart} & \textbf{Live} · Eng. / Adapted & $6$\,s sliding cadence window (A/B verified) + Renaudin Eq.~8 structure with LOSO coefficients on SLEDataset2 \& RBDS. \\
+Calorie Accounting & \path{user_profile.dart}, \path{compendium_met.ts} & \textbf{Live} · Contiguous Lookup & 2024 Adult Compendium MET tables mapped monotonically to nearest speed band (zero float-equality gaps, client--server parity). \\
+Route Map Matching & \path{route-correction-worker/} & \textbf{Live:} Stub · \textbf{Offline:} HMM & Production stub returns \texttt{false}; standalone Newson--Krumm HMM~\cite{newson2009hidden} unit-tested in Deno without OSM graph. \\ \bottomrule
 \end{tabular}%
 }
 \end{table}

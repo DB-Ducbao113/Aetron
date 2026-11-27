@@ -374,13 +374,13 @@ Table~\ref{tab:sdd_ablations} summarizes the remaining peer-reviewed comparator 
 \begin{tabular}{@{}L{3.1cm}L{3.6cm}L{5.0cm}L{2.8cm}@{}}
 \toprule
 \textbf{Study (SDD)} & \textbf{Dataset / Split} & \textbf{Key Measured Outcome} & \textbf{Decision} \\ \midrule
-SDD-01 Stop Detection & STAGA ($20$k Val / $20$k Test) & Zheng $95.68\%$ F1, IMM $93.74\%$ F1 vs.\ Speed Gate $82.81\%$ F1 & Keep T-DBSCAN + ship causal modules \\
-SDD-02/03 IGG-III+IAE & TU~Wien (P7Pro Val / P9a Test) & IGG-III+IAE $1.859$\,m RMSE / $3.37\%$ dist.\ vs.\ AEKF $2.285$\,m / $0.36\%$ & Keep AEKF-NIS for distance \\
-SDD-04 Step Gate A/B & Oxford (12) + Xu (5) + Impulse & Gate ON: $93.16\%$ / $98.46\%$ Acc; $0/20$ false impulses & \textbf{Keep ON} (verified) \\
-SDD-05 Cadence A/B & Oxford ($2{,}347$ windows) & $6$\,s window $11.20$\,spm vs.\ $60/\Delta t$ median $15.55$--$23.45$\,spm & \textbf{Keep 6s} (verified) \\
-SDD-06 CAP-ALSTM & CIOD ($201$k) + HAR-PMD ($28.8$k) & $94.07\%$ (7ch) / $78.82\%$ (4ch) / $76.14\%$ (iOS); HAR-PMD negative & \textbf{Adopt} (observational) \\
+SDD-01 Stop Detection & STAGA ($20$k Val / $20$k Test) & Zheng $95.68\%$ F1, IMM $93.74\%$ F1 vs.\ Speed Gate $82.81\%$ F1 & Offline comparators (not wired live) \\
+SDD-02/03 IGG-III+IAE & TU~Wien (P7Pro Val / P9a Test) & Linear CV IGG-III+IAE $1.859$\,m / $3.37\%$ vs.\ AEKF $2.285$\,m / $0.36\%$ & Keep live AEKF-NIS; CV filter is offline comparator \\
+SDD-04 Step Gate A/B & Oxford (12) + Xu (5) + Impulse & Gate ON: $93.16\%$ / $98.46\%$ Acc; $0/20$ false impulses & \textbf{Keep ON} (live, adapted) \\
+SDD-05 Cadence A/B & Oxford ($2{,}347$ windows) & $6$\,s window $11.20$\,spm vs.\ $60/\Delta t$ median $15.55$--$23.45$\,spm & \textbf{Keep 6s} (live) \\
+SDD-06 CAP-ALSTM & CIOD ($201$k) + HAR-PMD ($28.8$k) & $94.07\%$ (7ch) / $78.82\%$ (4ch) / $76.14\%$ (iOS); HAR-PMD negative & Offline verified (live app runs \texttt{liveMobile}) \\
 SDD-07 HMM Matcher & Synthetic road graph (Deno) & Viterbi outlier resilience + gap split; $24/24$ Deno tests pass & Not reproduced on Seattle (stub kept) \\
-SDD-08 Unified PDR & TU~Wien P9a ($224$ gap epochs) & PDR update reduces $10$\,s gap RMSE $8.11\text{\,m} \to 5.10\text{\,m}$ ($-37.2\%$) & Shipped for Future Work \\ \bottomrule
+SDD-08 Unified PDR & TU~Wien P9a ($224$ gap epochs) & PDR update reduces $10$\,s gap RMSE $8.11\text{\,m} \to 5.10\text{\,m}$ ($-37.2\%$) & Offline comparator / Future Work \\ \bottomrule
 \end{tabular}%
 }
 \end{table}
