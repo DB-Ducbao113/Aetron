@@ -1,0 +1,376 @@
+\chapter{Experimental Results and Benchmark Evaluation}
+\label{ch:evaluation}
+
+\section{Evaluation Methodology and Evidence Provenance Chain}
+\label{sec:eval_methodology}
+To ensure academic integrity, repeatability, and transparent scientific disclosure, all evaluations in Aetron are conducted against published, peer-reviewed public research datasets featuring independent physical ground truth. Rather than reporting ad-hoc runs or unverified synthetic simulations, every empirical claim presented in this chapter follows a strict, unbroken \textbf{Evidence Provenance Chain}:
+\begin{equation}
+    \text{Paper} \longrightarrow \text{Dataset} \longrightarrow \text{Ground Truth} \longrightarrow \text{Implementation} \longrightarrow \text{Experiment Script} \longrightarrow \text{Raw Results} \longrightarrow \text{Statistical Analysis}
+\end{equation}
+
+Table~\ref{tab:evidence_chain} details the complete provenance chain across all evaluated modules of the Aetron platform, mapping published research papers, public datasets, production Dart classes, and benchmark harnesses.
+
+\begin{table}[htbp]
+\centering
+\caption{Complete Scientific Evidence Provenance Chain across All Evaluated Modules.}
+\label{tab:evidence_chain}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{@{}lllllll@{}}
+\toprule
+\textbf{Module} & \textbf{Published Research} & \textbf{Public Dataset \& Source} & \textbf{Reference Ground Truth} & \textbf{Production Code} & \textbf{Benchmark Script / Test} & \textbf{Evaluation Metrics} \\ \midrule
+\textbf{1. GPS / EKF / AEKF} & D{\"u}rnberger~\cite{tuwien2026gnss}; Groves~\cite{groves2013principles} & TU Wien Multi-GNSS (2025) & Leica GS18 Dual-Freq RTK & \texttt{ExtendedKalmanFilter} & \texttt{run\_fixed\_alpha\_vs\_ekf.py} & Shared-mask RMSE, MAE, P95, \\
+ & Beuchert~\cite{beuchert2023snappergps}; Li et al.~\cite{li2025trajectory} & SnapperGPS~2 (12 rides) & u-blox ZED-F9P RTK & (\texttt{lib/.../ekf/}) & \texttt{aetron\_field\_and\_paper\_evaluator\_test.dart} & Adj.\ Dist.\ Err.\ \& Cluster Bootstrap \\ \midrule
+\textbf{2. Cross-Platform IOD} & Dastagir~\cite{dastagir2024deepiod}; Yoo~\cite{yoo2025seamless} & Cambridge CIOD (1.47M rows) & Session-disjoint labels & \texttt{DeepIodNeuralClassifier} & \texttt{run\_p05\_transition\_benchmark.py} & Held-out Acc, Macro-F1, In/Out Rec, \\
+ & Ashraf~\cite{ashraf2018magio}; Kelishomi~\cite{kelishomi2019activities}; Zhu~\cite{zhu2019fast} & HAR-PMD~\cite{harpmd2025dataset} (120 subjects) & \& 46 doorway transits & \texttt{IosMultiSensorIodClassifier} & \texttt{evaluate\_ios\_magio\_ciod.py} & Event F1, FT/hr \& delay distribution \\ \midrule
+\textbf{3. Step / ZUPT / Cadence} & Salvi~\cite{salvi2018oxford}; Xu~\cite{xu2022step} & Oxford WPD (12); Xu G3 (5) & Tally \& 60\,fps video & \texttt{OxfordStepDetector} & \texttt{stationary\_step\_gating\_test.dart} & Count Acc, WAPE, False Steps, \\
+ & Skog~\cite{skog2010zupt}; Brajdic~\cite{brajdic2013walk}; Mattfeld~\cite{mattfeld2021pedeval} & PedEval (90); OxWalk~\cite{oxwalk2022oxford} (39) & (119,572 verified steps) & \texttt{XuRunningStepDetector} & \texttt{run\_scientific\_cadence\_audit.dart} & Stride Oracle MAE \& display flutter \\ \midrule
+\textbf{4. Adaptive Stride} & Renaudin~\cite{renaudin2012step}; Fukuchi~\cite{fukuchi2017public} & SLEDataset2~\cite{vezocnik2021sle} (114 walk) & Optical MoCap \& & \texttt{ResearchStepLengthFallback} & \texttt{stride\_length\_benchmark\_test.dart} & Strict Leave-One-Subject-Out (LOSO) \\
+ & & Fukuchi RBDS (84 run) & Force-Plate Treadmill & (\texttt{lib/.../sensor/}) & & MAE (cm), RMSE (cm), MAPE (\%) \\ \midrule
+\textbf{5. Reconstruction} & Fritsch \& Carlson~\cite{fritsch1980pchip} & TU Wien RTK (10 walks) & Masked interior RTK & \texttt{WorkoutSessionFinalizer} & \texttt{replay\_tu\_wien\_p03\_closure.py} & Per-session \& pooled horizontal \\
+ & Czerwi{\'n}ski~\cite{czerwinski2026reconstruction} & SnapperGPS~2 (12 rides) & (5\,s decimated gaps) & (\texttt{linearChord} vs \texttt{pchip}) & \texttt{p03\_reconstruction\_baseline\_test.dart} & RMSE, MAE, P95 (Display-Only) \\ \midrule
+\textbf{6. Dwell \& Drift} & Ester~\cite{ester1996dbscan}; Zheng~\cite{zheng2009mining} & STAGA~\cite{spang2022staga} (122,808 epochs) & Mobility stop/trip diary & \texttt{GpsDbscanService} & \texttt{gps\_dbscan\_service\_test.dart} & Stop Precision, Recall, F1, \\
+ & & 60-min Urban Courtyard Log & Stationary truth ($v \equiv 0$) & \texttt{GpsPipeline} (ZUPT) & \texttt{p06\_distance\_fallback\_test.dart} & False stop bouts \& drift ratio \\ \midrule
+\textbf{7. Compression \& MET} & Herrmann~\cite{herrmann2024compendium} (2024 Comp.) & 30,381 TU Wien + Snapper pts & Raw JSON \& 5-digit & \texttt{PolylineCompressionService} & \texttt{workout\_metrics\_calculator\_test.dart} & Byte savings, decode RMSE, \\
+ & Newson \& Krumm~\cite{newson2009hidden} & Exact mph speed bands & Compendium MET codes & \texttt{UserProfile} / \texttt{compendium\_met.ts} & Deno \texttt{deterministic-finalize-worker} & Bit-exact client--server parity \\ \bottomrule
+\end{tabular}
+}
+\end{table}
+
+\subsection{Ground-Truth Integrity and Rig Hardware Configuration}
+Prior to executing benchmark replays, a geodetic, chronometric, and partition-isolation audit was conducted:
+\begin{enumerate}
+    \item \textbf{Surveyor-Grade RTK Solution Quality:} In the TU~Wien dataset~\cite{tuwien2026gnss}, across the 1,680 Gate~3 epochs, \textbf{99.70\%} (1,675 epochs) maintained full dual-frequency carrier-phase integer ambiguity resolution (\texttt{GNSSPhaseMeasuredRTK}, $CQ_{2D} \le 9.3$--$29.7$\,cm), providing a baseline over an order of magnitude more precise than consumer smartphone GNSS.
+    \item \textbf{Hardware Test Stand and Co-Location:} Datasets~31--35 represent five physical walking routes in Vienna where the Google Pixel~9a, Pixel~7~Pro, and Leica GS18 antenna were rigidly co-mounted on a 3D-printed collinear stand ($\approx 15$\,cm inter-device separation). The 10 phone recordings thus reflect five paired environmental and satellite-geometry trials rather than 10 independent routes.
+    \item \textbf{UTC Timestamp Alignment and Common Epoch Masks:} TU~Wien reference timestamps (CET = UTC+1) were aligned to UTC ($t_{\text{UTC}} = t_{\text{CET}} - 3600$\,s) and verified via cross-correlation grid search to absorb OS logger buffering lag (e.g., Pixel~7~Pro $\approx 2.55$\,s). Competing GNSS pipelines are scored on shared common epoch masks $\mathcal{T}_{\text{common}}$ so aggressive outlier rejection cannot artificially deflate RMSE.
+    \item \textbf{Disjoint Holdout Partitioning:} All neural and statistical IOD parameters were fitted strictly on Cambridge CIOD Sessions~00--59, tuned on Validation Sessions~60--71, and evaluated once on untouched Holdout Sessions~72--84 ($N = 201{,}731$). Stride-length coefficients were audited under strict Leave-One-Subject-Out (LOSO) cross-validation.
+\end{enumerate}
+
+\section{Core Module 1: Outdoor GNSS Filtering, AEKF Audit, and Negative Results}
+\label{sec:eval_gps_aekf}
+
+\subsection{Isolated EKF vs.\ AEKF Ablation (Gate~3 Benchmark)}
+We first evaluate whether adding isolated Normalized Innovation Squared (NIS) measurement covariance scaling ($\alpha_k = \max(1.0, \text{NIS}_k / 5.991)$) over a well-tuned 4-state kinematic EKF yields a practically meaningful accuracy improvement on pedestrian smartphone hardware. Table~\ref{tab:tu_wien_gps_benchmark} summarizes the paired Gate~3 benchmark across the 1,680-epoch subset on Pixel~9a and Pixel~7~Pro.
+
+\begin{table}[htbp]
+\centering
+\caption{Isolated Gate~3 GNSS Filtering Benchmark on TU Wien Dataset vs.\ Leica RTK Ground Truth (1,680 Epochs).}
+\label{tab:tu_wien_gps_benchmark}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{@{}lcccccccc@{}}
+\toprule
+\multirow{2}{*}{\textbf{Evaluation Cohort / Device}} & \multicolumn{3}{c}{\textbf{Horizontal Position RMSE (m)}} & \multicolumn{2}{c}{\textbf{Error Percentiles (m)}} & \multicolumn{2}{c}{\textbf{AEKF vs.\ EKF Improvement}} & \multirow{2}{*}{\textbf{Predefined Gate Verdict}} \\ \cmidrule(lr){2-4} \cmidrule(lr){5-6} \cmidrule(lr){7-8}
+ & \textbf{Raw (A)} & \textbf{EKF (B)} & \textbf{AEKF (D)} & \textbf{P50 (Median)} & \textbf{P95} & \textbf{$\Delta$ RMSE} & \textbf{95\% Bootstrap CI} & \\ \midrule
+Pixel 9a -- Dataset 31 (Open Walk) & 2.541 & 1.892 & 1.884 & 1.52 & 3.41 & +0.42\% & $[-0.021, +0.005]$\,m & FAIL ($< 10\%$) \\
+Pixel 9a -- Dataset 32 (Urban Corridor) & 3.120 & 2.145 & 2.128 & 1.78 & 4.12 & +0.79\% & $[-0.038, +0.004]$\,m & FAIL ($< 10\%$) \\
+Pixel 9a -- Datasets 33--35 & 2.894 & 2.030 & 2.012 & 1.64 & 3.89 & +0.88\% & $[-0.045, +0.002]$\,m & FAIL ($< 10\%$) \\
+\textbf{Pixel 9a Aggregate Cohort} & \textbf{2.852} & \textbf{2.022} & \textbf{2.005} & \textbf{1.65} & \textbf{3.81} & \textbf{+0.84\%} & $\mathbf{[-0.0467, +0.0002]}$\,\textbf{m} & \textbf{FAIL ($< 10\%$ target)} \\ \midrule
+Pixel 7 Pro -- Dataset 31 & 4.891 & 4.210 & 4.215 & 3.65 & 8.12 & -0.12\% & $[-0.008, +0.018]$\,m & FAIL ($< 10\%$) \\
+Pixel 7 Pro -- Dataset 32 & 5.412 & 4.890 & 4.892 & 4.12 & 9.45 & -0.04\% & $[-0.005, +0.012]$\,m & FAIL ($< 10\%$) \\
+Pixel 7 Pro -- Datasets 33--35 & 5.120 & 4.712 & 4.718 & 3.98 & 9.02 & -0.13\% & $[-0.007, +0.019]$\,m & FAIL ($< 10\%$) \\
+\textbf{Pixel 7 Pro Aggregate Cohort} & \textbf{5.141} & \textbf{4.604} & \textbf{4.608} & \textbf{3.92} & \textbf{8.86} & \textbf{-0.07\%} & $\mathbf{[-0.0035, +0.0108]}$\,\textbf{m} & \textbf{FAIL ($< 10\%$ target)} \\ \midrule
+\textbf{Total Combined Cohort} & \textbf{3.996} & \textbf{3.313} & \textbf{3.306} & \textbf{2.78} & \textbf{6.34} & \textbf{+0.21\%} & $\mathbf{[-0.0233, +0.0034]}$\,\textbf{m} & \textbf{OVERALL FAIL} \\ \bottomrule
+\end{tabular}
+}
+\vspace{0.15cm}
+\parbox{\textwidth}{\footnotesize\textit{Note on Bootstrap Methodology:} Session rows use an epoch block bootstrap ($L=10$ epochs for serial autocorrelation). Aggregate rows use a paired session-cluster bootstrap across $N=5$ physical routes (2,000 resamples).}
+\end{table}
+
+Across all 10 phone runs, isolated NIS scaling yielded merely a \textbf{+0.21\%} RMSE difference ($7$\,mm: $3.313$\,m vs.\ $3.306$\,m) with a paired route-cluster 95\% bootstrap CI of $[-0.0233, +0.0034]$\,m spanning zero, and slightly degraded Pixel~7~Pro accuracy ($-0.07\%$) on sharp turns. Because the predefined acceptance gate required $\ge 10\%$ RMSE reduction with an upper 95\% CI bound $< 0.0$\,m, isolated NIS scaling received a disciplined \textbf{NO-GO} verdict over a calibrated Standard EKF.
+
+\subsection{Historical Progression: Fixed-Alpha Blending vs.\ Standard EKF}
+\label{sec:eval_fixed_alpha_vs_ekf}
+To audit the upgrade from the Pre-Thesis prototype's Confidence-Based Fixed-Alpha smoother ($\hat{\mathbf{p}}_k = (1-\alpha_k)\hat{\mathbf{p}}_{k-1} + \alpha_k \mathbf{p}_k$, $\alpha_k \in \{0.72, 0.52, 0.34\}$~\cite{aetron2026prethesis}) to the 4-state kinematic EKF, Table~\ref{tab:fixed_alpha_vs_ekf_benchmark} replays six estimators identically across all 3,286 matched TU~Wien epochs.
+
+\begin{table}[htbp]
+\centering
+\caption{Head-to-Head Replay: Fixed-Alpha vs.\ Linear KF vs.\ Standard EKF on TU Wien Dataset (10 Sessions, 5 Routes, 3,286 Matched Epochs).}
+\label{tab:fixed_alpha_vs_ekf_benchmark}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{@{}lcccccccc@{}}
+\toprule
+\textbf{Algorithm Pipeline} & \textbf{RMSE (m)} & \textbf{MAE (m)} & \textbf{P50 (m)} & \textbf{P95 (m)} & \textbf{P99 (m)} & \textbf{Dist.\ Err.\ (\%)} & \textbf{Stat.\ Drift (m)} & \textbf{Host Time ($\mu$s)} \\ \midrule
+\textbf{1. Raw GPS (Unfiltered)} & 3.478 & 2.914 & 2.457 & 6.523 & 8.863 & 3.03\% & 128.09 & 0.00 \\
+\textbf{2. Fixed-Alpha (Pure Blending)} & 3.789 & 3.186 & 2.697 & 7.044 & 9.432 & \textbf{1.42\%} & 110.57 & 17.20 \\
+\textbf{3. Fixed-Alpha Full (Pre-Thesis Heuristics)} & 6.722 & 5.470 & 4.783 & 11.897 & 20.215 & 7.03\% & \textbf{61.67} & 23.35 \\
+\textbf{4. Standard Linear KF (4-State CV)} & \textbf{3.505} & \textbf{2.939} & \textbf{2.496} & \textbf{6.560} & 8.912 & 2.32\% & 124.50 & \textbf{5.92} \\
+\textbf{5. Standard EKF (4-State Kinematic)} & 3.560 & 2.994 & 2.518 & 6.660 & \textbf{8.880} & 2.37\% & 132.46 & 22.57 \\
+\textbf{6. Candidate AEKF (Isolated Scaling)} & 3.560 & 2.994 & 2.518 & 6.660 & \textbf{8.880} & 2.37\% & 132.46 & 20.32 \\ \bottomrule
+\end{tabular}
+}
+\vspace{0.15cm}
+\parbox{\textwidth}{\footnotesize\textit{Protocol Note:} All six pipelines replayed identical NMEA fixes with accuracy proxy $\sigma_{\text{acc}} = \max(2.5, \text{HDOP}\times 4.0\,\text{m})$. Host Python timings are not mobile-device CPU measurements.}
+\end{table}
+
+Standard EKF reduces horizontal RMSE by \textbf{5.97\%} vs.\ Fixed-Alpha Pure ($3.560$\,m vs.\ $3.789$\,m; 95\% route-cluster CI $[-0.294, -0.148]$\,m) and by \textbf{46.64\%} vs.\ Pre-Thesis Fixed-Alpha Full ($6.722$\,m), whose freeze rule ($\Delta d_k \le 2.2$\,m AND $(v_k \le 0.8 \lor \Delta t_k \ge 1.0)$) collapsed permanently at $1$\,Hz and froze normal walking strides.
+
+\subsection{Full Production Pipeline (P01+P02) and Cycling Negative Result (SnapperGPS~2)}
+Finally, Table~\ref{tab:gnss_p01_p02_snapper} evaluates Aetron's integrated Dart production classes (\texttt{P01} kinematic preprocessing + \texttt{P02} Mahalanobis-gated, turn-rate-scaled 4-state AEKF) on shared common epoch masks across both TU~Wien smartphone walks ($2{,}694$ phase-RTK epochs) and all 12 Oxford SnapperGPS~2 cycling rides ($20{,}770$ epochs vs.\ u-blox ZED-F9P RTK~\cite{beuchert2023snappergps}).
+
+\begin{table}[htbp]
+\centering
+\caption{Production Pipeline Benchmark (\texttt{P01+P02}) on TU Wien Phase-RTK Walks and SnapperGPS~2 Cycling (Shared Common Epoch Masks).}
+\label{tab:gnss_p01_p02_snapper}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{@{}llrrrrrr@{}}
+\toprule
+\textbf{Dataset \& Ground Truth} & \textbf{Pipeline Variant} & \textbf{Common $N$} & \textbf{RMSE (m)} & \textbf{MAE (m)} & \textbf{Median (m)} & \textbf{P95 (m)} & \textbf{Adj.\ Dist.\ Err.\ (\%)} \\ \midrule
+\multirow{6}{*}{TU Wien Phase-RTK~\cite{tuwien2026gnss} (Walk)}
+ & Raw Smartphone GNSS (NMEA GGA/RMC) & 2,694 & \textbf{2.113} & \textbf{1.886} & \textbf{1.808} & \textbf{3.429} & 4.15\% \\
+ & Historical \texttt{Fixed Alpha} ($\alpha \in [0.34, 0.82]$) & 2,694 & 8.753 & 6.131 & 3.860 & 19.678 & 9.77\% \\
+ & Aetron \texttt{Legacy 4-State EKF} (No P02) & 2,694 & 10.181 & 7.400 & 4.923 & 21.854 & 11.55\% \\
+ & \texttt{P01 + Legacy 4-State EKF} & 2,694 & 10.181 & 7.400 & 4.923 & 21.854 & 11.55\% \\
+ & \textbf{Production \texttt{P01 + P02 (4-State AEKF)}} & \textbf{2,694} & \textbf{3.432} & \textbf{2.514} & \textbf{2.155} & \textbf{4.746} & \textbf{1.34\%} \\
+ & Component-Only \texttt{Service AEKF} (No Hold) & 2,694 & 2.634 & 2.249 & --- & --- & 1.03\% \\ \midrule
+\multirow{5}{*}{SnapperGPS~2~\cite{beuchert2023snappergps} (Cycling$^\dagger$)}
+ & Raw Snapshot Fixes (Author Med: $14.5$\,m) & 20,770 & \textbf{27.670} & \textbf{18.380} & 13.681 & \textbf{46.462} & 360.34\% \\
+ & Historical \texttt{Fixed Alpha} ($\alpha \in [0.34, 0.82]$) & 20,770 & 40.419 & 23.928 & 13.999 & 81.172 & 44.50\% \\
+ & Aetron \texttt{Legacy 4-State EKF} & 20,770 & 41.001 & 23.575 & \textbf{12.664} & 85.124 & 30.73\% \\
+ & \texttt{P01 + Legacy 4-State EKF} & 20,770 & 64.337 & 33.697 & 15.008 & 137.303 & \textbf{13.41\%} \\
+ & \texttt{P01 + P02 (4-State AEKF)} \textit{(Negative Result)} & 20,770 & 138.226 & 63.778 & 16.341 & 373.104 & 15.18\% \\ \bottomrule
+\end{tabular}
+}
+\vspace{0.15cm}
+\parbox{\textwidth}{\footnotesize $^\dagger$Low-cost snapshot GNSS receiver lacking Doppler speed/course and reporting CEP50 ($50\%$ radial confidence) rather than native OS $68\%$ ($1\sigma$) horizontal accuracy.}
+\end{table}
+
+On TU~Wien smartphone walks, activating the full \texttt{P01 + P02} pipeline eliminates the legacy stationary marker-freezing error ($8.753$\,m Fixed-Alpha and $10.181$\,m Legacy EKF $\to \mathbf{3.432}$\,m RMSE, a $60.8\%$ reduction) and slashes contiguous distance error to \textbf{1.34\%} (a $67.8\%$ reduction vs.\ Raw GNSS at $4.15\%$), satisfying Scott et al.'s $<5\%$ \textbf{Good} benchmark~\cite{scott2016validity}. Crucially, however, SnapperGPS~2 exposes an important \textbf{negative result}: without Doppler velocity and with tighter CEP50 radii, Mahalanobis gating (\texttt{P01+P02}) rejects $75.36\%$ of fixes at cycling speeds and holds stale positions, inflating RMSE to $138.226$\,m (whereas scaling CEP50 to $1\sigma$ via $\times 1.2821$ causes all 12 rides to fail the $20$\,m seed gate). Preserving this negative result delineates the exact sensor-contract assumptions of Phase~2 NIS gating (native OS $1\sigma$ accuracy + Doppler velocity).
+
+\section{Core Module 2: Cross-Platform Indoor/Outdoor Detection Benchmarking}
+\label{sec:eval_iod_benchmark}
+We evaluate environmental context detection across $>490{,}000$ smartphone sensor epochs from Cambridge CIOD~\cite{bakirtzis2022ciod} and HAR-PMD~\cite{harpmd2025dataset}, addressing both (1)~the iOS light-free sensor gap and (2)~event-level doorway transition oscillation.
+
+\subsection{iOS-First Light-Free Multi-Sensor IOD vs.\ Android 4-Channel Model~C-Mobile}
+Table~\ref{tab:ciod_ios_benchmark} presents the strictly session-isolated held-out evaluation on Cambridge CIOD Sessions~72--84 ($N = 201{,}731$ 1\,Hz epochs; Train Sessions~00--59; Validation Sessions~60--71; zero data leakage).
+
+\begin{table}[htbp]
+\centering
+\caption{Session-Isolated Held-Out Indoor/Outdoor Benchmark on Cambridge CIOD (Sessions~72--84, $N = 201{,}731$ Epochs).}
+\label{tab:ciod_ios_benchmark}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+\textbf{Model Variant \& Sensor Profile} & \textbf{iOS Coverage} & \textbf{Accuracy (\%)} & \textbf{Macro-F1 (\%)} & \textbf{Indoor Rec.\ (\%)} & \textbf{Outdoor Rec.\ (\%)} \\ \midrule
+Always-Indoor Majority Baseline & 100\% & 58.97\% & 37.10\% & 100.00\% & 0.00\% \\
+DeepIOD Model~C (8-Ch Research Oracle~\cite{dastagir2024deepiod}) & 0\% (Privileged) & \textbf{90.59\%} & \textbf{90.17\%} & \textbf{94.33\%} & \textbf{85.21\%} \\ \midrule
+Model~C-Mobile (4-Ch Android: Light+Mag+Acc+Day) & 0\% (No ALS) & 73.64\% & 69.59\% & 93.37\% & 45.28\% \\
+MagIO GNB Raw (Mag-Only, Ashraf et al.~\cite{ashraf2018magio}) & 100\% & 72.71\% & 69.64\% & 88.61\% & 49.85\% \\
+MagIO GNB + Causal HMM (Mag-Only~\cite{ashraf2018magio,zhu2019fast}) & 100\% & 73.38\% & 70.67\% & 87.98\% & 52.40\% \\
+\textbf{iOS [MagIO+Acc+Daytime] MLP (Raw)}~\cite{ashraf2018magio,kelishomi2019activities} & \textbf{100\%} & \textbf{77.07\%} & \textbf{74.97\%} & 89.94\% & 58.57\% \\
+\textbf{iOS [MagIO+Acc+Daytime] MLP + Causal HMM}~\cite{zhu2019fast} & \textbf{100\%} & 75.65\% & 74.77\% & 79.94\% & \textbf{69.48\%} \\ \bottomrule
+\end{tabular}
+}
+\vspace{0.15cm}
+\parbox{\textwidth}{\footnotesize\textit{Disclosure:} All offline CIOD rows use strictly the sensors recorded in Cambridge CIOD. Runtime \texttt{CoreLocation} accuracy/blackout fusion~\cite{bui2020gpsiod} and \texttt{CMAltimeter} barometric pressure delta ($\ge 0.35$\,hPa~\cite{feriol2020review}) are active on physical iPhones in \texttt{IosMultiSensorIodClassifier} but are not credited in this table because CIOD lacks GPS accuracy and barometer logs.}
+\end{table}
+
+Three findings stand out from Table~\ref{tab:ciod_ios_benchmark}:
+\begin{enumerate}
+    \item \textbf{Restoring 100\% iOS Coverage while Exceeding the Android 4-Channel Baseline:} Because iOS blocks public ambient light access, Android's 4-channel Model~C-Mobile abstains completely on iPhones. Reproducing MagIO~\cite{ashraf2018magio} using only the magnetometer already matches Model~C-Mobile ($73.38\%$ Acc / $70.67\%$ Macro-F1 with causal HMM). Extending MagIO with linear acceleration dynamics~\cite{kelishomi2019activities} and astronomical daytime elevates held-out accuracy to \textbf{77.07\%} and Macro-F1 to \textbf{74.97\%} ($+3.43$\,pp accuracy and $+5.38$\,pp Macro-F1 over 4-channel Model~C-Mobile) across 100\% of iOS and Android devices.
+    \item \textbf{Dramatic Outdoor Recall Improvement via Causal HMM:} Applying Zhu et al.'s~\cite{zhu2019fast} causal 2-state HMM balances class recall cleanly, lifting Outdoor Recall from $45.28\%$ (4-Ch Android) and $58.57\%$ (Raw MLP) to \textbf{69.48\%} while preserving $74.77\%$ Macro-F1 without any lookahead latency.
+    \item \textbf{Honest Privilege Gap vs.\ 8-Channel DeepIOD:} A $15.2$\,pp Macro-F1 gap remains relative to full 8-channel DeepIOD ($90.17\%$), directly quantifying the information lost when mobile OS sandboxes block cellular \texttt{RSRP}/\texttt{RSRQ} and acoustic channels.
+\end{enumerate}
+
+\subsection{Epoch-Level Classification vs.\ Event-Level Doorway Transition Detection}
+To quantify boundary stability during real doorway crossings, Table~\ref{tab:ciod_comprehensive_benchmark} evaluates five temporal smoothing policies on Model~C-Mobile across all 46 physical doorway transits in Cambridge CIOD Sessions~72--84 (56.04 hours; match window $-5\,\text{s} \le \Delta t_{\text{delay}} \le 60\,\text{s}$).
+
+\begin{table}[htbp]
+\centering
+\caption{Epoch-Level vs.\ Event-Level Doorway Transition Benchmark on Cambridge CIOD (201,731 Epochs, 46 Ground-Truth Transitions, 56.04 Hours).}
+\label{tab:ciod_comprehensive_benchmark}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{@{}l*{12}{c}@{}}
+\toprule
+\multirow{2}{*}{\textbf{Algorithmic Configuration}} & \multicolumn{3}{c}{\textbf{Epoch-Level Classification}} & \multicolumn{8}{c}{\textbf{Event-Level Boundary Transition Detection (46 Physical Transitions)}} & \multirow{2}{*}{\textbf{Mean Delay}} \\ \cmidrule(lr){2-4} \cmidrule(lr){5-12}
+ & \textbf{Accuracy} & \textbf{Macro-F1} & \textbf{Out-Recall} & \textbf{Total Det.} & \textbf{Matched GT} & \textbf{Missed GT} & \textbf{False Trans.} & \textbf{Trans.\ Recall} & \textbf{Trans.\ Precision} & \textbf{Event F1} & \textbf{FT / Hour} & \\ \midrule
+\textbf{1. Raw Binary ($\theta=0.50$)} & 73.64\% & 69.60\% & 45.30\% & 2,890 & \textbf{30 / 46} & 16 & 2,860 & \textbf{65.22\%} & 1.04\% & 2.04\% & \textbf{51.04 / hr} & 16.60\,s \\
+\textbf{2. Majority Vote ($W=7$)} & 73.73\% & 69.70\% & 45.41\% & 1,464 & 23 / 46 & 23 & 1,441 & 50.00\% & 1.57\% & 3.05\% & 25.72 / hr & 16.26\,s \\
+\textbf{3. Dual Hysteresis ($[0.65, 0.35]$)} & 73.97\% & 70.00\% & 45.81\% & 1,042 & 21 / 46 & 25 & 1,021 & 45.65\% & 2.02\% & 3.86\% & 18.22 / hr & 16.62\,s \\
+\textbf{4. Probabilistic EMA ($\alpha=0.30$)} & 74.22\% & 70.16\% & 45.53\% & 689 & 15 / 46 & 31 & 674 & 32.61\% & 2.18\% & 4.08\% & 12.03 / hr & 20.33\,s \\
+\textbf{5. Adaptive Engine (Debounced)} & \textbf{74.26\%} & \textbf{70.22\%} & \textbf{45.61\%} & \textbf{638} & 15 / 46 & \textbf{31} & \textbf{623} & 32.61\% & \textbf{2.35\%} & \textbf{4.39\%} & \textbf{11.12 / hr} & 20.13\,s \\ \bottomrule
+\end{tabular}
+}
+\end{table}
+
+While the Adaptive Transition Engine slashes false handovers by \textbf{78.22\%} ($51.04 \to 11.12$\,FT/hr) and more than doubles Event Precision ($1.04\% \to 2.35\%$) and Event F1 ($2.04\% \to 4.39\%$), Transition Recall drops from $65.22\%$ to $32.61\%$ ($15/46$ physical transits, with $>50\%$ of misses occurring during nighttime/shaded Sessions~78, 80, and 82). Because $11.12$\,FT/hr still represents an erroneous transition every $5.4$\,minutes without GPS/barometer corroboration, Aetron strictly enforces \texttt{isObservationalOnly = true} on all IOD classifiers in production so unverified boundary flips never corrupt workout tracking state.
+
+\section{Core Module 3: Inertial Step Detection, MV-GLRT ZUPT, Cadence, and Stride Length}
+\label{sec:eval_cadence_benchmark}
+
+\subsection{Causal Step Counting and MV-GLRT Stationary Rejection}
+Table~\ref{tab:step_mvglrt_benchmark} benchmarks Aetron's causal Dart detectors (\texttt{OxfordStepDetector}~\cite{salvi2018oxford} and \texttt{XuRunningStepDetector}~\cite{xu2022step}) before and after replacing ad-hoc min-max amplitude bounds with Skog et al.'s MV-GLRT ZUPT~\cite{skog2010zupt} calibrated via Brajdic \& Harle~\cite{brajdic2013walk}.
+
+\begin{table}[htbp]
+\centering
+\caption{Inertial Step Counting and Stationary False-Step Rejection Benchmarks (Oxford WPD, Xu Group~3, and Stationary Stress Tests).}
+\label{tab:step_mvglrt_benchmark}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{@{}llcccc@{}}
+\toprule
+\textbf{Dataset / Stress Protocol} & \textbf{Detector / Reference} & \textbf{Sessions / GT Steps} & \textbf{Predicted Steps} & \textbf{Count Acc.\ / WAPE} & \textbf{Key Finding} \\ \midrule
+\multirow{4}{*}{Oxford WPD~\cite{salvi2018oxford} (Walking)}
+ & Author Recorded Java WPD Reference & 12 / 4,107 & --- & 93.36\% / 6.65\% & Drops terminal step \\
+ & Aetron Causal \texttt{OxfordStepDetector} (Span) & 12 / 4,107 & 4,236 & 93.16\% / 6.84\% & Matches ref.\ within $0.20$\,pp \\
+ & \textbf{Aetron Causal \texttt{OxfordStepDetector} (MV-GLRT)} & \textbf{12 / 4,107} & \textbf{4,225} & \textbf{Closer to GT} & $\gamma_{\text{MV}}=0.36\text{ (m/s}^2)^2$ \\
+ & Hardware Subset: OS Counter vs.\ Aetron Dart & 6 / 2,084 & --- & 99.03\% / 97.69\% & Placement-robust \\ \midrule
+\multirow{4}{*}{Xu Group~3~\cite{xu2022step} (Running)}
+ & Author-Reported \texttt{StepCount} Baseline & 5 / 1,280 & --- & 89.92\% / --- & Non-adaptive baseline \\
+ & Author-Reported Xu et al.\ (2022) & 5 / 1,280 & --- & 98.94\% / --- & Offline windowing \\
+ & Aetron Causal \texttt{XuRunningStepDetector} (Span) & 5 / 1,280 & 1,279 & \textbf{98.69\% / 1.17\%} & Session MAE $2.02$\,spm \\
+ & \textbf{Aetron Causal \texttt{XuRunningStepDetector} (MV-GLRT)} & \textbf{5 / 1,280} & \textbf{1,265} & \textbf{98.83\% total ratio} & $\gamma_{\text{MV}}=0.64\text{ (m/s}^2)^2$ \\ \midrule
+\multirow{2}{*}{Stationary Adversarial Suite}
+ & 60\,s Stationary Hand-Sway ($\pm 0.4$\,m/s$^2$) & 1 / 0 & \textbf{0} & \textbf{100\% Rejected} & Zero phantom drift \\
+ & Isolated $2.2$\,m/s$^2$ 50\,ms Screen-Tap Impulses & 1 / 0 & \textbf{0} & \textbf{100\% Rejected} & MV-GLRT $<$ $\gamma_{\text{MV}}$ \\ \bottomrule
+\end{tabular}
+}
+\end{table}
+
+Replacing heuristic peak-to-peak bounds with Skog MV-GLRT ZUPT eliminates 100\% of false steps from both 60-second stationary hand sway and sharp $2.2$\,m/s$^2$ 50\,ms screen taps (where single-sample min-max span exceeds $1.40$\,m/s$^2$ but 1-second window variance $T_{\text{MV}}$ remains far below $0.36\text{ (m/s}^2)^2$), while actually bringing Oxford WPD total step counts closer to ground truth ($4{,}225$ vs.\ $4{,}236$ against $4{,}107$ GT) and preserving $1{,}265/1{,}280$ steps on Xu Group~3 running. Downstream, \texttt{StepMotionGate} ($N_{\text{bout}} = 5$ rhythmic steps in $[0.65, 4.5]$\,Hz + outdoor stationary GNSS lock) guarantees zero idle counter creep on real handsets.
+
+\subsection{Cadence Trilemma Matrix (Clemson PedEval \& Oxford OxWalk)}
+Table~\ref{tab:cadence_trilemma_matrix} benchmarks sliding cadence window durations across 129 continuous sessions (54.39 hours; 119,572 video-annotated steps) from Clemson PedEval~\cite{mattfeld2021pedeval} and Oxford OxWalk~\cite{oxwalk2022oxford} against our lookahead-free Biomechanical Stride Oracle.
+
+\begin{table}[htbp]
+\centering
+\caption{Cadence Multi-Cohort Benchmark Matrix across Sliding Window Durations (129 Sessions, 119,572 Ground-Truth Steps).}
+\label{tab:cadence_trilemma_matrix}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Evaluation Dimension \& Test Cohort} & \textbf{3-Second Window} & \textbf{6-Second Window (Aetron)} & \textbf{10-Second Window} \\ \midrule
+\textbf{1. CADENCE ACCURACY (MAE)} & & & \\
+$\bullet$ PedEval Regular Walking (30 sessions, 31,435 steps) & 10.75\,spm & \textbf{8.41\,spm} & 7.95\,spm \\
+$\bullet$ PedEval SemiRegular Obstacle (30 sessions, 19,917 steps) & 18.89\,spm & 20.74\,spm & 23.35\,spm \\
+$\bullet$ PedEval Irregular Room Search (30 sessions, 5,316 steps) & 30.04\,spm & 33.68\,spm & 43.70\,spm \\
+$\bullet$ PedEval Total Aggregate Cohort (90 sessions, 56,668 steps) & 19.89\,spm & 20.94\,spm & 25.00\,spm \\
+$\bullet$ OxWalk Active Locomotion (39 sessions, 62,904 steps) & 15.13\,spm & 15.55\,spm & 17.50\,spm \\
+$\bullet$ OxWalk Continuous Walking P13 (4,064 steps, 39 minutes) & 8.48\,spm & \textbf{8.52\,spm} & 9.38\,spm \\ \midrule
+\textbf{2. DISPLAY JITTER (Second-to-Second Flutter Rate)} & & & \\
+$\bullet$ PedEval Regular Walking & $5.68 \pm 9.79$\,spm/s & $\mathbf{2.84 \pm 6.19}$\,\textbf{spm/s} & $1.67 \pm 5.18$\,spm/s \\
+$\bullet$ PedEval SemiRegular Obstacle & $12.99 \pm 13.68$\,spm/s & $\mathbf{7.19 \pm 8.01}$\,\textbf{spm/s} & $4.48 \pm 5.90$\,spm/s \\
+$\bullet$ OxWalk Active Free-Living & $11.32 \pm 12.71$\,spm/s & $\mathbf{6.13 \pm 6.63}$\,\textbf{spm/s} & $3.92 \pm 4.13$\,spm/s \\
+$\bullet$ \textbf{Visual Flutter Reduction vs.\ 3-Second Baseline} & \textbf{Baseline (Extreme Flutter)} & \textbf{-50.0\% Reduction} & -65.0\% Reduction \\ \midrule
+\textbf{3. STOP DECAY LATENCY} & & & \\
+$\bullet$ Latency on Complete Silence (True Physical Stop) & 1.00\,s & \textbf{3.00\,s -- 4.00\,s} & 4.00\,s -- 5.00\,s \\
+$\bullet$ Maximum Observed Transition Lag & 1.00\,s & \textbf{4.52\,s} (5.93\,s in irregular) & 5.93\,s \\ \bottomrule
+\end{tabular}
+}
+\end{table}
+
+The 6-second window resolves the Cadence Trilemma optimally: it achieves \textbf{8.41--8.52\,spm} steady-state MAE, reduces live visual flutter by \textbf{50.0\%} in PedEval Regular Walking ($5.68 \to 2.84$\,spm/s) and \textbf{45.8\%} in OxWalk Active Locomotion ($11.32 \to 6.13$\,spm/s), and bounds stop decay within $3.0$--$4.5$\,s in steady gait (up to $5.93$\,s in irregular room search). Across all 90 PedEval sessions, Aetron's step pipeline also passed $100\%$ of conservation and pause/resume gates ($0.00\%$ cumulative step drift).
+
+\subsection{Leave-One-Subject-Out (LOSO) Adaptive Step-Length Estimation}
+Table~\ref{tab:stride_loso_benchmark} audits Renaudin et al.'s Equation~8~\cite{renaudin2012step} under strict LOSO cross-validation on 114 walking sessions (\texttt{SLEDataset2}~\cite{vezocnik2021sle}, 10 subjects, 98,320 cycles) and 84 force-plate treadmill running sessions (Fukuchi et al.~\cite{fukuchi2017public}, 28 runners at $2.5, 3.5, 4.5$\,m/s).
+
+\begin{table}[htbp]
+\centering
+\caption{Strict Leave-One-Subject-Out (LOSO) Step-Length Benchmark (SLEDataset2 Walking \& Fukuchi RBDS Running).}
+\label{tab:stride_loso_benchmark}
+\begin{tabular}{@{}llrrr@{}}
+\toprule
+\textbf{Cohort ($N$ Sessions)} & \textbf{Estimator (LOSO)} & \textbf{MAE (cm)} & \textbf{RMSE (cm)} & \textbf{MAPE (\%)} \\ \midrule
+\multirow{4}{*}{Walking ($114$ sessions)}
+ & Legacy Static ($0.415 H$) & 9.51 & 11.73 & 12.99\% \\
+ & \textbf{Renaudin Eq.~8 LOSO}~\cite{renaudin2012step} & \textbf{8.61} & \textbf{10.88} & \textbf{12.01\%} \\
+ & Fallback (Known $H$, Cohort $\mathbb{E}[f]$) & 9.05 & 11.16 & 12.73\% \\
+ & Fallback (Missing $H$, Population Mean) & 9.23 & 11.09 & 12.92\% \\ \midrule
+\multirow{4}{*}{Running ($84$ sessions)}
+ & Legacy Static ($0.65 H$) & 20.42 & 23.65 & 17.30\% \\
+ & \textbf{Renaudin Eq.~8 LOSO}~\cite{renaudin2012step} & \textbf{17.80} & \textbf{20.94} & \textbf{15.29\%} \\
+ & Fallback (Known $H$, Cohort $\mathbb{E}[f]$) & 20.89 & 24.49 & 18.22\% \\
+ & Fallback (Missing $H$, Population Mean) & 20.41 & 23.78 & 17.83\% \\ \bottomrule
+\end{tabular}
+\end{table}
+
+Renaudin Eq.~8 lowers walking LOSO MAE from $9.51$\,cm to \textbf{8.61\,cm} (slashing fast-walking MAPE from $14.00\%$ to \textbf{9.97\%}) and lowers running LOSO MAE from $20.42$\,cm to \textbf{17.80\,cm} (cutting $4.5$\,m/s fast-running MAPE from $20.21\%$ to \textbf{14.59\%}). By contrast, an auxiliary file-holdout audit of raw-acceleration cycle models (PCA/CCA) diverged to $20$--$169$\,cm MAE on speed transitions, validating Aetron's bounded stature--cadence support clamps.
+
+\section{Supporting Module 4: Trajectory Reconstruction and Outage Recovery}
+\label{sec:eval_reconstruction}
+Table~\ref{tab:reconstruction_per_session} evaluates Linear Chord against Fritsch--Carlson Monotone PCHIP~\cite{fritsch1980pchip} across simulated 5-second GNSS dropouts on all 10 TU~Wien RTK walk recordings.
+
+\begin{table}[htbp]
+\centering
+\caption{Per-Session Trajectory Reconstruction Accuracy vs.\ Leica RTK Ground Truth (5-Second Simulated Outages).}
+\label{tab:reconstruction_per_session}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{@{}llccccccc@{}}
+\toprule
+\textbf{Device Platform} & \textbf{Dataset ID} & \textbf{Input Fixes} & \textbf{Linear RMSE} & \textbf{PCHIP RMSE} & \textbf{$\Delta$ RMSE (PCHIP $-$ Lin)} & \textbf{Linear P95} & \textbf{PCHIP P95} & \textbf{Outcome ($\varepsilon_{\text{tie}} = 10$\,mm)} \\ \midrule
+\textbf{Pixel 9a} & \texttt{dataset\_31} & 101 & 2.499\,m (2.50\,m) & 2.502\,m (2.50\,m) & +3.2\,mm & 4.52\,m & 4.46\,m & Practical Tie ($|\Delta| < 1$\,cm) \\
+\textbf{Pixel 9a} & \texttt{dataset\_32} & 70 & 1.917\,m (1.92\,m) & 1.912\,m (1.91\,m) & -5.5\,mm & 3.61\,m & 3.58\,m & Practical Tie ($|\Delta| < 1$\,cm) \\
+\textbf{Pixel 9a} & \texttt{dataset\_33} & 101 & 1.920\,m (1.92\,m) & 1.902\,m (1.90\,m) & -18.1\,mm & 3.00\,m & 3.00\,m & PCHIP ($+18$\,mm) \\
+\textbf{Pixel 9a} & \texttt{dataset\_34} & 70 & 1.488\,m (1.49\,m) & 1.506\,m (1.51\,m) & +18.2\,mm & 2.61\,m & 2.64\,m & Linear ($+18$\,mm) \\
+\textbf{Pixel 9a} & \texttt{dataset\_35} & 89 & 1.524\,m (1.52\,m) & 1.517\,m (1.52\,m) & -6.8\,mm & 2.64\,m & 2.57\,m & Practical Tie ($|\Delta| < 1$\,cm) \\ \midrule
+\textbf{Pixel 7 Pro} & \texttt{dataset\_31} & 100 & 4.345\,m (4.35\,m) & 4.364\,m (4.36\,m) & +19.3\,mm & 6.92\,m & 6.93\,m & Linear ($+19$\,mm) \\
+\textbf{Pixel 7 Pro} & \texttt{dataset\_32} & 70 & 5.724\,m (5.72\,m) & 5.737\,m (5.74\,m) & +13.3\,mm & 9.15\,m & 9.14\,m & Linear ($+13$\,mm) \\
+\textbf{Pixel 7 Pro} & \texttt{dataset\_33} & 100 & 4.973\,m (4.97\,m) & 4.992\,m (4.99\,m) & +19.3\,mm & 6.67\,m & 6.74\,m & Linear ($+19$\,mm) \\
+\textbf{Pixel 7 Pro} & \texttt{dataset\_34} & 71 & 3.491\,m (3.49\,m) & 3.514\,m (3.51\,m) & +22.9\,mm & 4.99\,m & 5.04\,m & Linear ($+23$\,mm) \\
+\textbf{Pixel 7 Pro} & \texttt{dataset\_35} & 89 & 3.599\,m (3.60\,m) & 3.628\,m (3.63\,m) & +29.1\,mm & 5.64\,m & 5.67\,m & Linear ($+29$\,mm) \\ \midrule
+\textbf{Unweighted Session Mean} & \textbf{10 Runs} & \textbf{86.1 avg} & \textbf{3.148\,m} & \textbf{3.157\,m} & \textbf{+9.5\,mm} & 4.98\,m & 4.98\,m & \textbf{Lin wins 7/10 raw; 8/10 at 0.01\,m} \\
+\textbf{Fix-Weighted Mean} & \textbf{10 Runs} & \textbf{861 total} & \textbf{3.160\,m} & \textbf{3.169\,m} & \textbf{+9.0\,mm} & 4.98\,m & 4.98\,m & \textbf{Weighted across 861 sparse fixes} \\
+\textbf{Pooled Pointwise (All Epochs)} & \textbf{10 Runs} & \textbf{3,286 pts} & \textbf{3.456\,m} & \textbf{3.468\,m} & \textbf{+12.1\,mm} & \textbf{6.43\,m} & \textbf{6.49\,m} & \textbf{Pooled across all 3,286 points} \\ \bottomrule
+\end{tabular}
+}
+\end{table}
+
+Across all 10 TU~Wien recordings, differences never exceed $2.91$\,cm (pooled $3.456$\,m vs.\ $3.468$\,m; masked interior epochs $2.108$\,m vs.\ $2.125$\,m on TU~Wien and $14.114$\,m vs.\ $15.486$\,m on SnapperGPS~2). Linear Chord wins 7/10 sessions unrounded (6 wins, 2 ties at $0.01$\,m; 6 wins, 3 ties at $\varepsilon_{\text{tie}} = 10$\,mm), executes $\approx 25\%$ faster ($1.8\,\mu$s vs.\ $2.4\,\mu$s per point), and avoids heading-derivative lateral bulging. Accordingly, Aetron confines P03 trajectory reconstruction strictly to offline visual display and never promotes reconstructed vertices into saved distance metrics.
+
+\section{Supporting Module 5: Dwell Clustering, Drift Suppression, Compression, and Calorimetry}
+\label{sec:eval_calorie_drift}
+
+\subsection{STAGA Stop/Motion Classification and Urban Stationary Drift Suppression}
+Table~\ref{tab:staga_dbscan_benchmark} evaluates Aetron's post-process \texttt{GpsDbscanService} ($\varepsilon=6.5$\,m, $t\ge 10$\,s, $\mathrm{MinPts}=4$), Zheng's stay-point segmenter~\cite{zheng2009mining} ($D_{\max}=8$\,m, $T_{\min}=10$\,s), and a causal 3-second speed-threshold Auto-Pause gate ($v \le 0.8$\,m/s) on the STAGA mobility diary~\cite{spang2022staga} ($N = 122{,}808$ GPS epochs at $\Delta t_{\text{med}} = 10.0$\,s: $78{,}865$ \textsc{Stop}, $43{,}943$ \textsc{Trip}).
+
+\begin{table}[htbp]
+\centering
+\caption{Stop/Motion Classification Benchmark on the STAGA Mobility Diary ($N = 122{,}808$ Epochs, $\Delta t_{\text{med}} = 10.0$\,s).}
+\label{tab:staga_dbscan_benchmark}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+\textbf{Method} & \textbf{Precision (\%)} & \textbf{Recall (\%)} & \textbf{F1 (\%)} & \textbf{Accuracy (\%)} & \textbf{False Stops (Bouts)} \\ \midrule
+\textbf{Aetron \texttt{T-DBSCAN} ($6.5$\,m)} & \textbf{98.97} & 52.39 & 68.52 & 69.08 & \textbf{122} \\
+Zheng Stay-Point ($8.0$\,m)~\cite{zheng2009mining} & 97.03 & \textbf{71.15} & \textbf{82.10} & \textbf{80.07} & 598 \\
+Causal Speed Gate ($v \le 0.8$\,m/s) & 96.44 & 67.98 & 79.75 & 77.83 & 1,117 \\ \bottomrule
+\end{tabular}
+\end{table}
+
+\texttt{T-DBSCAN} achieves \textbf{98.97\%} \textsc{Stop} precision with only \textbf{122} false stop bouts---$9.2\times$ fewer false pauses during slow urban movement than speed-only Auto-Pause ($1{,}117$ bouts)---while its conservative $6.5$\,m centroid radius yields $52.39\%$ recall when multi-hour indoor drift exceeds $6.5$\,m. Complementarily, in a 60-minute physical urban courtyard stationary test, raw GPS accumulated $150$--$284.6$\,m of multipath wander, whereas Aetron's EKF ZUPT + DBSCAN pipeline capped drift to \textbf{4.2\,m} (\textbf{98.5\%} suppression).
+
+\subsection{Google Encoded Polyline Compression and 2024 Compendium Parity}
+Table~\ref{tab:polyline_compression} quantifies \texttt{PolylineCompressionService} across all $30{,}381$ empirical coordinates ($1{,}418{,}305$\,B raw JSON) from TU~Wien and SnapperGPS~2, achieving \textbf{94.18\%} payload reduction ($17.19\times$ smaller, $0.375$\,m decode RMSE) at precision~5 and \textbf{91.89\%} reduction ($0.023$\,m RMSE) at precision~6.
+
+\begin{table}[htbp]
+\centering
+\caption{Empirical Google Encoded Polyline Compression across $30{,}381$ Coordinates ($1{,}418{,}305$\,B Raw JSON).}
+\label{tab:polyline_compression}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+\textbf{Precision} & \textbf{Encoded Size (B)} & \textbf{Bytes Saved (\%)} & \textbf{Compression Factor} & \textbf{Decode RMSE (m)} & \textbf{Max Error (m)} \\ \midrule
+$10^{-5}$\,deg (p=5) & 82,523 & \textbf{94.18\%} & $\mathbf{17.19\times}$ & 0.375 & 0.669 \\
+$10^{-6}$\,deg (p=6) & 114,972 & 91.89\% & $12.34\times$ & \textbf{0.023} & \textbf{0.066} \\ \bottomrule
+\end{tabular}
+\end{table}
+
+For caloric expenditure, we explicitly distinguish between formulaic agreement with population-average exercise physiology tables and individual $\dot{V}\text{O}_2$ indirect calorimetry. Automated Flutter and Deno tests confirm \textbf{bit-exact parity} between client (\texttt{UserProfile.calculateCalories}) and server (\texttt{compendium\_met.ts}) across all 2024 Adult Compendium~\cite{herrmann2024compendium} walking, running, and cycling speed bands, zero calorie accrual when displacement is zero, and non-promotion of stub map-matching geometry when no OSRM provider is attached.
+
+\section{End-to-End System Integration and Operational Metrics}
+\label{sec:eval_e2e_system}
+
+\subsection{Microsecond Execution Latency and Memory Footprint}
+Profiled on ARM64 Apple Silicon and Android hardware, all pure-Dart engines operate well within mobile real-time budgets:
+\begin{itemize}
+    \item \textbf{4-State EKF Prediction + Update:} \textbf{12.4\,$\mu$s} per epoch ($< 0.002\%$ CPU duty cycle at 1\,Hz).
+    \item \textbf{Pure Dart Model~C-Mobile / iOS MagIO MLP Inference:} \textbf{780\,$\mu$s (0.78\,ms)} per window (Model~C-Mobile) and $< 50\,\mu$s per window for the frozen 14-feature iOS MagIO+Acc MLP + Causal HMM.
+    \item \textbf{Adaptive Transition Engine Debouncing:} \textbf{38.2\,$\mu$s} per evaluation.
+    \item \textbf{Memory Footprint:} Pure Dart IOD model weights occupy \textbf{54.0\,KB} (Model~C-Mobile) plus $< 4$\,KB (iOS MagIO MLP); total runtime algorithmic memory overhead remains under \textbf{1.8\,MB}.
+\end{itemize}
+
+\subsection{Automated Software Verification vs.\ Physical Hardware Reality}
+Aetron enforces continuous static analysis and automated regression verification across both its production (\texttt{main}) and research (\texttt{ekf}) branches:
+\begin{itemize}
+    \item \textbf{Static Analysis Baseline:} \texttt{flutter analyze} reports \textbf{0 issues found} (clean).
+    \item \textbf{Automated Test Suite:} \textbf{786 tests passing (100\% green, 3 skipped)} covering EKF/AEKF numerical stability, iOS light-free MagIO+HMM IOD, MV-GLRT stationary step rejection, cadence trilemma gates, Renaudin LOSO stride fallback, 2024 Compendium parity, Isar persistence, and iOS/Android OS notification settings deep-linking.
+    \item \textbf{Backend Verification:} Deno test suite validates \texttt{deterministic-finalize-worker} canonical reconciliation and Compendium parity.
+\end{itemize}
+
+\paragraph{Epistemological Boundary Disclosure:}
+Automated software verification proves mathematical correctness, Joseph-form covariance stability, state-machine safety, and persistence contracts under controlled harness conditions. It does \textbf{not} prove multi-hour endurance survival under vendor-specific OEM process killers (Android Doze, MIUI/OneUI), physical Monsoon power-monitor battery drain (modeled analytically at $<0.05\%$/h from CPU duty cycles), or physical iPhone doorway handover F1 prior to live iOS field ground-truth collection. These operational boundaries are formally disclosed as part of this thesis.

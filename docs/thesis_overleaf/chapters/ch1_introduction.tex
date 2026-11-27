@@ -1,0 +1,97 @@
+\chapter{Introduction}
+\label{ch:introduction}
+
+\section{Background and Motivation}
+In recent years, smartphone-based fitness tracking applications have become ubiquitous tools for promoting healthy lifestyles, quantifying athletic performance, and supporting recreational training regimens. Modern consumer smartphones are equipped with sophisticated multi-sensor platforms, including multi-constellation Global Navigation Satellite System (GNSS) receivers (GPS, GLONASS, Galileo, BeiDou), micro-electro-mechanical systems (MEMS) inertial measurement units (3-axis accelerometers and gyroscopes), magnetometers, barometric pressure transducers, and (on Android devices) ambient light sensors. In theory, these ubiquitous sensors allow mobile devices to operate as standalone, self-contained telemetry computers capable of recording workout trajectories, classifying indoor and outdoor contexts, estimating physical velocity and stride length, tracking cadence, and calculating caloric expenditure without requiring expensive dedicated sports watches or chest straps.
+
+Commercial applications such as Strava, Nike Run Club, and Garmin Connect have demonstrated the immense commercial appeal and utility of mobile fitness tracking. However, despite their widespread adoption, commercial fitness software platforms treat their core filtering, smoothing, environment classification, and gait-detection algorithms as proprietary trade secrets. Academic researchers and independent software engineers seeking to build reliable, high-fidelity sports tracking systems from first principles encounter substantial theoretical and practical hurdles. A commercial application may produce smooth visual polylines, but the underlying mechanisms---how measurement noise is rejected, how satellite dropouts are bridged, how indoor environments are detected without privileged OS sensors, how stationary device handling is separated from genuine footsteps, and how energy expenditure is approximated---remain completely opaque.
+
+Building a dependable, open-source fitness tracking architecture requires synthesizing knowledge across multiple computer science and engineering disciplines: geodetic kinematics, optimal Bayesian estimation, embedded machine learning inference, probabilistic temporal filtering (Hidden Markov Models), human gait biomechanics, real-time reactive state management, and fail-safe local data persistence. Orchestrating these components into a unified, battery-efficient, and mathematically verifiable mobile application is the primary technical objective of this research.
+
+\section{Problem Statement}
+Designing an accurate mobile fitness tracking application on commodity Android and iOS hardware introduces several fundamental challenges that conventional desktop or cloud systems do not face:
+
+\begin{enumerate}[label=\textbf{C\arabic*.}]
+    \item \textbf{Severe GNSS Measurement Noise and Multipath in Urban Environments:} Low-cost smartphone GNSS antennas have limited gain and lack multipath suppression hardware found in geodetic receivers. In urban canyons, tree-covered trails, or under stadium overhangs, non-line-of-sight (NLOS) signal reflections cause severe coordinate spikes, pseudorange errors, and phantom movements. When an athlete pauses at a traffic light, raw GPS coordinates frequently drift by tens to hundreds of meters per hour, artificially inflating total workout distance and distorting average pace.
+    \item \textbf{Cross-Platform Sensor Sandboxing and Indoor/Outdoor Boundary Oscillation:} Athletes frequently transition between indoor environments (gymnasiums, living spaces, transit tunnels) and outdoor tracks. While published deep learning Indoor/Outdoor Detection (IOD) models rely heavily on cellular radio metrics (RSRP/RSRQ), raw GNSS $C/N_0$, or ambient light photodiodes, modern mobile operating systems---particularly iOS---strictly prohibit third-party apps from accessing all of these signals. An ambient-light-dependent classifier therefore yields 0\% active coverage on iPhones, whereas naive instantaneous classifiers suffer severe boundary jitter, triggering dozens of false handovers per hour.
+    \item \textbf{Stationary False Steps and the Biomechanical Cadence Trilemma:} Smartphone accelerometers continuously capture non-locomotor impulses (tapping the screen while standing still, adjusting the phone in hand, or checking notifications). Without statistically grounded zero-velocity detection and rhythmic bout gating, step counters accumulate phantom steps while the athlete is stationary. Simultaneously, live cadence estimation (steps per minute, spm) faces a three-way trade-off between accuracy, display jitter ($\pm 15$--$25$\,spm flutter on short 3-second windows), and stop decay latency ($>5$\,s lag on long 10-second windows).
+    \item \textbf{Unverified Algorithmic Complexity and Hand-Crafted Heuristics:} Academic literature frequently proposes complex neural networks or Adaptive Extended Kalman Filters (AEKF) evaluated only on synthetic or leaked splits, while mobile engineering codebases often fall back to ad-hoc linear weights and magic thresholds without formal probabilistic grounding or independent holdout validation against surveyor-grade ground truth.
+    \item \textbf{Strict Mobile Platform Constraints:} Algorithms must execute within tight mobile operating system resource envelopes on native Android and iOS devices. Background sensor collection faces aggressive OS thread throttling, memory caps, notification permission gating, and battery life constraints, demanding microsecond-level pure-Dart execution with zero privileged telephony permissions.
+\end{enumerate}
+
+\section{Scope and Objectives}
+This thesis addresses the design, implementation, and rigorous scientific benchmarking of \textbf{Aetron}, a research-driven, cross-platform mobile fitness tracking application implemented in Flutter and Dart for native Android and iOS. The specific objectives are defined as follows:
+
+\begin{itemize}
+    \item \textbf{Objective 1: Multi-Modal Research-Grounded Tracking Architecture:} Engineer a clean, layered mobile software architecture unifying outdoor GNSS kinematic filtering (4-state EKF with Joseph-form covariance stabilization, ZUPT, and Phase~1/2 preprocessing/gating), cross-platform Indoor/Outdoor Detection (Android Model~C-Mobile + Adaptive Transition Engine and iOS-first light-free MagIO + Accelerometer + CoreLocation + Barometer + Causal HMM fusion), MV-GLRT ZUPT-hardened inertial step/cadence estimation, Renaudin adaptive step length, and 2024 Adult Compendium metabolic accounting.
+    \item \textbf{Objective 2: Strict Algorithmic Reproduction and Baseline Comparison:} Reproduce peer-reviewed published algorithms with verified DOIs and benchmark them on open, published public datasets containing independent reference baselines (TU~Wien Leica GS18 RTK, Oxford SnapperGPS~2, Cambridge CIOD, HAR-PMD, STAGA, Clemson PedEval, Oxford OxWalk, Oxford WPD, Xu Running Group~3, SLEDataset2, and Fukuchi RBDS).
+    \item \textbf{Objective 3: Evidence-Based Architectural Selection and Negative Result Preservation:} Establish predefined empirical acceptance gates for all candidate algorithms. Retain proven baselines or preserve negative results transparently whenever candidate complexity fails to generalize (e.g., isolated AEKF NO-GO on TU~Wien walking and CEP50 SnapperGPS cycling failure).
+    \item \textbf{Objective 4: System Integration, Observational Isolation, and Persistence Verification:} Enforce strict architectural separation between production UI/tracking state and experimental telemetry (\texttt{isObservationalOnly: true} on IOD; display-only offline trajectory reconstruction), backed by Isar/SQLite local persistence, Supabase server reconciliation, and clean automated regression testing.
+\end{itemize}
+
+\section{Methodological Framework: Two-Tier Evaluation Paradigm}
+To maintain utmost academic and engineering integrity, this thesis establishes a clear demarcation between two distinct evaluation tiers, as illustrated in Figure~\ref{fig:methodology_paradigm}:
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+    tier1/.style={rectangle, draw=aetroncyan, fill=blue!5, rounded corners=6pt, thick, text width=6.6cm, align=left, inner sep=10pt, font=\small},
+    tier2/.style={rectangle, draw=codegreen, fill=green!5, rounded corners=6pt, thick, text width=6.6cm, align=left, inner sep=10pt, font=\small},
+    bridge/.style={rectangle, draw=aetronblue, fill=gray!8, rounded corners=6pt, thick, text width=14.2cm, align=center, inner sep=8pt, font=\small},
+    arrow/.style={-{Stealth[length=2.5mm]}, thick, color=aetronblue}
+]
+    % Tier 1 Box
+    \node[tier1] (t1) {
+        \textbf{\large Tier 1: Offline Scientific Benchmark}\\[4pt]
+        $\bullet$ \textbf{Public Datasets:} TU Wien RTK, SnapperGPS~2, Cambridge CIOD, STAGA, PedEval, OxWalk, Oxford WPD, Xu, SLEDataset2, Fukuchi RBDS.\\
+        $\bullet$ \textbf{Reference Ground Truth:} Centimeter Leica GS18 / ZED-F9P RTK, Video Heel-Strikes, Force-Plate Treadmills, Physical Transits.\\
+        $\bullet$ \textbf{Research Focus:} DOI-verified reproduction, session/subject holdout, paired cluster bootstrap, negative-result preservation.
+    };
+
+    % Tier 2 Box
+    \node[tier2, right=1.0cm of t1] (t2) {
+        \textbf{\large Tier 2: Online Mobile System Engine}\\[4pt]
+        $\bullet$ \textbf{Production Stack:} Flutter (Android \& iOS), Pure Dart ML/DSP, Isar NoSQL, SQLite, Supabase Edge Workers.\\
+        $\bullet$ \textbf{Runtime Guarding:} \texttt{isObservationalOnly} IOD, display-only P03 splines, MV-GLRT stationary step gating.\\
+        $\bullet$ \textbf{Engineering Focus:} Sub-millisecond latency, zero UI thread jank, 786 passing tests, crash-free background persistence.
+    };
+
+    % Bridge Box
+    \node[bridge, below=0.9cm of $(t1.south)!0.5!(t2.south)$] (b) {
+        \textbf{Unified Evidence Provenance \& Architectural Integration}\\[2pt]
+        Algorithms proven on independent holdout data graduate to production; candidate models failing gates or platform assumptions (e.g., isolated AEKF NO-GO, SnapperGPS CEP50 failure, 4-Ch IOD iOS light gap) are transparently documented and safely isolated.
+    };
+
+    \draw[arrow] (t1.south) -- ++(0,-0.4) -| (b.north -| t1.south);
+    \draw[arrow] (t2.south) -- ++(0,-0.4) -| (b.north -| t2.south);
+\end{tikzpicture}
+\caption{Two-Tier Scientific Evaluation Methodology in Aetron.}
+\label{fig:methodology_paradigm}
+\end{figure}
+
+\begin{enumerate}
+    \item \textbf{Tier 1: Offline Algorithmic Benchmark (Scientific Reproduction):} Evaluates the exact mathematical formulation of algorithms (EKF vs.\ AEKF vs.\ Fixed-Alpha, light-free iOS MagIO+Acc+HMM vs.\ 4-Ch Android IOD, MV-GLRT ZUPT step detectors, 3s/6s/10s cadence windows, LOSO Renaudin stride estimation, and T-DBSCAN dwell clustering) on open, reproducible public datasets with independent physical ground truth. This tier proves mathematical correctness, statistical discipline, and generalization boundaries.
+    \item \textbf{Tier 2: End-to-End System Evaluation (Mobile Software Engineering):} Assesses the runtime software implementation on Android and iOS targets, verifying sensor stream synchronization, pure-Dart inference latency, UI frame rendering stability, database transactional integrity, OS notification permission deep-linking, and automated test verification.
+\end{enumerate}
+
+By separating offline algorithmic proofs from online mobile runtime verification, this thesis prevents circular reasoning and ensures that all reported performance claims are traceable and scientifically grounded.
+
+\section{Thesis Contributions}
+The main contributions of this thesis are summarized as follows:
+
+\begin{enumerate}
+    \item \textbf{An Open, Research-Grounded Mobile Fitness Architecture:} We design and implement Aetron in Flutter and Dart with a clean layered separation between presentation (Kinetic design system), reactive state management (Riverpod), pure-Dart algorithmic domain services, dual local persistence (Isar + SQLite), and deterministic Supabase cloud reconciliation.
+    \item \textbf{Rigorous Empirical GNSS Filtering Evaluation and Negative Result Transparency:} Across TU~Wien Leica GS18 phase-RTK pedestrian walks and Oxford SnapperGPS~2 cycling rides, we show (a)~why replacing Pre-Thesis Fixed-Alpha smoothing with a kinematic 4-state EKF eliminates the stationary-freeze pathology (cutting horizontal RMSE from $6.722$\,m down to $3.560$\,m on 3,286 matched epochs, and reducing contiguous distance error to $1.34\%$ under the Phase~1+2 pipeline on 2,694 shared phase-RTK epochs); (b)~why isolated NIS scaling over a tuned EKF earns a disciplined \textit{NO-GO} ($+0.21\%$ RMSE change, 95\% CI $[-0.0233, +0.0034]$\,m); and (c)~why CEP50 Doppler-free cycling data causes NIS gating divergence ($138.226$\,m RMSE), preserved verbatim as a negative result.
+    \item \textbf{Cross-Platform iOS/Android Indoor--Outdoor Detection Architecture:} Beyond evaluating Android 4-channel Model~C-Mobile with Schmitt-trigger dwell debouncing (cutting false transitions by $78.22\%$ from $51.04$ to $11.12$\,FT/h while honestly documenting its $4.39\%$ event-level F1), we solve iOS's missing-light-sensor barrier by engineering a light-free multi-sensor classifier (\texttt{IosMultiSensorIodClassifier}) combining MagIO geomagnetic features, accelerometer dynamics, CoreLocation accuracy/blackout likelihoods, \texttt{CMAltimeter} pressure transitions, and a causal 2-state HMM. On held-out Cambridge CIOD (Sessions~72--84, $N=201{,}731$), the light-free \texttt{[MagIO+Acc+Daytime]} MLP achieves \textbf{77.07\% accuracy} and \textbf{74.97\% Macro-F1} ($69.48\%$ outdoor recall with HMM), outperforming the Android-only 4-channel baseline while restoring 100\% iOS coverage. We further replace legacy linear weights in \texttt{EnvironmentClassifier} with probabilistic sigmoid likelihoods, Benhamou's path straightness index, and a causal HMM.
+    \item \textbf{MV-GLRT Stationary Step Gating, Cadence Trilemma Optimization, and LOSO Stride Estimation:} We integrate Skog et al.'s MV-GLRT ZUPT into causal Oxford WPD and Xu running step detectors alongside Brajdic \& Harle rhythmic bout confirmation (\texttt{StepMotionGate}), eliminating 100\% of stationary hand-sway and screen-tap false steps ($0$ false steps over $60$\,s) while preserving $4{,}225/4{,}107$ steps on Oxford WPD and $1{,}265/1{,}280$ on Xu Group~3. Across 119,572 video-annotated steps (PedEval and OxWalk), we justify a 6-second cadence window ($50.0\%$ flutter reduction, $8.41$\,spm steady MAE), and validate LOSO Renaudin adaptive step length ($9.51 \to 8.61$\,cm walk MAE; $20.42 \to 17.80$\,cm run MAE).
+    \item \textbf{Integrated Trajectory Reconstruction, T-DBSCAN Dwell Clustering, Compression, and 2024 Compendium Parity:} We benchmark Linear Chord vs.\ Monotone PCHIP outage interpolation (isolated strictly to display), audit T-DBSCAN on STAGA ($98.97\%$ stop precision, $122$ false stops vs.\ $1{,}117$ for speed-only Auto-Pause), quantify $94.18\%$ Google Encoded Polyline compression ($0.375$\,m RMSE), and verify bit-exact client--server parity with the 2024 Adult Compendium of Physical Activities.
+\end{enumerate}
+
+\section{Structure of the Thesis}
+The remainder of this thesis is organized as follows:
+\begin{itemize}
+    \item \textbf{Chapter~\ref{ch:literature_review} (Literature Review):} Reviews peer-reviewed theoretical foundations across geodetic GNSS kinematics, Kalman filtering, cross-platform Indoor/Outdoor Detection (including MagIO, IODetector, DeepIOD, and HMM smoothing), inertial step detection and ZUPT-GLRT stationary rejection, adaptive stride length, trajectory interpolation, T-DBSCAN dwell clustering, and 2024 Adult Compendium calorimetry.
+    \item \textbf{Chapter~\ref{ch:system_design} (System Design and Implementation):} Details Aetron's layered Flutter/Dart architecture, pure-Dart algorithmic pipelines, cross-platform iOS/Android IOD routing, MV-GLRT step gating, offline display-only reconstruction, 2024 Compendium accounting, and observational safety gating.
+    \item \textbf{Chapter~\ref{ch:evaluation} (Experimental Results and Benchmark Evaluation):} Presents the complete Evidence Provenance Chain, empirical benchmark tables, statistical inference, negative results, and runtime operational metrics across all evaluated modules.
+    \item \textbf{Chapter~\ref{ch:conclusion} (Conclusion and Future Work):} Synthesizes key achievements, discusses limitations and threats to validity with complete transparency, and outlines concrete future research directions.
+\end{itemize}

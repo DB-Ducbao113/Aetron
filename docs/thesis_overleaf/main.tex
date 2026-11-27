@@ -1,0 +1,151 @@
+\documentclass[12pt,a4paper,oneside]{report}
+
+% =========================================================
+% INSTRUCTIONS FOR OVERLEAF COMPILATION:
+% 1. Go to Overleaf -> Menu (top-left) -> Settings
+% 2. Set 'Compiler' to 'XeLaTeX' (for native Unicode & Vietnamese fonts)
+% =========================================================
+
+% ---------------------------------------------------------
+% Core Academic Packages & Engine Configuration
+% ---------------------------------------------------------
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[utf8]{inputenc}
+  \usepackage[T5,T1]{fontenc}
+  \usepackage{lmodern}
+\else
+  % Compile with XeLaTeX on Overleaf
+  \usepackage{fontspec}
+  \defaultfontfeatures{Ligatures=TeX}
+  \setmainfont{Noto Serif}
+\fi
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{subcaption}
+\usepackage{cite}
+\usepackage{listings}
+\usepackage{microtype}
+\usepackage{setspace}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc}
+\usepackage[hidelinks,breaklinks=true,pdfencoding=auto]{hyperref}
+
+% Typography & Spacing
+\onehalfspacing
+\setlength{\parindent}{1.5em}
+\setlength{\parskip}{0.5em}
+
+% Custom Colors for Tables and Highlights
+\definecolor{aetronblue}{RGB}{20, 55, 94}
+\definecolor{aetroncyan}{RGB}{47, 138, 175}
+\definecolor{codegreen}{RGB}{40, 140, 70}
+\definecolor{codegray}{RGB}{120, 120, 120}
+
+% Title Formatting
+\titleformat{\chapter}[display]
+  {\normalfont\bfseries\color{aetronblue}}
+  {\filleft\fontsize{14}{14}\selectfont CHAPTER \thechapter}
+  {1ex}
+  {\titlerule\vspace{1ex}\LARGE}
+  [\vspace{1ex}\titlerule]
+
+\titlespacing*{\chapter}{0pt}{20pt}{25pt}
+
+% ---------------------------------------------------------
+% Document Metadata
+% ---------------------------------------------------------
+\title{\textbf{AETRON: A RESEARCH-DRIVEN MULTI-MODAL MOBILE FITNESS TRACKING PLATFORM WITH EMPIRICAL ALGORITHMIC BENCHMARKING}}
+\author{Nguyễn Đức Bảo (Student ID: ITITIU22238)}
+\date{November 2026}
+
+\begin{document}
+
+% ---------------------------------------------------------
+% Front Matter
+% ---------------------------------------------------------
+\begin{titlepage}
+    \centering
+    \vspace*{0.5cm}
+
+    {\fontsize{13}{15}\selectfont \textbf{VIETNAM NATIONAL UNIVERSITY -- HO CHI MINH CITY}}\\
+    {\fontsize{13}{15}\selectfont \textbf{INTERNATIONAL UNIVERSITY}}\\
+    {\fontsize{12}{14}\selectfont \textbf{SCHOOL OF COMPUTER SCIENCE AND ENGINEERING}}\\
+    {\fontsize{11}{13}\selectfont \textbf{DEPARTMENT OF INFORMATION TECHNOLOGY}}\\[1.8cm]
+
+    % University Logo / Crest (Gracefully handles absence of local image)
+    \IfFileExists{figures/iu_logo.png}{%
+        \includegraphics[width=0.22\textwidth]{figures/iu_logo.png}\\[1.5cm]
+    }{%
+        \vspace{3.5cm}%
+    }
+
+    {\fontsize{16}{20}\selectfont \textbf{GRADUATION THESIS}}\\[0.8cm]
+
+    {\fontsize{15}{19}\selectfont \textbf{AETRON: A RESEARCH-DRIVEN MULTI-MODAL MOBILE FITNESS TRACKING PLATFORM WITH EMPIRICAL ALGORITHMIC BENCHMARKING}}\\[2.0cm]
+
+    \begin{minipage}{0.85\textwidth}
+        \begin{tabular}{ll}
+            \textbf{Author:} & Nguyễn Đức Bảo (ITITIU22238) \\
+            \textbf{Program:} & Bachelor of Science in Information Technology \\
+            \textbf{Department:} & School of Computer Science and Engineering \\
+            \textbf{Academic Year:} & 2022 -- 2026 \\
+        \end{tabular}
+    \end{minipage}
+
+    \vfill
+    {\fontsize{11}{13}\selectfont Ho Chi Minh City, November 2026}
+\end{titlepage}
+
+\newpage
+\pagenumbering{roman}
+
+% ---------------------------------------------------------
+% Abstract
+% ---------------------------------------------------------
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+Modern mobile fitness applications require robust, real-time sensory telemetry across heterogeneous indoor and outdoor physical environments. However, consumer smartphones face severe sensing constraints: satellite signal degradation and multipath errors in urban canyons, mobile operating system sandboxing that blocks ambient light and raw radio APIs on iOS, rapid state oscillation across indoor--outdoor boundaries, false step counts triggered by stationary device handling, and display jitter during live biomechanical cadence feedback. While commercial platforms (e.g., Strava, Nike Run Club) deliver polished user experiences, their core filtering and sensing pipelines remain proprietary black boxes.
+
+This thesis presents \textbf{Aetron}, an open, research-grounded, multi-modal mobile fitness tracking platform built on Flutter and Dart for native Android and iOS devices. Aetron unifies real-time sensor fusion with rigorous offline scientific validation across six algorithmic subsystems grounded in peer-reviewed literature: (1)~an outdoor 4-state 2D kinematic Extended Kalman Filter (EKF) with Joseph-form covariance stabilization, Zero-Velocity Update (ZUPT), and Phase~1/2 kinematic preprocessing and Mahalanobis gating; (2)~a cross-platform Indoor--Outdoor Detection (IOD) architecture pairing an Android 4-channel 2D Depthwise Separable CNN (Model~C-Mobile) and an Adaptive Transition Engine with an \textbf{iOS-first light-free multi-sensor classifier} combining MagIO geomagnetic perturbation features, linear acceleration dynamics, CoreLocation accuracy/outage likelihoods, \texttt{CMAltimeter} barometric pressure deltas, and a causal 2-state Hidden Markov Model (HMM) alongside a probabilistic path-straightness \texttt{EnvironmentClassifier}; (3)~causal inertial step detectors (Oxford WPD for walking and Xu FFT-adaptive detection for running) hardened with Skog et al.'s Magnitude-Variance Generalized Likelihood Ratio Test (MV-GLRT) ZUPT, Brajdic \& Harle rhythmic bout gating, a 6-second sliding-window cadence engine, and Leave-One-Subject-Out (LOSO) Renaudin adaptive step-length estimation; (4)~offline display-only trajectory reconstruction comparing Linear Chord and Monotone PCHIP interpolation; (5)~T-DBSCAN spatial--temporal dwell clustering and Google Encoded Polyline compression; and (6)~2024 Adult Compendium speed-banded metabolic expenditure modeling with client--server parity.
+
+All subsystems are audited against published public datasets with independent physical ground truth: TU~Wien Leica GS18 phase-RTK pedestrian walks, Oxford SnapperGPS~2 cycling tracks, Cambridge CIOD and HAR-PMD environmental traces ($>490{,}000$ epochs), STAGA mobility diaries ($122{,}808$ epochs), Clemson PedEval and Oxford OxWalk ($119{,}572$ video-annotated steps), Oxford WPD and Xu Group~3 accelerometry, and SLEDataset2 / Fukuchi RBDS stride-length cohorts. Rigorous holdout testing yields actionable and transparent findings: on TU~Wien RTK walks, isolating NIS scaling alone over a tuned EKF fails the predefined $10\%$ acceptance gate ($+0.21\%$ RMSE change, 95\% cluster bootstrap CI $[-0.0233, +0.0034]$\,m), whereas coupling Phase~1 preprocessing with Phase~2 Mahalanobis-gated 4-state AEKF resolves the legacy Fixed-Alpha stationary-freeze pathology ($8.753$\,m $\to 3.432$\,m RMSE; $1.34\%$ contiguous distance error), while SnapperGPS cycling under CEP50 without Doppler exposes a critical negative result ($138.226$\,m RMSE). On held-out Cambridge CIOD (Sessions~72--84, $N=201{,}731$), our iOS-compatible light-free \texttt{[MagIO+Acc+Daytime]} MLP achieves \textbf{77.07\% accuracy} and \textbf{74.97\% Macro-F1} ($75.65\%$ / $74.77\%$ with causal HMM and $69.48\%$ outdoor recall), outperforming the Android-only 4-channel baseline ($73.64\%$ / $69.59\%$) while restoring 100\% sensor coverage on iOS; meanwhile, event-level doorway transition F1 remains modest ($4.39\%$, $15/46$ physical transits), enforcing \texttt{isObservationalOnly: true} in production. Finally, MV-GLRT ZUPT eliminates 100\% of stationary hand-sway and $2.2$\,m/s$^2$ screen-tap false steps ($0$ false steps over $60$\,s) while preserving $4{,}225/4{,}107$ steps on Oxford WPD and $1{,}265/1{,}280$ on Xu Group~3, and the 6-second cadence window cuts display flutter by $50.0\%$ with $8.41$\,spm steady-state MAE.
+
+\vspace{0.8cm}
+\noindent\textbf{Keywords:} Mobile Fitness Tracking, Extended Kalman Filter (EKF), Indoor/Outdoor Detection (IOD), MagIO, Hidden Markov Model, Zero-Velocity Update (MV-GLRT), Biomechanical Cadence, Reproducible Benchmarking.
+
+% ---------------------------------------------------------
+% Table of Contents & Lists
+% ---------------------------------------------------------
+\tableofcontents
+\listoffigures
+\listoftables
+
+\newpage
+\pagenumbering{arabic}
+
+% ---------------------------------------------------------
+% Chapters Inclusion
+% ---------------------------------------------------------
+\include{chapters/ch1_introduction}
+\include{chapters/ch2_literature_review}
+\include{chapters/ch3_system_design}
+\include{chapters/ch4_evaluation}
+\include{chapters/ch5_conclusion}
+
+% ---------------------------------------------------------
+% Bibliography
+% ---------------------------------------------------------
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}

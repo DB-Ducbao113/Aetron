@@ -145,13 +145,13 @@ Adapting Ester \emph{et al.}'s DBSCAN \cite{ester1996dbscan} to time-ordered tra
 
 \subsection{Pillar 5: Causal Inertial Step and Cadence Detection}
 \subsubsection{Walking (Salvi \emph{et al.}, EMBC 2018)}
-\texttt{OxfordStepDetector} adapts the Oxford Windowed Peak Detection (WPD) pipeline \cite{salvi2018oxford}. Raw 3-axis acceleration magnitude $\|\mathbf{a}\| = \sqrt{a_x^2 + a_y^2 + a_z^2}$ (including gravity) is linearly interpolated onto a uniform $100\text{ Hz}$ grid ($\Delta t = 10\text{ ms}$), convolved with a 13-tap Gaussian FIR kernel ($w_i \propto \exp[-\frac{1}{2}((i-6)/(0.35\times 6))^2]$), and scored at the midpoint of a 35-sample window via $s_k = \frac{1}{34}\sum_{j=0}^{34}(\tilde{a}_{k,17} - \tilde{a}_{k,j})$. Online Welford mean $\mu_n$ and standard deviation $\sigma_n$ gate candidate peaks via:
+\texttt{OxfordStepDetector} adapts the Oxford Windowed Peak Detection (WPD) pipeline \cite{salvi2018oxford}. Raw 3-axis acceleration magnitude $\|\mathbf{a}\| = \sqrt{a_x^2 + a_y^2 + a_z^2}$ (including gravity) is linearly interpolated onto a uniform $100\text{ Hz}$ grid ($\Delta t = 10\text{ ms}$), convolved with a 13-tap Gaussian FIR kernel ($w_i \propto \exp[-\frac{1}{2}((i-6)/(0.35\times 6))^2]$), and scored at the midpoint of a 35-sample window via $s_k = \frac{1}{34}\sum_{j=0}^{34}(\tilde{a}_{k,17} - \tilde{a}_{k,j})$. Online Welford mean $\mu_n$ and standard deviation $\sigma_n$ gate candidate peaks alongside the MV-GLRT stance test (\ref{eq:skog_zupt}) via:
 \begin{equation}
   s_n - \mu_n > \max(1.2\sigma_n,\, s_{\min}), \qquad
-  \max_{w \in W_{100}} \|\mathbf{a}\|_w - \min_{w \in W_{100}} \|\mathbf{a}\|_w \ge R_{\min},
+  T_{\text{MV}}(n) \ge \gamma_{\text{MV}},
   \label{eq:oxford}
 \end{equation}
-where $s_{\min} = 0.35\text{ m/s}^2$ and 1-second dynamic span $R_{\min} = 1.40\text{ m/s}^2$ suppress resting tremor. Whereas the reference Java implementation confirms a step only when the \emph{next} separated peak arrives (dropping terminal steps), Aetron causally confirms the strongest pending peak once its $200\text{ ms}$ refractory window expires.
+where $s_{\min} = 0.35\text{ m/s}^2$ and $\gamma_{\text{MV}} = 0.36\text{ (m/s}^2)^2$ suppress resting tremor and impulsive screen taps. Whereas the reference Java implementation confirms a step only when the \emph{next} separated peak arrives (dropping terminal steps), Aetron causally confirms the strongest pending peak once its $200\text{ ms}$ refractory window expires.
 
 \subsubsection{Running (Xu \emph{et al.}, 2022) and ZUPT-GLRT Stationary Rejection}
 \texttt{XuRunningStepDetector} implements a causal adaptation of Xu \emph{et al.} \cite{xu2022step}. Acceleration magnitude is interpolated onto a $50\text{ Hz}$ grid, smoothed by an 11-tap Hamming-windowed low-pass FIR filter ($f_c = 0.1 f_s = 5\text{ Hz}$) alongside a 15-sample moving average, and analyzed every $1\text{ s}$ via a 256-point real Discrete Fourier Transform ($\approx 5.12\text{ s}$ buffer) to extract dominant gait frequency $f_{\text{dom}}$. Rather than relying on ad-hoc peak-to-peak bounds vulnerable to isolated screen taps, both \texttt{OxfordStepDetector} and \texttt{XuRunningStepDetector} apply the Magnitude-Variance Zero-Velocity Generalized Likelihood Ratio Test (MV-GLRT) of Skog \emph{et al.} \cite{skog2010zupt} (Eq.~13),

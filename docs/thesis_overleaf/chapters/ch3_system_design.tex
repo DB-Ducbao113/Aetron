@@ -1,0 +1,212 @@
+\chapter{System Design and Implementation}
+\label{ch:system_design}
+
+\section{System Overview and Architecture}
+\label{sec:system_overview}
+Aetron is architected as an offline-first, research-grounded mobile fitness application implemented in Flutter and Dart~\cite{flutter2024framework} targeting native Android and iOS devices. To guarantee separation of concerns, headless testability, and deterministic behavior, Aetron adopts a four-tier clean layered architecture, illustrated in Figure~\ref{fig:aetron_architecture}.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+    layer/.style={rectangle, draw=aetronblue, fill=blue!5, rounded corners=4pt, thick, text width=13.8cm, align=left, inner sep=7pt, font=\small},
+    arrow/.style={-{Stealth[length=2.5mm]}, thick, color=aetronblue}
+]
+    % Layer 1: Presentation
+    \node[layer, fill=cyan!6, draw=aetroncyan] (l1) {
+        \textbf{\large 1. Presentation Layer (Kinetic Design System \& Native OS Bridges)}\\[2pt]
+        $\bullet$ Athletic HUD Cockpit $\bullet$ Live Map Polylines $\bullet$ iOS Live Activities $\bullet$ Two-Way iOS/Android Notification Settings Bridge
+    };
+
+    % Layer 2: Application Logic
+    \node[layer, fill=blue!6, draw=aetronblue, below=0.48cm of l1] (l2) {
+        \textbf{\large 2. Application Logic Layer (Riverpod Code-Generated State Management)}\\[2pt]
+        $\bullet$ Workout Life-Cycle Controllers (\texttt{recording}, \texttt{paused}, \texttt{finalized}) $\bullet$ \texttt{WorkoutEnvironmentController} $\bullet$ Sensor Isolates
+    };
+
+    % Layer 3: Domain
+    \node[layer, fill=green!6, draw=codegreen, below=0.48cm of l2] (l3) {
+        \textbf{\large 3. Domain Layer (Pure Dart Research-Grounded Algorithmic Engines)}\\[2pt]
+        $\bullet$ P01/P02 4-State EKF/AEKF + ZUPT + T-DBSCAN $\bullet$ Cross-Platform IOD (Android Model~C-Mobile \& iOS Light-Free MagIO+HMM)\\
+        $\bullet$ Probabilistic \texttt{EnvironmentClassifier} $\bullet$ Oxford/Xu MV-GLRT Step Detectors + \texttt{StepMotionGate} $\bullet$ Renaudin SLE \& 2024 Compendium
+    };
+
+    % Layer 4: Data Persistence
+    \node[layer, fill=gray!8, draw=codegray, below=0.48cm of l3] (l4) {
+        \textbf{\large 4. Data and Persistence Layer (Dual Local Storage \& Cloud Reconciliation)}\\[2pt]
+        $\bullet$ \textbf{Isar NoSQL:} Time-series GPS \& raw telemetry $\bullet$ \textbf{SQLite:} Profiles \& sync queues $\bullet$ \textbf{Supabase Edge Workers}
+    };
+
+    % Connections
+    \draw[arrow] (l1.south) -- (l2.north);
+    \draw[arrow] (l2.south) -- (l3.north);
+    \draw[arrow] (l3.south) -- (l4.north);
+\end{tikzpicture}
+\caption{Layered Architecture of the Aetron Mobile Fitness Tracking Platform.}
+\label{fig:aetron_architecture}
+\end{figure}
+
+\begin{enumerate}
+    \item \textbf{Presentation Layer (Kinetic Design System):} Delivers editorial-style athletic HUDs, live route recaps, iOS Live Activities, and direct native OS notification settings deep-linking (\texttt{UNUserNotificationCenter} / \texttt{openNotificationSettingsURLString} on iOS and \texttt{ACTION\_APP\_NOTIFICATION\_SETTINGS} on Android). Experimental IOD overlays are removed from the production recording screen while background telemetry continues non-intrusively.
+    \item \textbf{Application Logic Layer (Riverpod):} Implemented with \texttt{riverpod\_annotation}~\cite{riverpod2024state}, coordinating workout life-cycles, background sensor streams, and environment controllers without blocking the UI thread.
+    \item \textbf{Domain Layer (Pure Dart Algorithmic Services):} Houses all mathematical filtering, neural/probabilistic IOD, MV-GLRT step detection, stride estimation, and calorimetry engines in platform-independent pure Dart, enabling 100\% deterministic execution on headless CI runners.
+    \item \textbf{Data and Persistence Layer:} Pairs \textbf{Isar NoSQL}~\cite{isar2024database} (high-throughput time-series GPS and workout logs) with \textbf{SQLite} (user profiles and sync queues) and \textbf{Supabase}~\cite{supabase2024backend} Deno edge workers (\texttt{deterministic-finalize-worker} and \texttt{route-correction-worker}) for canonical post-workout reconciliation.
+\end{enumerate}
+
+\section{Outdoor GPS Pipeline and Kinematic State Estimation}
+\label{sec:gps_pipeline_design}
+The outdoor tracking pipeline converts raw mobile location fixes into a smoothed, geodetically consistent trajectory.
+
+\subsection{Planar Coordinate Projection and Phase~1 Preprocessing}
+To avoid repeated spherical trigonometry inside the $1$\,Hz Kalman loop, Aetron projects incoming coordinates $(\phi, \lambda)$ onto a local Equirectangular tangent plane anchored at $(\phi_0, \lambda_0)$:
+\begin{align}
+    p_x &= R_{\text{earth}} \cdot (\lambda - \lambda_0) \cdot \cos\left(\frac{\phi_0 \cdot \pi}{180}\right) \cdot \frac{\pi}{180} \\
+    p_y &= R_{\text{earth}} \cdot (\phi - \phi_0) \cdot \frac{\pi}{180}
+\end{align}
+Introducing $<0.01\%$ distortion for workout radii $<50$\,km, this representation enables closed-form matrix operations. Upstream Phase~1 preprocessing (\cite{zheng2015trajectory,li2025trajectory}) applies modality-specific speed/acceleration limits, sliding-window median outlier rejection, Zheng~\cite{zheng2009mining} stay-point detection, and outage segmentation before fixes enter the filter.
+
+\subsection{4-State Kinematic EKF, Joseph Stabilization, and Phase~2 Gating}
+Implemented in \texttt{ExtendedKalmanFilter} (\texttt{lib/features/workout/domain/services/ekf/}), the state vector $\mathbf{x} = [p_x, p_y, v, \theta]^T$ maintains local position, ground speed, and heading:
+\begin{itemize}
+    \item \textbf{Heading Phase Normalization \& Low-Speed Deadband:} Heading $\theta$ wraps continuously to $[0, 2\pi)$ with shortest-arc angular residuals; noisy GNSS course readings are suppressed below modality speed deadbands ($0.8 / 1.2 / 1.8$\,m/s for walk/run/cycle).
+    \item \textbf{Joseph-Form Covariance Stabilizer:} Covariance $\mathbf{P}_k$ is updated exclusively via Equation~\ref{eq:joseph_form} on flat \texttt{Float64List} buffers with Cauchy--Schwarz off-diagonal clamping ($|P_{EN}| \le 0.99\sqrt{P_{EE}P_{NN}}$).
+    \item \textbf{2-DOF Mahalanobis Gating \& Centripetal Scaling:} Under Phase~2 GNSS correction~\cite{groves2013principles,rongli2003survey}, spatial NIS $d_M^2 = \boldsymbol{\nu}_k^T \mathbf{S}_k^{-1} \boldsymbol{\nu}_k$ is compared against $\chi^2_2$ quantiles ($\gamma_1 = 5.991$, $\gamma_2 = 13.816$): moderate innovations inflate $\sigma_{\text{eff}} = \sigma_k \sqrt{d_M^2/\gamma_1}$, severe jumps ($d_M^2 > \gamma_2$) are rejected unless $N_{\text{reanchor}} = 4$ consecutive fixes confirm a genuine shift, and sharp turns scale heading process noise by $\mu_\theta = \min(\mu_{\max}, 1 + 0.8(\dot{\psi}_k/\omega_{\text{th}})^2)$.
+    \item \textbf{Stationary ZUPT \& T-DBSCAN Dwell Clustering:} When $v < 0.3$\,m/s for $\ge 3$\,s, ZUPT clamps velocity to zero and scales $\mathbf{Q}_k$ by $0.01$. Complementarily, \texttt{GpsDbscanService}~\cite{ester1996dbscan} scans sequential low-speed fixes ($v_k \le 1.0$\,m/s), expanding a dwell cluster while $d_{\text{geo}}(\bar{\mathbf{c}}_{i:j-1}, p_j) \le \varepsilon = 6.5$\,m and confirming stationary stops when $\mathrm{MinPts} \ge 4$ and duration $\ge 10.0$\,s (collapsing courtyard dwell clouds to their centroid).
+\end{itemize}
+
+\section{Cross-Platform Indoor/Outdoor Detection Architecture}
+\label{sec:deepiod_impl}
+To provide seamless indoor--outdoor awareness across both Android and iOS despite asymmetric OS sensor sandboxing, \texttt{IodCompositeClassifier} routes incoming telemetry snapshots (\texttt{IodSensorSnapshot}) dynamically by verified hardware capability.
+
+\subsection{Android Path: Unprivileged 4-Channel Model~C-Mobile \& Yoo $C/N_0$}
+Because unprivileged background apps cannot query cellular RSRP/RSRQ used in full 8-channel DeepIOD~\cite{dastagir2024deepiod}, Android devices with an ambient light photodiode execute \textbf{Model~C-Mobile} (\texttt{lib/features/iod/domain/services/deepiod\_neural\_classifier.dart}), a pure-Dart 2D Depthwise Separable CNN over four unprivileged channels:
+\begin{equation}
+    \mathbf{X}_{\text{input}} \in \mathbb{R}^{B \times 4 \times W} = \left[\text{Light},\; \text{Mag},\; \text{Acc},\; \text{Daytime}\right]
+\end{equation}
+combining log-scaled illuminance $\log_{10}(1 + \text{lux})$, geomagnetic magnitude $\|\mathbf{m}\|$ and rolling variance, linear acceleration variance, and deterministic astronomical daytime. Its architecture executes:
+\begin{enumerate}
+    \item \textbf{Input Preprocessing Layer:} Population standardization ($\mu=0, \sigma=1$) over 10-second windows.
+    \item \textbf{2D Depthwise Separable Convolution:} Channel-wise $3\times 3$ filtering followed by $1\times 1$ pointwise projection, cutting parameters by 78\%.
+    \item \textbf{Batch Normalization and LeakyReLU Activation:} Folded statically into convolutional weights.
+    \item \textbf{Global Average Pooling and Sigmoid Head:} Emits instantaneous $P(\text{Outdoor}) \in [0, 1]$ using only \textbf{54.0\,KB} of weights in $<0.8$\,ms per window without TFLite/ONNX native bloat.
+\end{enumerate}
+Where Android \texttt{GnssStatus} exposes satellite $C/N_0$, \texttt{SeamlessTransitionDetector} fuses Yoo's probabilistic $30$--$40$\,dB-Hz transition curve~\cite{yoo2025seamless}.
+
+\subsection{iOS-First Light-Free Multi-Sensor Classifier (\texttt{IosMultiSensorIodClassifier})}
+On iOS, public APIs expose neither ambient light nor raw satellite $C/N_0$, causing light-dependent 4-channel models to abstain completely ($0\%$ coverage). We therefore engineered \texttt{IosMultiSensorIodClassifier} (\texttt{lib/features/iod/domain/services/ios\_multisensor\_iod\_classifier.dart}) strictly from unprivileged cross-platform sensors (\texttt{CMMotionManager}, \texttt{CoreLocation}, and \texttt{CMAltimeter}):
+\begin{enumerate}
+    \item \textbf{MagIO Magnetic Perturbation Vector (Ashraf et al., 2018~\cite{ashraf2018magio}):} Over a causal 10-second sliding buffer of magnetic magnitude $\|\mathbf{m}_k\|$, the service computes 10 distributional features: mean, standard deviation, min, max, range, median, interquartile range (IQR), skewness, kurtosis, and mean absolute first derivative $|\Delta \|\mathbf{m}\||$.
+    \item \textbf{Inertial Dynamics \& Diurnal Prior (Esmaeili Kelishomi et al., 2019~\cite{kelishomi2019activities}):} Appends 10-second linear acceleration mean, standard deviation, and peak-to-peak excursion alongside deterministic astronomical daytime, forming a 14-dimensional feature vector passed through a pure-Dart frozen 2-layer MLP trained exclusively on Cambridge CIOD Sessions~00--59 (threshold tuned on Validation Sessions~60--71).
+    \item \textbf{CoreLocation \& Barometer Runtime Likelihood Fusion (Bui et al., 2020~\cite{bui2020gpsiod}; Li et al., 2014~\cite{li2014iodetector}; F{\'e}riol et al., 2020~\cite{feriol2020review}):} When live GNSS horizontal accuracy $\sigma_{\text{acc}}$, raw GPS fix silence age $\Delta t_{\text{silence}}$, or \texttt{CMAltimeter} 10-second pressure delta $\Delta P_{10\text{s}}$ (acquired via \texttt{IodSensorAcquisitionService}) are present, emission probability $b_t(\text{Out})$ combines the neural MagIO+Acc posterior with sigmoid CoreLocation accuracy/outage likelihoods and barometric doorway/elevator step evidence ($|\Delta P_{10\text{s}}| \ge 0.35$\,hPa) using IODetector confidence weighting~\cite{li2014iodetector}.
+    \item \textbf{Causal 2-State HMM Forward Filter (Zhu et al., 2019~\cite{zhu2019fast}):} Frame emissions are smoothed recursively via Equation~\ref{eq:hmm_lit} with diagonal self-transition retention ($A_{ss} = 0.90$), preventing single-epoch urban-canyon flickers while responding to genuine building entries within $3$--$4$\,s.
+\end{enumerate}
+
+\subsection{Probabilistic \texttt{EnvironmentClassifier} with Path Straightness}
+To eliminate legacy ad-hoc linear score weights ($0.45/0.30/0.15/0.10$) in the core workout tracker, \texttt{EnvironmentClassifier} (\texttt{lib/core/services/environment\_detector.dart}) now computes calibrated sigmoid GNSS accuracy likelihoods~\cite{bui2020gpsiod,dastagir2024deepiod}, evaluates \textbf{Benhamou's (2004) Path Straightness Index}~\cite{benhamou2004tortuosity}:
+\begin{equation}
+    S = \frac{d_{\text{net}}}{\max(d_{\text{path}}, 1.0)} \in [0, 1]
+    \label{eq:benhamou_s}
+\end{equation}
+over recent GPS trajectories to separate straight outdoor paths ($S \to 1$) from tortuous indoor multipath clouds ($S \to 0$), enforces an 8-second GPS-blackout + active-step indoor gate for iPhone gymnasiums, and filters posterior state through the same causal 2-state HMM~\cite{zhu2019fast}.
+
+\section{Adaptive Transition Engine Architecture}
+\label{sec:transition_engine_design}
+To suppress boundary jitter on instantaneous neural outputs, Aetron encapsulates Model~C-Mobile within an \textbf{Adaptive Transition Engine} (\texttt{IndoorOutdoorTransitionEngine}), formalized in Algorithm~\ref{alg:transition_engine}.
+
+\begin{algorithm}[htbp]
+\KwIn{Sensor Snapshot $\mathbf{s}_t$, Previous State $S_{t-1}$, Hysteresis Thresholds $\theta_{\text{high}}=0.65, \theta_{\text{low}}=0.35$, Minimum Dwell Epochs $N_{\text{dwell}}=5$}
+\KwOut{Committed State $S_t \in \{\text{Indoor}, \text{Outdoor}\}$, Uncertainty Flag $U_t$}
+
+$P_t \leftarrow \text{ModelC\_Mobile}(\mathbf{s}_t)$\;
+$U_t \leftarrow (P_t \ge 0.40 \land P_t \le 0.60)$ \tcp*{Epistemic uncertainty band}
+
+\tcp{Schmitt Trigger Dual-Threshold Evaluation}
+\eIf{$S_{t-1} == \text{Indoor}$}{
+    \eIf{$P_t \ge \theta_{\text{high}}$}{
+        $C_t \leftarrow \text{Outdoor}$ \tcp*{Candidate transition}
+    }{
+        $C_t \leftarrow \text{Indoor}$\;
+    }
+}{
+    \eIf{$P_t \le \theta_{\text{low}}$}{
+        $C_t \leftarrow \text{Indoor}$ \tcp*{Candidate transition}
+    }{
+        $C_t \leftarrow \text{Outdoor}$\;
+    }
+}
+
+\tcp{Minimum Dwell-Time Debouncing State Machine}
+\eIf{$C_t \ne S_{t-1}$}{
+    \eIf{$C_t == \text{PendingState}_{t-1}$}{
+        $\text{PendingDwell}_t \leftarrow \text{PendingDwell}_{t-1} + 1$\;
+        \eIf{$\text{PendingDwell}_t \ge N_{\text{dwell}}$}{
+            $S_t \leftarrow C_t$ \tcp*{Commit handover}
+            $\text{Dwell}_t \leftarrow \text{PendingDwell}_t$\;
+            $\text{PendingState}_t \leftarrow \text{None}$\;
+            $\text{EmitHandoverEvent}(S_{t-1} \to S_t)$\;
+        }{
+            $S_t \leftarrow S_{t-1}$\;
+            $\text{Dwell}_t \leftarrow \text{Dwell}_{t-1} + 1$\;
+            $\text{PendingState}_t \leftarrow C_t$\;
+        }
+    }{
+        $\text{PendingState}_t \leftarrow C_t$\;
+        $\text{PendingDwell}_t \leftarrow 1$\;
+        $S_t \leftarrow S_{t-1}$\;
+        $\text{Dwell}_t \leftarrow \text{Dwell}_{t-1} + 1$\;
+    }
+}{
+    $S_t \leftarrow S_{t-1}$\;
+    $\text{Dwell}_t \leftarrow \text{Dwell}_{t-1} + 1$\;
+    $\text{PendingState}_t \leftarrow \text{None}$\;
+    $\text{PendingDwell}_t \leftarrow 0$\;
+}
+\Return{$(S_t, U_t)$}\;
+\caption{Adaptive Transition Debouncing and Handover Algorithm}
+\label{alg:transition_engine}
+\end{algorithm}
+
+The engine enforces Schmitt-trigger hysteresis ($\theta_{\text{high}} = 0.65, \theta_{\text{low}} = 0.35$), minimum persistence debouncing ($N_{\text{dwell}} = 5$\,s), and epistemic uncertainty flagging ($P_t \in [0.40, 0.60]$).
+
+\section{Inertial Step Detection, MV-GLRT Gating, Cadence, and Stride Length}
+\label{sec:cadence_engine_design}
+
+\subsection{Causal Step Detectors with Skog MV-GLRT ZUPT and Bout Gating}
+Alongside hardware pedometer adapters (\texttt{TYPE\_STEP\_COUNTER} / \texttt{CMPedometer} with reboot-safe baseline anchoring), Aetron implements two causal pure-Dart inertial detectors hardened against stationary false steps:
+\begin{itemize}
+    \item \textbf{Walking (\texttt{OxfordStepDetector}):} Adapts Salvi et al.~\cite{salvi2018oxford} ($100$\,Hz resampling, 13-tap Gaussian FIR, 35-sample midpoint prominence $s_k$, online Welford threshold $s_n - \mu_n > \max(1.2\sigma_n, 0.35)$, and causal $200$\,ms refractory confirmation so terminal steps are not dropped).
+    \item \textbf{Running (\texttt{XuRunningStepDetector}):} Adapts Xu et al.~\cite{xu2022step} ($50$\,Hz resampling, 11-tap Hamming LPF at $5$\,Hz, 256-point real DFT dominant gait frequency extraction, and adaptive peak gating).
+    \item \textbf{Skog et al. (2010) MV-GLRT Stance Rejection:} Replacing ad-hoc min-max amplitude spans vulnerable to single screen taps, both detectors evaluate Equation~\ref{eq:mv_glrt_lit} over a $1.0$\,s rolling magnitude window against Brajdic \& Harle-calibrated variance floors~\cite{skog2010zupt,brajdic2013walk}: $\gamma_{\text{MV}} = 0.36\text{ (m/s}^2)^2$ for walking ($\sigma \ge 0.60$\,m/s$^2$) and $\gamma_{\text{MV}} = 0.64\text{ (m/s}^2)^2$ for running ($\sigma \ge 0.80$\,m/s$^2$).
+    \item \textbf{Rhythmic Bout \& GNSS Lock (\texttt{StepMotionGate}):} Grounded in Brajdic \& Harle~\cite{brajdic2013walk}, \texttt{StepMotionGate} buffers candidate steps until $N_{\text{bout}} = 5$ consecutive steps arrive within physiological gait cadence ($[0.65, 4.5]$\,Hz; inter-step gap $\le 2.2$\,s), and purges buffered in-place impulses whenever high-accuracy outdoor GNSS proves zero displacement past a $3.5$\,s onset grace window.
+\end{itemize}
+
+\subsection{6-Second Sliding-Window Cadence and Renaudin Adaptive Step Length}
+\texttt{CadenceCalculatorService} resolves the Cadence Trilemma with a 6-second circular FIFO buffer and $4.0$\,s auto-decay inactivity timeout:
+\begin{equation}
+    \text{Cadence}_{\text{live}}(t) =
+    \begin{cases}
+        0 & \text{if } t - t_{\text{last\_step}} > 4.0\,\text{s} \text{ or } N_{\text{steps in window}} < 2 \\
+        \min\left(270, \frac{N_{\text{steps in window}} \times 60}{6.0}\right) & \text{otherwise}
+    \end{cases}
+\end{equation}
+For indoor or GPS-denied distance estimation, \texttt{ResearchStepLengthFallback} evaluates Renaudin et al.'s linear stature--frequency model (Equation~\ref{eq:renaudin_lit})~\cite{renaudin2012step} using LOSO-validated parameters: $(a, b, c) = (0.1328, 0.0217, 0.2755)$ for walking ($H \in [1.60, 1.88]$\,m, $C \in [94, 144]$\,spm) and $(0.3211, 0.7253, -1.6810)$ for running ($H \in [1.627, 1.872]$\,m, $C \in [143, 223]$\,spm), clamping safely to cohort means outside validated support rather than extrapolating unboundedly.
+
+\section{Offline Trajectory Reconstruction, Compression, and Calorimetry}
+\label{sec:reconstruction_design}
+
+\subsection{Display-Only Outage Reconstruction and Polyline Compression}
+Post-workout, \texttt{WorkoutSessionFinalizer} bridges short GNSS dropouts ($2.0\,\text{s} < \Delta t_{\text{gap}} \le 15.0\,\text{s}$) via either Linear Chord or Fritsch--Carlson Monotone PCHIP~\cite{fritsch1980pchip} (configured by \texttt{kTrajectoryReconstructionMethod}), while isolating blackouts $>15.0$\,s without fabrication. \textbf{Strict offline isolation} guarantees that zero synthetic points ever enter the live EKF, saved distance accumulator, or server segment audits. Before cloud synchronization, \texttt{PolylineCompressionService} applies Google Encoded Polyline delta quantization ($10^{-5}$ or $10^{-6}$\,deg), and \texttt{deterministic-finalize-worker} + \texttt{route-correction-worker} reconcile canonical server metrics (\texttt{METRICS\_VERSION = 2}), explicitly reporting \texttt{routeMatchingAvailable() = false} when no OSRM road-graph provider is attached~\cite{newson2009hidden}.
+
+\subsection{2024 Adult Compendium Caloric Expenditure}
+\label{sec:calorie_design}
+Both the Flutter client (\texttt{UserProfile.calculateCalories}) and Supabase edge worker (\texttt{compendium\_met.ts}) compute distance-activity kilocalories via Equation~\ref{eq:compendium_2024} using exact 5-digit speed-banded codes from the \textbf{2024 Adult Compendium of Physical Activities}~\cite{herrmann2024compendium} (walking \texttt{17151--17255}, running \texttt{12028--12145}, cycling \texttt{01010--01060}) converted via $v_{\text{mph}} = v_{\text{km/h}} / 1.609344$ without unverified interpolation across speed-band gaps, returning strictly $0$\,kcal whenever verified moving displacement is zero. Non-distance indoor activities (gym, yoga) fall back to duration-based MET integration with a $0.95$ female adjustment factor.
+
+\section{System Safety, Feature Flags, and Observational Isolation}
+\label{sec:safety_gating}
+All research pipeline switches are governed by compile-time \texttt{--dart-define} constants in \texttt{lib/core/constants/debug\_config.dart}:
+\begin{itemize}
+    \item \texttt{kGpsFilterAlgoConfig = 'ekf4State'} (4-state kinematic EKF default; \texttt{fixedAlpha} preserved only for A/B replay).
+    \item \texttt{kEnableTrajectoryPreprocessing = true} and \texttt{kEnableGnssCorrection = true} (Phase~1 kinematic preprocessing and Phase~2 Mahalanobis/turn-rate EKF guards).
+    \item \texttt{kEnableTrajectoryReconstruction = true} (strictly offline display-only; never mutates distance or pace).
+    \item \texttt{kEnableGpsQualityGate = false} (guarded behind explicit opt-in until further multi-device validation).
+\end{itemize}
+Crucially, every IOD classifier (\texttt{DeepIodNeuralClassifier}, \texttt{IosMultiSensorIodClassifier}, \texttt{IodCompositeClassifier}, \texttt{SeamlessTransitionDetector}) hardcodes \texttt{isObservationalOnly = true}. Experimental environment predictions are logged for scientific auditing without ever overriding the primary workout persistence state machine.
