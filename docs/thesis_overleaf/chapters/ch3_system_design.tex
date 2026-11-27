@@ -545,3 +545,29 @@ The redesigned Kinetic UI organizes user journeys across a clean 5-tab bar (Figu
 \caption{Application navigation and workout recording UX flow sharing \texttt{WorkoutRepository} as the single source of truth.}
 \label{fig:ux_flow}
 \end{figure}
+
+\section{Algorithm Provenance and Unified Bayesian Architecture}
+\label{sec:algo_provenance}
+To maintain strict scientific traceability and avoid conflating peer-reviewed reproductions with project-specific engineering safeguards, Table~\ref{tab:algo_provenance} classifies every algorithmic module in Aetron by its exact provenance. Architecturally, Aetron follows a \emph{Context-Aware Hybrid Time-Series and Recursive Bayesian State Estimation} design: indoor/outdoor context is inferred via a pure-Dart reproduction of Bakirtzis et al.'s \texttt{CAP-ALSTM}~\cite{bakirtzis2022ciod} (\texttt{CapAlstmModel} / \texttt{CapAlstmIodClassifier}, $84{,}737$ parameters, Conv1D $\to$ ASPP $r\in\{1,2,3,4\}$ $\to$ 2-layer LSTM with Bahdanau self-attention $\to$ MLP) paired with a causal 2-state HMM~\cite{zhu2019fast}; outdoor trajectory estimation uses recursive Kalman filtering alongside verified scientific comparators implementing Yang et al.'s IGG-III robust weighting~\cite{yang2001igg3}, Mohamed \& Schwarz's Innovation-Based Adaptive Estimation (IAE)~\cite{mohamed1999iae}, Blom \& Bar-Shalom's 2-mode Interacting Multiple Model (IMM)~\cite{blom1988imm}, causal Zheng stay-point detection~\cite{zheng2009mining}, and a standalone Deno Viterbi HMM map matcher following Newson \& Krumm~\cite{newson2009hidden}.
+
+\begin{table}[htbp]
+\centering
+\caption{Algorithm provenance matrix distinguishing peer-reviewed reproductions, adaptations, engineering designs, and safety-isolated stubs.}
+\label{tab:algo_provenance}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{@{}L{3.1cm}L{3.2cm}L{2.7cm}L{6.4cm}@{}}
+\toprule
+\textbf{Subsystem} & \textbf{Code Module} & \textbf{Provenance Class} & \textbf{Published Basis \& Explicit Disclosure} \\ \midrule
+Indoor/Outdoor Detection (IOD) & \path{cap_alstm_model.dart}, \path{cap_alstm_iod_classifier.dart} & Reproduced + Bayes HMM & Exact CAP-ALSTM + Eq.~6 Shapley~\cite{bakirtzis2022ciod} on CIOD; HMM~\cite{zhu2019fast} tuned on validation only; \texttt{isObservationalOnly: true}. \\
+GNSS Filtering (P01--P02) & \path{gps_smoothing_service.dart}, \path{innovation_adaptive_filter.dart} & Adapted + Comparators & Production 4-state AEKF-NIS; scientific comparators for IGG-III~\cite{yang2001igg3} and IAE~\cite{mohamed1999iae}. \\
+Gap Reconstruction (P03) & \path{trajectory_reconstruction/} & Reproduced (Numerical) & Fritsch--Carlson monotone PCHIP for display/archive only; never overrides distance. \\
+Auto-Pause / Dwell & \path{gps_dbscan_service.dart}, \path{stop_detection/} & Reproduced / Adapted & Production T-DBSCAN; causal IMM~\cite{blom1988imm} and causal Zheng~\cite{zheng2009mining} benchmarked on STAGA. \\
+Step Detection (Walk/Run) & \path{oxford_step_detector.dart}, \path{xu_running_step_detector.dart} & Reproduced / Adapted & Oxford Table~III params ($M=13$, $N=35$, $c=1.2$, $200$\,ms) + Skog MV-GLRT; Xu 2022 running adaptation. \\
+Step Motion Gate & \path{step_motion_gate.dart} & Hybrid (Published + Eng.) & MV-GLRT from Skog; bout constants ($5$ steps, $2200/3500$\,ms, $2.5$\,m) are Aetron engineering parameters verified via A/B ablation. \\
+Cadence Calculator & \path{cadence_calculator_service.dart} & Engineering Design & $6$\,s sliding window verified via A/B ablation against $60/\Delta t_{\text{step}}$ median. \\
+Step Length & \path{research_*_step_length.dart} & Adapted & Renaudin Eq.~8 structure with LOSO coefficients fit on SLEDataset2 \& RBDS. \\
+Calorie Accounting & \path{workout_metrics_calculator.dart} & Reproduced (Lookup) & 2024 Adult Compendium MET tables with client--server bit-exact parity. \\
+Route Map Matching & \path{route-correction-worker/} & Honest Stub + HMM Engine & Standalone Newson--Krumm HMM~\cite{newson2009hidden} unit-tested in Deno; production stub returns \texttt{false} until OSM graph is connected. \\ \bottomrule
+\end{tabular}%
+}
+\end{table}

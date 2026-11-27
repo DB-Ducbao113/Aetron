@@ -367,6 +367,136 @@
       font-size: 0.8rem;
       overflow-x: auto;
     }
+
+    .bench-panel {
+      background: var(--card);
+      backdrop-filter: blur(18px);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 28px;
+      margin-bottom: 44px;
+      box-shadow: var(--shadow);
+    }
+
+    .bench-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .bench-head h2 {
+      font-size: 1.48rem;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+
+    .bench-head p {
+      color: var(--muted);
+      font-size: 0.92rem;
+      max-width: 760px;
+    }
+
+    .bench-table-wrap {
+      overflow-x: auto;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+    }
+
+    table.bench-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.86rem;
+      font-variant-numeric: tabular-nums;
+      min-width: 820px;
+    }
+
+    table.bench-table thead th {
+      text-align: left;
+      padding: 12px 14px;
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      background: rgba(148, 163, 184, 0.08);
+      border-bottom: 1px solid var(--border);
+    }
+
+    table.bench-table tbody td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    table.bench-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    table.bench-table tbody tr:hover {
+      background: rgba(56, 189, 248, 0.06);
+    }
+
+    .metric-strong {
+      font-weight: 800;
+      color: var(--cyan);
+    }
+
+    .metric-sub {
+      display: block;
+      color: var(--muted);
+      font-size: 0.78rem;
+      margin-top: 2px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      white-space: nowrap;
+      border: 1px solid transparent;
+    }
+
+    .badge-ok {
+      background: rgba(52, 211, 153, 0.14);
+      color: var(--emerald);
+      border-color: rgba(52, 211, 153, 0.35);
+    }
+
+    .badge-warn {
+      background: rgba(251, 191, 36, 0.14);
+      color: var(--amber);
+      border-color: rgba(251, 191, 36, 0.35);
+    }
+
+    .badge-neg {
+      background: rgba(251, 113, 133, 0.14);
+      color: var(--rose);
+      border-color: rgba(251, 113, 133, 0.35);
+    }
+
+    .bench-notes {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .bench-note {
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(148, 163, 184, 0.06);
+      font-size: 0.83rem;
+      color: var(--muted);
+    }
+
+    .bench-note strong {
+      color: var(--text);
+    }
   </style>
 </head>
 
@@ -384,43 +514,46 @@
       </div>
       <div class="top-actions">
         <span class="pill">Flutter 3.44 + Riverpod + Isar</span>
-        <span class="pill">Supabase + Deno Workers</span>
+        <span class="pill">787 Flutter + 24 Deno PASS</span>
+        <a class="btn" href="#benchmarks">📊 Bảng Benchmark Mới Nhất</a>
         <button class="btn" id="theme-btn" type="button">🌗 Đổi giao diện Sáng/Tối</button>
       </div>
     </header>
 
     <section class="hero">
-      <div class="eyebrow">● Verified Against Source Tree & Public Datasets</div>
-      <h1>Toàn cảnh Kiến trúc <span class="grad">Archify & Floorplan</span> cùng Tổng quan Thuật toán & Benchmark</h1>
+      <div class="eyebrow">● Verified Against Source Tree &amp; Public Datasets • SDD-01 → SDD-08 Complete</div>
+      <h1>Toàn cảnh Kiến trúc <span class="grad">Archify &amp; Floorplan</span> cùng Tổng quan Thuật toán &amp;
+        Benchmark</h1>
       <p>Bộ tài liệu tương tác độc lập (standalone HTML không phụ thuộc server) được biên dịch trực tiếp từ mã nguồn
-        thực tế của <strong>Aetron</strong>, kết hợp bài báo <strong>IEEEtran LaTeX</strong> phân tích 9 trụ cột thuật
-        toán và phương pháp thiết lập benchmark khoa học.</p>
+        thực tế của <strong>Aetron</strong>, cập nhật đầy đủ bộ benchmark khoa học <strong>SDD-01 → SDD-08</strong>
+        (CAP-ALSTM IOD, IGG-III/IAE GNSS, Causal Zheng/IMM Stop Detection, Step Gate, Cadence, Unified Bayesian PDR và
+        HMM Map-Matching).</p>
     </section>
 
     <section class="kpi-strip">
       <div class="kpi">
-        <div class="kpi-val" data-count="12">12</div>
-        <div class="kpi-lbl">Phân hệ Feature-First (Flutter)</div>
+        <div class="kpi-val">94.07%</div>
+        <div class="kpi-lbl">CAP-ALSTM 7-ch + HMM Acc (CIOD Held-Out · 4-ch: 78.82%)</div>
       </div>
       <div class="kpi">
-        <div class="kpi-val" data-count="9">9</div>
-        <div class="kpi-lbl">Deno Edge Functions & Workers</div>
+        <div class="kpi-val">14.86 m</div>
+        <div class="kpi-lbl">IGG-III Cycling RMSE (#1 SnapperGPS 2 · 26,171 RTK epochs)</div>
       </div>
       <div class="kpi">
-        <div class="kpi-val" data-count="9">9</div>
-        <div class="kpi-lbl">Nhóm Thuật toán Nghiên cứu (DOI)</div>
+        <div class="kpi-val">1.859 m</div>
+        <div class="kpi-lbl">IGG-III + IAE Walking (TU Wien Pixel 9a · P01+AEKF Dist: 1.34%)</div>
       </div>
       <div class="kpi">
-        <div class="kpi-val">1.34%</div>
-        <div class="kpi-lbl">Sai số quãng đường P01+AEKF (TU Wien RTK)</div>
+        <div class="kpi-val">95.68%</div>
+        <div class="kpi-lbl">Causal Zheng Stop F1 (STAGA · 0.23 false/h · IMM: 93.74%)</div>
       </div>
       <div class="kpi">
-        <div class="kpi-val">98.69%</div>
-        <div class="kpi-lbl">Độ chính xác đếm bước chạy Xu (2022)</div>
+        <div class="kpi-val">98.46%</div>
+        <div class="kpi-lbl">Step Gate Running Acc (Xu 1.48% WAPE · Oxford 93.16% · 0/20 nhiễu)</div>
       </div>
       <div class="kpi">
-        <div class="kpi-val">94.18%</div>
-        <div class="kpi-lbl">Tỉ lệ nén Google Polyline (17.2×)</div>
+        <div class="kpi-val">787 + 24</div>
+        <div class="kpi-lbl">Flutter + Deno Tests PASS (0 analyze issues · −37.2% PDR gap RMSE)</div>
       </div>
     </section>
 
@@ -464,9 +597,11 @@
           <p>Trình đọc học thuật tương tác giải thích công thức toán học, cách từng bài báo gốc tạo ra con số benchmark,
             và kết quả kiểm chứng thực nghiệm trên Aetron.</p>
           <ul class="feature-list">
-            <li>Đầy đủ 9 nhóm thuật toán (GNSS P01/P02/P03, T-DBSCAN, Step, Stride, DeepIOD, MET, Map-Match)</li>
+            <li>Đầy đủ SDD-01 → SDD-08 &amp; 9 trụ cột (CAP-ALSTM IOD, IGG-III/IAE, Zheng/IMM, Step, Cadence, Stride,
+              MET, HMM)</li>
             <li>Biểu đồ tương tác so sánh: Bài báo gốc vs. Bản tái lập vs. Bản Production Aetron</li>
-            <li>Phân tích minh bạch dữ liệu thiếu (Data Gaps) và kết quả âm tính (SnapperGPS Cycling, 4-ch IOD)</li>
+            <li>Phân tích minh bạch kết quả âm tính (HAR-PMD cross-dataset shift, un-gated IAE Cycling, SDD-07 stub)
+            </li>
             <li>Hiển thị công thức Toán học trực quan, bộ lọc tìm kiếm và sao chép trích dẫn BibTeX</li>
           </ul>
         </div>
@@ -510,35 +645,215 @@
       </a>
     </section>
 
+    <section class="bench-panel" id="benchmarks">
+      <div class="bench-head">
+        <div>
+          <div class="card-tag" style="--accent: var(--cyan); margin-bottom: 10px;">Live Master Benchmark Matrix •
+            SDD-01 → SDD-08</div>
+          <h2>Tổng hợp Kết quả Benchmark Thực nghiệm Mới Nhất (2026-11-27)</h2>
+          <p>Toàn bộ số liệu dưới đây được chạy trực tiếp trên tập held-out công khai từ mã nguồn Aetron
+            (<code>flutter analyze</code>: <strong>0 issues</strong>, <strong>787</strong> Flutter tests PASS,
+            <strong>24</strong> Deno tests PASS) và đã đồng bộ vào <code>docs/thesis_overleaf/</code>.</p>
+        </div>
+        <span class="badge badge-ok">● All Verification Gates Passed</span>
+      </div>
+
+      <div class="bench-table-wrap">
+        <table class="bench-table">
+          <thead>
+            <tr>
+              <th>SDD / Thuật toán</th>
+              <th>Bài báo gốc (DOI)</th>
+              <th>Dataset &amp; Quy mô Held-Out</th>
+              <th>Kết quả Chính (Verified)</th>
+              <th>So với Baseline</th>
+              <th>Trạng thái</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>SDD-06 · IOD CAP-ALSTM + HMM</strong><span class="metric-sub">Android 7-ch / 6-ch · Mobile
+                  4-ch · iOS 3-ch</span></td>
+              <td>Bakirtzis 2022 (IEEE IoTJ)<span class="metric-sub">Zhu 2019 Causal HMM · Shapley Eq. 6</span></td>
+              <td>CIOD Held-Out <code>72..84</code><span class="metric-sub">201,731 epochs · 2,000 parity windows</span>
+              </td>
+              <td>
+                <span class="metric-strong">7-ch + HMM: 94.07% Acc / 93.87% MF1</span>
+                <span class="metric-sub">6-ch motion-free: 92.77% / 92.34% · 4-ch + HMM: <strong>78.82% /
+                    78.63%</strong> · 3-ch iOS + HMM: <strong>76.14% / 75.54%</strong> · Parity Py–Dart ≤ 1e-5 (100%
+                  agree)</span>
+              </td>
+              <td>4-ch: <strong>+9.04 pp MF1</strong> vs DeepIOD C-Mobile (69.59%)<span class="metric-sub">7-ch: +3.70
+                  pp vs Model C 8-ch (90.17%)</span></td>
+              <td><span class="badge badge-ok">Verified</span></td>
+            </tr>
+            <tr>
+              <td><strong>SDD-06 · IOD Cross-Dataset</strong><span class="metric-sub">External Zero-Shot Stress
+                  Test</span></td>
+              <td>Bakirtzis 2022 vs DeepIOD</td>
+              <td>HAR-PMD (12 subjects, 48 rec)<span class="metric-sub">28,846 epochs (không RSRP)</span></td>
+              <td>
+                <span class="metric-strong" style="color:var(--rose);">CAP-ALSTM: 35.29%–42.47% MF1</span>
+                <span class="metric-sub">DeepIOD C-Mobile: 55.26% MF1 (lệch phân phối 46× median Acc &amp; bão hòa 291k
+                  lux)</span>
+              </td>
+              <td>Giữ cờ an toàn <code>isObservationalOnly: true</code></td>
+              <td><span class="badge badge-neg">Negative Result</span></td>
+            </tr>
+            <tr>
+              <td><strong>SDD-02/03 · GNSS Walking</strong><span class="metric-sub">P01+P02 AEKF-NIS &amp; IGG-III +
+                  IAE</span></td>
+              <td>Yang 2001 (IGG-III)<span class="metric-sub">Mohamed &amp; Schwarz 1999 (IAE)</span></td>
+              <td>TU Wien Leica Phase-RTK<span class="metric-sub">Full 2,694 epochs · Held-Out Pixel 9a 1,346
+                  epochs</span></td>
+              <td>
+                <span class="metric-strong">IGG-III+IAE: RMSE 1.859 m</span>
+                <span class="metric-sub">MAE 1.627 m · Dist Err 3.37% · Prod P01+AEKF (full): RMSE 3.432 m, Dist Err
+                  <strong>1.34%</strong></span>
+              </td>
+              <td>Thắng AEKF-NIS (2.285 m) &amp; Fixed Alpha (3.658 m) trên Pixel 9a</td>
+              <td><span class="badge badge-ok">Verified</span></td>
+            </tr>
+            <tr>
+              <td><strong>SDD-02/03 · GNSS Cycling</strong><span class="metric-sub">Robust Weighting trên xe đạp
+                  nhanh</span></td>
+              <td>Yang 2001 (IGG-III Only)<span class="metric-sub">Mohamed &amp; Schwarz 1999 (IAE)</span></td>
+              <td>Oxford SnapperGPS 2 Cycling<span class="metric-sub">12 recordings · 26,171 RTK epochs</span></td>
+              <td>
+                <span class="metric-strong">#1 IGG-III Only: RMSE 14.86 m</span>
+                <span class="metric-sub">MAE 11.97 m · Med 9.88 m · P95 28.61 m · Dist Err <strong>43.20%</strong> ·
+                  Un-gated IAE: 26.93 m</span>
+              </td>
+              <td>Thắng AEKF-NIS (15.46 m / 48.31%), Fixed Alpha (19.13 m) &amp; Raw (29.50 m)</td>
+              <td><span class="badge badge-ok">#1 Best (IGG-III)</span></td>
+            </tr>
+            <tr>
+              <td><strong>SDD-08 · Unified Bayesian + PDR</strong><span class="metric-sub">Bắc cầu khi mất sóng GNSS
+                  10s</span></td>
+              <td>Unified <code>StateEstimator</code><span class="metric-sub">Heading + Renaudin Step Length</span></td>
+              <td>TU Wien Pixel 9a (10s gaps)<span class="metric-sub">224 masked gap epochs</span></td>
+              <td>
+                <span class="metric-strong">RMSE 5.10 m · MAE 3.95 m</span>
+                <span class="metric-sub">Tích hợp mượt vào chu trình GNSS + IMU</span>
+              </td>
+              <td><strong>−37.2% RMSE</strong> so với GNSS hold-only (8.11 m / MAE 6.80 m)</td>
+              <td><span class="badge badge-ok">Verified</span></td>
+            </tr>
+            <tr>
+              <td><strong>SDD-01 · Stop Detection / Auto-Pause</strong><span class="metric-sub">Causal Zheng · 2-Mode
+                  IMM · T-DBSCAN</span></td>
+              <td>Zheng 2009 · Bar-Shalom 2001<span class="metric-sub">T-DBSCAN (Post-workout)</span></td>
+              <td>STAGA Stop/Motion<span class="metric-sub">20k Val / 20k Held-Out Test</span></td>
+              <td>
+                <span class="metric-strong">Causal Zheng: F1 95.68%</span>
+                <span class="metric-sub">0.23 false stops/h · 2-Mode IMM: <strong>F1 93.74%</strong> · Post T-DBSCAN:
+                  98.97% Precision (9.2× ít false pause)</span>
+              </td>
+              <td>Vượt xa Speed Gate &lt;0.5 m/s (F1 82.81%, 1.05 false/h)</td>
+              <td><span class="badge badge-ok">Verified</span></td>
+            </tr>
+            <tr>
+              <td><strong>SDD-04 · Step Motion Gate</strong><span class="metric-sub">MV-GLRT + Motion Gate A/B</span>
+              </td>
+              <td>Oxford WPD (Salvi 2018)<span class="metric-sub">Xu Running (2022)</span></td>
+              <td>Oxford Walk (4,107 ref) · Xu Run (1,280 ref)<span class="metric-sub">+ 20 xung nhiễu rời rạc</span>
+              </td>
+              <td>
+                <span class="metric-strong">Run 98.46% · Walk 93.16%</span>
+                <span class="metric-sub">Run WAPE 1.48% (0 bước rơi) · Walk WAPE 6.84% · Xung nhiễu:
+                  <strong>0/20</strong> nhận nhầm</span>
+              </td>
+              <td>Gate OFF nhận nhầm 20/20 xung nhiễu; Walk OFF 93.09%</td>
+              <td><span class="badge badge-ok">Verified</span></td>
+            </tr>
+            <tr>
+              <td><strong>SDD-05 · Cadence (<code>window6s</code>)</strong><span class="metric-sub">Rolling Window vs
+                  Instantaneous</span></td>
+              <td>Rolling 6s Cadence Estimator</td>
+              <td>Oxford Walking &amp; PedEval</td>
+              <td>
+                <span class="metric-strong">Oxford MAE 11.20 spm</span>
+                <span class="metric-sub">PedEval MAE <strong>8.41 spm</strong> (giảm ~50% dao động jitter)</span>
+              </td>
+              <td>Thắng <code>60/Δt_step</code> median (15.55–23.45 spm trên Oxford)</td>
+              <td><span class="badge badge-ok">Verified</span></td>
+            </tr>
+            <tr>
+              <td><strong>Pillar · Stride · MET · Polyline</strong><span class="metric-sub">Renaudin · 2024 Compendium ·
+                  Polyline</span></td>
+              <td>Renaudin 2012 Eq. 8<span class="metric-sub">Herrmann 2024 Compendium</span></td>
+              <td>LOSO Stride · Dart–TS Parity · Route</td>
+              <td>
+                <span class="metric-strong">Stride Walk 8.61 cm / Run 17.80 cm</span>
+                <span class="metric-sub">MET: <strong>100%</strong> Dart–TS parity · Polyline: <strong>94.18%</strong>
+                  nén (17.2×)</span>
+              </td>
+              <td>Đạt chuẩn triển khai đồng nhất Client–Server</td>
+              <td><span class="badge badge-ok">Verified</span></td>
+            </tr>
+            <tr>
+              <td><strong>SDD-07 · HMM Map Matching</strong><span class="metric-sub">Viterbi Log-Domain trong
+                  Deno</span></td>
+              <td>Newson &amp; Krumm 2009 (ACM GIS)</td>
+              <td>Unit &amp; Synthetic Graph Suite<span class="metric-sub">Chưa có OSM/Seattle real holdout</span></td>
+              <td>
+                <span class="metric-strong" style="color:var(--amber);">24/24 Deno Tests PASS</span>
+                <span class="metric-sub">Đủ emission/transition Gaussian–Exponential + Viterbi</span>
+              </td>
+              <td>Production giữ stub <code>routeMatchingAvailable() = false</code></td>
+              <td><span class="badge badge-warn">Not Reproduced</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="bench-notes">
+        <div class="bench-note">
+          <strong>Shapley Attribution (Bakirtzis Eq. 6, 2⁸ = 256 coalitions):</strong>
+          <code>RSRP (0.1956)</code> &gt; <code>Acc (0.1268)</code> &gt; <code>Daytime (0.1099)</code> &gt;
+          <code>Mag (0.0833)</code> &gt; <code>Proximity (0.0828)</code> &gt; <code>Sound (0.0697)</code> &gt;
+          <code>RSRQ (0.0389)</code> &gt; <code>Light (0.0344)</code>.
+        </div>
+        <div class="bench-note">
+          <strong>Minh bạch Kết quả Âm tính &amp; Giới hạn:</strong>
+          (1) HAR-PMD cross-dataset suy giảm mạnh do thiếu RSRP &amp; lệch thang cảm biến → giữ
+          <code>isObservationalOnly: true</code>;
+          (2) Un-gated IAE kém trên xe đạp nhanh SnapperGPS (<code>26.93 m</code> vs IGG-III <code>14.86 m</code>);
+          (3) SDD-07 giữ stub đến khi có dữ liệu bản đồ OSM/Seattle thật.
+        </div>
+      </div>
+    </section>
+
     <section class="latex-box">
       <div>
         <div class="card-tag" style="--accent: var(--amber); margin-bottom: 10px;">HCM-IU Thesis Report (1-Column PDF)
-          &amp; Slide Decks</div>
-        <h3 style="font-size:1.3rem; margin-bottom: 8px;">Báo cáo Khóa luận Chuẩn HCM-IU (1 cột, 57 trang) &amp; Slide
-          Literature Review</h3>
+          &amp; SDD-01 → SDD-08 Closure</div>
+        <h3 style="font-size:1.3rem; margin-bottom: 8px;">Báo cáo Khóa luận Chuẩn HCM-IU &amp; Hồ sơ Đối chứng Thực
+          nghiệm</h3>
         <p style="color:var(--muted); font-size:0.92rem; margin-bottom: 12px;">
-          Báo cáo chính đã được viết lại theo đúng bố cục <strong>1 cột chuẩn Pre-Thesis HCM-IU</strong> với tên đề tài
-          mới <em>"A Mobile Fitness Tracking Application for Indoor and Outdoor Activities"</em>. Bản bài báo 2 cột
-          IEEEtran cũ vẫn được giữ bên cạnh để tham khảo kỹ thuật khi cần:
+          Toàn bộ Chương 3, Chương 4, Chương 5 và <code>references.bib</code> trong
+          <strong>docs/thesis_overleaf/</strong>
+          đã được đồng bộ với kết quả thực nghiệm SDD-01 → SDD-08. Xem thêm báo cáo đóng kế hoạch và bảng truy xuất
+          nguồn gốc thuật toán:
         </p>
         <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom: 12px;">
           <a href="../thesis_overleaf/main.pdf" target="_blank"
             style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:999px;background:var(--amber);color:#0f172a;font-weight:800;font-size:0.88rem;text-decoration:none;">📘
-            Mở Báo cáo Thesis (1 cột, 57 trang) &rarr;</a>
+            Mở Báo cáo Thesis (1 cột) &rarr;</a>
+          <a href="../research/FULL_PLAN_EXECUTION_CLOSURE_20261127.md" target="_blank"
+            style="display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:999px;background:rgba(52,211,153,0.16);border:1px solid rgba(52,211,153,0.4);color:var(--text);font-weight:700;font-size:0.86rem;text-decoration:none;">✅
+            Báo cáo Closure SDD-01→08 &rarr;</a>
+          <a href="../plans/ALGORITHM_PROVENANCE_TABLE.md" target="_blank"
+            style="display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:999px;background:rgba(56,189,248,0.16);border:1px solid var(--border-strong);color:var(--text);font-weight:700;font-size:0.84rem;text-decoration:none;">📑
+            Algorithm Provenance Table &rarr;</a>
           <a href="../thesis_overleaf/Aetron_Literature_Review.pptx" download
-            style="display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:999px;background:rgba(56,189,248,0.16);border:1px solid var(--border-strong);color:var(--text);font-weight:700;font-size:0.86rem;text-decoration:none;">📊
-            Tải Slide PowerPoint (.PPTX — 14 Slides) &darr;</a>
-          <a href="./aetron_literature_presentation.html"
-            style="display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:999px;background:rgba(163,230,53,0.14);border:1px solid var(--border);color:var(--text);font-weight:700;font-size:0.84rem;text-decoration:none;">🖥️
-            Trình chiếu Web (Minimalist) &rarr;</a>
-          <a href="./latex/aetron_literature_review_benchmark.pdf" target="_blank"
-            style="display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:999px;background:rgba(148,163,184,0.12);border:1px solid var(--border);color:var(--muted);font-weight:600;font-size:0.82rem;text-decoration:none;">📄
-            Bản Paper 2 cột (IEEEtran cũ)</a>
+            style="display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:999px;background:rgba(163,230,53,0.14);border:1px solid var(--border);color:var(--text);font-weight:700;font-size:0.84rem;text-decoration:none;">📊
+            Tải Slide (.PPTX — 14 Slides) &darr;</a>
         </div>
         <div style="display:flex; flex-wrap:wrap; gap:8px;">
-          <code class="path">docs/thesis_overleaf/main.pdf</code>
-          <code class="path">docs/thesis_overleaf/slides_literature_review.pdf</code>
-          <code class="path">docs/archify_review/aetron_literature_presentation.html</code>
+          <code class="path">docs/thesis_overleaf/main.tex</code>
+          <code class="path">docs/research/FULL_PLAN_EXECUTION_CLOSURE_20261127.md</code>
+          <code class="path">docs/plans/ALGORITHM_PROVENANCE_TABLE.md</code>
         </div>
       </div>
       <div class="cmd-block">

@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import '../models/indoor_outdoor_state.dart';
 import '../models/iod_prediction.dart';
 import '../models/iod_sensor_snapshot.dart';
+import 'cap_alstm_iod_classifier.dart';
+import 'cap_alstm_model.dart';
 import 'deepiod_baseline_classifier.dart';
 import 'deepiod_framework_classifier.dart';
 import 'deepiod_neural_classifier.dart';
@@ -11,6 +13,10 @@ import 'seamless_transition_detector.dart';
 
 /// Supported operation modes for the Aetron Indoor-Outdoor Detection subsystem.
 enum IodClassifierMode {
+  /// CAP-ALSTM (Bakirtzis et al., IEEE IoT J 2022, DOI: 10.1109/JIOT.2022.3190555)
+  /// + Causal 2-state HMM (Zhu et al., Sensors 2019). Requires an injected [CapAlstmModel].
+  capAlstm,
+
   /// Live, availability-gated cross-platform IOD:
   /// - Android (with ambient light sensor): DeepIOD Model C-Mobile (4-channel).
   /// - iOS / Light-free devices: iOS Multi-Sensor MagIO + IMU + CoreLocation + Barometer Causal HMM.
@@ -72,11 +78,14 @@ class IodCompositeClassifier {
   final SeamlessTransitionDetector _yooTransition;
   final IosMultiSensorIodClassifier _iosLiveClassifier;
   final IosMultiSensorIodClassifier _magIoResearchClassifier;
+  final CapAlstmIodClassifier? _capAlstmClassifier;
   int _liveEpochCount = 0;
   DateTime? _lastLiveEpoch;
 
   String get activeModelVersion {
     switch (mode) {
+      case IodClassifierMode.capAlstm:
+        return _capAlstmClassifier?.modelVersion ?? 'cap-alstm-unloaded';
       case IodClassifierMode.liveMobile:
         return liveModelVersion;
       case IodClassifierMode.iosMultiSensorHmm:
@@ -107,6 +116,7 @@ class IodCompositeClassifier {
     SeamlessTransitionDetector? yooTransition,
     IosMultiSensorIodClassifier? iosLiveClassifier,
     IosMultiSensorIodClassifier? magIoResearchClassifier,
+    CapAlstmIodClassifier? capAlstmClassifier,
   }) : _frameworkClassifier =
            frameworkClassifier ?? DeepIodFrameworkClassifier(),
        _mobileClassifier = mobileClassifier ?? DeepIodNeuralClassifier.mobile(),
@@ -121,7 +131,15 @@ class IodCompositeClassifier {
            ),
        _magIoResearchClassifier =
            magIoResearchClassifier ??
-           IosMultiSensorIodClassifier(mode: IosIodEvaluationMode.magIoOnly);
+           IosMultiSensorIodClassifier(mode: IosIodEvaluationMode.magIoOnly),
+       _capAlstmClassifier = capAlstmClassifier;
+
+  factory IodCompositeClassifier.capAlstm({
+    required CapAlstmIodClassifier classifier,
+  }) => IodCompositeClassifier(
+    mode: IodClassifierMode.capAlstm,
+    capAlstmClassifier: classifier,
+  );
 
   factory IodCompositeClassifier.fullDeepIod({
     SeamlessTransitionDetector? yooTransition,
@@ -172,6 +190,7 @@ class IodCompositeClassifier {
     _yooTransition.reset();
     _iosLiveClassifier.reset();
     _magIoResearchClassifier.reset();
+    _capAlstmClassifier?.reset();
     _liveEpochCount = 0;
     _lastLiveEpoch = null;
   }
@@ -319,6 +338,15 @@ class IodCompositeClassifier {
   /// Evaluates models according to the selected [mode].
   IodPrediction predict(IodSensorSnapshot snapshot) {
     switch (mode) {
+      case IodClassifierMode.capAlstm:
+        final classifier = _capAlstmClassifier;
+        if (classifier == null) {
+          return IodPrediction.unknown(
+            reason: 'cap_alstm_weights_not_loaded',
+            modelVersion: activeModelVersion,
+          );
+        }
+        return classifier.classify(snapshot);
       case IodClassifierMode.liveMobile:
         return _predictLive(snapshot);
       case IodClassifierMode.iosMultiSensorHmm:
