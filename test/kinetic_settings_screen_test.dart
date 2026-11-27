@@ -149,7 +149,7 @@ void main() {
       }
     });
 
-    testWidgets('SettingsScreen permission switch taps open management dialog cleanly without plugin crashes', (WidgetTester tester) async {
+    testWidgets('SettingsScreen permission switch taps do not open modal dialogs and run cleanly', (WidgetTester tester) async {
       tester.view.physicalSize = const Size(390 * 2.0, 844 * 2.0);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(() {
@@ -167,15 +167,14 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      // All 4 switches (Notifications, Camera, Photos, Location) toggle cleanly without opening KineticGlassDialog
       for (int i = 0; i < 4; i++) {
         final sw = find.byType(CupertinoSwitch).at(i);
         await tester.ensureVisible(sw);
         await tester.pumpAndSettle();
         await tester.tap(sw);
         await tester.pumpAndSettle();
-        expect(find.byType(KineticGlassDialog), findsOneWidget);
-        await tester.tap(find.text('Cancel'));
-        await tester.pumpAndSettle();
+        expect(find.byType(KineticGlassDialog), findsNothing);
         expect(tester.takeException(), isNull);
       }
     });

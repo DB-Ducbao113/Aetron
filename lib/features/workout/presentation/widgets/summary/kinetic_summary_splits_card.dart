@@ -62,7 +62,7 @@ class KineticSummarySplitsCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    currentLang == AppLanguage.vi ? 'PHÂN TÁCH CỰ LY' : 'SPLITS BREAKDOWN',
+                    currentLang == AppLanguage.vi ? 'Phân tách cự ly' : 'Splits breakdown',
                     style: KineticTypography.unitLabel.copyWith(
                       color: colors.textPrimary,
                       letterSpacing: 1.1,
@@ -112,7 +112,7 @@ class KineticSummarySplitsCard extends StatelessWidget {
                   SizedBox(
                     width: 44,
                     child: Text(
-                      'Km ${split.index}',
+                      '${useMetricUnits ? "Km" : "Mi"} ${split.index}',
                       style: KineticTypography.bodySmall.copyWith(
                         color: isFastest ? colors.primary : colors.textSecondary,
                         fontWeight: isFastest ? FontWeight.w700 : FontWeight.w500,

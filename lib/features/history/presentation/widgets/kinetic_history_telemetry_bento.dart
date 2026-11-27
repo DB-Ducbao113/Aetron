@@ -1,9 +1,6 @@
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_card.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_colors.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_tokens.dart';
-import 'package:fitness_exercise_application/shared/kinetic/kinetic_typography.dart';
+import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 
 class HistorySummaryData {
@@ -39,11 +36,6 @@ class KineticHistoryTelemetryBento extends StatelessWidget {
     final colors = context.kinetic;
     final isVi = currentLang == AppLanguage.vi;
 
-    final distanceStr = WorkoutFormatters.formatDistance(
-      summary.distanceKm,
-      useMetric: useMetricUnits,
-      decimals: 1,
-    );
     final durationStr = WorkoutFormatters.formatDurationFromSeconds(summary.durationSec);
     final unit = WorkoutFormatters.distanceUnitLabel(useMetric: useMetricUnits).toUpperCase();
     final avgPaceStr = summary.distanceKm > 0 && summary.durationSec > 0
@@ -74,7 +66,7 @@ class KineticHistoryTelemetryBento extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  isVi ? 'TỔNG QUAN GIAI ĐOẠN' : 'PERIOD TELEMETRY MATRIX',
+                  isVi ? 'Tổng quan giai đoạn' : 'Period telemetry matrix',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: KineticTypography.cardEyebrowOf(colors),
@@ -127,7 +119,7 @@ class KineticHistoryTelemetryBento extends StatelessWidget {
                           const SizedBox(width: 5),
                           Expanded(
                             child: Text(
-                              (isVi ? 'QUÃNG ĐƯỜNG' : 'DISTANCE').toUpperCase(),
+                              isVi ? 'Quãng đường' : 'Distance',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: KineticTypography.unitLabel.copyWith(
@@ -144,13 +136,14 @@ class KineticHistoryTelemetryBento extends StatelessWidget {
                         textBaseline: TextBaseline.alphabetic,
                         children: [
                           Flexible(
-                            child: Text(
-                              distanceStr.replaceAll(RegExp(r'[a-zA-Z]'), '').trim(),
+                            child: KineticCountUp(
+                              value: useMetricUnits
+                                  ? summary.distanceKm
+                                  : WorkoutFormatters.kmToMi(summary.distanceKm),
+                              decimals: 1,
                               style: KineticTypography.metricMedium.copyWith(
                                 color: colors.textPrimary,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           const SizedBox(width: 4),
@@ -224,15 +217,14 @@ class KineticHistoryTelemetryBento extends StatelessWidget {
                           ),
                           const SizedBox(width: 6),
                           Expanded(
-                            child: Text(
-                              '${summary.calories} kcal',
+                            child: KineticCountUp(
+                              value: summary.calories.toDouble(),
+                              formatter: (val) => '${val.round()} kcal',
                               style: KineticTypography.label.copyWith(
                                 color: colors.textPrimary,
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
@@ -266,7 +258,7 @@ class KineticHistoryTelemetryBento extends StatelessWidget {
                       const SizedBox(width: 6),
                       Flexible(
                         child: Text(
-                          isVi ? 'Pace trung bình:' : 'Average Pace:',
+                          isVi ? 'Nhịp độ trung bình:' : 'Average pace:',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: KineticTypography.bodySmall.copyWith(

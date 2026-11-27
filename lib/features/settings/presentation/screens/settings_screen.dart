@@ -11,10 +11,12 @@ import 'package:fitness_exercise_application/features/profile/presentation/provi
 import 'package:fitness_exercise_application/features/profile/presentation/widgets/edit_display_name_sheet.dart';
 import 'package:fitness_exercise_application/features/settings/presentation/providers/notification_settings_providers.dart';
 import 'package:fitness_exercise_application/features/settings/presentation/providers/settings_preferences_providers.dart';
+import 'package:fitness_exercise_application/features/settings/presentation/screens/notification_settings_screen.dart';
 import 'package:fitness_exercise_application/features/settings/presentation/widgets/kinetic_settings_section.dart';
 import 'package:fitness_exercise_application/features/settings/presentation/widgets/kinetic_settings_top_bar.dart';
 import 'package:fitness_exercise_application/features/shell/presentation/widgets/aetron_bottom_bar.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/providers/workout_providers.dart';
+import 'package:fitness_exercise_application/shared/aetron/aetron_logo_paths.dart';
 import 'package:fitness_exercise_application/shared/aetron/aetron_skeleton.dart';
 import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
@@ -182,7 +184,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                 icon: Icons.straighten_rounded,
                 title: isVi ? 'Hệ mét (Metric)' : 'Metric System',
                 subtitle: isVi
-                    ? 'Kilômét (km), Mét (m), Vận tốc (km/h), Pace (min/km)'
+                    ? 'Kilômét (km), Mét (m), Vận tốc (km/h), Nhịp độ (phút/km)'
                     : 'Kilometers (km), Meters (m), Speed (km/h), Pace (min/km)',
                 isSelected: _useMetricUnits,
                 onTap: () => Navigator.of(context).pop(true),
@@ -192,7 +194,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                 icon: Icons.speed_rounded,
                 title: isVi ? 'Hệ Anh (Imperial)' : 'Imperial System',
                 subtitle: isVi
-                    ? 'Dặm (mi), Feet (ft), Vận tốc (mph), Pace (min/mi)'
+                    ? 'Dặm (mi), Feet (ft), Vận tốc (mph), Nhịp độ (phút/mi)'
                     : 'Miles (mi), Feet (ft), Speed (mph), Pace (min/mi)',
                 isSelected: !_useMetricUnits,
                 onTap: () => Navigator.of(context).pop(false),
@@ -325,12 +327,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   }
 
   Future<void> _setNotificationsEnabled(bool value) async {
-    if (value) {
-      final allowed = await NotificationService.instance.requestPermissions();
-      if (!allowed && mounted) {
-        openAppSettings();
-      }
-    }
     setState(() => _notificationsEnabled = value);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(kNotificationsPrefKey, value);
@@ -385,7 +381,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   }
 
   Future<void> _refreshPermissions() async {
-    if (Platform.environment.containsKey('FLUTTER_TEST')) {
+    if (NotificationService.instance.shouldBypassOsBridgeInTest) {
       if (!mounted) return;
       setState(() {
         _loadingPermissions = false;
@@ -402,83 +398,85 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       // 1. Notification Permission Check
       PermissionStatus notifStatus = PermissionStatus.denied;
       try {
-        final notifAllowed = await NotificationService.instance
-            .areNotificationsAllowed();
-        if (notifAllowed) {
-          notifStatus = PermissionStatus.granted;
-        } else {
-          final s = await Permission.notification.status;
-          notifStatus = (s.isGranted || s.isLimited)
-              ? PermissionStatus.granted
-              : s;
-        }
+        final osNotifState = await NotificationService.instance
+            .getOsPermissionState();
+        notifStatus = switch (osNotifState) {
+          NotificationOsPermissionState.granted => PermissionStatus.granted,
+          NotificationOsPermissionState.denied =>
+            PermissionStatus.permanentlyDenied,
+          NotificationOsPermissionState.notDetermined => PermissionStatus.denied,
+        };
       } catch (_) {
-        try {
-          final s = await Permission.notification.status;
-          notifStatus = (s.isGranted || s.isLimited)
-              ? PermissionStatus.granted
-              : PermissionStatus.denied;
-        } catch (_) {
-          notifStatus = PermissionStatus.denied;
-        }
+        notifStatus = PermissionStatus.denied;
       }
+
+      final skipOtherHardwareInTest =
+          Platform.environment.containsKey('FLUTTER_TEST');
 
       // 2. Camera Permission Check
       PermissionStatus camStatus = PermissionStatus.denied;
-      try {
-        camStatus = await Permission.camera.status;
-      } catch (_) {
-        camStatus = PermissionStatus.denied;
+      if (!skipOtherHardwareInTest) {
+        try {
+          camStatus = await Permission.camera.status;
+        } catch (_) {
+          camStatus = PermissionStatus.denied;
+        }
       }
 
       // 3. Location (GPS) Permission Check - Query Geolocator first across all platforms
       PermissionStatus locStatus = PermissionStatus.denied;
-      try {
-        final geoPerm = await Geolocator.checkPermission();
-        if (geoPerm == LocationPermission.always ||
-            geoPerm == LocationPermission.whileInUse) {
-          locStatus = PermissionStatus.granted;
-        } else if (geoPerm == LocationPermission.deniedForever) {
-          locStatus = PermissionStatus.permanentlyDenied;
-        } else {
-          locStatus = PermissionStatus.denied;
-        }
-      } catch (_) {
+      if (!skipOtherHardwareInTest) {
         try {
-          final s = await Permission.locationWhenInUse.status;
-          locStatus = s;
+          final geoPerm = await Geolocator.checkPermission();
+          if (geoPerm == LocationPermission.always ||
+              geoPerm == LocationPermission.whileInUse) {
+            locStatus = PermissionStatus.granted;
+          } else if (geoPerm == LocationPermission.deniedForever) {
+            locStatus = PermissionStatus.permanentlyDenied;
+          } else {
+            locStatus = PermissionStatus.denied;
+          }
         } catch (_) {
-          locStatus = PermissionStatus.denied;
+          try {
+            final s = await Permission.locationWhenInUse.status;
+            locStatus = s;
+          } catch (_) {
+            locStatus = PermissionStatus.denied;
+          }
         }
       }
 
       // 4. Photos Permission Check
       PermissionState photoState = PermissionState.notDetermined;
-      try {
-        photoState = await PhotoManager.getPermissionState(
-          requestOption: const PermissionRequestOption(
-            iosAccessLevel: IosAccessLevel.readWrite,
-          ),
-        );
-      } catch (_) {
+      if (!skipOtherHardwareInTest) {
         try {
-          final p = await Permission.photos.status;
-          photoState = (p.isGranted || p.isLimited)
-              ? PermissionState.authorized
-              : PermissionState.denied;
+          photoState = await PhotoManager.getPermissionState(
+            requestOption: const PermissionRequestOption(
+              iosAccessLevel: IosAccessLevel.readWrite,
+            ),
+          );
         } catch (_) {
-          photoState = PermissionState.denied;
+          try {
+            final p = await Permission.photos.status;
+            photoState = (p.isGranted || p.isLimited)
+                ? PermissionState.authorized
+                : PermissionState.denied;
+          } catch (_) {
+            photoState = PermissionState.denied;
+          }
         }
       }
 
       if (!mounted) return;
       final notifGranted = notifStatus.isGranted || notifStatus.isLimited;
+      final prefs = await SharedPreferences.getInstance();
+      final userPref = prefs.getBool(kNotificationsPrefKey) ?? true;
       setState(() {
         _notificationStatus = notifStatus;
         _cameraStatus = camStatus;
         _locationStatus = locStatus;
         _photosStatus = photoState;
-        _notificationsEnabled = notifGranted;
+        _notificationsEnabled = notifGranted && userPref;
         _loadingPermissions = false;
       });
     } catch (_) {
@@ -492,6 +490,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   bool get _isNotificationGranted =>
       _notificationStatus.isGranted || _notificationStatus.isLimited;
 
+  bool get _isNotificationActive =>
+      _notificationsEnabled && _isNotificationGranted;
+
   bool get _isCameraGranted =>
       _cameraStatus.isGranted || _cameraStatus.isLimited;
 
@@ -503,121 +504,35 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   bool get _isLocationGranted =>
       _locationStatus.isGranted || _locationStatus.isLimited;
 
-  Future<void> _showRevokePermissionDialog(
-    BuildContext context,
-    String permissionName,
-    AppLanguage lang,
-  ) async {
-    final colors = context.kinetic;
-    final isVi = lang == AppLanguage.vi;
-    final shouldOpen = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => KineticGlassDialog(
-        padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: colors.primary.withValues(alpha: 0.14),
-                    border: Border.all(
-                      color: colors.primary.withValues(alpha: 0.30),
-                    ),
-                  ),
-                  child: Icon(
-                    Icons.settings_outlined,
-                    color: colors.primary,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    isVi
-                        ? 'Quản lý quyền $permissionName'
-                        : 'Manage $permissionName Access',
-                    style: KineticTypography.headlineSmall.copyWith(
-                      fontSize: 16.5,
-                      fontWeight: FontWeight.w800,
-                      color: colors.textPrimary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              isVi
-                  ? 'Để cấp quyền hoặc thay đổi quyền $permissionName, bạn vui lòng chuyển nút gạt trong phần Cài đặt của thiết bị.'
-                  : 'To grant or update $permissionName access, please toggle it in your device Settings.',
-              style: KineticTypography.bodyMedium.copyWith(
-                fontSize: 13.5,
-                color: colors.textSecondary,
-                height: 1.45,
-              ),
-            ),
-            const SizedBox(height: 22),
-            Row(
-              children: [
-                Expanded(
-                  child: KineticButton(
-                    label: isVi ? 'Đóng' : 'Cancel',
-                    variant: KineticButtonVariant.secondary,
-                    height: 46,
-                    onPressed: () => Navigator.of(ctx).pop(false),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: KineticButton(
-                    label: isVi ? 'Mở Cài Đặt' : 'Open Settings',
-                    variant: KineticButtonVariant.primary,
-                    height: 46,
-                    onPressed: () => Navigator.of(ctx).pop(true),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-
-    if (shouldOpen == true) {
-      await openAppSettings();
-    }
-  }
-
   Future<void> _toggleNotificationPermission(
     bool value,
     AppLanguage lang,
   ) async {
+    final isTestBlocked =
+        NotificationService.instance.shouldBypassOsBridgeInTest;
     if (value) {
+      if (isTestBlocked) {
+        await _setNotificationsEnabled(false);
+        return;
+      }
+      final osBefore = await NotificationService.instance
+          .getOsPermissionState();
+      if (osBefore == NotificationOsPermissionState.denied) {
+        await NotificationService.instance.openNotificationSettings();
+        await _refreshPermissions();
+        return;
+      }
       final allowed = await NotificationService.instance.requestPermissions();
       await _refreshPermissions();
-      if (!allowed && mounted) {
-        await _showRevokePermissionDialog(
-          context,
-          lang == AppLanguage.vi ? 'Thông báo' : 'Notifications',
-          lang,
-        );
-      } else {
+      if (allowed || _isNotificationGranted) {
         await _setNotificationsEnabled(true);
+      } else {
+        await _setNotificationsEnabled(false);
+        await NotificationService.instance.openNotificationSettings();
       }
     } else {
-      await _setNotificationsEnabled(false);
-      if (mounted) {
-        await _showRevokePermissionDialog(
-          context,
-          lang == AppLanguage.vi ? 'Thông báo' : 'Notifications',
-          lang,
-        );
+      if (!isTestBlocked) {
+        await NotificationService.instance.openNotificationSettings();
       }
     }
   }
@@ -636,18 +551,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       }
       await _refreshPermissions();
       if (!status.isGranted && !status.isLimited && mounted) {
-        await _showRevokePermissionDialog(
-          context,
-          lang == AppLanguage.vi ? 'Camera' : 'Camera',
-          lang,
-        );
+        if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+          await openAppSettings();
+        }
       }
     } else {
-      await _showRevokePermissionDialog(
-        context,
-        lang == AppLanguage.vi ? 'Camera' : 'Camera',
-        lang,
-      );
+      if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+        await openAppSettings();
+      }
     }
   }
 
@@ -669,18 +580,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       }
       await _refreshPermissions();
       if (!status.isAuth && mounted) {
-        await _showRevokePermissionDialog(
-          context,
-          lang == AppLanguage.vi ? 'Thư viện ảnh' : 'Photo Library',
-          lang,
-        );
+        if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+          await openAppSettings();
+        }
       }
     } else {
-      await _showRevokePermissionDialog(
-        context,
-        lang == AppLanguage.vi ? 'Thư viện ảnh' : 'Photo Library',
-        lang,
-      );
+      if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+        await openAppSettings();
+      }
     }
   }
 
@@ -707,18 +614,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       if (geoPerm != LocationPermission.always &&
           geoPerm != LocationPermission.whileInUse &&
           mounted) {
-        await _showRevokePermissionDialog(
-          context,
-          lang == AppLanguage.vi ? 'Vị trí (GPS)' : 'Location (GPS)',
-          lang,
-        );
+        if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+          await openAppSettings();
+        }
       }
     } else {
-      await _showRevokePermissionDialog(
-        context,
-        lang == AppLanguage.vi ? 'Vị trí (GPS)' : 'Location (GPS)',
-        lang,
-      );
+      if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+        await openAppSettings();
+      }
     }
   }
 
@@ -1090,6 +993,36 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                                 ),
                                 onTap: () => _showThemeSelector(currentLang),
                               ),
+                              KineticSettingsTile(
+                                icon: Icons.notifications_outlined,
+                                bladeIcon: BladeIconName.bell,
+                                title: currentLang == AppLanguage.vi
+                                    ? 'Lịch nhắc tập luyện'
+                                    : 'Workout Reminders',
+                                subtitle: _isNotificationActive
+                                    ? (currentLang == AppLanguage.vi
+                                          ? 'Đang bật • Giờ nhắc & khung giờ yên tĩnh'
+                                          : 'On • Daily schedule & quiet hours')
+                                    : (currentLang == AppLanguage.vi
+                                          ? 'Tùy chỉnh giờ nhắc & khung giờ yên tĩnh'
+                                          : 'Configure schedule & quiet hours'),
+                                accentColor: colors.secondary,
+                                trailing: Icon(
+                                  Icons.chevron_right_rounded,
+                                  color: colors.textSecondary,
+                                ),
+                                onTap: () async {
+                                  await Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const NotificationSettingsScreen(),
+                                    ),
+                                  );
+                                  if (!mounted) return;
+                                  await _loadPreferences();
+                                  await _refreshPermissions();
+                                },
+                              ),
                             ],
                           ),
                           const SizedBox(height: KineticTokens.spaceLG),
@@ -1114,11 +1047,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                                       )
                                     : _isNotificationGranted
                                     ? (currentLang == AppLanguage.vi
-                                          ? 'Đã cho phép • Nhắc nhở tập & chuỗi Streak'
-                                          : 'Allowed • Workout & streak alerts')
+                                          ? 'Đã cho phép • Chạm để mở cài đặt hệ thống'
+                                          : 'Allowed • Tap to open system settings')
                                     : (currentLang == AppLanguage.vi
-                                          ? 'Chưa cho phép • Bật để nhận thông báo từ iPhone'
-                                          : 'Denied • Tap to allow alerts'),
+                                          ? 'Chưa cho phép • Bật trong cài đặt hệ thống'
+                                          : 'Denied • Tap to allow in system settings'),
                                 accentColor: colors.secondary,
                                 trailing: CupertinoSwitch(
                                   value: _isNotificationGranted,
@@ -1378,14 +1311,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                                       color: colors.borderSubtle,
                                     ),
                                   ),
-                                  child: Text(
-                                    'AETRON',
-                                    style: KineticTypography.unitLabel.copyWith(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w800,
-                                      color: colors.secondary,
-                                      letterSpacing: 1.0,
+                                  child: const AetronBrandLockup(
+                                    key: ValueKey(
+                                      'settings-version-brand-lockup',
                                     ),
+                                    markSize: 16,
+                                    wordmarkHeight: 11,
+                                    spacing: 5,
                                   ),
                                 ),
                               ),
@@ -1396,8 +1328,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                           // SECTION 5: ACCOUNT DELETION
                           KineticSettingsSectionGroup(
                             title: currentLang == AppLanguage.vi
-                                ? 'QUẢN LÝ TÀI KHOẢN'
-                                : 'ACCOUNT MANAGEMENT',
+                                ? 'Quản lý tài khoản'
+                                : 'Account management',
                             children: [
                               KineticSettingsTile(
                                 icon: Icons.person_remove_rounded,
@@ -1601,7 +1533,7 @@ class _ProfileHeroCard extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              nameLabel.toUpperCase(),
+                              nameLabel,
                               style: KineticTypography.sectionEyebrow.copyWith(
                                 color: colors.textMuted,
                               ),

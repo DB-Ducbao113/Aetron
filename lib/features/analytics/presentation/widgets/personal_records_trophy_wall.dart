@@ -183,9 +183,9 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
               Text(
                 isUnlocked
                     ? (isVi
-                          ? 'KỶ LỤC CÁ NHÂN ĐÃ XÁC LẬP'
-                          : 'PERSONAL BEST ESTABLISHED')
-                    : (isVi ? 'CHƯA MỞ KHÓA' : 'NOT YET UNLOCKED'),
+                          ? 'Kỷ lục cá nhân đã xác lập'
+                          : 'Personal best established')
+                    : (isVi ? 'Chưa mở khóa' : 'Not yet unlocked'),
                 style: KineticTypography.unitLabel.copyWith(
                   fontWeight: FontWeight.w900,
                   color: isUnlocked ? colors.tertiary : colors.textMuted,
@@ -210,7 +210,7 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            isVi ? 'THÀNH TÍCH ĐỈNH CAO' : 'PEAK RECORD',
+                            isVi ? 'Thành tích đỉnh cao' : 'Peak record',
                             style: KineticTypography.unitLabel.copyWith(
                               color: colors.textSecondary,
                             ),
@@ -245,7 +245,7 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              isVi ? 'NGÀY XÁC LẬP' : 'DATE ACHIEVED',
+                              isVi ? 'Ngày xác lập' : 'Date achieved',
                               style: KineticTypography.unitLabel.copyWith(
                                 color: colors.textSecondary,
                               ),
@@ -275,7 +275,7 @@ class PersonalRecordsTrophyWall extends StatelessWidget {
               const SizedBox(height: KineticTokens.spaceLG),
 
               KineticButton(
-                label: isVi ? 'ĐÓNG' : 'CLOSE',
+                label: isVi ? 'Đóng' : 'Close',
                 icon: Icons.check_circle_outline_rounded,
                 variant: KineticButtonVariant.secondary,
                 onPressed: () => Navigator.of(context).pop(),

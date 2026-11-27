@@ -53,8 +53,8 @@ class KineticNextMilestoneSpotlight extends StatelessWidget {
                           children: [
                             Text(
                               currentLang == AppLanguage.vi
-                                  ? 'CỘT MỐC TIẾP THEO'
-                                  : 'NEXT MILESTONE',
+                                  ? 'Cột mốc tiếp theo'
+                                  : 'Next milestone',
                               style: KineticTypography.pageEyebrow.copyWith(
                                 color: colors.primary,
                               ),

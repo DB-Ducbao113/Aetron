@@ -3,6 +3,8 @@ import "dart:ui" as ui;
 import "package:fitness_exercise_application/core/constants/debug_config.dart";
 import "package:fitness_exercise_application/core/localization/app_translations.dart";
 import "package:fitness_exercise_application/features/workout/presentation/screens/record/workout_session_state.dart";
+import "package:fitness_exercise_application/features/workout/presentation/utils/route_display_sanitizer.dart";
+import "package:fitness_exercise_application/shared/aetron/aetron_logo_paths.dart";
 import "package:fitness_exercise_application/shared/kinetic/blade_icons.dart";
 import "package:fitness_exercise_application/shared/kinetic/kinetic.dart";
 import "package:flutter/foundation.dart";
@@ -179,6 +181,7 @@ class _TrackingMapWidgetState extends State<TrackingMapWidget>
 
   DateTime? _lastCameraMove;
   bool _initialCameraSet = false;
+  bool _userAdjustedZoom = false;
   late bool _is3DMode;
   AppMapType _fallbackMapType = AppMapType.satellite;
   bool _checkedLocalPrefs = false;
@@ -187,12 +190,43 @@ class _TrackingMapWidgetState extends State<TrackingMapWidget>
   int? _zoomBucket;
 
   static const LatLng _defaultCenter = LatLng(10.7769, 106.7009);
-
-  static const _routeShadow = Color(0x33000000);
+  static const double _minMapZoom = 4.0;
+  static const double _maxMapZoom = 22.0;
 
   static Duration get _cameraThrottle => kDebugLocationMode
       ? const Duration(milliseconds: 120)
       : const Duration(milliseconds: 160);
+
+  double _recommendedTrackingZoom() {
+    // Indoor / weak-GPS / short walking spaces automatically zoom close in
+    // (like Strava) so room-scale or courtyard paths remain clearly readable.
+    final isWalking = widget.activityType.toLowerCase() == 'walking';
+    final isCycling = widget.activityType.toLowerCase() == 'cycling';
+    final isCompactSpan = _isCompactRouteSpan(widget.routePoints);
+
+    if (widget.isGpsSignalWeak || (isWalking && isCompactSpan)) {
+      return 19.4;
+    }
+    if (isWalking) return 18.6;
+    if (isCycling) return 16.6;
+    return isCompactSpan ? 18.4 : 17.8;
+  }
+
+  bool _isCompactRouteSpan(List<LatLng> points) {
+    if (points.length < 2) return true;
+    var minLat = points.first.latitude;
+    var maxLat = points.first.latitude;
+    var minLng = points.first.longitude;
+    var maxLng = points.first.longitude;
+    for (final p in points) {
+      if (p.latitude < minLat) minLat = p.latitude;
+      if (p.latitude > maxLat) maxLat = p.latitude;
+      if (p.longitude < minLng) minLng = p.longitude;
+      if (p.longitude > maxLng) maxLng = p.longitude;
+    }
+    // ~55m bounding box across either axis counts as compact/indoor scale.
+    return (maxLat - minLat) < 0.0005 && (maxLng - minLng) < 0.0005;
+  }
 
   @override
   void initState() {
@@ -296,21 +330,27 @@ class _TrackingMapWidgetState extends State<TrackingMapWidget>
     }
 
     if (widget.recenterRequestId != oldWidget.recenterRequestId) {
+      _userAdjustedZoom = false;
       _recenterToCurrent(force: true);
       return;
     }
 
     if (!widget.followUser) return;
 
-    if (target == null || target == prevTarget) return;
+    final signalChanged = widget.isGpsSignalWeak != oldWidget.isGpsSignalWeak;
+    if (target == null || (target == prevTarget && !signalChanged)) return;
 
     final now = DateTime.now();
     final last = _lastCameraMove;
-    if (last == null || now.difference(last) >= _cameraThrottle) {
+    if (signalChanged || last == null || now.difference(last) >= _cameraThrottle) {
       _lastCameraMove = now;
       final currentZoom = _mapController.camera.zoom;
-      final camTarget = _visualCameraTarget(target, currentZoom);
-      _mapController.move(camTarget, currentZoom);
+      final desiredZoom = _userAdjustedZoom
+          ? currentZoom
+          : (currentZoom + (_recommendedTrackingZoom() - currentZoom) * 0.35)
+              .clamp(_minMapZoom, _maxMapZoom);
+      final camTarget = _visualCameraTarget(target, desiredZoom);
+      _mapController.move(camTarget, desiredZoom);
     }
   }
 
@@ -337,7 +377,10 @@ class _TrackingMapWidgetState extends State<TrackingMapWidget>
     _lastCameraMove = now;
     _initialCameraSet = true;
     final currentZoom = _mapController.camera.zoom;
-    final zoom = currentZoom < 14.0 ? 17.2 : currentZoom;
+    final recommended = _recommendedTrackingZoom();
+    final zoom = (!_userAdjustedZoom || currentZoom < 14.0)
+        ? recommended
+        : currentZoom;
     final camTarget = _visualCameraTarget(target, zoom);
     _mapController.move(camTarget, zoom);
   }
@@ -351,26 +394,42 @@ class _TrackingMapWidgetState extends State<TrackingMapWidget>
       return;
     }
 
-    final zoom = _zoomBucket ?? 17;
+    final zoom = _zoomBucket ?? _recommendedTrackingZoom().round();
     final tolerance = _simplificationTolerance(zoom);
 
+    List<LatLng> prepareSegment(List<LatLng> segment) {
+      final simplified = _simplifyPoints(segment, tolerance);
+      final sanitized = sanitizeRouteForDisplay(
+        simplified,
+        activityType: widget.activityType,
+        applyCurveSmoothing: true,
+      );
+      return sanitized.length >= 2 ? sanitized : simplified;
+    }
+
     if (rawSegments.isNotEmpty) {
+      // Bridge short indoor/signal-hiccup breaks (<= 45m) before curve smoothing
+      // so single-point recoveries are preserved and short gaps look seamless.
+      final bridgedRaw = bridgeShortDisplayGaps(
+        rawSegments,
+        maxSeamlessGapMeters: 45.0,
+      );
       final outSegments = <List<LatLng>>[];
-      for (final segment in rawSegments) {
+      for (final segment in bridgedRaw) {
         if (segment.length < 2) continue;
-        final simplified = _simplifyPoints(segment, tolerance);
-        if (simplified.length >= 2) {
-          outSegments.add(simplified);
+        final curved = prepareSegment(segment);
+        if (curved.length >= 2) {
+          outSegments.add(curved);
         }
       }
       _cachedDisplaySegments = outSegments;
       _cachedDisplayRoute = outSegments.isNotEmpty
           ? outSegments.expand((element) => element).toList()
-          : _simplifyPoints(raw, tolerance);
+          : prepareSegment(raw);
       return;
     }
 
-    _cachedDisplayRoute = _simplifyPoints(raw, tolerance);
+    _cachedDisplayRoute = prepareSegment(raw);
     _cachedDisplaySegments = _cachedDisplayRoute.isNotEmpty
         ? <List<LatLng>>[_cachedDisplayRoute]
         : const <List<LatLng>>[];
@@ -470,12 +529,6 @@ class _TrackingMapWidgetState extends State<TrackingMapWidget>
     return px * px + py * py;
   }
 
-  List<LatLng> _offsetShadowPoints(List<LatLng> pts) {
-    return pts
-        .map((p) => LatLng(p.latitude - 0.000035, p.longitude + 0.000025))
-        .toList();
-  }
-
   @override
   Widget build(BuildContext context) {
     final center =
@@ -496,20 +549,13 @@ class _TrackingMapWidgetState extends State<TrackingMapWidget>
     final useLitePolyline =
         widget.routePoints.length > (kDebugLocationMode ? 250 : 700);
 
-    // Theme identity: dark keeps the cyan route on its dark basemap;
-    // light ("Morning") draws the route in deep teal on the light basemap
-    // and melts the map edges into the paper background instead of black.
     final colors = context.kinetic;
     final isLight = Theme.of(context).brightness == Brightness.light;
-    final routeCore = colors.accentFill;
+    final initialZoom = _recommendedTrackingZoom();
 
     return AetronMapTypeBuilder(
       fallbackType: _fallbackMapType,
       builder: (context, activeMapType) {
-        final routeCasing = (isLight || activeMapType == AppMapType.satellite)
-            ? Colors.white.withValues(alpha: 0.92)
-            : Colors.black.withValues(alpha: 0.55);
-
         return Stack(
           children: [
             AnimatedBuilder(
@@ -528,15 +574,20 @@ class _TrackingMapWidgetState extends State<TrackingMapWidget>
                 mapController: _mapController,
                 options: MapOptions(
                   backgroundColor: colors.surface2,
-                  initialCenter: _visualCameraTarget(center, 17.2),
-                  initialZoom: 17.2,
-                  minZoom: 4,
-                  maxZoom: 20,
+                  initialCenter: _visualCameraTarget(center, initialZoom),
+                  initialZoom: initialZoom,
+                  minZoom: _minMapZoom,
+                  maxZoom: _maxMapZoom,
                   interactionOptions: const InteractionOptions(
                     flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
                   ),
                   onPositionChanged: (camera, hasGesture) {
                     final nextZoomBucket = camera.zoom.round();
+                    if (hasGesture &&
+                        (camera.zoom - _recommendedTrackingZoom()).abs() >
+                            0.25) {
+                      _userAdjustedZoom = true;
+                    }
                     if (nextZoomBucket != _zoomBucket) {
                       setState(() {
                         _zoomBucket = nextZoomBucket;
@@ -553,38 +604,24 @@ class _TrackingMapWidgetState extends State<TrackingMapWidget>
                     ...buildAetronMapTileLayers(activeMapType),
                   if (widget.showRoute && displaySegments.isNotEmpty)
                     PolylineLayer(
-                      polylines: [
-                        for (final segment in displaySegments) ...[
-                          if (!useLitePolyline)
-                            Polyline(
-                              points: _offsetShadowPoints(segment),
-                              strokeWidth: 9,
-                              color: _routeShadow,
-                            ),
-                          Polyline(
-                            points: segment,
-                            strokeWidth: useLitePolyline ? 6.5 : 8.5,
-                            color: routeCasing,
-                          ),
-                          Polyline(
-                            points: segment,
-                            strokeWidth: useLitePolyline ? 4.5 : 5.5,
-                            color: routeCore,
-                          ),
-                        ],
-                      ],
+                      simplificationTolerance: 0.25,
+                      polylines: buildAetronRoutePolylines(
+                        segments: displaySegments,
+                        mapType: activeMapType,
+                        isDark: !isLight,
+                        coreWidth: useLitePolyline ? 4.4 : 5.4,
+                        lite: useLitePolyline,
+                      ),
                     ),
                   MarkerLayer(
                     markers: [
                       if (widget.showRoute && displayRoute.isNotEmpty)
                         Marker(
                           point: displayRoute.first,
-                          width: 32,
-                          height: 44,
-                          alignment: Alignment.bottomCenter,
-                          child: _Start3DPinMarker(
-                            tiltAnimation: _tiltAnimation,
-                          ),
+                          width: 24,
+                          height: 24,
+                          alignment: Alignment.center,
+                          child: const _StartAnchorMarker(),
                         ),
                       if (markerPos != null)
                         Marker(
@@ -597,14 +634,6 @@ class _TrackingMapWidgetState extends State<TrackingMapWidget>
                             initials: widget.initials,
                             tiltAnimation: _tiltAnimation,
                           ),
-                        ),
-                      if (widget.gpsGapMarker != null)
-                        Marker(
-                          point: widget.gpsGapMarker!,
-                          width: 20,
-                          height: 20,
-                          alignment: Alignment.center,
-                          child: const _GpsGapMarker(),
                         ),
                     ],
                   ),
@@ -669,7 +698,143 @@ class _TrackingMapWidgetState extends State<TrackingMapWidget>
   }
 }
 
+const Distance _routeBridgeDistance = Distance();
+
+/// Builds Aetron's unified Glassline luminous route ribbon polylines for both
+/// live tracking and saved workout route previews.
+///
+/// Segment continuity (display-only, never alters distance metrics):
+/// - Short indoor/signal-hiccup gaps (`<= maxSeamlessGapMeters`, default 45m)
+///   are seamlessly merged and curve-smoothed so routes never show ragged holes.
+/// - Longer GPS blackouts/tunnels (`> 45m` and `<= 2000m`) are bridged with a
+///   sleek translucent Glassline dashed connector so continuity stays clear.
+///
+/// Solid Ribbon Layers:
+/// 1. Soft ambient sky-blue halo (stays anchored at every zoom up to 22)
+/// 2. Crisp frosted casing for legibility over satellite and street tiles
+/// 3. Directional Aetron brand gradient (`#1166DB` Cobalt -> `#2A85FF` -> `#93BFFF` Sky)
+/// 4. Subtle frost specular filament along the center ridge
+List<Polyline> buildAetronRoutePolylines({
+  required List<List<LatLng>> segments,
+  required AppMapType mapType,
+  required bool isDark,
+  double coreWidth = 5.0,
+  bool lite = false,
+  double maxSeamlessGapMeters = 45.0,
+  double maxDashedBridgeMeters = 2000.0,
+}) {
+  final useLightCasing = !isDark || mapType == AppMapType.satellite;
+  final haloColor = isDark
+      ? AetronLogoPaths.darkAccentColor.withValues(alpha: 0.24)
+      : AetronLogoPaths.lightAccentColor.withValues(alpha: 0.18);
+  final casingColor = useLightCasing
+      ? Colors.white.withValues(alpha: 0.94)
+      : const Color(0xDD0C1420);
+  const gradient = <Color>[
+    AetronLogoPaths.lightAccentColor, // #1166DB (start)
+    Color(0xFF2A85FF), // Electric Kinetic Blue (mid)
+    AetronLogoPaths.darkAccentColor, // #93BFFF (current/finish tip)
+  ];
+  const stops = <double>[0.0, 0.55, 1.0];
+
+  final visualSegments = bridgeShortDisplayGaps(
+    segments,
+    maxSeamlessGapMeters: maxSeamlessGapMeters,
+  );
+
+  final polylines = <Polyline>[];
+
+  // Draw sleek Glassline dashed bridges across longer GPS blackout / tunnel gaps
+  // BEFORE solid segments so solid endpoints sit cleanly on top.
+  for (var i = 0; i < visualSegments.length - 1; i++) {
+    final prevEnd = visualSegments[i].last;
+    final nextStart = visualSegments[i + 1].first;
+    final gapM = _routeBridgeDistance.distance(prevEnd, nextStart);
+    if (gapM > 0.5 && gapM <= maxDashedBridgeMeters) {
+      final bridgePoints = <LatLng>[prevEnd, nextStart];
+      final dashedPattern = StrokePattern.dashed(segments: const <double>[7, 7]);
+      polylines.add(
+        Polyline(
+          points: bridgePoints,
+          strokeWidth: (coreWidth * 0.72) + 2.4,
+          color: casingColor.withValues(alpha: 0.75),
+          pattern: dashedPattern,
+          strokeCap: StrokeCap.round,
+          strokeJoin: StrokeJoin.round,
+        ),
+      );
+      polylines.add(
+        Polyline(
+          points: bridgePoints,
+          strokeWidth: coreWidth * 0.72,
+          color: (isDark
+                  ? AetronLogoPaths.darkAccentColor
+                  : AetronLogoPaths.lightAccentColor)
+              .withValues(alpha: 0.78),
+          pattern: dashedPattern,
+          strokeCap: StrokeCap.round,
+          strokeJoin: StrokeJoin.round,
+        ),
+      );
+    }
+  }
+
+  for (final segment in visualSegments) {
+    if (segment.length < 2) continue;
+    final curved = smoothCurveForDisplay(segment, iterations: 1);
+    final renderPoints = curved.length >= 2 ? curved : segment;
+    if (!lite) {
+      polylines.add(
+        Polyline(
+          points: renderPoints,
+          strokeWidth: coreWidth + 8.5,
+          color: haloColor,
+          strokeCap: StrokeCap.round,
+          strokeJoin: StrokeJoin.round,
+        ),
+      );
+    }
+    polylines.add(
+      Polyline(
+        points: renderPoints,
+        strokeWidth: coreWidth + 3.2,
+        color: casingColor,
+        strokeCap: StrokeCap.round,
+        strokeJoin: StrokeJoin.round,
+      ),
+    );
+    polylines.add(
+      Polyline(
+        points: renderPoints,
+        strokeWidth: coreWidth,
+        gradientColors: gradient,
+        colorsStop: stops,
+        color: AetronLogoPaths.lightAccentColor,
+        strokeCap: StrokeCap.round,
+        strokeJoin: StrokeJoin.round,
+      ),
+    );
+    if (!lite) {
+      polylines.add(
+        Polyline(
+          points: renderPoints,
+          strokeWidth: (coreWidth * 0.26).clamp(1.1, 1.6),
+          color: AetronLogoPaths.darkWordmarkColor.withValues(alpha: 0.45),
+          strokeCap: StrokeCap.round,
+          strokeJoin: StrokeJoin.round,
+        ),
+      );
+    }
+  }
+  return polylines;
+}
+
 /// Builds the ArcGIS tile layers for the active [AppMapType].
+///
+/// Uses `maxNativeZoom: 18` with unbounded `maxZoom` (`double.infinity`) so
+/// `flutter_map` smoothly overzooms native z18 tiles all the way to zoom 22
+/// (indoor/room scale) without ever turning blank white or hitting ArcGIS
+/// "Map data not yet available" placeholder tiles.
 List<Widget> buildAetronMapTileLayers(AppMapType type) {
   switch (type) {
     case AppMapType.satellite:
@@ -679,16 +844,16 @@ List<Widget> buildAetronMapTileLayers(AppMapType type) {
           urlTemplate:
               "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
           userAgentPackageName: "com.aetron.app",
-          maxZoom: 20,
-          maxNativeZoom: 19,
+          maxNativeZoom: 18,
+          keepBuffer: 3,
         ),
         TileLayer(
           key: const ValueKey('aetron-tile-satellite-boundaries'),
           urlTemplate:
               "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
           userAgentPackageName: "com.aetron.app",
-          maxZoom: 20,
-          maxNativeZoom: 19,
+          maxNativeZoom: 18,
+          keepBuffer: 3,
         ),
       ];
     case AppMapType.streets:
@@ -698,8 +863,8 @@ List<Widget> buildAetronMapTileLayers(AppMapType type) {
           urlTemplate:
               "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
           userAgentPackageName: "com.aetron.app",
-          maxZoom: 20,
-          maxNativeZoom: 19,
+          maxNativeZoom: 18,
+          keepBuffer: 3,
         ),
       ];
   }
@@ -887,7 +1052,7 @@ class _MapStylePickerSheet extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      isVi ? "CHỌN KIỂU BẢN ĐỒ" : "SELECT MAP STYLE",
+                      isVi ? "Chọn kiểu bản đồ" : "Select map style",
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: KineticTypography.pageEyebrow.copyWith(
@@ -913,13 +1078,13 @@ class _MapStylePickerSheet extends StatelessWidget {
                 optionKey: const Key('map-style-option-satellite'),
                 type: AppMapType.satellite,
                 activeType: activeType,
-                title: isVi ? "Ảnh Vệ Tinh 3D" : "3D Satellite Imagery",
+                title: isVi ? "Ảnh vệ tinh 3D" : "3D satellite imagery",
                 subtitle: isVi
                     ? "Ảnh chụp thực tế độ phân giải cao"
                     : "Photorealistic aerial satellite imagery",
                 iconBuilder: (color, size) =>
                     Icon(Icons.satellite_alt_rounded, color: color, size: size),
-                badge: isVi ? "CHÂN THỰC" : "REALISTIC",
+                badge: isVi ? "Chân thực" : "Realistic",
               ),
               const SizedBox(height: 12),
               _buildMapOption(
@@ -927,13 +1092,13 @@ class _MapStylePickerSheet extends StatelessWidget {
                 optionKey: const Key('map-style-option-streets'),
                 type: AppMapType.streets,
                 activeType: activeType,
-                title: isVi ? "Đường Phố Rõ Nét" : "Clean Street Map",
+                title: isVi ? "Đường phố rõ nét" : "Clean street map",
                 subtitle: isVi
                     ? "Bản đồ đường xá, công viên tinh tế"
                     : "Clean minimal street & sports map",
                 iconBuilder: (color, size) =>
                     BladeIcon(BladeIconName.map, color: color, size: size),
-                badge: isVi ? "RÕ NÉT" : "CLEAN",
+                badge: isVi ? "Rõ nét" : "Clean",
               ),
             ],
           ),
@@ -1239,112 +1404,40 @@ class _PinTipPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-class _Start3DPinMarker extends StatelessWidget {
-  final Animation<double>? tiltAnimation;
-
-  const _Start3DPinMarker({this.tiltAnimation});
+class _StartAnchorMarker extends StatelessWidget {
+  const _StartAnchorMarker();
 
   @override
   Widget build(BuildContext context) {
-    Widget pin = Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(7),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF2AF598), Color(0xFF00B86B)],
-            ),
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 2),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF2AF598).withValues(alpha: 0.5),
-                blurRadius: 10,
-                offset: const Offset(0, 3),
-              ),
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.4),
-                blurRadius: 6,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: const Icon(Icons.flag_rounded, color: Colors.white, size: 16),
-        ),
-        CustomPaint(
-          size: const Size(10, 6),
-          painter: _PinTipPainter(color: const Color(0xFF00B86B)),
-        ),
-      ],
-    );
-
-    if (tiltAnimation != null) {
-      pin = AnimatedBuilder(
-        animation: tiltAnimation!,
-        builder: (context, child) {
-          final tilt = tiltAnimation!.value;
-          return Transform(
-            alignment: Alignment.bottomCenter,
-            transform: Matrix4.identity()..rotateX(-tilt),
-            child: child,
-          );
-        },
-        child: pin,
-      );
-    }
-
-    return SizedBox(
-      width: 32,
-      height: 44,
-      child: Stack(
-        alignment: Alignment.bottomCenter,
-        clipBehavior: Clip.none,
-        children: [
-          Positioned(
-            bottom: -2,
-            child: Container(
-              width: 14,
-              height: 5,
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.45),
-                borderRadius: BorderRadius.circular(99),
-              ),
-            ),
-          ),
-          Positioned(bottom: 0, child: pin),
-        ],
-      ),
-    );
-  }
-}
-
-class _GpsGapMarker extends StatelessWidget {
-  const _GpsGapMarker();
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.kinetic;
     return Container(
+      width: 22,
+      height: 22,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF1E3A5F), Color(0xFF0D1B2A)],
-        ),
         shape: BoxShape.circle,
-        border: Border.all(color: colors.primary, width: 2),
+        color: const Color(0xFF10B981).withValues(alpha: 0.24),
         boxShadow: [
           BoxShadow(
-            color: colors.primary.withValues(alpha: 0.45),
+            color: const Color(0xFF10B981).withValues(alpha: 0.42),
             blurRadius: 10,
             spreadRadius: 1,
           ),
         ],
       ),
-      child: Icon(Icons.sensors_rounded, color: colors.primary, size: 18),
+      child: Center(
+        child: Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF10B981), Color(0xFF34D399)],
+            ),
+            border: Border.all(color: Colors.white, width: 2),
+          ),
+        ),
+      ),
     );
   }
 }

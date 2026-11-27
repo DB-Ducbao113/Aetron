@@ -115,7 +115,7 @@ void main() {
       );
       await _tap(
         tester,
-        find.descendant(of: sheet, matching: find.text('ĐÓNG')),
+        find.descendant(of: sheet, matching: find.text('Đóng')),
       );
       expect(sheet, findsNothing);
       await _tap(tester, _badge('century_100k'));
@@ -129,7 +129,7 @@ void main() {
       );
       await _tap(
         tester,
-        find.descendant(of: sheet, matching: find.text('ĐÓNG')),
+        find.descendant(of: sheet, matching: find.text('Đóng')),
       );
       expect(sheet, findsNothing);
       await tester.drag(find.byType(ListView).first, const Offset(0, 650));

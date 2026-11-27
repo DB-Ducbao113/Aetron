@@ -90,6 +90,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           child: _isRefreshing
               ? KineticSkeleton.profile()
               : profileAsync.when(
+                  skipLoadingOnReload: true,
+                  skipLoadingOnRefresh: true,
                   loading: () => KineticSkeleton.profile(),
                   error: (error, _) => ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
@@ -97,7 +99,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       Padding(
                         padding: const EdgeInsets.all(24),
                         child: Text(
-                          'Your profile could not be loaded.\n$error',
+                          currentLang == AppLanguage.vi
+                              ? 'Không thể tải hồ sơ của bạn.\n$error'
+                              : 'Your profile could not be loaded.\n$error',
                           textAlign: TextAlign.center,
                           style: KineticTypography.bodyMedium.copyWith(
                             color: colors.textPrimary,
@@ -482,8 +486,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           children: [
                             Text(
                               currentLang == AppLanguage.vi
-                                  ? 'BẢO MẬT ĐÃ ĐẠT CHUẨN TỐI ƯU'
-                                  : 'STRONG SECURITY ACTIVE',
+                                  ? 'Bảo mật đã đạt chuẩn tối ưu'
+                                  : 'Strong security active',
                               style: KineticTypography.label.copyWith(
                                 color: colors.secondary,
                                 fontWeight: FontWeight.w900,
@@ -978,8 +982,8 @@ class _GoogleGmailRecoverySheetState extends State<_GoogleGmailRecoverySheet> {
             const SizedBox(height: 20),
             KineticButton(
               label: linked
-                  ? (isVi ? 'ĐÃ LIÊN KẾT GOOGLE GMAIL' : 'GOOGLE GMAIL LINKED')
-                  : (isVi ? 'LIÊN KẾT GOOGLE GMAIL' : 'LINK GOOGLE GMAIL'),
+                  ? (isVi ? 'Đã liên kết Google Gmail' : 'Google Gmail linked')
+                  : (isVi ? 'Liên kết Google Gmail' : 'Link Google Gmail'),
               variant: linked
                   ? KineticButtonVariant.secondary
                   : KineticButtonVariant.primary,
@@ -1166,6 +1170,9 @@ class _UpdatePasswordSheetState extends State<_UpdatePasswordSheet> {
   Widget build(BuildContext context) {
     final colors = context.kinetic;
     final lang = widget.currentLang;
+    final currentUser = Supabase.instance.client.auth.currentUser;
+    final username = (currentUser?.userMetadata?['username'] as String?) ??
+        currentUser?.email?.split('@').first;
 
     return KineticGlassBottomSheet(
       floating: true,
@@ -1196,7 +1203,7 @@ class _UpdatePasswordSheetState extends State<_UpdatePasswordSheet> {
 
                 // New Password Field
                 Text(
-                  AppTranslations.get('new_password', lang).toUpperCase(),
+                  AppTranslations.get('new_password', lang),
                   style: KineticTypography.unitLabel.copyWith(
                     color: colors.primary,
                     fontWeight: FontWeight.w900,
@@ -1212,7 +1219,8 @@ class _UpdatePasswordSheetState extends State<_UpdatePasswordSheet> {
                     color: colors.textPrimary,
                     fontWeight: FontWeight.w600,
                   ),
-                  validator: (val) => validatePasswordStrict(val, lang),
+                  validator: (val) =>
+                      validatePasswordStrict(val, lang, username: username),
                   decoration: InputDecoration(
                     hintText: '••••••••',
                     hintStyle: TextStyle(
@@ -1249,12 +1257,13 @@ class _UpdatePasswordSheetState extends State<_UpdatePasswordSheet> {
                 PasswordSecurityMeter(
                   password: _passwordController.text,
                   lang: lang,
+                  username: username,
                 ),
                 const SizedBox(height: 12),
 
                 // Confirm New Password
                 Text(
-                  AppTranslations.get('confirm_password', lang).toUpperCase(),
+                  AppTranslations.get('confirm_password', lang),
                   style: KineticTypography.unitLabel.copyWith(
                     color: colors.primary,
                     fontWeight: FontWeight.w900,

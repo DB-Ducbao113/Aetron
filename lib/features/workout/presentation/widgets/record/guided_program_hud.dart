@@ -112,7 +112,7 @@ class GuidedProgramHud extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            isVi ? 'BỎ QUA' : 'SKIP',
+                            isVi ? 'Bỏ qua' : 'Skip',
                             style: KineticTypography.unitLabel.copyWith(
                               fontWeight: FontWeight.w800,
                               color: colors.primary,
@@ -229,7 +229,7 @@ class GuidedProgramHud extends StatelessWidget {
   ) {
     if (currentPaceSecKm <= 0 || currentPaceSecKm > 1200) {
       return _PaceFeedback(
-        label: isVi ? 'ĐANG BẮT TỐC ĐỘ' : 'ACQUIRING PACE',
+        label: isVi ? 'Đang bắt nhịp độ' : 'Acquiring pace',
         color: colors.primary,
       );
     }
@@ -239,14 +239,14 @@ class GuidedProgramHud extends StatelessWidget {
 
     if (minPace == null || maxPace == null) {
       return _PaceFeedback(
-        label: isVi ? 'DUY TRÌ ĐỀU' : 'KEEP STEADY',
+        label: isVi ? 'Duy trì đều' : 'Keep steady',
         color: colors.primary,
       );
     }
 
     if (currentPaceSecKm < minPace - 30) {
       return _PaceFeedback(
-        label: isVi ? '🛑 HÃY CHẬM LẠI' : '🛑 SLOW DOWN',
+        label: isVi ? '🛑 Hãy chậm lại' : '🛑 Slow down',
         color: colors.error,
       );
     } else if (currentPaceSecKm > maxPace + 45) {
@@ -256,7 +256,7 @@ class GuidedProgramHud extends StatelessWidget {
       );
     } else {
       return _PaceFeedback(
-        label: isVi ? '✅ PACE ĐẠT CHUẨN' : '✅ ON TARGET PACE',
+        label: isVi ? '✅ NHỊP ĐỘ ĐẠT CHUẨN' : '✅ ON TARGET PACE',
         color: const Color(0xFF2AF598),
       );
     }

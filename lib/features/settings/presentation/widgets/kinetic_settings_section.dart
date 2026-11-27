@@ -52,7 +52,7 @@ class KineticSettingsSectionGroup extends StatelessWidget {
             bottom: KineticTokens.spaceSM,
           ),
           child: Text(
-            title.toUpperCase(),
+            title,
             style: KineticTypography.sectionEyebrow.copyWith(
               color: colors.textMuted,
             ),

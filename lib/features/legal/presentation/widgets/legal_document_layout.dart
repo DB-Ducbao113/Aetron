@@ -69,15 +69,15 @@ class LegalDocumentLayout extends StatelessWidget {
                       children: [
                         Text(
                           lang == AppLanguage.vi
-                              ? 'VĂN BẢN PHÁP LÝ'
-                              : 'LEGAL DOCUMENT',
+                              ? 'Văn bản pháp lý'
+                              : 'Legal document',
                           style: KineticTypography.pageEyebrow.copyWith(
                             color: colors.primary,
                           ),
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          title.toUpperCase(),
+                          title,
                           style: KineticTypography.headlineSmall.copyWith(
                             color: colors.textPrimary,
                             fontWeight: FontWeight.w800,
@@ -121,8 +121,8 @@ class LegalDocumentLayout extends StatelessWidget {
                           ),
                           child: Text(
                             lang == AppLanguage.vi
-                                ? 'VĂN BẢN CHÍNH THỨC'
-                                : 'OFFICIAL DOCUMENT',
+                                ? 'Văn bản chính thức'
+                                : 'Official document',
                             style: KineticTypography.unitLabel.copyWith(
                               color: colors.secondary,
                               letterSpacing: 1.2,
@@ -217,7 +217,7 @@ class _TableOfContents extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                lang == AppLanguage.vi ? 'MỤC LỤC TRANG' : 'ON THIS PAGE',
+                lang == AppLanguage.vi ? 'Mục lục trang' : 'On this page',
                 style: KineticTypography.unitLabel.copyWith(
                   color: colors.textSecondary,
                   letterSpacing: 1.5,

@@ -59,7 +59,7 @@ void main() {
 
       expect(find.textContaining('HIỆP 1/18'), findsOneWidget);
       expect(find.text('04:40'), findsOneWidget);
-      expect(find.text('✅ PACE ĐẠT CHUẨN'), findsOneWidget);
+      expect(find.text('✅ NHỊP ĐỘ ĐẠT CHUẨN'), findsOneWidget);
     });
   });
 }

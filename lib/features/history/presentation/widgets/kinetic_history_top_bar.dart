@@ -23,6 +23,15 @@ class KineticHistoryTopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.kinetic;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+
+    final bool isSmallPhone = screenWidth < 375;
+
+    final double titleFontSize = isSmallPhone ? 26.0 : 28.0;
+    final double eyebrowFontSize = isSmallPhone ? 10.8 : 11.5;
+    final double actionButtonSize = isSmallPhone ? 38.0 : 40.0;
+    final double actionIconSize = isSmallPhone ? 18.0 : 19.0;
+    final double badgeFontSize = isSmallPhone ? 10.8 : 11.5;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -39,9 +48,11 @@ class KineticHistoryTopBar extends StatelessWidget {
                 children: [
                   Text(
                     currentLang == AppLanguage.vi
-                        ? 'HOẠT ĐỘNG ĐÃ LƯU'
-                        : 'SAVED ACTIVITIES',
-                    style: KineticTypography.tabEyebrowOf(colors),
+                        ? 'Hoạt động đã lưu'
+                        : 'Saved activities',
+                    style: KineticTypography.tabEyebrowOf(colors).copyWith(
+                      fontSize: eyebrowFontSize,
+                    ),
                   ),
                   const SizedBox(height: 3),
                   FittedBox(
@@ -49,7 +60,9 @@ class KineticHistoryTopBar extends StatelessWidget {
                     alignment: Alignment.centerLeft,
                     child: Text(
                       AppTranslations.get('workout_history', currentLang),
-                      style: KineticTypography.tabTitleOf(colors),
+                      style: KineticTypography.tabTitleOf(colors).copyWith(
+                        fontSize: titleFontSize,
+                      ),
                       maxLines: 1,
                     ),
                   ),
@@ -62,21 +75,25 @@ class KineticHistoryTopBar extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(right: KineticTokens.spaceXS),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: colors.primaryTint,
-                    borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
+                    borderRadius:
+                        BorderRadius.circular(KineticTokens.radiusPill),
                     border: Border.all(
                       color: colors.primary.withValues(alpha: 0.18),
                       width: 0.8,
                     ),
                   ),
                   child: Text(
-                    '$totalCount ${currentLang == AppLanguage.vi ? "BUỔI" : "WORKOUTS"}',
+                    '$totalCount ${currentLang == AppLanguage.vi ? "buổi" : "workouts"}',
                     style: KineticTypography.caption.copyWith(
                       color: colors.primary,
                       fontWeight: FontWeight.w800,
-                      fontSize: 10.5,
+                      fontSize: badgeFontSize,
                       letterSpacing: 0.5,
                     ),
                   ),
@@ -85,12 +102,12 @@ class KineticHistoryTopBar extends StatelessWidget {
 
             KineticGlassIconButton(
               label: currentLang == AppLanguage.vi ? 'Lịch' : 'Calendar',
-              size: 37,
-              visualSize: 37,
+              size: actionButtonSize,
+              visualSize: actionButtonSize,
               onPressed: onCalendarTap ?? () {},
               icon: BladeIcon(
                 BladeIconName.cal,
-                size: 18,
+                size: actionIconSize,
                 color: colors.textSecondary,
                 strokeWidth: 1.7,
               ),

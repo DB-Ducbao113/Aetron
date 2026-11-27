@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
 import 'package:fitness_exercise_application/shared/formatters/workout_formatters.dart';
@@ -38,40 +39,93 @@ class KineticDetailsTelemetryListCard extends StatelessWidget {
     final isVi = currentLang == AppLanguage.vi;
 
     final displayDistanceKm = workout.distanceKm;
-    final effectiveDistanceKm = workout.gpsAnalysis.validDistanceKm > 0
-        ? workout.gpsAnalysis.validDistanceKm
-        : displayDistanceKm;
     final distanceUnit = WorkoutFormatters.distanceUnitLabel(useMetric: useMetricUnits);
     final formattedDistance = (useMetricUnits
             ? displayDistanceKm
             : WorkoutFormatters.kmToMi(displayDistanceKm))
         .toStringAsFixed(2);
 
-    final durationFormatted = WorkoutFormatters.formatDurationFromSeconds(workout.durationSec);
+    final totalDurationSec = workout.durationSec;
+    final durationFormatted = WorkoutFormatters.formatDurationFromSeconds(totalDurationSec);
+
+    // Calculate effective moving and rest durations robustly
+    final effectiveMovingSec = workout.movingTimeSec > 0
+        ? workout.movingTimeSec
+        : (workout.gpsAnalysis.restDurationSec > 0 &&
+                totalDurationSec > workout.gpsAnalysis.restDurationSec
+            ? totalDurationSec - workout.gpsAnalysis.restDurationSec
+            : totalDurationSec);
+
+    final effectiveRestSec = workout.gpsAnalysis.restDurationSec > 0
+        ? workout.gpsAnalysis.restDurationSec
+        : math.max(0, totalDurationSec - effectiveMovingSec);
+
+    final movingTimeFormatted =
+        WorkoutFormatters.formatDurationFromSeconds(effectiveMovingSec);
+    final restTimeFormatted =
+        WorkoutFormatters.formatDurationFromSeconds(effectiveRestSec);
 
     final isCycling = workout.activityType.toLowerCase() == 'cycling';
-    final avgPace = WorkoutFormatters.formatPaceFromDistanceAndDuration(
+
+    // Primary Pace: prioritize effectivePaceSecPerKm from GPS analysis (excluding stops/drift),
+    // then calculate from moving duration, then from avgSpeedKmh.
+    final String avgPace;
+    if (workout.gpsAnalysis.effectivePaceSecPerKm != null &&
+        workout.gpsAnalysis.effectivePaceSecPerKm! > 0) {
+      avgPace = WorkoutFormatters.formatPaceFromSecondsPerKm(
+        workout.gpsAnalysis.effectivePaceSecPerKm!,
+        useMetric: useMetricUnits,
+      );
+    } else if (displayDistanceKm > 0 && effectiveMovingSec > 0) {
+      avgPace = WorkoutFormatters.formatPaceFromDistanceAndDuration(
+        distanceKm: displayDistanceKm,
+        durationSec: effectiveMovingSec,
+        useMetric: useMetricUnits,
+      );
+    } else if (workout.avgSpeedKmh >= 0.1) {
+      avgPace = WorkoutFormatters.formatPaceFromSpeedKmh(
+        workout.avgSpeedKmh,
+        useMetric: useMetricUnits,
+      );
+    } else {
+      avgPace = '--';
+    }
+
+    // Moving pace (matches moving time)
+    final movingPace = WorkoutFormatters.formatPaceFromDistanceAndDuration(
       distanceKm: displayDistanceKm,
-      durationSec: workout.durationSec,
+      durationSec: effectiveMovingSec,
       useMetric: useMetricUnits,
     );
 
-    final movingPace = WorkoutFormatters.formatMovingPaceFromDistanceAndDuration(
-      distanceKm: effectiveDistanceKm,
-      durationSec: workout.movingTimeSec,
-      restDurationSec: 0,
-      useMetric: useMetricUnits,
-    );
+    // Speed calculation consistent with distance and moving time
+    final rawSpeedKmh = workout.avgSpeedKmh > 0
+        ? workout.avgSpeedKmh
+        : (effectiveMovingSec > 0 && displayDistanceKm > 0
+            ? WorkoutFormatters.computeAverageSpeedKmh(
+                distanceKm: displayDistanceKm,
+                durationSec: effectiveMovingSec,
+              )
+            : 0.0);
 
     final speedUnit = useMetricUnits ? 'km/h' : 'mph';
     final avgSpeed = useMetricUnits
-        ? workout.avgSpeedKmh
-        : WorkoutFormatters.kmToMi(workout.avgSpeedKmh);
+        ? rawSpeedKmh
+        : WorkoutFormatters.kmToMi(rawSpeedKmh);
 
+    // Calories: fallback to estimated 62 kcal/km if <= 0
+    final effectiveCalories = workout.caloriesKcal > 0
+        ? workout.caloriesKcal.round()
+        : (displayDistanceKm * 62).round();
+
+    // Steps and Cadence (SPM)
     final showSteps = _hasSteps(workout.activityType) && workout.steps > 0;
+    final cadenceSpm = (showSteps && effectiveMovingSec >= 30)
+        ? ((workout.steps / effectiveMovingSec) * 60).round()
+        : 0;
 
     return KineticCard(
-      useLiquidGlass: true,
+      useLiquidGlass: false,
       borderRadius: 21,
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       child: Column(
@@ -83,7 +137,7 @@ class KineticDetailsTelemetryListCard extends StatelessWidget {
               Icon(Icons.analytics_outlined, size: 16, color: colors.primary),
               const SizedBox(width: 8),
               Text(
-                isVi ? 'THÔNG SỐ CHI TIẾT' : 'WORKOUT TELEMETRY',
+                isVi ? 'Thông số chi tiết' : 'Workout telemetry',
                 style: KineticTypography.unitLabel.copyWith(
                   color: colors.primary,
                   letterSpacing: 1.1,
@@ -119,7 +173,7 @@ class KineticDetailsTelemetryListCard extends StatelessWidget {
             icon: Icons.speed_rounded,
             label: isCycling
                 ? (isVi ? 'Tốc độ TB' : 'Avg Speed')
-                : (isVi ? 'Pace TB' : 'Avg Pace'),
+                : (isVi ? 'Nhịp độ TB' : 'Avg Pace'),
             value: isCycling ? '${avgSpeed.toStringAsFixed(1)} $speedUnit' : avgPace,
             colors: colors,
             isHighlighted: true,
@@ -130,7 +184,7 @@ class KineticDetailsTelemetryListCard extends StatelessWidget {
           _TelemetryRow(
             icon: Icons.local_fire_department_outlined,
             label: isVi ? 'Calo' : 'Calories',
-            value: '${workout.caloriesKcal.round()} kcal',
+            value: '$effectiveCalories kcal',
             colors: colors,
             isHighlighted: true,
           ),
@@ -147,13 +201,25 @@ class KineticDetailsTelemetryListCard extends StatelessWidget {
             ),
           ],
 
+          // 5b. Nhịp bước Cadence (nếu có)
+          if (cadenceSpm > 0) ...[
+            _divider(colors),
+            _TelemetryRow(
+              icon: Icons.timer_3_rounded,
+              label: isVi ? 'Nhịp bước' : 'Cadence',
+              value: '$cadenceSpm spm',
+              colors: colors,
+              isHighlighted: true,
+            ),
+          ],
+
           _divider(colors),
 
           // 6. Pace di chuyển (nếu không phải cycling)
           if (!isCycling) ...[
             _TelemetryRow(
               icon: Icons.directions_run_rounded,
-              label: isVi ? 'Pace di chuyển' : 'Moving Pace',
+              label: isVi ? 'Nhịp độ di chuyển' : 'Moving Pace',
               value: movingPace,
               colors: colors,
             ),
@@ -164,7 +230,7 @@ class KineticDetailsTelemetryListCard extends StatelessWidget {
           _TelemetryRow(
             icon: Icons.play_circle_outline_rounded,
             label: isVi ? 'Thời gian di chuyển' : 'Moving Time',
-            value: WorkoutFormatters.formatElapsedClock(workout.movingTimeSec),
+            value: movingTimeFormatted,
             colors: colors,
           ),
           _divider(colors),
@@ -173,21 +239,10 @@ class KineticDetailsTelemetryListCard extends StatelessWidget {
           _TelemetryRow(
             icon: Icons.pause_circle_outline_rounded,
             label: isVi ? 'Thời gian nghỉ' : 'Rest Time',
-            value: WorkoutFormatters.formatElapsedClock(workout.gpsAnalysis.restDurationSec),
+            value: restTimeFormatted,
             colors: colors,
           ),
           _divider(colors),
-
-          // 9. Tốc độ trung bình (nếu chưa hiển thị ở trên)
-          if (!isCycling) ...[
-            _TelemetryRow(
-              icon: Icons.speed_outlined,
-              label: isVi ? 'Tốc độ trung bình' : 'Avg Speed',
-              value: '${avgSpeed.toStringAsFixed(1)} $speedUnit',
-              colors: colors,
-            ),
-            _divider(colors),
-          ],
 
           // 10. Giờ bắt đầu
           _TelemetryRow(

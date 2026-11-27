@@ -15,6 +15,7 @@ import 'package:fitness_exercise_application/features/profile/presentation/provi
 import 'package:fitness_exercise_application/features/workout/presentation/providers/workout_providers.dart';
 import 'package:fitness_exercise_application/core/services/notification_service.dart';
 import 'package:fitness_exercise_application/shared/aetron/aetron_globe_orbit_screen.dart';
+import 'package:fitness_exercise_application/shared/aetron/aetron_logo_draw_screen.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:fitness_exercise_application/features/shell/presentation/screens/main_shell.dart';
 import 'package:flutter/material.dart';
@@ -39,6 +40,7 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
   String? _activeUserId;
   bool _showingWelcomeGlobe = false;
   bool? _welcomeSeen;
+  final _startupLogoGate = StartupGlobeGate();
   final _startupGlobeGate = StartupGlobeGate();
 
   @override
@@ -79,15 +81,36 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
           return const MainShell();
         }
 
-        if (_startupGlobeGate.shouldShow) {
-          return AetronGlobeOrbitScreen(
-            duration: const Duration(milliseconds: 1200),
-            customTitle: 'Aetron',
-            forceDarkPalette: true,
-            onComplete: () {
-              if (!mounted) return;
-              setState(_startupGlobeGate.complete);
-            },
+        if (_startupLogoGate.shouldShow || _startupGlobeGate.shouldShow) {
+          return ColoredBox(
+            color: const Color(0xFF0C1420),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 360),
+              switchInCurve: const Interval(0.45, 1.0, curve: Curves.easeOut),
+              switchOutCurve: const Interval(0.45, 1.0, curve: Curves.easeIn),
+              transitionBuilder: (child, animation) {
+                return FadeTransition(opacity: animation, child: child);
+              },
+              child: _startupLogoGate.shouldShow
+                  ? AetronLogoDrawScreen(
+                      key: const ValueKey('startup-logo-draw'),
+                      duration: const Duration(milliseconds: 1500),
+                      onComplete: () {
+                        if (!mounted) return;
+                        setState(_startupLogoGate.complete);
+                      },
+                    )
+                  : AetronGlobeOrbitScreen(
+                      key: const ValueKey('startup-globe-orbit'),
+                      duration: const Duration(milliseconds: 1400),
+                      customTitle: 'Aetron',
+                      forceDarkPalette: true,
+                      onComplete: () {
+                        if (!mounted) return;
+                        setState(_startupGlobeGate.complete);
+                      },
+                    ),
+            ),
           );
         }
 
@@ -242,7 +265,7 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          isVi ? 'LỖI ĐỒNG BỘ HỒ SƠ' : 'PROFILE SYNC ERROR',
+                          isVi ? 'Lỗi đồng bộ hồ sơ' : 'Profile sync error',
                           style: KineticTypography.headlineSmall.copyWith(
                             color: colors.textPrimary,
                             fontWeight: FontWeight.bold,

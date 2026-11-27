@@ -50,15 +50,12 @@ class KineticWorkoutHistoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.kinetic;
-    final isVi = currentLang == AppLanguage.vi;
     final isCycling = workout.activityType.toLowerCase() == 'cycling';
     final activityIcon = _getActivityIcon(workout.activityType);
     final activityName = _getActivityName(workout.activityType, currentLang);
     final timeStr = DateFormat('HH:mm').format(workout.startedAt.toLocal());
 
-    final distanceKm = workout.gpsAnalysis.validDistanceKm > 0
-        ? workout.gpsAnalysis.validDistanceKm
-        : workout.distanceKm;
+    final distanceKm = workout.distanceKm;
 
     final distanceStr = WorkoutFormatters.formatDistance(
       distanceKm,
@@ -72,45 +69,36 @@ class KineticWorkoutHistoryCard extends StatelessWidget {
 
     final paceSpeedStr = isCycling
         ? '${(useMetricUnits ? workout.avgSpeedKmh : workout.avgSpeedKmh * 0.621371).toStringAsFixed(1)} ${useMetricUnits ? 'km/h' : 'mph'}'
-        : WorkoutFormatters.formatPaceFromSpeedKmh(
-            workout.avgSpeedKmh,
-            useMetric: useMetricUnits,
-          );
-
-    final validityFlag = workout.gpsAnalysis.validityFlag;
-    final Color validityColor;
-    final String validityText;
-    switch (validityFlag) {
-      case WorkoutValidityFlag.verified:
-        validityColor = colors.primary;
-        validityText = isVi ? 'ĐÃ XÁC MINH' : 'VERIFIED';
-        break;
-      case WorkoutValidityFlag.partial:
-        validityColor = colors.secondary;
-        validityText = isVi ? 'HIỆU CHỈNH' : 'CALIBRATED';
-        break;
-      case WorkoutValidityFlag.unverified:
-        validityColor = colors.tertiary;
-        validityText = isVi ? 'CẢM BIẾN' : 'SENSOR';
-        break;
-    }
+        : (workout.gpsAnalysis.effectivePaceSecPerKm != null &&
+                workout.gpsAnalysis.effectivePaceSecPerKm! > 0
+            ? WorkoutFormatters.formatPaceFromSecondsPerKm(
+                workout.gpsAnalysis.effectivePaceSecPerKm!,
+                useMetric: useMetricUnits,
+              )
+            : WorkoutFormatters.formatPaceFromSpeedKmh(
+                workout.avgSpeedKmh,
+                useMetric: useMetricUnits,
+              ));
 
     return KineticCard(
-      useLiquidGlass: true,
+      useLiquidGlass: false,
       padding: const EdgeInsets.all(17),
       borderRadius: 21,
       onTap: () {
         HapticFeedback.lightImpact();
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (_) => WorkoutDetailsScreen(workoutId: workout.id),
+            builder: (_) => WorkoutDetailsScreen(
+              workoutId: workout.id,
+              initialWorkout: workout,
+            ),
           ),
         );
       },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top Row: Activity Pill + Time + GPS Badge + Arrow
+          // Top Row: Activity Pill + Time + Arrow
           Row(
             children: [
               Container(
@@ -128,7 +116,7 @@ class KineticWorkoutHistoryCard extends StatelessWidget {
                     Icon(activityIcon, size: 12, color: colors.primary),
                     const SizedBox(width: 4),
                     Text(
-                      activityName.toUpperCase(),
+                      activityName,
                       style: KineticTypography.unitLabel.copyWith(
                         color: colors.primary,
                         fontSize: 10,
@@ -150,27 +138,6 @@ class KineticWorkoutHistoryCard extends StatelessWidget {
               ),
 
               const Spacer(),
-
-              // Validity chip
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: validityColor.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
-                ),
-                child: Text(
-                  validityText,
-                  style: KineticTypography.unitLabel.copyWith(
-                    color: validityColor,
-                    fontSize: 9.5,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 4),
               BladeIcon(BladeIconName.chevR, size: 16, color: colors.textMuted),
             ],
           ),

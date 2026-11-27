@@ -64,7 +64,7 @@ class KineticLiveMetricsHud extends StatelessWidget {
       final diffText = '${diff >= 0 ? '+' : ''}${diff.toStringAsFixed(1)} ${useMetricUnits ? 'km/h' : 'mph'}';
       comparisonNote = '$diffText ${isVi ? 'so với trung bình' : 'vs avg'}';
     } else {
-      primarySecondaryLabel = isVi ? 'Pace tức thì' : 'Live Pace';
+      primarySecondaryLabel = isVi ? 'Nhịp độ tức thì' : 'Live Pace';
       primarySecondaryValue = WorkoutFormatters.formatPaceFromSpeedKmh(
         speedKmh,
         useMetric: useMetricUnits,
@@ -75,7 +75,7 @@ class KineticLiveMetricsHud extends StatelessWidget {
         avgSpeedKmh,
         useMetric: useMetricUnits,
       );
-      comparisonNote = '${isVi ? 'Pace TB' : 'Avg'}: $avgPaceStr';
+      comparisonNote = '${isVi ? 'Nhịp độ TB' : 'Avg'}: $avgPaceStr';
     }
 
     return Column(
@@ -255,7 +255,7 @@ class _MetricTile extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                label.toUpperCase(),
+                label,
                 style: KineticTypography.unitLabel.copyWith(
                   fontWeight: FontWeight.w800,
                   color: colors.textSecondary,
@@ -392,7 +392,7 @@ class KineticMiniMetricsCard extends StatelessWidget {
       paceOrSpeedValue = effectiveSpeed.toStringAsFixed(1);
       paceOrSpeedUnit = useMetricUnits ? 'km/h' : 'mph';
     } else {
-      paceOrSpeedLabel = isVi ? 'Pace' : 'Pace';
+      paceOrSpeedLabel = isVi ? 'Nhịp độ' : 'Pace';
       paceOrSpeedValue = WorkoutFormatters.formatPaceFromSpeedKmh(
         speedKmh,
         useMetric: useMetricUnits,
@@ -407,11 +407,11 @@ class KineticMiniMetricsCard extends StatelessWidget {
       builder: (context, constraints) {
         final isNarrow = constraints.maxWidth < 360;
         final timeLabel = isNarrow
-            ? (isVi ? 'GIỜ' : 'TIME')
-            : (isVi ? 'THỜI GIAN' : 'TIME');
+            ? (isVi ? 'Giờ' : 'Time')
+            : (isVi ? 'Thời gian' : 'Time');
         final caloriesLabel = isNarrow
-            ? (isVi ? 'CAL' : 'CAL')
-            : (isVi ? 'CALO' : 'CALORIES');
+            ? (isVi ? 'Cal' : 'Cal')
+            : (isVi ? 'Calo' : 'Calories');
 
         return Material(
           color: Colors.transparent,
@@ -536,7 +536,7 @@ class KineticMiniMetricsCard extends StatelessWidget {
                         _buildDivider(colors),
                         Expanded(
                           child: _MiniMetricColumn(
-                            label: paceOrSpeedLabel.toUpperCase(),
+                            label: paceOrSpeedLabel,
                             value: paceOrSpeedValue,
                             unit: paceOrSpeedUnit,
                             valueColor: colors.textPrimary,

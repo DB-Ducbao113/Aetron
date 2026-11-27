@@ -81,8 +81,8 @@ class KineticHistoryEmptyState extends ConsumerWidget {
             const SizedBox(height: KineticTokens.spaceXL),
             KineticButton(
               label: currentLang == AppLanguage.vi
-                  ? 'BẮT ĐẦU BUỔI TẬP'
-                  : 'START A WORKOUT',
+                  ? 'Bắt đầu buổi tập'
+                  : 'Start a workout',
               icon: Icons.directions_run_rounded,
               isFullWidth: false,
               onPressed: () {

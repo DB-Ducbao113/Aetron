@@ -373,13 +373,18 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      _UnitSelector(
-                        useMetricUnits: useMetricUnits,
-                        onChanged: _setUseMetricUnits,
-                        currentLang: currentLang,
+                      KineticEntrance(
+                        index: 0,
+                        child: _UnitSelector(
+                          useMetricUnits: useMetricUnits,
+                          onChanged: _setUseMetricUnits,
+                          currentLang: currentLang,
+                        ),
                       ),
                       const SizedBox(height: KineticTokens.spaceMD),
-                      _GlassCard(
+                      KineticEntrance(
+                        index: 1,
+                        child: _GlassCard(
                         child: Column(
                           children: [
                             Container(
@@ -618,16 +623,20 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: KineticTokens.spaceXL),
-                      KineticButton(
-                        label: currentLang == AppLanguage.vi
-                            ? (isEditing ? 'CẬP NHẬT HỒ SƠ' : 'LƯU HỒ SƠ')
-                            : (isEditing ? 'UPDATE PROFILE' : 'SAVE PROFILE'),
-                        icon: Icons.arrow_forward_rounded,
-                        variant: KineticButtonVariant.primary,
-                        height: KineticTokens.buttonHeightPrimary,
-                        isLoading: _isLoading,
-                        onPressed: _isLoading ? null : _saveProfile,
+                    ),
+                    const SizedBox(height: KineticTokens.spaceXL),
+                      KineticEntrance(
+                        index: 2,
+                        child: KineticButton(
+                          label: currentLang == AppLanguage.vi
+                              ? (isEditing ? 'Cập nhật hồ sơ' : 'Lưu hồ sơ')
+                              : (isEditing ? 'Update profile' : 'Save profile'),
+                          icon: Icons.arrow_forward_rounded,
+                          variant: KineticButtonVariant.primary,
+                          height: KineticTokens.buttonHeightPrimary,
+                          isLoading: _isLoading,
+                          onPressed: _isLoading ? null : _saveProfile,
+                        ),
                       ),
                     ],
                   ),
@@ -669,10 +678,10 @@ class _UnitSelector extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 6),
           child: Text(
-            isVi ? 'ĐƠN VỊ ĐO ƯA THÍCH' : 'PREFERRED UNITS',
+            isVi ? 'Đơn vị đo ưa thích' : 'Preferred units',
             style: KineticTypography.unitLabel.copyWith(
               color: colors.primary,
-              letterSpacing: 1.2,
+              letterSpacing: 1.0,
             ),
           ),
         ),
@@ -727,7 +736,7 @@ class _UnitSelector extends StatelessWidget {
                         children: [
                           Expanded(
                             child: _UnitOption(
-                              label: isVi ? 'HỆ MÉT' : 'METRIC',
+                              label: isVi ? 'Hệ mét' : 'Metric',
                               detail: 'kg / cm',
                               selected: useMetricUnits,
                               onTap: () => onChanged(true),
@@ -735,7 +744,7 @@ class _UnitSelector extends StatelessWidget {
                           ),
                           Expanded(
                             child: _UnitOption(
-                              label: isVi ? 'HỆ ANH' : 'IMPERIAL',
+                              label: isVi ? 'Hệ Anh' : 'Imperial',
                               detail: 'lb / ft',
                               selected: !useMetricUnits,
                               onTap: () => onChanged(false),
@@ -758,7 +767,7 @@ class _UnitSelector extends StatelessWidget {
                     children: [
                       Expanded(
                         child: _UnitOption(
-                          label: isVi ? 'HỆ MÉT' : 'METRIC',
+                          label: isVi ? 'Hệ mét' : 'Metric',
                           detail: 'kg / cm',
                           selected: useMetricUnits,
                           onTap: () => onChanged(true),
@@ -766,7 +775,7 @@ class _UnitSelector extends StatelessWidget {
                       ),
                       Expanded(
                         child: _UnitOption(
-                          label: isVi ? 'HỆ ANH' : 'IMPERIAL',
+                          label: isVi ? 'Hệ Anh' : 'Imperial',
                           detail: 'lb / ft',
                           selected: !useMetricUnits,
                           onTap: () => onChanged(false),

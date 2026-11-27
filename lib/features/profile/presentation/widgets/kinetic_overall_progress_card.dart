@@ -39,7 +39,7 @@ class KineticOverallProgressCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  currentLang == AppLanguage.vi ? 'TIẾN TRÌNH DANH HIỆU' : 'ACHIEVEMENT PROGRESS',
+                  currentLang == AppLanguage.vi ? 'Tiến trình danh hiệu' : 'Achievement progress',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: KineticTypography.pageEyebrow.copyWith(

@@ -9,7 +9,9 @@ import 'package:fitness_exercise_application/shared/kinetic/kinetic_glass_icon_b
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class RunningProgramsScreen extends ConsumerWidget {
+class RunningProgramsScreen extends ConsumerStatefulWidget {
+  final String? initialProgramId;
+
   static void showProgramGuide(
     BuildContext context,
     StructuredRunningProgram program,
@@ -22,7 +24,11 @@ class RunningProgramsScreen extends ConsumerWidget {
     );
   }
 
-  const RunningProgramsScreen({super.key});
+  const RunningProgramsScreen({super.key, this.initialProgramId});
+
+  @override
+  ConsumerState<RunningProgramsScreen> createState() =>
+      _RunningProgramsScreenState();
 
   static final List<StructuredRunningProgram> programs = [
     StructuredRunningProgram(
@@ -54,8 +60,8 @@ class RunningProgramsScreen extends ConsumerWidget {
         // 1. Warm Up Walk (5 mins)
         const ProgramStep(
           id: 'c25k_warmup',
-          titleEn: 'WARM UP WALK',
-          titleVi: 'KHỞI ĐỘNG ĐI BỘ',
+          titleEn: 'Warm up walk',
+          titleVi: 'Khởi động đi bộ',
           durationSeconds: 300,
           phaseType: ProgramPhaseType.warmup,
           targetPaceMinSecKm: 600, // 10:00/km
@@ -69,8 +75,8 @@ class RunningProgramsScreen extends ConsumerWidget {
         for (var i = 1; i <= 8; i++) ...[
           ProgramStep(
             id: 'c25k_run_$i',
-            titleEn: 'RUN INTERVAL ($i/8)',
-            titleVi: 'CHẠY BỨT TỐC ($i/8)',
+            titleEn: 'Run interval ($i/8)',
+            titleVi: 'Chạy bứt tốc ($i/8)',
             durationSeconds: 60,
             phaseType: ProgramPhaseType.run,
             targetPaceMinSecKm: 330, // 5:30/km
@@ -82,8 +88,8 @@ class RunningProgramsScreen extends ConsumerWidget {
           ),
           ProgramStep(
             id: 'c25k_walk_$i',
-            titleEn: 'RECOVERY WALK ($i/8)',
-            titleVi: 'ĐI BỘ HỒI SỨC ($i/8)',
+            titleEn: 'Recovery walk ($i/8)',
+            titleVi: 'Đi bộ hồi sức ($i/8)',
             durationSeconds: 90,
             phaseType: ProgramPhaseType.walk,
             targetPaceMinSecKm: 570, // 9:30/km
@@ -97,8 +103,8 @@ class RunningProgramsScreen extends ConsumerWidget {
         // Cooldown (5 mins)
         const ProgramStep(
           id: 'c25k_cooldown',
-          titleEn: 'COOL DOWN & STRETCH',
-          titleVi: 'THẢ LỎNG & GIÃN CƠ',
+          titleEn: 'Cool down & stretch',
+          titleVi: 'Thả lỏng & giãn cơ',
           durationSeconds: 300,
           phaseType: ProgramPhaseType.cooldown,
           targetPaceMinSecKm: 600,
@@ -113,8 +119,8 @@ class RunningProgramsScreen extends ConsumerWidget {
     StructuredRunningProgram(
       id: 'easy_base_run',
       titleKey: 'easy_base_run',
-      badgeEn: 'RECOVERY • ZONE 2 BASE',
-      badgeVi: 'PHỤC HỒI • ZONE 2 BASE',
+      badgeEn: 'Recovery • Zone 2 base',
+      badgeVi: 'Phục hồi • Zone 2 base',
       targetDistance: '3.0 - 5.0 km',
       targetPace: '7:00 - 8:00 min/km',
       targetZone: 'Zone 2 Low HR',
@@ -138,8 +144,8 @@ class RunningProgramsScreen extends ConsumerWidget {
       steps: [
         const ProgramStep(
           id: 'easy_warmup',
-          titleEn: 'WARM UP JOG',
-          titleVi: 'KHỞI ĐỘNG NHẸ',
+          titleEn: 'Warm up jog',
+          titleVi: 'Khởi động nhẹ',
           durationSeconds: 180,
           phaseType: ProgramPhaseType.warmup,
           targetPaceMinSecKm: 510,
@@ -151,8 +157,8 @@ class RunningProgramsScreen extends ConsumerWidget {
         ),
         const ProgramStep(
           id: 'easy_main_run',
-          titleEn: 'STEADY ZONE 2 RUN',
-          titleVi: 'CHẠY ĐỀU ZONE 2',
+          titleEn: 'Steady zone 2 run',
+          titleVi: 'Chạy đều Zone 2',
           durationSeconds: 1800, // 30 mins
           phaseType: ProgramPhaseType.run,
           targetPaceMinSecKm: 420, // 7:00/km
@@ -164,8 +170,8 @@ class RunningProgramsScreen extends ConsumerWidget {
         ),
         const ProgramStep(
           id: 'easy_cooldown',
-          titleEn: 'COOL DOWN WALK',
-          titleVi: 'ĐI BỘ THẢ LỎNG',
+          titleEn: 'Cool down walk',
+          titleVi: 'Đi bộ thả lỏng',
           durationSeconds: 180,
           phaseType: ProgramPhaseType.cooldown,
           targetPaceMinSecKm: 600,
@@ -180,8 +186,8 @@ class RunningProgramsScreen extends ConsumerWidget {
     StructuredRunningProgram(
       id: 'pace_builder_10k',
       titleKey: 'pace_builder_10k',
-      badgeEn: 'INTERMEDIATE • 6 WEEKS',
-      badgeVi: 'TRUNG CẤP • 6 TUẦN',
+      badgeEn: 'Intermediate • 6 weeks',
+      badgeVi: 'Trung cấp • 6 tuần',
       targetDistance: '10.0 km',
       targetPace: '5:45 - 6:30 min/km',
       targetZone: 'Zone 3 Tempo Pace',
@@ -205,8 +211,8 @@ class RunningProgramsScreen extends ConsumerWidget {
       steps: [
         const ProgramStep(
           id: '10k_warmup',
-          titleEn: 'WARM UP JOG',
-          titleVi: 'KHỞI ĐỘNG CHẠY NHẸ',
+          titleEn: 'Warm up jog',
+          titleVi: 'Khởi động chạy nhẹ',
           durationSeconds: 600, // 10 mins
           phaseType: ProgramPhaseType.warmup,
           targetPaceMinSecKm: 420,
@@ -218,8 +224,8 @@ class RunningProgramsScreen extends ConsumerWidget {
         ),
         const ProgramStep(
           id: '10k_tempo_main',
-          titleEn: 'TEMPO 10K RACE PACE',
-          titleVi: 'CHẠY TEMPO TỐC ĐỘ 10K',
+          titleEn: 'Tempo 10K race pace',
+          titleVi: 'Chạy tempo tốc độ 10K',
           durationSeconds: 2100, // 35 mins
           phaseType: ProgramPhaseType.tempo,
           targetPaceMinSecKm: 345, // 5:45/km
@@ -231,8 +237,8 @@ class RunningProgramsScreen extends ConsumerWidget {
         ),
         const ProgramStep(
           id: '10k_cooldown',
-          titleEn: 'COOL DOWN JOG',
-          titleVi: 'CHẠY CHẬM THẢ LỎNG',
+          titleEn: 'Cool down jog',
+          titleVi: 'Chạy chậm thả lỏng',
           durationSeconds: 300,
           phaseType: ProgramPhaseType.cooldown,
           targetPaceMinSecKm: 480,
@@ -247,8 +253,8 @@ class RunningProgramsScreen extends ConsumerWidget {
     StructuredRunningProgram(
       id: 'speed_intervals',
       titleKey: 'speed_intervals',
-      badgeEn: 'ADVANCED • SPEEDWORK',
-      badgeVi: 'TỐC ĐỘ • NÂNG CAO',
+      badgeEn: 'Advanced • Speedwork',
+      badgeVi: 'Tốc độ • Nâng cao',
       targetDistance: '6.0 km Total',
       targetPace: '4:30 - 5:15 min/km',
       targetZone: 'Zone 4-5 High HR',
@@ -272,8 +278,8 @@ class RunningProgramsScreen extends ConsumerWidget {
       steps: [
         const ProgramStep(
           id: 'speed_warmup',
-          titleEn: 'WARM UP JOG',
-          titleVi: 'KHỞI ĐỘNG CHẠY NHẸ',
+          titleEn: 'Warm up jog',
+          titleVi: 'Khởi động chạy nhẹ',
           durationSeconds: 600,
           phaseType: ProgramPhaseType.warmup,
           targetPaceMinSecKm: 420,
@@ -286,8 +292,8 @@ class RunningProgramsScreen extends ConsumerWidget {
         for (var i = 1; i <= 6; i++) ...[
           ProgramStep(
             id: 'speed_sprint_$i',
-            titleEn: 'SPEED STRIDE ($i/6)',
-            titleVi: 'BỨT TỐC NHANH ($i/6)',
+            titleEn: 'Speed stride ($i/6)',
+            titleVi: 'Bứt tốc nhanh ($i/6)',
             durationSeconds: 90,
             phaseType: ProgramPhaseType.sprint,
             targetPaceMinSecKm: 270, // 4:30/km
@@ -299,8 +305,8 @@ class RunningProgramsScreen extends ConsumerWidget {
           ),
           ProgramStep(
             id: 'speed_walk_$i',
-            titleEn: 'RECOVERY WALK ($i/6)',
-            titleVi: 'ĐI BỘ PHỤC HỒI ($i/6)',
+            titleEn: 'Recovery walk ($i/6)',
+            titleVi: 'Đi bộ phục hồi ($i/6)',
             durationSeconds: 90,
             phaseType: ProgramPhaseType.walk,
             targetPaceMinSecKm: 540, // 9:00/km
@@ -313,8 +319,8 @@ class RunningProgramsScreen extends ConsumerWidget {
         ],
         const ProgramStep(
           id: 'speed_cooldown',
-          titleEn: 'COOL DOWN JOG',
-          titleVi: 'CHẠY CHẬM THẢ LỎNG',
+          titleEn: 'Cool down jog',
+          titleVi: 'Chạy chậm thả lỏng',
           durationSeconds: 300,
           phaseType: ProgramPhaseType.cooldown,
           targetPaceMinSecKm: 480,
@@ -328,7 +334,7 @@ class RunningProgramsScreen extends ConsumerWidget {
     ),
   ];
 
-  String _shortLevelLabel(StructuredRunningProgram prog, bool isVi) {
+  static String shortLevelLabel(StructuredRunningProgram prog, bool isVi) {
     return switch (prog.id) {
       'couch_to_5k' => isVi ? 'Người mới' : 'Beginner',
       'easy_base_run' => isVi ? 'Phục hồi' : 'Recovery',
@@ -338,13 +344,13 @@ class RunningProgramsScreen extends ConsumerWidget {
     };
   }
 
-  String _shortDistanceLabel(StructuredRunningProgram prog) =>
+  static String shortDistanceLabel(StructuredRunningProgram prog) =>
       prog.targetDistance.replaceAll(' Total', '');
 
-  String _shortPaceLabel(StructuredRunningProgram prog) =>
+  static String shortPaceLabel(StructuredRunningProgram prog) =>
       prog.targetPace.replaceAll(' min/km', ' /km').replaceAll(' - ', '–');
 
-  String _shortZoneLabel(StructuredRunningProgram prog) {
+  static String shortZoneLabel(StructuredRunningProgram prog) {
     return switch (prog.id) {
       'couch_to_5k' || 'easy_base_run' => 'Zone 2',
       'pace_builder_10k' => 'Zone 3',
@@ -352,9 +358,43 @@ class RunningProgramsScreen extends ConsumerWidget {
       _ => prog.targetZone,
     };
   }
+}
+
+class _RunningProgramsScreenState
+    extends ConsumerState<RunningProgramsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialProgramId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final target = RunningProgramsScreen.programs.firstWhere(
+          (p) => p.id == widget.initialProgramId,
+          orElse: () => RunningProgramsScreen.programs.first,
+        );
+        final route = ModalRoute.of(context);
+        if (route != null &&
+            route.animation != null &&
+            !route.animation!.isCompleted) {
+          void handler(AnimationStatus status) {
+            if (status == AnimationStatus.completed) {
+              route.animation!.removeStatusListener(handler);
+              if (mounted) {
+                RunningProgramsScreen.showProgramGuide(context, target);
+              }
+            }
+          }
+
+          route.animation!.addStatusListener(handler);
+        } else {
+          RunningProgramsScreen.showProgramGuide(context, target);
+        }
+      });
+    }
+  }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final colors = context.kinetic;
     final currentLang = ref.watch(appLanguageProvider);
     final isVi = currentLang == AppLanguage.vi;
@@ -408,12 +448,12 @@ class RunningProgramsScreen extends ConsumerWidget {
                   hPad,
                   MediaQuery.viewPaddingOf(context).bottom + 24,
                 ),
-                itemCount: programs.length,
+                itemCount: RunningProgramsScreen.programs.length,
                 separatorBuilder: (_, _) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
-                  final prog = programs[index];
+                  final prog = RunningProgramsScreen.programs[index];
                   final title = AppTranslations.get(prog.titleKey, currentLang);
-                  final level = _shortLevelLabel(prog, isVi);
+                  final level = RunningProgramsScreen.shortLevelLabel(prog, isVi);
                   final durationMin = (prog.totalDurationSeconds / 60).round();
                   final (
                     bannerIcon,
@@ -457,7 +497,7 @@ class RunningProgramsScreen extends ConsumerWidget {
                       : Colors.white.withValues(alpha: 0.85);
 
                   return KineticCard(
-                    useLiquidGlass: true,
+                    useLiquidGlass: false,
                     borderRadius: 21,
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -488,8 +528,7 @@ class RunningProgramsScreen extends ConsumerWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    '$level · $durationMin ${isVi ? "phút" : "min"}'
-                                        .toUpperCase(),
+                                    '$level · $durationMin ${isVi ? "phút" : "min"}',
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: KineticTypography.unitLabel.copyWith(
@@ -536,7 +575,7 @@ class RunningProgramsScreen extends ConsumerWidget {
                               Expanded(
                                 child: _CompactProgramStat(
                                   icon: Icons.route_rounded,
-                                  value: _shortDistanceLabel(prog),
+                                  value: RunningProgramsScreen.shortDistanceLabel(prog),
                                 ),
                               ),
                               Container(
@@ -547,7 +586,7 @@ class RunningProgramsScreen extends ConsumerWidget {
                               Expanded(
                                 child: _CompactProgramStat(
                                   icon: Icons.speed_rounded,
-                                  value: _shortPaceLabel(prog),
+                                  value: RunningProgramsScreen.shortPaceLabel(prog),
                                 ),
                               ),
                               Container(
@@ -558,7 +597,7 @@ class RunningProgramsScreen extends ConsumerWidget {
                               Expanded(
                                 child: _CompactProgramStat(
                                   icon: Icons.favorite_border_rounded,
-                                  value: _shortZoneLabel(prog),
+                                  value: RunningProgramsScreen.shortZoneLabel(prog),
                                 ),
                               ),
                             ],
@@ -599,7 +638,7 @@ class RunningProgramsScreen extends ConsumerWidget {
                                 variant: KineticButtonVariant.secondary,
                                 height: 40,
                                 onPressed: () =>
-                                    showProgramGuide(context, prog),
+                                    RunningProgramsScreen.showProgramGuide(context, prog),
                               ),
                             ),
                             const SizedBox(width: 10),
@@ -686,16 +725,19 @@ class _ProgramGuideSheet extends ConsumerWidget {
     final currentLang = ref.watch(appLanguageProvider);
     final isVi = currentLang == AppLanguage.vi;
     final title = AppTranslations.get(program.titleKey, currentLang);
+    final screenHeight = MediaQuery.sizeOf(context).height;
 
     return KineticGlassBottomSheet(
       floating: false,
       borderRadius: 28,
       maxHeightFactor: 0.88,
       padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Header Title
+      child: SizedBox(
+        height: screenHeight * 0.74,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Header Title
             Row(
               children: [
                 Container(
@@ -729,8 +771,8 @@ class _ProgramGuideSheet extends ConsumerWidget {
                       ),
                       Text(
                         isVi
-                            ? 'LỘ TRÌNH HUẤN LUYỆN TỪNG BƯỚC'
-                            : 'STRUCTURED WORKOUT TIMELINE',
+                            ? 'Lộ trình huấn luyện từng bước'
+                            : 'Structured workout timeline',
                         style: KineticTypography.unitLabel.copyWith(
                           fontSize: 11,
                           fontWeight: FontWeight.w800,
@@ -770,23 +812,23 @@ class _ProgramGuideSheet extends ConsumerWidget {
                 children: [
                   Expanded(
                     child: _GuideParam(
-                      label: isVi ? 'PACE MỤC TIÊU' : 'TARGET PACE',
+                      label: isVi ? 'Nhịp độ mục tiêu' : 'Target pace',
                       val: program.targetPace,
                     ),
                   ),
                   Container(width: 1, height: 26, color: colors.borderSubtle),
                   Expanded(
                     child: _GuideParam(
-                      label: isVi ? 'GUỒNG CHÂN' : 'CADENCE',
+                      label: isVi ? 'Guồng chân' : 'Cadence',
                       val: program.cadence,
                     ),
                   ),
                   Container(width: 1, height: 26, color: colors.borderSubtle),
                   Expanded(
                     child: _GuideParam(
-                      label: isVi ? 'THỜI LƯỢNG' : 'DURATION',
+                      label: isVi ? 'Thời lượng' : 'Duration',
                       val:
-                          '${(program.totalDurationSeconds / 60).round()} mins',
+                          '${(program.totalDurationSeconds / 60).round()} ${isVi ? "phút" : "mins"}',
                     ),
                   ),
                 ],
@@ -802,7 +844,7 @@ class _ProgramGuideSheet extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isVi ? 'TIẾN TRÌNH CÁC HIỆP CHẠY' : 'INTERVAL BREAKDOWN',
+                      isVi ? 'Tiến trình các hiệp chạy' : 'Interval breakdown',
                       style: KineticTypography.unitLabel.copyWith(
                         fontSize: 11,
                         fontWeight: FontWeight.w900,

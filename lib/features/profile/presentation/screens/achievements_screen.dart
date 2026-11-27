@@ -202,11 +202,10 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                           child: Text(
                             _selectedCategory == BadgeCategory.all
                                 ? (currentLang == AppLanguage.vi
-                                      ? 'TẤT CẢ HUY HIỆU'
-                                      : 'ALL BADGES')
+                                      ? 'Tất cả huy hiệu'
+                                      : 'All badges')
                                 : _selectedCategory
-                                      .label(currentLang)
-                                      .toUpperCase(),
+                                      .label(currentLang),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: KineticTypography.pageEyebrow.copyWith(

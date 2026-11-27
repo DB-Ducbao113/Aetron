@@ -46,7 +46,7 @@ class KineticMetricTile extends StatelessWidget {
                 const SizedBox(width: 5),
               ],
               Text(
-                label.toUpperCase(),
+                label,
                 style: KineticTypography.unitLabel.copyWith(
                   color: colors.textMuted,
                   fontSize: compact ? 10 : 11,

@@ -48,7 +48,7 @@ class AetronStatePanel extends ConsumerWidget {
           ),
           const SizedBox(height: 14),
           Text(
-            title.toUpperCase(),
+            title,
             style: const TextStyle(
               color: AetronColors.text,
               fontSize: 15,
@@ -74,7 +74,7 @@ class AetronStatePanel extends ConsumerWidget {
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh_rounded, size: 19),
                 label: Text(
-                  (retryLabel ?? (isVi ? 'THỬ LẠI' : 'RETRY')).toUpperCase(),
+                  retryLabel ?? (isVi ? 'Thử lại' : 'Retry'),
                 ),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: accent,

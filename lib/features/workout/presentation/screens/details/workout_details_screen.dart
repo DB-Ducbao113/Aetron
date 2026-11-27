@@ -1,6 +1,7 @@
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/settings/presentation/providers/settings_preferences_providers.dart';
 import 'package:fitness_exercise_application/features/shell/presentation/widgets/aetron_bottom_bar.dart';
+import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/providers/workout_providers.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/screens/details/workout_route_full_map_screen.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/details/kinetic_details_delete_dialog.dart';
@@ -12,14 +13,17 @@ import 'package:fitness_exercise_application/features/workout/presentation/widge
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 class WorkoutDetailsScreen extends ConsumerWidget {
   final String workoutId;
   final bool showMapTiles;
+  final WorkoutSession? initialWorkout;
 
   const WorkoutDetailsScreen({
     super.key,
     required this.workoutId,
+    this.initialWorkout,
     this.showMapTiles = true,
   });
 
@@ -51,7 +55,7 @@ class WorkoutDetailsScreen extends ConsumerWidget {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    'Error: $e',
+                    lang == AppLanguage.vi ? 'Lỗi: $e' : 'Error: $e',
                     style: KineticTypography.label.copyWith(color: Colors.white),
                   ),
                   backgroundColor: colors.error,
@@ -64,6 +68,78 @@ class WorkoutDetailsScreen extends ConsumerWidget {
     );
   }
 
+  Widget _buildContent(
+    BuildContext context,
+    WorkoutSession workout,
+    WorkoutRoutePresentation? routePresentation,
+    AppLanguage currentLang,
+    bool useMetricUnits,
+    double hPad,
+  ) {
+    final routePoints = routePresentation?.routePoints ?? const [];
+    final routeSegments = routePresentation?.routeSegments ?? const [];
+
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: EdgeInsets.fromLTRB(
+        hPad,
+        8,
+        hPad,
+        MediaQuery.viewPaddingOf(context).bottom + 28,
+      ),
+      children: [
+        // 1. Activity Header
+        KineticDetailsHeader(
+          workout: workout,
+          dateLabel: DateFormat('dd/MM/yyyy · HH:mm').format(workout.startedAt.toLocal()),
+          currentLang: currentLang,
+        ),
+        const SizedBox(height: 14),
+
+        // 2. Route Map Card
+        KineticDetailsRouteCard(
+          routePoints: routePoints,
+          routeSegments: routeSegments,
+          activityType: workout.activityType,
+          currentLang: currentLang,
+          showMapTiles: showMapTiles,
+          onViewFullMap: routePoints.length < 2
+              ? null
+              : () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => WorkoutRouteFullMapScreen(
+                        routePoints: routePoints,
+                        routeSegments: routeSegments,
+                        activityType: workout.activityType,
+                        currentLang: currentLang,
+                      ),
+                    ),
+                  );
+                },
+        ),
+        const SizedBox(height: 14),
+
+        // 3. Toàn bộ thông số gộp chung thành một list thông tin duy nhất ở dưới màn hình route
+        KineticDetailsTelemetryListCard(
+          workout: workout,
+          useMetricUnits: useMetricUnits,
+          currentLang: currentLang,
+        ),
+
+        // 4. Lap Splits Card (Km-by-Km laps if present)
+        if (workout.lapSplits.isNotEmpty) ...[
+          const SizedBox(height: 14),
+          KineticDetailsSplitsCard(
+            lapSplits: workout.lapSplits,
+            useMetricUnits: useMetricUnits,
+            currentLang: currentLang,
+          ),
+        ],
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.kinetic;
@@ -71,6 +147,13 @@ class WorkoutDetailsScreen extends ConsumerWidget {
     final workoutAsync = ref.watch(workoutProvider(workoutId));
     final routeAsync = ref.watch(workoutRoutePresentationProvider(workoutId));
     final useMetricUnits = ref.watch(metricUnitsPreferenceProvider).value ?? true;
+
+    // Fast-path: use in-memory workout immediately to prevent skeleton jank on push
+    final resolvedWorkout = workoutAsync.valueOrNull ?? initialWorkout;
+    final routePresentation = routeAsync.valueOrNull ??
+        (resolvedWorkout != null
+            ? WorkoutRoutePresentation.fromWorkout(resolvedWorkout)
+            : null);
 
     final hPad = AetronBottomBar.horizontalPagePaddingOf(context);
 
@@ -89,99 +172,54 @@ class WorkoutDetailsScreen extends ConsumerWidget {
 
             // Content
             Expanded(
-              child: workoutAsync.when(
-                loading: () => KineticSkeleton.workoutDetails(),
-                error: (error, _) => Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Text(
-                      'Error: $error',
-                      style: KineticTypography.bodyMedium.copyWith(
-                        color: colors.error,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-                data: (workout) {
-                  if (workout == null) {
-                    return Center(
-                      child: Text(
-                        currentLang == AppLanguage.vi
-                            ? 'Không tìm thấy buổi tập'
-                            : 'Workout not found',
-                        style: KineticTypography.bodyMedium.copyWith(
-                          color: colors.textPrimary,
+              child: resolvedWorkout != null
+                  ? _buildContent(
+                      context,
+                      resolvedWorkout,
+                      routePresentation,
+                      currentLang,
+                      useMetricUnits,
+                      hPad,
+                    )
+                  : workoutAsync.when(
+                      skipLoadingOnReload: true,
+                      loading: () => KineticSkeleton.workoutDetails(),
+                      error: (error, _) => Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text(
+                            currentLang == AppLanguage.vi ? 'Lỗi: $error' : 'Error: $error',
+                            style: KineticTypography.bodyMedium.copyWith(
+                              color: colors.error,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
                         ),
                       ),
-                    );
-                  }
+                      data: (workout) {
+                        if (workout == null) {
+                          return Center(
+                            child: Text(
+                              currentLang == AppLanguage.vi
+                                  ? 'Không tìm thấy buổi tập'
+                                  : 'Workout not found',
+                              style: KineticTypography.bodyMedium.copyWith(
+                                color: colors.textPrimary,
+                              ),
+                            ),
+                          );
+                        }
 
-                  final routePresentation = routeAsync.valueOrNull;
-                  final routePoints = routePresentation?.routePoints ?? const [];
-                  final routeSegments =
-                      routePresentation?.routeSegments ?? const [];
-
-                  return ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.fromLTRB(
-                      hPad,
-                      8,
-                      hPad,
-                      MediaQuery.viewPaddingOf(context).bottom + 28,
+                        return _buildContent(
+                          context,
+                          workout,
+                          routePresentation,
+                          currentLang,
+                          useMetricUnits,
+                          hPad,
+                        );
+                      },
                     ),
-                    children: [
-                      // 1. Activity Header
-                      KineticDetailsHeader(
-                        workout: workout,
-                        currentLang: currentLang,
-                      ),
-                      const SizedBox(height: 14),
-
-                      // 2. Route Map Card
-                      KineticDetailsRouteCard(
-                        routePoints: routePoints,
-                        routeSegments: routeSegments,
-                        activityType: workout.activityType,
-                        currentLang: currentLang,
-                        showMapTiles: showMapTiles,
-                        onViewFullMap: routePoints.length < 2
-                            ? null
-                            : () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => WorkoutRouteFullMapScreen(
-                                      routePoints: routePoints,
-                                      routeSegments: routeSegments,
-                                      activityType: workout.activityType,
-                                      currentLang: currentLang,
-                                    ),
-                                  ),
-                                );
-                              },
-                      ),
-                      const SizedBox(height: 14),
-
-                      // 3. Toàn bộ thông số gộp chung thành một list thông tin duy nhất ở dưới màn hình route (bỏ môi trường)
-                      KineticDetailsTelemetryListCard(
-                        workout: workout,
-                        useMetricUnits: useMetricUnits,
-                        currentLang: currentLang,
-                      ),
-
-                      // 4. Lap Splits Card (Km-by-Km laps if present)
-                      if (workout.lapSplits.isNotEmpty) ...[
-                        const SizedBox(height: 14),
-                        KineticDetailsSplitsCard(
-                          lapSplits: workout.lapSplits,
-                          useMetricUnits: useMetricUnits,
-                          currentLang: currentLang,
-                        ),
-                      ],
-                    ],
-                  );
-                },
-              ),
             ),
           ],
         ),

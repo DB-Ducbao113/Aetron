@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:fitness_exercise_application/app/bootstrap.dart';
 import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/features/shell/presentation/widgets/aetron_bottom_bar.dart';
+import 'package:fitness_exercise_application/shared/aetron/aetron_logo_paths.dart';
 import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:fitness_exercise_application/shared/kinetic/blade_icons.dart';
 import 'package:fitness_exercise_application/features/auth/presentation/helpers/google_oauth.dart';
@@ -125,11 +126,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         }
       }
     } on AuthException catch (e) {
-      setState(() => _errorMessage = e.message);
+      final currentLang = ref.read(appLanguageProvider);
+      final isVi = currentLang == AppLanguage.vi;
+      final lower = e.message.toLowerCase();
+      String msg = e.message;
+      if (lower.contains('invalid login credentials')) {
+        msg = isVi
+            ? 'Tên đăng nhập hoặc mật khẩu không chính xác.'
+            : 'Invalid username or password.';
+      } else if (lower.contains('email not confirmed')) {
+        msg = isVi
+            ? 'Tài khoản chưa được kích hoạt.'
+            : 'Email address has not been confirmed.';
+      }
+      setState(() => _errorMessage = msg);
     } catch (e) {
+      final currentLang = ref.read(appLanguageProvider);
+      final isVi = currentLang == AppLanguage.vi;
       setState(
-        () => _errorMessage =
-            'Could not sign in right now. Please check your credentials.',
+        () => _errorMessage = isVi
+            ? 'Không thể đăng nhập lúc này. Vui lòng kiểm tra lại thông tin.'
+            : 'Could not sign in right now. Please check your credentials.',
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -155,9 +172,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       }
     } catch (e) {
       if (mounted) {
+        final currentLang = ref.read(appLanguageProvider);
+        final isVi = currentLang == AppLanguage.vi;
         setState(() {
-          _errorMessage =
-              'Google Sign-In could not be completed. Please try again.';
+          _errorMessage = isVi
+              ? 'Đăng nhập Google không thành công. Vui lòng thử lại.'
+              : 'Google Sign-In could not be completed. Please try again.';
           _isGoogleLoading = false;
         });
       }
@@ -185,15 +205,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               padding: EdgeInsets.fromLTRB(hPad, topPad + 16, hPad, 12),
               child: Row(
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(11),
-                  child: Image.asset(
-                    'assets/logo_glassline.png',
-                    width: 44,
-                    height: 44,
-                    fit: BoxFit.cover,
-                  ),
-                ),
+                const AetronBrandMark(size: 44),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -227,16 +239,34 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           ),
           Divider(height: 1, thickness: 1, color: colors.borderSubtle),
 
-          // ── Scrollable Body ───────────────────────────────────────────────
+          // ── Centered Scrollable Body ──────────────────────────────────────
           Expanded(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(hPad, 24, hPad, bottomInset + 32),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    KineticCard(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                const topGap = 16.0;
+                final bottomGap = bottomInset + 24.0;
+                final minBodyHeight =
+                    (constraints.maxHeight - topGap - bottomGap).clamp(
+                      0.0,
+                      double.infinity,
+                    );
+
+                return SingleChildScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: EdgeInsets.fromLTRB(hPad, topGap, hPad, bottomGap),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: minBodyHeight),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 440),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              KineticCard(
                       useLiquidGlass: true,
                       borderRadius: 21,
                       padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
@@ -244,7 +274,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           // ── Username field ──────────────────────────────────────
-                          _SectionLabel(isVi ? 'TÊN ĐĂNG NHẬP' : 'USERNAME'),
+                          _SectionLabel(isVi ? 'Tên đăng nhập' : 'Username'),
                           const SizedBox(height: 6),
                           _StitchTextField(
                             controller: _usernameController,
@@ -258,7 +288,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           const SizedBox(height: 16),
 
                           // ── Password field ──────────────────────────────────────
-                          _SectionLabel(isVi ? 'MẬT KHẨU' : 'PASSWORD'),
+                          _SectionLabel(isVi ? 'Mật khẩu' : 'Password'),
                           const SizedBox(height: 6),
                           _StitchTextField(
                             controller: _passwordController,
@@ -332,7 +362,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
                           // ── Primary CTA (stitch: bg-[#A8DCE7] text-[#09181c] pill) ─
                           _PrimaryButton(
-                            label: isVi ? 'Đăng Nhập' : 'Sign In',
+                            label: isVi ? 'Đăng nhập' : 'Sign in',
                             isLoading: _isLoading,
                             disabled: _isGoogleLoading,
                             onPressed: _login,
@@ -414,10 +444,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           ),
                         ],
                       ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             ),
           ),
         ],

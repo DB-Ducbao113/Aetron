@@ -44,50 +44,18 @@ class KineticSummaryRouteRecap extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    BladeIcon(
-                      BladeIconName.map,
-                      size: 15,
-                      color: colors.primary,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      currentLang == AppLanguage.vi ? 'BẢN ĐỒ CUNG ĐƯỜNG' : 'ROUTE MAP',
-                      style: KineticTypography.unitLabel.copyWith(
-                        color: colors.textPrimary,
-                        letterSpacing: 1.1,
-                      ),
-                    ),
-                  ],
+                BladeIcon(
+                  BladeIconName.map,
+                  size: 15,
+                  color: colors.primary,
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: colors.primary.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(KineticTokens.radiusPill),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 5,
-                        height: 5,
-                        decoration: BoxDecoration(
-                          color: colors.primary,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 5),
-                      Text(
-                        currentLang == AppLanguage.vi ? 'ĐÃ LÀM MỊN' : 'SMOOTHED',
-                        style: KineticTypography.unitLabel.copyWith(
-                          color: colors.primary,
-                        ),
-                      ),
-                    ],
+                const SizedBox(width: 6),
+                Text(
+                  currentLang == AppLanguage.vi ? 'Bản đồ cung đường' : 'Route map',
+                  style: KineticTypography.unitLabel.copyWith(
+                    color: colors.textPrimary,
+                    letterSpacing: 1.1,
                   ),
                 ),
               ],

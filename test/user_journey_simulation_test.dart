@@ -135,7 +135,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
 
       // Check login form renders
-      expect(find.textContaining('Đăng Nhập'), findsWidgets);
+      expect(find.textContaining('Đăng nhập'), findsWidgets);
       expect(find.text('Quên mật khẩu?'), findsOneWidget);
       expect(find.text('Tiếp tục với Google'), findsOneWidget);
       expect(find.text('Tạo tài khoản'), findsOneWidget);
@@ -158,7 +158,7 @@ void main() {
       await tester.pump();
 
       // Submit without checking terms checkbox
-      final regBtn = find.text('Tạo Tài Khoản');
+      final regBtn = find.text('Tạo tài khoản');
       expect(regBtn, findsOneWidget);
       await tester.tap(regBtn);
       await tester.pumpAndSettle();
@@ -267,8 +267,8 @@ void main() {
       expect(find.byType(KineticAnalyticsHeader), findsOneWidget);
 
       // Telemetry sections rendered
-      expect(find.text('CƠ CẤU MÔN TẬP'), findsOneWidget);
-      expect(find.text('CHỈ DẪN HỒI PHỤC'), findsOneWidget);
+      expect(find.text('Cơ cấu môn tập'), findsOneWidget);
+      expect(find.text('Chỉ dẫn hồi phục'), findsOneWidget);
     });
 
     testWidgets('Journey 5: ProfileScreen rendering and components', (tester) async {
@@ -293,7 +293,7 @@ void main() {
       expect(find.text('AETRON'), findsNothing);
       expect(find.text('Hồ sơ cá nhân'), findsOneWidget);
       // Biometrics bento
-      expect(find.text('DỮ LIỆU SINH TRẮC'), findsOneWidget);
+      expect(find.text('Dữ liệu sinh trắc'), findsOneWidget);
       expect(find.textContaining('68.0'), findsOneWidget);
     });
 
@@ -324,8 +324,8 @@ void main() {
       expect(find.text('Chạy bộ'), findsOneWidget);
 
       // Actions
-      expect(find.text('HOÀN THÀNH'), findsOneWidget);
-      expect(find.text('CHIA SẺ BUỔI TẬP'), findsOneWidget);
+      expect(find.text('Hoàn thành'), findsOneWidget);
+      expect(find.text('Chia sẻ buổi tập'), findsOneWidget);
     });
 
     testWidgets('Journey 7: WorkoutDetailsScreen details, telemetry, and route recap', (tester) async {
@@ -352,13 +352,13 @@ void main() {
       await tester.pumpAndSettle();
 
       // Header displays activity
-      expect(find.text('CHẠY BỘ'), findsOneWidget);
+      expect(find.text('Chạy bộ'), findsOneWidget);
       expect(find.text('5.25 km'), findsOneWidget);
 
-      // Telemetry list shows Moving time, Avg speed, Pace
+      // Telemetry list shows Moving time, Pace (speed omitted for running)
       expect(find.text('Thời gian di chuyển'), findsOneWidget);
-      expect(find.text('Tốc độ trung bình'), findsOneWidget);
-      expect(find.text('Pace TB'), findsOneWidget);
+      expect(find.text('Tốc độ trung bình'), findsNothing);
+      expect(find.text('Nhịp độ TB'), findsOneWidget);
 
       // Delete action button present in top bar
       expect(find.byTooltip('Xóa buổi tập'), findsOneWidget);
@@ -383,8 +383,8 @@ void main() {
       // Top bar & section headers
       expect(find.text('Cài đặt'), findsOneWidget);
       expect(find.text('AETRON SYSTEM'), findsNothing);
-      expect(find.text('QUYỀN RIÊNG TƯ & TRUY CẬP'), findsOneWidget);
-      expect(find.text('CẤU HÌNH ỨNG DỤNG'), findsOneWidget);
+      expect(find.text('Quyền riêng tư & truy cập'), findsOneWidget);
+      expect(find.text('Cấu hình ứng dụng'), findsOneWidget);
 
       // Check notification settings screen directly
       await tester.pumpWidget(
@@ -397,7 +397,7 @@ void main() {
       expect(find.text('Nhắc nhở luyện tập'), findsOneWidget);
       expect(find.text('Luyện tập & Chuỗi ngày'), findsOneWidget);
       expect(find.text('Mục tiêu & Thành tích'), findsOneWidget);
-      expect(find.text('KHUNG GIỜ YÊN TĨNH'), findsOneWidget);
+      expect(find.text('Khung giờ yên tĩnh'), findsOneWidget);
       expect(find.text('Chế độ yên tĩnh'), findsOneWidget);
     });
 

@@ -85,8 +85,8 @@ void main() {
       // Section structure using KineticSettingsSectionGroup + KineticSettingsTile
       expect(find.byType(KineticSettingsSectionGroup), findsNWidgets(2));
       expect(find.byType(KineticSettingsTile), findsNWidgets(4));
-      expect(find.text('TÙY CHỌN NHẮC NHỞ'), findsOneWidget);
-      expect(find.text('KHUNG GIỜ YÊN TĨNH'), findsOneWidget);
+      expect(find.text('Tùy chọn nhắc nhở'), findsOneWidget);
+      expect(find.text('Khung giờ yên tĩnh'), findsOneWidget);
 
       // Consolidated groups & tiles
       expect(find.text('Luyện tập & Chuỗi ngày'), findsOneWidget);
@@ -139,10 +139,10 @@ void main() {
       expect(find.text('Nhắc nhở luyện tập'), findsOneWidget);
       expect(find.text('v1.0.0'), findsNothing);
       expect(find.text('Nhận thông báo'), findsOneWidget);
-      expect(find.text('TÙY CHỌN NHẮC NHỞ'), findsOneWidget);
+      expect(find.text('Tùy chọn nhắc nhở'), findsOneWidget);
       expect(find.text('Luyện tập & Chuỗi ngày'), findsOneWidget);
       expect(find.text('Mục tiêu & Thành tích'), findsOneWidget);
-      expect(find.text('KHUNG GIỜ YÊN TĨNH'), findsOneWidget);
+      expect(find.text('Khung giờ yên tĩnh'), findsOneWidget);
       expect(find.text('Chế độ yên tĩnh'), findsOneWidget);
 
       // Glassline V3 Liquid Glass surface cards
@@ -409,21 +409,20 @@ void main() {
 
         if (item.lang == 'en') {
           expect(find.text('Notifications'), findsOneWidget);
-          expect(find.text('Smart Reminders'), findsOneWidget);
+          expect(find.text('Smart Reminders'), findsNWidgets(2));
           expect(find.text('Push Notifications'), findsOneWidget);
-          expect(find.text('SMART REMINDERS'), findsOneWidget);
           expect(find.text('Workouts & Streak'), findsOneWidget);
           expect(find.text('Daily Reminder Time'), findsOneWidget);
           expect(find.text('Goals & Achievements'), findsOneWidget);
-          expect(find.text('QUIET HOURS'), findsOneWidget);
+          expect(find.text('Quiet hours'), findsOneWidget);
           expect(find.text('Quiet Mode'), findsOneWidget);
           expect(find.text('Quiet Window'), findsOneWidget);
         } else {
           expect(find.text('Thông báo'), findsOneWidget);
           expect(find.text('Nhắc nhở luyện tập'), findsOneWidget);
           expect(find.text('Nhận thông báo'), findsOneWidget);
-          expect(find.text('TÙY CHỌN NHẮC NHỞ'), findsOneWidget);
-          expect(find.text('KHUNG GIỜ YÊN TĨNH'), findsOneWidget);
+          expect(find.text('Tùy chọn nhắc nhở'), findsOneWidget);
+          expect(find.text('Khung giờ yên tĩnh'), findsOneWidget);
           expect(find.text('Chế độ yên tĩnh'), findsOneWidget);
         }
       }
@@ -443,7 +442,7 @@ void main() {
       await tester.ensureVisible(find.text('18:00'));
       await tester.tap(find.text('18:00'));
       await tester.pump();
-      await tester.tap(find.text('XÁC NHẬN'));
+      await tester.tap(find.text('Xác nhận'));
       await tester.pumpAndSettle();
 
       expect(find.text('18:00'), findsOneWidget);
@@ -457,7 +456,7 @@ void main() {
       await tester.ensureVisible(find.text('20:00'));
       await tester.tap(find.text('20:00'));
       await tester.pump();
-      await tester.tap(find.text('XÁC NHẬN'));
+      await tester.tap(find.text('Xác nhận'));
       await tester.pumpAndSettle();
 
       expect(find.text('20:00'), findsOneWidget);
@@ -471,7 +470,7 @@ void main() {
       await tester.ensureVisible(find.text('06:00'));
       await tester.tap(find.text('06:00'));
       await tester.pump();
-      await tester.tap(find.text('XÁC NHẬN'));
+      await tester.tap(find.text('Xác nhận'));
       await tester.pumpAndSettle();
 
       expect(find.text('06:00'), findsOneWidget);
@@ -518,7 +517,7 @@ void main() {
         osPermissionOverride: false,
       );
       expect(find.text('Thông báo bị tắt trong hệ thống'), findsOneWidget);
-      expect(find.text('MỞ'), findsOneWidget);
+      expect(find.text('Mở'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
       // Shown in English at 360x640 Dark mode
@@ -531,7 +530,7 @@ void main() {
         osPermissionOverride: false,
       );
       expect(find.text('Notifications disabled in OS Settings'), findsOneWidget);
-      expect(find.text('OPEN'), findsOneWidget);
+      expect(find.text('Open'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });

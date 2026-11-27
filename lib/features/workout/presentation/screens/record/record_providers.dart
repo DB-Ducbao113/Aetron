@@ -4,9 +4,11 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'package:fitness_exercise_application/features/workout/data/local/local_db.dart';
 import 'package:fitness_exercise_application/core/constants/debug_config.dart';
+import 'package:fitness_exercise_application/core/localization/app_translations.dart';
 import 'package:fitness_exercise_application/core/services/environment_detector.dart';
 import 'package:fitness_exercise_application/features/iod/presentation/providers/iod_controller.dart';
 import 'package:fitness_exercise_application/features/profile/domain/entities/user_profile.dart';
+import 'package:fitness_exercise_application/features/settings/presentation/providers/settings_preferences_providers.dart';
 import 'package:fitness_exercise_application/features/workout/domain/entities/workout_session.dart';
 import 'package:fitness_exercise_application/features/workout/domain/repositories/workout_repository.dart';
 import 'package:fitness_exercise_application/features/workout/domain/constants/workout_processing_contract.dart';
@@ -33,6 +35,7 @@ import 'package:fitness_exercise_application/features/workout/domain/services/wo
 import 'package:fitness_exercise_application/features/workout/domain/services/research_walking_step_length.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/research_running_step_length.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/research_step_length_fallback.dart';
+import 'package:fitness_exercise_application/features/workout/domain/services/step_motion_gate.dart';
 import 'package:fitness_exercise_application/features/workout/domain/services/workout_tracking_engine.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -180,7 +183,11 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   );
   DateTime? _lastStepTime;
   int _lastSessionSteps = 0;
+  int _lastObservedActiveSensorSteps = 0;
   int _pausedStepsOffset = 0;
+  final StepMotionGate _stepMotionGate = StepMotionGate();
+  Position? _lastRawGpsPosition;
+  DateTime? _lastMovingGpsAcceptedAt;
   // Raw GPS anchor used for distance accumulation only.
   LatLng? _distanceAnchorPoint;
   int _lastSplitElapsedSec = 0;
@@ -725,6 +732,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
         _locationSub = null;
         final stepService = _ref.read(stepTrackingServiceProvider);
         _sensorController.pauseStepTracking(stepService);
+        _stepMotionGate.reset();
       } catch (error, stack) {
         debugPrint('[Workout] Pause sensor shutdown failed: $error\n$stack');
       }
@@ -752,6 +760,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     _stopwatch.start();
     final stepService = _ref.read(stepTrackingServiceProvider);
     _sensorController.resumeStepTracking(stepService);
+    _stepMotionGate.reset();
     _speedSamples.clear();
     _shouldResetGpsAnchorOnResume = true;
     _streamingPreprocessor?.reset();
@@ -1066,7 +1075,11 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     _rawSignalContinuity.reset();
     _lastStepTime = null;
     _lastSessionSteps = 0;
+    _lastObservedActiveSensorSteps = 0;
     _pausedStepsOffset = 0;
+    _stepMotionGate.reset();
+    _lastRawGpsPosition = null;
+    _lastMovingGpsAcceptedAt = null;
     _lastGpsEventTime = null;
     _distanceAnchorPoint = null;
     _recordingCoordinator.reset();
@@ -1129,21 +1142,30 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
 
   void _syncLiveActivityState() {
     final liveActivity = _ref.read(iosLiveActivityServiceProvider);
+    final useMetricUnits =
+        _ref.read(metricUnitsPreferenceProvider).value ?? true;
+    final lang = _ref.read(appLanguageProvider);
+    final effectiveStatus = state.isAutoPaused ? 'paused' : state.status.name;
     unawaited(
       liveActivity.syncWorkout(
         activityType: state.activityType,
         trackingMode: state.trackingMode,
-        status: state.status.name,
+        status: effectiveStatus,
         durationSeconds: state.durationSeconds,
         distanceMeters: state.distanceMeters,
         avgSpeedKmh: state.avgSpeedKmh,
         caloriesBurned: state.caloriesBurned,
+        useMetricUnits: useMetricUnits,
+        languageCode: lang.name,
       ),
     );
   }
 
   Future<void> _endLiveActivity(WorkoutSessionState finalState) {
     final liveActivity = _ref.read(iosLiveActivityServiceProvider);
+    final useMetricUnits =
+        _ref.read(metricUnitsPreferenceProvider).value ?? true;
+    final lang = _ref.read(appLanguageProvider);
     return liveActivity.endWorkout(
       activityType: finalState.activityType,
       trackingMode: finalState.trackingMode,
@@ -1151,6 +1173,8 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       distanceMeters: finalState.distanceMeters,
       avgSpeedKmh: finalState.avgSpeedKmh,
       caloriesBurned: finalState.caloriesBurned,
+      useMetricUnits: useMetricUnits,
+      languageCode: lang.name,
     );
   }
 
@@ -1374,6 +1398,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       }
       return;
     }
+    _lastRawGpsPosition = position;
 
     if (!isGpsPrimary && state.trackingMode == kIndoorMode) {
       state = state.copyWith(
@@ -1457,9 +1482,15 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       if (decision.reason == GpsRejectReason.lowAccuracy) {
         state = state.copyWith(
           isGpsSignalWeak: true,
+          isStationaryByGps: false,
           gpsGapMarker:
               state.currentLatLng ??
               (state.routePoints.isNotEmpty ? state.routePoints.last : null),
+        );
+      } else if (decision.reason == GpsRejectReason.tinySegment) {
+        state = state.copyWith(
+          isGpsSignalWeak: false,
+          isStationaryByGps: true,
         );
       }
       if (kDebugMode) {
@@ -1550,21 +1581,78 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     );
   }
 
+  bool _isOutdoorGpsStationaryLocked(DateTime now) {
+    if (!_requiresGpsTracking(state.activityType) ||
+        state.recordingSource != 'gps' ||
+        state.gpsFallbackActive ||
+        state.isGpsSignalWeak) {
+      return false;
+    }
+    final pos = _lastRawGpsPosition;
+    if (pos == null || !pos.accuracy.isFinite || pos.accuracy > 15.0) {
+      return false;
+    }
+    final fixRefTime =
+        (now.difference(pos.timestamp).inSeconds).abs() <= 120
+            ? pos.timestamp
+            : _lastGpsEventTime;
+    if (fixRefTime == null ||
+        now.difference(fixRefTime) > const Duration(seconds: 4)) {
+      return false;
+    }
+    final sensorSpeedMs =
+        pos.speed.isFinite && pos.speed > 0 ? pos.speed : 0.0;
+    if (sensorSpeedMs >= 0.45 || _isMoving(state.speedKmh, state.activityType)) {
+      return false;
+    }
+    if (_lastMovingGpsAcceptedAt != null &&
+        now.difference(_lastMovingGpsAcceptedAt!) <
+            const Duration(seconds: 4)) {
+      return false;
+    }
+    final anchor =
+        _distanceAnchorPoint ?? state.initialPosition ?? state.currentLatLng;
+    if (anchor == null) {
+      return false;
+    }
+    final driftMeters = Geolocator.distanceBetween(
+      anchor.latitude,
+      anchor.longitude,
+      pos.latitude,
+      pos.longitude,
+    );
+    return driftMeters < 2.5;
+  }
+
   // Step updates
   void _onStepUpdate(WorkoutStepUpdate update) {
     if (state.activityType.toLowerCase() == 'cycling') return;
     if (state.status == RecordingState.paused) {
+      _lastObservedActiveSensorSteps = update.activeSessionSteps;
       state = state.copyWith(currentCadenceSpm: 0);
       return;
     }
 
     if (state.status != RecordingState.active) return;
 
-    final effectiveSteps = update.activeSessionSteps;
+    final rawDelta =
+        update.activeSessionSteps >= _lastObservedActiveSensorSteps
+            ? update.activeSessionSteps - _lastObservedActiveSensorSteps
+            : math.max(0, update.deltaSteps);
+    _lastObservedActiveSensorSteps = update.activeSessionSteps;
     _lastSessionSteps = update.totalSessionSteps;
 
+    final gateResult = _stepMotionGate.evaluate(
+      rawDelta: rawDelta,
+      now: update.timestamp,
+      isOutdoorGpsStationaryLocked: _isOutdoorGpsStationaryLocked(
+        update.timestamp,
+      ),
+    );
+
+    final acceptedSteps = state.stepCount + gateResult.acceptedDelta;
     final stepDecision = _trackingEngine.evaluateStepUpdate(
-      sessionSteps: effectiveSteps,
+      sessionSteps: acceptedSteps,
       currentStepCount: state.stepCount,
       activityType: state.activityType,
       requiresGpsTracking: _requiresGpsTracking(state.activityType),
@@ -1575,8 +1663,18 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     );
 
     final delta = stepDecision.delta;
+    final effectiveCadenceSpm = gateResult.isActivelyStepping
+        ? update.currentCadenceSpm
+        : 0;
+    final effectiveAvgCadenceSpm =
+        acceptedSteps > 0 && state.movingTimeSeconds > 0
+            ? ((acceptedSteps * 60.0) / state.movingTimeSeconds)
+                  .round()
+                  .clamp(0, 270)
+            : (acceptedSteps > 0 ? update.avgCadenceSpm : 0);
+
     state = state.copyWith(
-      stepCount: effectiveSteps,
+      stepCount: acceptedSteps,
       researchDetectedSteps:
           state.researchDetectedSteps +
           (update.source == StepSensorSource.oxfordWpd
@@ -1587,8 +1685,8 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
           (update.source == StepSensorSource.xuRunning
               ? math.max(0, delta)
               : 0),
-      currentCadenceSpm: update.currentCadenceSpm,
-      avgCadenceSpm: update.avgCadenceSpm,
+      currentCadenceSpm: effectiveCadenceSpm,
+      avgCadenceSpm: effectiveAvgCadenceSpm,
     );
 
     if (delta <= 0) return;
@@ -1641,7 +1739,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     }
 
     final effectiveSteps = math.max(0, sessionSteps - _pausedStepsOffset);
-    final delta = effectiveSteps - state.stepCount;
+    final delta = effectiveSteps - _lastObservedActiveSensorSteps;
 
     _onStepUpdate(
       WorkoutStepUpdate(
@@ -1792,6 +1890,10 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     _lastAcceptedPositionTime = position.timestamp;
     _rawSignalContinuity.acknowledgeRouteAnchor();
     _distanceAnchorPoint = livePoint;
+
+    if (shouldAddDistance && segmentMeters > 0) {
+      _lastMovingGpsAcceptedAt = position.timestamp;
+    }
 
     // Update lightweight metrics state (1Hz)
     _legacyEnvironmentHint = 'outdoor';
@@ -2035,11 +2137,18 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
           ? (distKm / elapsedHours)
           : 0.0;
 
+      final lastStepAccepted = _stepMotionGate.lastAcceptedStepTime;
+      final cadenceExpired =
+          lastStepAccepted == null ||
+          DateTime.now().difference(lastStepAccepted) >
+              StepMotionGate.kActiveBoutTimeout;
+
       state = state.copyWith(
         durationSeconds: elapsedSec,
         movingTimeSeconds: movingTimeSec,
         speedKmh: liveSpeedKmh,
         avgSpeedKmh: avg,
+        currentCadenceSpm: cadenceExpired ? 0 : state.currentCadenceSpm,
         isAutoPaused: isAutoPaused,
       );
       _syncLiveActivityState();

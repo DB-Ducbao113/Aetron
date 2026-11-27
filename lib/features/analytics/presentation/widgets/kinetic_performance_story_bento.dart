@@ -181,8 +181,9 @@ class KineticPerformanceStoryBento extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.baseline,
                 textBaseline: TextBaseline.alphabetic,
                 children: [
-                  Text(
-                    displayDistance.toStringAsFixed(1),
+                  KineticCountUp(
+                    value: displayDistance,
+                    decimalPlaces: 1,
                     style: KineticTypography.metricHero.copyWith(
                       color: colors.textPrimary,
                     ),
@@ -228,7 +229,7 @@ class KineticPerformanceStoryBento extends StatelessWidget {
                       const SizedBox(width: 4),
                       Text(
                         isNewBenchmark
-                            ? (isVi ? 'MỐC MỚI' : 'NEW BENCHMARK')
+                            ? (isVi ? 'Mốc mới' : 'New benchmark')
                             : '${isPositive ? '+' : ''}${percentChange!.clamp(-100.0, 999.0).toStringAsFixed(0)}% ${isVi ? 'so với trước' : 'vs prev'}',
                         style: KineticTypography.unitLabel.copyWith(
                           color: isNewBenchmark || isPositive
@@ -318,9 +319,11 @@ class KineticPerformanceStoryBento extends StatelessWidget {
                               else
                                 const SizedBox(height: 22),
 
-                              // Slender bar
+                              // Slender bar with height animation
                               Flexible(
-                                child: FractionallySizedBox(
+                                child: AnimatedFractionallySizedBox(
+                                  duration: KineticTokens.motionCardEntrance,
+                                  curve: Curves.easeOutCubic,
                                   heightFactor: ratio,
                                   child: Container(
                                     width: isPeak ? 12 : 9,

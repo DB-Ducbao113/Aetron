@@ -152,8 +152,8 @@ class _AchievementBadgeItemState extends State<AchievementBadgeItem> {
                 Text(
                   isUnlocked
                       ? (currentLang == AppLanguage.vi
-                            ? 'ĐÃ ĐẠT ĐƯỢC'
-                            : 'UNLOCKED')
+                            ? 'Đã đạt được'
+                            : 'Unlocked')
                       : badge.remainingText(currentLang),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

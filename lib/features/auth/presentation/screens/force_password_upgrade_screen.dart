@@ -104,6 +104,12 @@ class _ForcePasswordUpgradeScreenState
   Widget build(BuildContext context) {
     final kinetic = context.kinetic;
     final currentLang = ref.watch(appLanguageProvider);
+    final currentUser = Supabase.instance.client.auth.currentUser;
+    final username = (currentUser?.userMetadata?['username'] as String?) ??
+        currentUser?.email?.split('@').first;
+
+    final hPad = AetronBottomBar.horizontalPagePaddingOf(context);
+    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
 
     final hPad = AetronBottomBar.horizontalPagePaddingOf(context);
     final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
@@ -134,8 +140,8 @@ class _ForcePasswordUpgradeScreenState
                       ),
                       label: Text(
                         currentLang == AppLanguage.vi
-                            ? 'ĐĂNG XUẤT'
-                            : 'LOG OUT',
+                            ? 'Đăng xuất'
+                            : 'Log out',
                         style: KineticTypography.label.copyWith(
                           color: kinetic.error,
                           fontSize: 12,
@@ -191,8 +197,8 @@ class _ForcePasswordUpgradeScreenState
                 Text(
                   AppTranslations.get('mandatory_password_upgrade_title', currentLang).isEmpty
                       ? (currentLang == AppLanguage.vi
-                          ? 'YÊU CẦU NÂNG CẤP MẬT KHẨU'
-                          : 'MANDATORY PASSWORD UPGRADE')
+                          ? 'Yêu cầu nâng cấp mật khẩu'
+                          : 'Mandatory password upgrade')
                       : AppTranslations.get('mandatory_password_upgrade_title', currentLang),
                   textAlign: TextAlign.center,
                   style: KineticTypography.headlineSmall.copyWith(
@@ -231,7 +237,7 @@ class _ForcePasswordUpgradeScreenState
                     children: [
                     // New Password Input
                     _FieldLabel(
-                      currentLang == AppLanguage.vi ? 'MẬT KHẨU MỚI' : 'NEW PASSWORD',
+                      currentLang == AppLanguage.vi ? 'Mật khẩu mới' : 'New password',
                       color: kinetic.primary,
                     ),
                     const SizedBox(height: 8),
@@ -243,7 +249,8 @@ class _ForcePasswordUpgradeScreenState
                         color: kinetic.textPrimary,
                         fontWeight: FontWeight.w600,
                       ),
-                      validator: (val) => validatePasswordStrict(val, currentLang),
+                      validator: (val) =>
+                          validatePasswordStrict(val, currentLang, username: username),
                       decoration: _inputDecoration(
                         hintText: '••••••••',
                         prefixIcon: BladeIconName.lock,
@@ -272,6 +279,7 @@ class _ForcePasswordUpgradeScreenState
                       child: PasswordSecurityMeter(
                         password: _passwordController.text,
                         lang: currentLang,
+                        username: username,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -279,8 +287,8 @@ class _ForcePasswordUpgradeScreenState
                     // Confirm Password Input
                     _FieldLabel(
                       currentLang == AppLanguage.vi
-                          ? 'XÁC NHẬN MẬT KHẨU MỚI'
-                          : 'CONFIRM NEW PASSWORD',
+                          ? 'Xác nhận mật khẩu mới'
+                          : 'Confirm new password',
                       color: kinetic.primary,
                     ),
                     const SizedBox(height: 8),

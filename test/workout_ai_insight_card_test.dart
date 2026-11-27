@@ -87,10 +87,10 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('AI COACH INSIGHT'), findsOneWidget);
-    expect(find.text('AI ACTIVE'), findsOneWidget);
+    expect(find.text('Phân tích từ AI Coach'), findsOneWidget);
+    expect(find.text('AI Active'), findsOneWidget);
     expect(find.text('Buổi chạy xuất sắc với nhịp tim ổn định'), findsOneWidget);
-    expect(find.text('CHẠY BỘ • 35 phút • AEROBIC'), findsOneWidget);
+    expect(find.text('Chạy bộ • 35 phút • Aerobic'), findsOneWidget);
     expect(find.text('Chi tiết'), findsOneWidget);
 
     // Tap on the card to navigate to full detail screen
@@ -98,8 +98,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(WorkoutAiInsightDetailScreen), findsOneWidget);
-    expect(find.text('PHÂN TÍCH TỪ AI COACH'), findsOneWidget);
-    expect(find.text('TỔNG QUAN HIỆU SUẤT'), findsOneWidget);
+    expect(find.text('Phân tích từ AI Coach'), findsOneWidget);
+    expect(find.text('Tổng quan hiệu suất'), findsOneWidget);
     expect(find.text('Buổi chạy xuất sắc với nhịp tim ổn định'), findsWidgets);
   });
 
@@ -125,10 +125,10 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('AI COACH INSIGHT'), findsOneWidget);
-    expect(find.text('AI ACTIVE'), findsOneWidget);
+    expect(find.text('AI Coach insight'), findsOneWidget);
+    expect(find.text('AI Active'), findsOneWidget);
     expect(find.text('Running Workout Performance Recap'), findsOneWidget);
-    expect(find.text('RUNNING • 30 min • RECOVERY'), findsOneWidget);
+    expect(find.text('Running • 30 min • Recovery'), findsOneWidget);
     expect(find.text('Details'), findsOneWidget);
 
     // Tap to open full page
@@ -136,8 +136,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(WorkoutAiInsightDetailScreen), findsOneWidget);
-    expect(find.text('AI COACH ANALYSIS'), findsOneWidget);
-    expect(find.text('PERFORMANCE OVERVIEW'), findsOneWidget);
+    expect(find.text('AI Coach analysis'), findsOneWidget);
+    expect(find.text('Performance overview'), findsOneWidget);
     expect(find.text('Running Workout Performance Recap'), findsWidgets);
   });
 
@@ -183,7 +183,7 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('SMART OFFLINE'), findsOneWidget);
+    expect(find.text('Smart Offline'), findsOneWidget);
     expect(find.text('Đánh giá buổi chạy bộ'), findsOneWidget);
   });
 }

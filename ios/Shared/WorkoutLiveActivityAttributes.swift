@@ -10,6 +10,8 @@ struct WorkoutLiveActivityAttributes: ActivityAttributes {
     var distanceMeters: Double
     var avgSpeedKmh: Double
     var caloriesBurned: Int
+    var useMetricUnits: Bool = true
+    var languageCode: String = "vi"
     var updatedAt: Date
   }
 

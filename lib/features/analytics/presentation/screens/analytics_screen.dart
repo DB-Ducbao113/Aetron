@@ -85,6 +85,8 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
           child: _isRefreshing
               ? const AnalyticsSkeletonView()
               : workoutsAsync.when(
+                  skipLoadingOnReload: true,
+                  skipLoadingOnRefresh: true,
                   data: (workouts) {
                     final filtered = _filterWorkouts(workouts, period);
                     final comparison = _calculateComparison(workouts, period);
@@ -115,69 +117,112 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                           const AetronOfflineBanner(),
                         ],
                         const SizedBox(height: KineticTokens.spaceMD),
-                        if (workouts.isEmpty || filtered.isEmpty) ...[
-                          _EmptyAnalyticsPanel(period: period),
-                        ] else ...[
-                          // 1. Performance Narrative Story Bento
-                          RepaintBoundary(
-                            child: KineticPerformanceStoryBento(
-                              workouts: filtered,
-                              period: period,
-                              currentDistanceKm: comparison.currentDistanceKm,
-                              previousDistanceKm: comparison.previousDistanceKm,
-                              useMetricUnits: useMetricUnits,
-                              isVi: isVi,
+                        AnimatedSwitcher(
+                          duration: KineticTokens.motionTab,
+                          switchInCurve: Curves.easeOutCubic,
+                          switchOutCurve: Curves.easeInCubic,
+                          child: KeyedSubtree(
+                            key: ValueKey(
+                              'analytics_${period.name}_${workouts.isEmpty || filtered.isEmpty}',
                             ),
-                          ),
-                          const SizedBox(height: KineticTokens.spaceMD),
+                            child: (workouts.isEmpty || filtered.isEmpty)
+                                ? _EmptyAnalyticsPanel(period: period)
+                                : Column(
+                                    children: [
+                                      // 1. Performance Narrative Story Bento
+                                      RepaintBoundary(
+                                        child: KineticEntrance(
+                                          index: 0,
+                                          child: KineticPerformanceStoryBento(
+                                            workouts: filtered,
+                                            period: period,
+                                            currentDistanceKm:
+                                                comparison.currentDistanceKm,
+                                            previousDistanceKm:
+                                                comparison.previousDistanceKm,
+                                            useMetricUnits: useMetricUnits,
+                                            isVi: isVi,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(
+                                        height: KineticTokens.spaceMD,
+                                      ),
 
-                          // 2. 4 Key Telemetry Metrics Bento
-                          RepaintBoundary(
-                            child: KineticKeyTelemetryBento(
-                              workouts: filtered,
-                              useMetricUnits: useMetricUnits,
-                              isVi: isVi,
-                            ),
-                          ),
-                          const SizedBox(height: KineticTokens.spaceMD),
+                                      // 2. 4 Key Telemetry Metrics Bento
+                                      RepaintBoundary(
+                                        child: KineticEntrance(
+                                          index: 1,
+                                          child: KineticKeyTelemetryBento(
+                                            workouts: filtered,
+                                            useMetricUnits: useMetricUnits,
+                                            isVi: isVi,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(
+                                        height: KineticTokens.spaceMD,
+                                      ),
 
-                          // 3. Multi-sport Endurance Activity Mix
-                          RepaintBoundary(
-                            child: KineticActivityMixBento(
-                              workouts: filtered,
-                              useMetricUnits: useMetricUnits,
-                              isVi: isVi,
-                            ),
-                          ),
-                          const SizedBox(height: KineticTokens.spaceMD),
+                                      // 3. Multi-sport Endurance Activity Mix
+                                      RepaintBoundary(
+                                        child: KineticEntrance(
+                                          index: 2,
+                                          child: KineticActivityMixBento(
+                                            workouts: filtered,
+                                            useMetricUnits: useMetricUnits,
+                                            isVi: isVi,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(
+                                        height: KineticTokens.spaceMD,
+                                      ),
 
-                          // 4. Goal Progress Section
-                          RepaintBoundary(
-                            child: _GoalProgressCard(
-                              progress: ref.watch(goalProgressProvider),
-                            ),
-                          ),
-                          const SizedBox(height: KineticTokens.spaceMD),
+                                      // 4. Goal Progress Section
+                                      RepaintBoundary(
+                                        child: KineticEntrance(
+                                          index: 3,
+                                          child: _GoalProgressCard(
+                                            progress:
+                                                ref.watch(goalProgressProvider),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(
+                                        height: KineticTokens.spaceMD,
+                                      ),
 
-                          // 5. Recovery Guidance Card
-                          RepaintBoundary(
-                            child: KineticRecoveryGuidanceCard(
-                              workouts: filtered,
-                              isVi: isVi,
-                              period: period,
-                            ),
-                          ),
-                          const SizedBox(height: KineticTokens.spaceMD),
+                                      // 5. Recovery Guidance Card
+                                      RepaintBoundary(
+                                        child: KineticEntrance(
+                                          index: 4,
+                                          child: KineticRecoveryGuidanceCard(
+                                            workouts: filtered,
+                                            isVi: isVi,
+                                            period: period,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(
+                                        height: KineticTokens.spaceMD,
+                                      ),
 
-                          // 6. Personal Records Trophy Wall
-                          RepaintBoundary(
-                            child: PersonalRecordsTrophyWall(
-                              records: records,
-                              useMetricUnits: useMetricUnits,
-                              currentLang: currentLang,
-                            ),
+                                      // 6. Personal Records Trophy Wall
+                                      RepaintBoundary(
+                                        child: KineticEntrance(
+                                          index: 5,
+                                          child: PersonalRecordsTrophyWall(
+                                            records: records,
+                                            useMetricUnits: useMetricUnits,
+                                            currentLang: currentLang,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                           ),
-                        ],
+                        ),
                       ],
                     );
                   },
@@ -235,7 +280,7 @@ class _GoalProgressCard extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              AppTranslations.get('goal_progress', currentLang).toUpperCase(),
+              AppTranslations.get('goal_progress', currentLang),
               style: KineticTypography.unitLabel.copyWith(
                 color: colors.primary,
                 letterSpacing: 1.2,
@@ -263,7 +308,7 @@ class _GoalProgressCard extends ConsumerWidget {
             ),
             const SizedBox(height: KineticTokens.spaceMD),
             KineticButton(
-              label: isVi ? 'ĐẶT MỤC TIÊU' : 'SET A GOAL',
+              label: isVi ? 'Đặt mục tiêu' : 'Set a goal',
               icon: Icons.flag_rounded,
               variant: KineticButtonVariant.secondary,
               onPressed: () {
@@ -305,7 +350,7 @@ class _GoalProgressCard extends ConsumerWidget {
                         AppTranslations.get(
                           'goal_progress',
                           currentLang,
-                        ).toUpperCase(),
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: KineticTypography.cardEyebrowOf(colors),
@@ -454,7 +499,7 @@ class _EmptyAnalyticsPanel extends ConsumerWidget {
             label: AppTranslations.get(
               'start_workout',
               currentLang,
-            ).toUpperCase(),
+            ),
             icon: Icons.play_arrow_rounded,
             onPressed: () {
               ref.read(mainTabControllerProvider.notifier).state =
@@ -480,9 +525,7 @@ String _periodLabel(TimePeriod p, AppLanguage lang) {
 }
 
 double _effectiveDistanceKm(WorkoutSession w) {
-  return w.gpsAnalysis.validDistanceKm > 0
-      ? w.gpsAnalysis.validDistanceKm
-      : w.distanceKm;
+  return w.distanceKm;
 }
 
 List<WorkoutSession> _filterWorkouts(

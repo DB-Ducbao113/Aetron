@@ -13,10 +13,12 @@ class OxfordStepDetector {
   static const _periodUs = 10000;
   static const _mergeUs = 200000;
   static const _maxGapUs = 250000;
-  /// Minimum peak score floor (m/s²) to reject accelerometer sensor noise
-  /// and resting tremor while stationary. Human walking dynamic score typically
-  /// exceeds 0.25 m/s²; resting sensor noise and hand tremor is < 0.08 m/s².
-  static const _minPeakThreshold = 0.10;
+  /// Minimum peak score floor (m/s²) and 1-second dynamic magnitude span (m/s²)
+  /// to reject accelerometer sensor noise, breathing, resting hand tremor, and
+  /// casual screen tilting while standing still.
+  static const _minPeakThreshold = 0.35;
+  static const _minDynamicRange = 1.40;
+  static const _rangeWindowSize = 100;
   static final _weights = List<double>.generate(
     13,
     (i) => math.exp(-0.5 * math.pow((i - 6) / (0.35 * 6), 2)),
@@ -25,6 +27,7 @@ class OxfordStepDetector {
 
   final _rawWindow = ListQueue<double>(13);
   final _smoothWindow = ListQueue<double>(35);
+  final _rangeWindow = ListQueue<double>(_rangeWindowSize);
   int? _previousTime, _nextTime, _pendingTime;
   double _previousMagnitude = 0, _pendingScore = 0;
   double _mean = 0, _std = 0;
@@ -35,6 +38,7 @@ class OxfordStepDetector {
   void reset() {
     _rawWindow.clear();
     _smoothWindow.clear();
+    _rangeWindow.clear();
     _previousTime = _nextTime = _pendingTime = null;
     _previousMagnitude = _pendingScore = _mean = _std = 0;
     _samples = 0;
@@ -75,6 +79,10 @@ class OxfordStepDetector {
   }
 
   void _process(int time, double magnitude, List<int> events) {
+    _rangeWindow.addLast(magnitude);
+    if (_rangeWindow.length > _rangeWindowSize) {
+      _rangeWindow.removeFirst();
+    }
     _rawWindow.addLast(magnitude);
     if (_rawWindow.length < 13) return;
     var weighted = 0.0;
@@ -118,7 +126,20 @@ class OxfordStepDetector {
     // losing a terminal peak and delaying a step indefinitely at rest.
     // Confirm the strongest candidate after its 200ms refractory interval
     // instead. This is an explicit live adaptation of its PostProcessStage.
+    var minMag = magnitude;
+    var maxMag = magnitude;
+    for (final v in _rangeWindow) {
+      if (v < minMag) minMag = v;
+      if (v > maxMag) maxMag = v;
+    }
+    final isDynamicMotion =
+        _rangeWindow.length >= 35 && (maxMag - minMag) >= _minDynamicRange;
+
     final pending = _pendingTime;
+    if (!isDynamicMotion) {
+      _pendingTime = null;
+      return;
+    }
     if (pending != null && peakTime - pending > _mergeUs) {
       events.add(pending);
       _pendingTime = null;

@@ -119,11 +119,11 @@ void main() {
         expect(find.text('30 ngày'), findsOneWidget);
 
         // Sections
-        expect(find.text('Ý NGHĨA & HIỆU QUẢ THỰC TẾ'), findsOneWidget);
-        expect(find.text('GÓI MỤC TIÊU ĐỀ XUẤT'), findsOneWidget);
+        expect(find.text('Ý nghĩa & hiệu quả thực tế'), findsOneWidget);
+        expect(find.text('Gói mục tiêu đề xuất'), findsOneWidget);
 
         // Sticky dock button
-        expect(find.text('KÍCH HOẠT MỤC TIÊU'), findsOneWidget);
+        expect(find.text('Kích hoạt mục tiêu'), findsOneWidget);
       },
     );
 
@@ -159,9 +159,9 @@ void main() {
       expect(find.text('30 days'), findsOneWidget);
 
       // Sections & CTA
-      expect(find.text('REAL-WORLD PERFORMANCE IMPACT'), findsOneWidget);
-      expect(find.text('RECOMMENDED GOAL PRESETS'), findsOneWidget);
-      expect(find.text('ACTIVATE GOAL'), findsOneWidget);
+      expect(find.text('Real-world performance impact'), findsOneWidget);
+      expect(find.text('Recommended goal presets'), findsOneWidget);
+      expect(find.text('Activate goal'), findsOneWidget);
     });
   });
 
@@ -232,7 +232,7 @@ void main() {
       // Check cadence selection state
       expect(find.text('Tháng'), findsOneWidget);
       expect(find.text('30 ngày'), findsOneWidget);
-      expect(find.text('MỤC TIÊU THÁNG'), findsOneWidget);
+      expect(find.text('Mục tiêu tháng'), findsOneWidget);
       expect(find.text('150'), findsWidgets);
       expect(find.textContaining('tháng'), findsWidgets);
     });
@@ -291,7 +291,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 150));
 
-      final ctaButton = find.text('KÍCH HOẠT MỤC TIÊU');
+      final ctaButton = find.text('Kích hoạt mục tiêu');
       expect(ctaButton, findsOneWidget);
 
       await tester.tap(ctaButton);
@@ -338,8 +338,8 @@ void main() {
         final deleteAction = find.bySemanticsLabel('Xóa mục tiêu');
         expect(deleteAction, findsOneWidget);
 
-        // CTA button text is 'LƯU MỤC TIÊU' when goal already exists
-        expect(find.text('LƯU MỤC TIÊU'), findsOneWidget);
+        // CTA button text is 'Lưu mục tiêu' when goal already exists
+        expect(find.text('Lưu mục tiêu'), findsOneWidget);
 
         // Tap delete icon to open confirmation dialog
         await tester.tap(deleteAction);
@@ -443,14 +443,14 @@ void main() {
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 150));
 
-        expect(find.text('NHẬP CHÍNH XÁC MỤC TIÊU'), findsOneWidget);
-        expect(find.text('ÁP DỤNG MỤC TIÊU'), findsOneWidget);
+        expect(find.text('Nhập chính xác mục tiêu'), findsOneWidget);
+        expect(find.text('Áp dụng mục tiêu'), findsOneWidget);
 
         // Enter 42 km
         await tester.enterText(find.byType(TextField), '42');
         await tester.pump();
 
-        await tester.tap(find.text('ÁP DỤNG MỤC TIÊU'));
+        await tester.tap(find.text('Áp dụng mục tiêu'));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 150));
 
@@ -493,7 +493,7 @@ void main() {
               expect(find.text('Calo'), findsOneWidget);
               expect(find.text('Tuần'), findsOneWidget);
               expect(find.text('Tháng'), findsOneWidget);
-              expect(find.text('KÍCH HOẠT MỤC TIÊU'), findsOneWidget);
+              expect(find.text('Kích hoạt mục tiêu'), findsOneWidget);
             } else {
               expect(find.text('Fitness Goals'), findsOneWidget);
               expect(find.text('Distance'), findsOneWidget);
@@ -501,7 +501,7 @@ void main() {
               expect(find.text('Calories'), findsOneWidget);
               expect(find.text('Weekly'), findsOneWidget);
               expect(find.text('Monthly'), findsOneWidget);
-              expect(find.text('ACTIVATE GOAL'), findsOneWidget);
+              expect(find.text('Activate goal'), findsOneWidget);
             }
           },
         );
@@ -595,7 +595,7 @@ void main() {
               await tester.pump(const Duration(milliseconds: 150));
 
               expect(find.text('60,000'), findsWidgets);
-              expect(find.text('KCAL'), findsWidgets);
+              expect(find.text('kcal'), findsWidgets);
               expect(tester.takeException(), isNull);
 
               // Also verify direct editor sheet and delete confirmation dialog fit cleanly
@@ -608,7 +608,7 @@ void main() {
 
               await tester.tap(
                 find.text(
-                  lang == AppLanguage.vi ? 'ÁP DỤNG MỤC TIÊU' : 'APPLY TARGET',
+                  lang == AppLanguage.vi ? 'Áp dụng mục tiêu' : 'Apply target',
                 ),
               );
               await tester.pump();
@@ -713,7 +713,7 @@ void main() {
                 equals(Colors.transparent),
               );
               expect(find.text('4'), findsWidgets);
-              expect(find.text(isVi ? 'BUỔI' : 'SESSIONS'), findsWidgets);
+              expect(find.text(isVi ? 'buổi' : 'sessions'), findsWidgets);
               expect(
                 find.text(isVi ? 'Buổi tập • tuần' : 'Sessions • wk'),
                 findsOneWidget,
@@ -752,7 +752,7 @@ void main() {
               );
               expect(find.text('15,000'), findsWidgets);
               expect(
-                find.text(isVi ? 'MỤC TIÊU THÁNG' : 'MONTHLY TARGET'),
+                find.text(isVi ? 'Mục tiêu tháng' : 'Monthly target'),
                 findsOneWidget,
               );
               expect(
@@ -762,7 +762,7 @@ void main() {
 
               // Persist and verify saved GoalType & GoalPeriod
               await tester.tap(
-                find.text(isVi ? 'KÍCH HOẠT MỤC TIÊU' : 'ACTIVATE GOAL'),
+                find.text(isVi ? 'Kích hoạt mục tiêu' : 'Activate goal'),
               );
               await tester.pump();
               await tester.pump(const Duration(milliseconds: 150));
@@ -823,7 +823,7 @@ void main() {
                 expect(tester.takeException(), isNull);
 
                 final targetHeaderFinder = find.text(
-                  isVi ? 'MỤC TIÊU THÁNG' : 'MONTHLY TARGET',
+                  isVi ? 'Mục tiêu tháng' : 'Monthly target',
                 );
                 final enterValueFinder = find.text(
                   isVi ? 'Nhập số' : 'Enter value',
@@ -864,7 +864,7 @@ void main() {
         expect(find.text('mi'), findsWidgets);
         expect(find.text('22'), findsWidgets);
 
-        await tester.tap(find.text('ACTIVATE GOAL'));
+        await tester.tap(find.text('Activate goal'));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 150));
 
@@ -916,7 +916,7 @@ void main() {
         // 50.0 km * 0.6213711922 = 31.068... -> '31.1'
         expect(find.text('31.1'), findsWidgets);
 
-        await tester.tap(find.text('UPDATE GOAL'));
+        await tester.tap(find.text('Update goal'));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 150));
 
@@ -964,7 +964,7 @@ void main() {
         expect(find.text('32.6'), findsWidgets);
         expect(find.text('MI'), findsWidgets);
 
-        await tester.tap(find.text('UPDATE GOAL'));
+        await tester.tap(find.text('Update goal'));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 150));
 
@@ -1049,7 +1049,7 @@ void main() {
         await tester.enterText(find.byType(TextField), '25,000');
         await tester.pump();
 
-        await tester.tap(find.text('ÁP DỤNG MỤC TIÊU'));
+        await tester.tap(find.text('Áp dụng mục tiêu'));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 350));
 
@@ -1106,7 +1106,7 @@ void main() {
 
           expect(tester.takeException(), isNull);
           expect(
-            tester.getSize(find.text('WEEKLY TARGET')).width,
+            tester.getSize(find.text('Weekly target')).width,
             greaterThan(0),
           );
           expect(

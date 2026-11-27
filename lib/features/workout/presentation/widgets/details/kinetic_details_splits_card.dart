@@ -63,7 +63,7 @@ class KineticDetailsSplitsCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    currentLang == AppLanguage.vi ? 'PHÂN TÁCH CỰ LY (SPLITS)' : 'SPLITS BREAKDOWN',
+                    currentLang == AppLanguage.vi ? 'Phân tách cự ly (Splits)' : 'Splits breakdown',
                     style: KineticTypography.unitLabel.copyWith(
                       color: colors.textPrimary,
                       letterSpacing: 1.1,

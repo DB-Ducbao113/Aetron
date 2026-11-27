@@ -111,7 +111,7 @@ class AetronConfirmDialog extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      title.toUpperCase(),
+                      title,
                       style: const TextStyle(
                         color: AetronColors.text,
                         fontSize: 16,
@@ -148,7 +148,7 @@ class AetronConfirmDialog extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: Text((cancelLabel ?? 'CANCEL').toUpperCase()),
+                      child: Text(cancelLabel ?? 'Cancel'),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -163,7 +163,7 @@ class AetronConfirmDialog extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: Text(confirmLabel.toUpperCase()),
+                      child: Text(confirmLabel),
                     ),
                   ),
                 ],

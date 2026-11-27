@@ -58,11 +58,11 @@ void main() {
       await tester.pumpWidget(buildTestApp(const LoginScreen()));
       await tester.pump();
 
-      expect(find.textContaining('Đăng Nhập'), findsWidgets);
+      expect(find.textContaining('Đăng nhập'), findsWidgets);
       expect(find.text('Quên mật khẩu?'), findsOneWidget);
       expect(find.text('Tiếp tục với Google'), findsOneWidget);
       expect(find.text('Tạo tài khoản'), findsOneWidget);
-      expect(find.text('TÊN ĐĂNG NHẬP'), findsOneWidget);
+      expect(find.text('Tên đăng nhập'), findsOneWidget);
       expect(find.text('Nhập tên đăng nhập'), findsOneWidget);
       expect(find.text('VI'), findsOneWidget);
       expect(find.text('EN'), findsOneWidget);
@@ -83,8 +83,8 @@ void main() {
         await tester.tap(find.text('EN'));
         await tester.pump();
 
-        expect(find.text('Sign In'), findsWidgets);
-        expect(find.text('USERNAME'), findsOneWidget);
+        expect(find.text('Sign in'), findsWidgets);
+        expect(find.text('Username'), findsOneWidget);
         expect(find.text('Enter your username'), findsOneWidget);
       },
     );
@@ -99,7 +99,7 @@ void main() {
       await tester.pumpWidget(buildTestApp(const LoginScreen()));
       await tester.pump();
 
-      final loginBtn = find.text('Đăng Nhập').last;
+      final loginBtn = find.text('Đăng nhập').last;
       await tester.tap(loginBtn);
       await tester.pumpAndSettle();
 
@@ -119,7 +119,7 @@ void main() {
       final textFields = find.byType(TextFormField);
       await tester.enterText(textFields.at(0), 'runner@gmail.com');
       await tester.enterText(textFields.at(1), 'Password123!');
-      await tester.tap(find.text('Đăng Nhập').last);
+      await tester.tap(find.text('Đăng nhập').last);
       await tester.pump();
 
       expect(
@@ -164,6 +164,27 @@ void main() {
       );
       expect(badgeContainerFinder, findsOneWidget);
     });
+
+    testWidgets(
+      'centers login form card vertically on standard mobile viewport (390x844)',
+      (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() => tester.view.resetPhysicalSize());
+
+        await tester.pumpWidget(buildTestApp(const LoginScreen()));
+        await tester.pump();
+
+        final dividerBottom = tester.getBottomLeft(find.byType(Divider).first).dy;
+        final cardRect = tester.getRect(find.byType(KineticCard).first);
+        final topGap = cardRect.top - dividerBottom;
+        final bottomGap = 844.0 - cardRect.bottom;
+
+        // Top and bottom gaps around the login card should be balanced (within 40px)
+        expect((topGap - bottomGap).abs(), lessThan(40.0));
+        expect(topGap, greaterThan(48.0));
+      },
+    );
 
     testWidgets(
       'LoginScreen renders without horizontal overflow at 360x640 and 320x568 with 1.3x textScaler in vi and en',

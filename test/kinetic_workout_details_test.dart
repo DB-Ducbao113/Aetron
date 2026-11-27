@@ -6,11 +6,8 @@ import 'package:fitness_exercise_application/features/workout/presentation/scree
 import 'package:fitness_exercise_application/features/workout/presentation/screens/details/workout_route_full_map_screen.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/details/kinetic_details_delete_dialog.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/details/kinetic_details_header.dart';
-import 'package:fitness_exercise_application/features/workout/presentation/widgets/details/kinetic_details_hero_distance.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/details/kinetic_details_route_card.dart';
-import 'package:fitness_exercise_application/features/workout/presentation/widgets/details/kinetic_details_secondary_card.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/details/kinetic_details_splits_card.dart';
-import 'package:fitness_exercise_application/features/workout/presentation/widgets/details/kinetic_details_telemetry_grid.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/details/kinetic_details_telemetry_list_card.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/details/kinetic_details_top_bar.dart';
 import 'package:fitness_exercise_application/features/workout/presentation/widgets/workout_route_recap_components.dart';
@@ -105,7 +102,9 @@ void main() {
   });
 
   group('KineticDetailsHeader Widget Tests', () {
-    testWidgets('renders verified sport header correctly', (tester) async {
+    testWidgets('renders clean sport header without validity pill clutter', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         buildTestable(
           KineticDetailsHeader(
@@ -116,13 +115,17 @@ void main() {
         ),
       );
 
-      expect(find.text('CHẠY BỘ'), findsOneWidget);
+      expect(find.text('Chạy bộ'), findsOneWidget);
       expect(find.text('Chủ Nhật, 15/10/2023'), findsOneWidget);
-      expect(find.text('HỢP LỆ'), findsOneWidget);
+      expect(find.text('Hợp lệ'), findsNothing);
+      expect(find.text('Cảnh báo'), findsNothing);
+      expect(find.text('Không hợp lệ'), findsNothing);
       expect(find.byIcon(Icons.directions_run_rounded), findsOneWidget);
     });
 
-    testWidgets('renders warning flag with reason banner', (tester) async {
+    testWidgets('hides internal flagged segment banners from user header', (
+      tester,
+    ) async {
       final flaggedWorkout = mockWorkoutSession.copyWith(
         gpsAnalysis: WorkoutGpsAnalysis(
           validityFlag: WorkoutValidityFlag.partial,
@@ -152,10 +155,11 @@ void main() {
         ),
       );
 
-      expect(find.text('CẢNH BÁO'), findsOneWidget);
+      expect(find.text('Chạy bộ'), findsOneWidget);
+      expect(find.text('Cảnh báo'), findsNothing);
       expect(
         find.text('Tốc độ bất thường tương tự phương tiện cơ giới'),
-        findsOneWidget,
+        findsNothing,
       );
     });
 
@@ -169,45 +173,11 @@ void main() {
         ),
       );
 
-      expect(find.text('CHẠY BỘ'), findsOneWidget);
-      expect(find.text('HỢP LỆ'), findsOneWidget);
+      expect(find.text('Chạy bộ'), findsOneWidget);
+      expect(find.text('Hợp lệ'), findsNothing);
       expect(find.byIcon(Icons.directions_run_rounded), findsOneWidget);
       expect(find.textContaining('Thứ'), findsNothing);
       expect(find.textContaining('Chủ Nhật'), findsNothing);
-    });
-  });
-
-  group('KineticDetailsHeroDistance Widget Tests', () {
-    testWidgets('renders metric distance and KM unit pill', (tester) async {
-      await tester.pumpWidget(
-        buildTestable(
-          KineticDetailsHeroDistance(
-            workout: mockWorkoutSession,
-            useMetricUnits: true,
-            currentLang: AppLanguage.vi,
-          ),
-        ),
-      );
-
-      expect(find.text('QUÃNG ĐƯỜNG ĐÃ LƯU'), findsOneWidget);
-      expect(find.text('10.50'), findsOneWidget);
-      expect(find.text('KM'), findsOneWidget);
-    });
-
-    testWidgets('converts to miles when useMetricUnits is false', (tester) async {
-      await tester.pumpWidget(
-        buildTestable(
-          KineticDetailsHeroDistance(
-            workout: mockWorkoutSession,
-            useMetricUnits: false,
-            currentLang: AppLanguage.en,
-          ),
-        ),
-      );
-
-      expect(find.text('RECORDED DISTANCE'), findsOneWidget);
-      expect(find.text('6.52'), findsOneWidget);
-      expect(find.text('MI'), findsOneWidget);
     });
   });
 
@@ -224,7 +194,11 @@ void main() {
       );
 
       expect(find.text('Không có dữ liệu bản đồ'), findsOneWidget);
-      expect(find.textContaining('chỉ số hiệu suất telemetry'), findsOneWidget);
+      expect(
+        find.text('Các chỉ số luyện tập của buổi này vẫn được lưu đầy đủ.'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('telemetry'), findsNothing);
     });
 
     testWidgets(
@@ -293,50 +267,6 @@ void main() {
     });
   });
 
-  group('KineticDetailsTelemetryGrid Widget Tests', () {
-    testWidgets('renders duration, avg pace, calories, and steps', (tester) async {
-      await tester.pumpWidget(
-        buildTestable(
-          KineticDetailsTelemetryGrid(
-            workout: mockWorkoutSession,
-            useMetricUnits: true,
-            currentLang: AppLanguage.vi,
-          ),
-        ),
-      );
-
-      expect(find.text('THỜI GIAN'), findsOneWidget);
-      expect(find.text('1h 0m'), findsOneWidget);
-      expect(find.text('PACE TB'), findsOneWidget);
-      expect(find.text('CALO'), findsOneWidget);
-      expect(find.text('680'), findsOneWidget);
-      expect(find.text('SỐ BƯỚC'), findsOneWidget);
-      expect(find.text('8.5k'), findsOneWidget);
-    });
-  });
-
-  group('KineticDetailsSecondaryCard Widget Tests', () {
-    testWidgets('renders moving time, rest time, avg speed, and environment', (tester) async {
-      await tester.pumpWidget(
-        buildTestable(
-          KineticDetailsSecondaryCard(
-            workout: mockWorkoutSession,
-            useMetricUnits: true,
-            currentLang: AppLanguage.vi,
-          ),
-        ),
-      );
-
-      expect(find.text('THÔNG SỐ BỔ SUNG'), findsOneWidget);
-      expect(find.text('Thời gian di chuyển'), findsOneWidget);
-      expect(find.text('Thời gian nghỉ'), findsOneWidget);
-      expect(find.text('Tốc độ trung bình'), findsOneWidget);
-      expect(find.text('10.5 km/h'), findsOneWidget);
-      expect(find.text('Môi trường'), findsOneWidget);
-      expect(find.text('Ngoài trời'), findsOneWidget);
-    });
-  });
-
   group('KineticDetailsSplitsCard Widget Tests', () {
     testWidgets('renders splits breakdown table and lap indicators', (tester) async {
       await tester.pumpWidget(
@@ -349,7 +279,7 @@ void main() {
         ),
       );
 
-      expect(find.text('PHÂN TÁCH CỰ LY (SPLITS)'), findsOneWidget);
+      expect(find.text('Phân tách cự ly (Splits)'), findsOneWidget);
       expect(find.text('KM 1'), findsOneWidget);
       expect(find.text('KM 2'), findsOneWidget);
       expect(find.text('2 KM'), findsOneWidget);
@@ -392,19 +322,22 @@ void main() {
         ),
       );
 
-      expect(find.text('THÔNG SỐ CHI TIẾT'), findsOneWidget);
+      expect(find.text('Thông số chi tiết'), findsOneWidget);
       expect(find.text('Quãng đường'), findsOneWidget);
       expect(find.text('10.50 km'), findsOneWidget);
       expect(find.text('Thời gian'), findsOneWidget);
       expect(find.text('1h 0m'), findsOneWidget);
-      expect(find.text('Pace TB'), findsOneWidget);
+      expect(find.text('Nhịp độ TB'), findsOneWidget);
       expect(find.text('Calo'), findsOneWidget);
       expect(find.text('680 kcal'), findsOneWidget);
       expect(find.text('Số bước'), findsOneWidget);
       expect(find.text('8,500 bước'), findsOneWidget);
+      expect(find.text('Nhịp bước'), findsOneWidget);
+      expect(find.text('150 spm'), findsOneWidget);
       expect(find.text('Thời gian di chuyển'), findsOneWidget);
       expect(find.text('Thời gian nghỉ'), findsOneWidget);
-      expect(find.text('Tốc độ trung bình'), findsOneWidget);
+      // Redundant average speed omitted for running (Pace is the primary metric)
+      expect(find.text('Tốc độ trung bình'), findsNothing);
 
       // Verify that Môi trường (Environment) is strictly omitted
       expect(find.text('Môi trường'), findsNothing);
@@ -430,6 +363,7 @@ void main() {
       );
 
       expect(find.text('Số bước'), findsNothing);
+      expect(find.text('Nhịp bước'), findsNothing);
       expect(find.text('Tốc độ TB'), findsOneWidget);
       expect(find.text('Môi trường'), findsNothing);
     });
@@ -471,19 +405,19 @@ void main() {
 
       expect(find.text('AETRON ARCHIVE'), findsNothing);
       expect(find.text('Chi tiết buổi tập'), findsOneWidget);
-      expect(find.text('CHẠY BỘ'), findsOneWidget);
+      expect(find.text('Chạy bộ'), findsOneWidget);
       // Header has no date label
       expect(find.textContaining('Chủ Nhật'), findsNothing);
       // Route card rendered below header (in empty route state)
       expect(find.text('Không có dữ liệu bản đồ'), findsOneWidget);
       // Combined telemetry list card rendered below route card
-      expect(find.text('THÔNG SỐ CHI TIẾT'), findsOneWidget);
+      expect(find.text('Thông số chi tiết'), findsOneWidget);
       expect(find.text('Quãng đường'), findsOneWidget);
       expect(find.text('10.50 km'), findsOneWidget);
-      expect(find.text('Pace TB'), findsOneWidget);
+      expect(find.text('Nhịp độ TB'), findsOneWidget);
       // Environment is NOT present
       expect(find.text('Môi trường'), findsNothing);
-      expect(find.text('PHÂN TÁCH CỰ LY (SPLITS)'), findsOneWidget);
+      expect(find.text('Phân tách cự ly (Splits)'), findsOneWidget);
     });
   });
 }

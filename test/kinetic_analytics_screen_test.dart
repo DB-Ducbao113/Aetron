@@ -83,7 +83,7 @@ void main() {
 
       expect(find.text('Phân tích'), findsOneWidget);
       expect(find.text('NHỊP ĐIỆU VẬN ĐỘNG'), findsNothing);
-      expect(find.text('HIỆU SUẤT'), findsOneWidget);
+      expect(find.text('Hiệu suất'), findsOneWidget);
       expect(find.text('Tuần này'), findsOneWidget);
       expect(find.text('Tháng này'), findsOneWidget);
       expect(find.text('Năm nay'), findsOneWidget);
@@ -145,7 +145,7 @@ void main() {
       expect(find.text('970'), findsOneWidget);
       // Sessions: 3
       expect(find.text('3'), findsOneWidget);
-      expect(find.text('BUỔI'), findsOneWidget);
+      expect(find.text('buổi'), findsOneWidget);
     });
   });
 
@@ -163,7 +163,7 @@ void main() {
           ),
         );
 
-        expect(find.text('CƠ CẤU MÔN TẬP'), findsOneWidget);
+        expect(find.text('Cơ cấu môn tập'), findsOneWidget);
         expect(find.text('Đạp xe'), findsOneWidget);
         expect(find.text('Chạy bộ'), findsOneWidget);
         expect(find.text('Đi bộ'), findsOneWidget);
@@ -185,7 +185,7 @@ void main() {
         ),
       );
 
-      expect(find.text('CHỈ DẪN HỒI PHỤC'), findsOneWidget);
+      expect(find.text('Chỉ dẫn hồi phục'), findsOneWidget);
       expect(find.text('Lên lịch đi bộ nhẹ'), findsOneWidget);
     });
 

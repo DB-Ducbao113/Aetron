@@ -84,8 +84,8 @@ class KineticBiometricsBento extends StatelessWidget {
             const SizedBox(height: KineticTokens.spaceSM),
             KineticButton(
               label: currentLang == AppLanguage.vi
-                  ? 'THIẾT LẬP CHỈ SỐ'
-                  : 'SET UP BIOMETRICS',
+                  ? 'Thiết lập chỉ số'
+                  : 'Set up biometrics',
               icon: Icons.add_rounded,
               isFullWidth: false,
               height: 40,
@@ -255,7 +255,7 @@ class _BiometricTile extends StatelessWidget {
               const SizedBox(width: 5),
               Flexible(
                 child: Text(
-                  label.toUpperCase(),
+                  label,
                   style: KineticTypography.unitLabel.copyWith(
                     color: colors.textMuted,
                   ),

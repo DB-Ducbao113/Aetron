@@ -282,24 +282,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                         // 2. Weekly Goal & 7-Day Activity Strip
                         SliverToBoxAdapter(
-                          child: KineticYourWeekBento(
-                            weeklyDistanceKm: weekly.weeklyDistanceKm,
-                            workoutCount: weekly.workoutCount,
-                            targetDistanceKm: hero.distanceTargetKm,
-                            targetWorkoutCount: 5,
-                            dateRangeText: _formatWeekDateRange(
-                              weekly.startOfWeek,
-                              isVi,
-                            ),
-                            isVi: isVi,
-                            useMetricUnits: useMetricUnits,
-                            activeWeekdays: weekly.activeWeekdays,
-                            goalCurrent: hero.current,
-                            goalTarget: hero.target,
-                            goalUnit: hero.unit,
-                            onSetGoalTap: () => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => const GoalScreen(),
+                          child: KineticEntrance(
+                            index: 0,
+                            child: KineticYourWeekBento(
+                              weeklyDistanceKm: weekly.weeklyDistanceKm,
+                              workoutCount: weekly.workoutCount,
+                              targetDistanceKm: hero.distanceTargetKm,
+                              targetWorkoutCount: 5,
+                              dateRangeText: _formatWeekDateRange(
+                                weekly.startOfWeek,
+                                isVi,
+                              ),
+                              isVi: isVi,
+                              useMetricUnits: useMetricUnits,
+                              activeWeekdays: weekly.activeWeekdays,
+                              goalCurrent: hero.current,
+                              goalTarget: hero.target,
+                              goalUnit: hero.unit,
+                              onSetGoalTap: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const GoalScreen(),
+                                ),
                               ),
                             ),
                           ),
@@ -311,83 +314,98 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                         // 3. Recent Activity Card (Route + 3 metrics)
                         SliverToBoxAdapter(
-                          child: workoutsAsync.when(
-                            loading: () => Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: AetronBottomBar.horizontalPagePaddingOf(context),
-                                vertical: KineticTokens.spaceXS,
-                              ),
-                              child: const AetronShimmer(
-                                child: AetronSkeletonCard(
-                                  padding: EdgeInsets.zero,
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      AetronSkeletonBox(
-                                        height: 150,
-                                        borderRadius: KineticTokens.radiusLG,
-                                      ),
-                                      Padding(
-                                        padding: EdgeInsets.all(
-                                          KineticTokens.spaceMD,
+                          child: KineticEntrance(
+                            index: 1,
+                            child: workoutsAsync.when(
+                              skipLoadingOnReload: true,
+                              skipLoadingOnRefresh: true,
+                              loading: () => Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: AetronBottomBar.horizontalPagePaddingOf(context),
+                                  vertical: KineticTokens.spaceXS,
+                                ),
+                                child: const AetronShimmer(
+                                  child: AetronSkeletonCard(
+                                    padding: EdgeInsets.zero,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        AetronSkeletonBox(
+                                          height: 150,
+                                          borderRadius: KineticTokens.radiusLG,
                                         ),
-                                        child: AetronSkeletonBox(
-                                          height: 44,
-                                          borderRadius: KineticTokens.radiusMD,
+                                        Padding(
+                                          padding: EdgeInsets.all(
+                                            KineticTokens.spaceMD,
+                                          ),
+                                          child: AetronSkeletonBox(
+                                            height: 44,
+                                            borderRadius: KineticTokens.radiusMD,
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                            error: (err, _) => Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: AetronBottomBar.horizontalPagePaddingOf(context),
-                                vertical: KineticTokens.spaceXS,
-                              ),
-                              child: ErrorState(
-                                title: isVi
-                                    ? 'Không thể tải dữ liệu'
-                                    : 'Unable to load data',
-                                message: isVi
-                                    ? 'Đã xảy ra lỗi khi đồng bộ buổi tập gần đây.'
-                                    : 'An error occurred while syncing recent workouts.',
-                                onRetry: () => ref
-                                    .read(workoutListProvider.notifier)
-                                    .refresh(),
-                              ),
-                            ),
-                            data: (workouts) => KineticRecentActivityCard(
-                              workouts: workouts,
-                              useMetricUnits: useMetricUnits,
-                              isVi: isVi,
-                              showMapTiles: widget.showMapTiles,
-                              onSeeAllTap: () {
-                                HapticFeedback.selectionClick();
-                                ref
-                                        .read(
-                                          mainTabControllerProvider.notifier,
-                                        )
-                                        .state =
-                                    2;
-                              },
-                              onWorkoutTap: (id) => Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      WorkoutDetailsScreen(workoutId: id),
+                              error: (err, _) => Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: AetronBottomBar.horizontalPagePaddingOf(context),
+                                  vertical: KineticTokens.spaceXS,
+                                ),
+                                child: ErrorState(
+                                  title: isVi
+                                      ? 'Không thể tải dữ liệu'
+                                      : 'Unable to load data',
+                                  message: isVi
+                                      ? 'Đã xảy ra lỗi khi đồng bộ buổi tập gần đây.'
+                                      : 'An error occurred while syncing recent workouts.',
+                                  onRetry: () => ref
+                                      .read(workoutListProvider.notifier)
+                                      .refresh(),
                                 ),
                               ),
-                              onStartFirstWorkoutTap: () {
-                                HapticFeedback.selectionClick();
-                                ref
-                                        .read(
-                                          mainTabControllerProvider.notifier,
-                                        )
-                                        .state =
-                                    1;
-                              },
+                              data: (workouts) => KineticRecentActivityCard(
+                                workouts: workouts,
+                                useMetricUnits: useMetricUnits,
+                                isVi: isVi,
+                                showMapTiles: widget.showMapTiles,
+                                onSeeAllTap: () {
+                                  HapticFeedback.selectionClick();
+                                  ref
+                                          .read(
+                                            mainTabControllerProvider.notifier,
+                                          )
+                                          .state =
+                                      2;
+                                },
+                                onWorkoutTap: (id) {
+                                  final selectedWorkout = workouts
+                                      .cast<WorkoutSession?>()
+                                      .firstWhere(
+                                        (w) => w?.id == id,
+                                        orElse: () => null,
+                                      );
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => WorkoutDetailsScreen(
+                                        workoutId: id,
+                                        initialWorkout: selectedWorkout,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                onStartFirstWorkoutTap: () {
+                                  HapticFeedback.selectionClick();
+                                  ref
+                                          .read(
+                                            mainTabControllerProvider.notifier,
+                                          )
+                                          .state =
+                                      1;
+                                },
+                              ),
                             ),
                           ),
                         ),
@@ -398,7 +416,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                         // 4. Training Plans Horizontal Strip
                         SliverToBoxAdapter(
-                          child: KineticExploreRoutes(isVi: isVi),
+                          child: KineticEntrance(
+                            index: 2,
+                            child: KineticExploreRoutes(isVi: isVi),
+                          ),
                         ),
 
                         SliverToBoxAdapter(

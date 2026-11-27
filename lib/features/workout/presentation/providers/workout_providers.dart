@@ -48,33 +48,39 @@ class WorkoutList extends _$WorkoutList {
 
     final repository = ref.read(workoutRepositoryProvider);
 
-    // 1. First sync any pending offline sessions to Cloud
+    // 1. Immediately load local cache so UI renders in 0ms without waiting for network
+    final localSessions = await repository.getSessionsLocal(user);
+    final initialSessions = _mergePendingLocalSessions(
+      await _includePersistedPending(repository, user, localSessions),
+      userId: user,
+    );
+
+    // 2. Trigger non-blocking background sync with Supabase Cloud
+    unawaited(_backgroundSyncAndFetch(repository, user));
+
+    return initialSessions;
+  }
+
+  Future<void> _backgroundSyncAndFetch(
+    WorkoutRepository repository,
+    String user,
+  ) async {
     try {
       await repository.syncPendingData();
-    } catch (e) {
-      debugPrint('[WorkoutList] syncPendingData error: $e');
-    }
-
-    // 2. Fetch remote sessions from Cloud so all devices (Web, iOS, Mac)
-    // stay in perfect real-time sync.
-    try {
       final remoteSessions = await repository.fetchSessionsRemote(user);
       if (!kIsWeb) {
         await repository.replaceLocalCache(user, remoteSessions);
       }
-      return _mergePendingLocalSessions(
+      final updated = _mergePendingLocalSessions(
         await _includePersistedPending(repository, user, remoteSessions),
         userId: user,
       );
+      if (!_disposed) {
+        state = AsyncData(updated);
+      }
     } catch (e) {
-      debugPrint('[WorkoutList] Remote fetch fallback to local: $e');
+      debugPrint('[WorkoutList] Background sync notice: $e');
     }
-
-    // 3. Fallback to local cache if offline or remote fetch failed
-    return _mergePendingLocalSessions(
-      await repository.getSessionsLocal(user),
-      userId: user,
-    );
   }
 
   Future<void> _syncAfterReconnect() async {
@@ -291,45 +297,40 @@ class WorkoutList extends _$WorkoutList {
     return merged;
   }
 
-  /// Refresh workout list
+  /// Refresh workout list without blanking existing state
   Future<void> refresh() async {
-    state = AsyncLoading<List<WorkoutSession>>().copyWithPrevious(state);
-    state = await AsyncValue.guard(() async {
-      if (kDebugBypassAuth) {
-        return _generateDebugWorkouts();
+    final user = ref.read(currentUserIdProvider);
+    if (user == null) return;
+    if (kDebugBypassAuth) {
+      state = AsyncData(_generateDebugWorkouts());
+      return;
+    }
+
+    final repository = ref.read(workoutRepositoryProvider);
+
+    // Keep existing data visible while fetching updates in background
+    try {
+      await repository.syncPendingData();
+      final remoteSessions = await repository.fetchSessionsRemote(user);
+      if (!kIsWeb) {
+        await repository.replaceLocalCache(user, remoteSessions);
       }
-      final user = ref.read(currentUserIdProvider);
-      if (user == null) return const [];
-
-      final repository = ref.read(workoutRepositoryProvider);
-
-      // 1. Sync pending offline sessions first
-      try {
-        await repository.syncPendingData();
-      } catch (e) {
-        debugPrint('[WorkoutList.refresh] syncPendingData error: $e');
-      }
-
-      // 2. Fetch remote sessions
-      try {
-        final remoteSessions = await repository.fetchSessionsRemote(user);
-        if (!kIsWeb) {
-          await repository.replaceLocalCache(user, remoteSessions);
-        }
-        return _mergePendingLocalSessions(
-          await _includePersistedPending(repository, user, remoteSessions),
-          userId: user,
-        );
-      } catch (e) {
-        debugPrint('[WorkoutList.refresh] Remote fetch error, using local: $e');
-      }
-
-      // 3. Fallback to local cache
-      return _mergePendingLocalSessions(
-        await repository.getSessionsLocal(user),
+      final updated = _mergePendingLocalSessions(
+        await _includePersistedPending(repository, user, remoteSessions),
         userId: user,
       );
-    });
+      if (!_disposed) {
+        state = AsyncData(updated);
+      }
+    } catch (e) {
+      debugPrint('[WorkoutList.refresh] Remote fetch error, maintaining local: $e');
+      final local = await repository.getSessionsLocal(user);
+      if (!_disposed) {
+        state = AsyncData(
+          _mergePendingLocalSessions(local, userId: user),
+        );
+      }
+    }
   }
 
   /// Delete a workout
@@ -437,19 +438,23 @@ class ActiveWorkout extends _$ActiveWorkout {
 /// Single Workout Provider
 @riverpod
 Future<WorkoutSession?> workout(WorkoutRef ref, String id) async {
-  if (kDebugBypassAuth) {
-    final debugList = ref.watch(workoutListProvider).valueOrNull;
-    if (debugList != null) {
-      for (final s in debugList) {
-        if (s.id == id) return s;
+  final user = ref.watch(currentUserIdProvider);
+  if (user == null && !kDebugBypassAuth) return null;
+
+  // 1. Instant in-memory cache hit from loaded workout list (0ms, avoids skeleton flash)
+  final inMemoryList = ref.watch(workoutListProvider).valueOrNull;
+  if (inMemoryList != null) {
+    for (final s in inMemoryList) {
+      if (s.id == id && (kDebugBypassAuth || s.userId == user)) {
+        return s;
       }
     }
   }
-  final user = ref.watch(currentUserIdProvider);
-  if (user == null) return null;
+
+  // 2. Fall back to local DB/repository if not in memory list
   final repository = ref.watch(workoutRepositoryProvider);
   final session = await repository.getSessionById(id);
-  return session?.userId == user ? session : null;
+  return (kDebugBypassAuth || session?.userId == user) ? session : null;
 }
 
 class WorkoutRoutePresentation {
@@ -466,6 +471,45 @@ class WorkoutRoutePresentation {
     required this.matchStatus,
     this.matchConfidence,
   });
+
+  /// Decodes route presentation synchronously directly from an in-memory WorkoutSession.
+  static WorkoutRoutePresentation fromWorkout(WorkoutSession workout) {
+    final matchedSegments = _decodeRouteSegments(workout.matchedRouteJson);
+    if (matchedSegments.isNotEmpty &&
+        workout.routeMatchStatus != 'match_failed_fallback_filtered' &&
+        workout.routeMatchStatus != 'not_requested') {
+      return WorkoutRoutePresentation(
+        routePoints: matchedSegments.expand((segment) => segment).toList(),
+        routeSegments: matchedSegments,
+        source: workout.routeMatchStatus.startsWith('reconstructed_')
+            ? 'reconstructed'
+            : 'matched',
+        matchStatus: workout.routeMatchStatus,
+        matchConfidence: workout.routeMatchConfidence,
+      );
+    }
+
+    final filteredSegments = _decodeRouteSegments(
+      workout.filteredRouteJson,
+    );
+    if (filteredSegments.isNotEmpty) {
+      return WorkoutRoutePresentation(
+        routePoints: filteredSegments.expand((segment) => segment).toList(),
+        routeSegments: filteredSegments,
+        source: 'filtered',
+        matchStatus: workout.routeMatchStatus,
+        matchConfidence: workout.routeMatchConfidence,
+      );
+    }
+
+    return WorkoutRoutePresentation(
+      routePoints: const [],
+      routeSegments: const [],
+      source: 'none',
+      matchStatus: workout.routeMatchStatus,
+      matchConfidence: workout.routeMatchConfidence,
+    );
+  }
 }
 
 final workoutRoutePresentationProvider =
@@ -483,46 +527,12 @@ final workoutRoutePresentationProvider =
         );
       }
 
-      {
-        final matchedSegments = _decodeRouteSegments(workout.matchedRouteJson);
-        if (matchedSegments.isNotEmpty &&
-            workout.routeMatchStatus != 'match_failed_fallback_filtered' &&
-            workout.routeMatchStatus != 'not_requested') {
-          return WorkoutRoutePresentation(
-            routePoints: matchedSegments.expand((segment) => segment).toList(),
-            routeSegments: matchedSegments,
-            source: workout.routeMatchStatus.startsWith('reconstructed_')
-                ? 'reconstructed'
-                : 'matched',
-            matchStatus: workout.routeMatchStatus,
-            matchConfidence: workout.routeMatchConfidence,
-          );
-        }
-
-        final filteredSegments = _decodeRouteSegments(
-          workout.filteredRouteJson,
-        );
-        if (filteredSegments.isNotEmpty) {
-          return WorkoutRoutePresentation(
-            routePoints: filteredSegments.expand((segment) => segment).toList(),
-            routeSegments: filteredSegments,
-            source: 'filtered',
-            matchStatus: workout.routeMatchStatus,
-            matchConfidence: workout.routeMatchConfidence,
-          );
-        }
-        if (ScientificResultMetadata.hasFinalServerVerdict(
-          workout.routeMatchMetricsJson,
-        )) {
-          // An explicit empty server route is not permission to display the
-          // rejected raw fixes or a stale reconstructed route.
-          return WorkoutRoutePresentation(
-            routePoints: const [],
-            routeSegments: const [],
-            source: 'filtered',
-            matchStatus: workout.routeMatchStatus,
-          );
-        }
+      final fromSession = WorkoutRoutePresentation.fromWorkout(workout);
+      if (fromSession.routePoints.isNotEmpty ||
+          ScientificResultMetadata.hasFinalServerVerdict(
+            workout.routeMatchMetricsJson,
+          )) {
+        return fromSession;
       }
 
       final points = (await LocalDB.getPointsForSession(id))

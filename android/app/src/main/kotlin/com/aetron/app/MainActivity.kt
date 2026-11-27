@@ -7,6 +7,7 @@ import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -14,11 +15,13 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.location.GnssStatus
 import android.location.LocationManager
+import android.net.Uri
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import android.provider.Settings
 import androidx.annotation.NonNull
 import androidx.core.content.ContextCompat
 import io.flutter.embedding.android.FlutterActivity
@@ -32,6 +35,7 @@ class MainActivity : FlutterActivity() {
     private val gnssStatusChannel = "com.aetron.app/gnss_status"
     private val lightSensorChannel = "com.aetron.app/light_sensor"
     private val sensorCheckChannel = "com.aetron.app/sensors_check"
+    private val notificationChannel = "com.aetron.app/notifications"
 
     private var locationManager: LocationManager? = null
     private var sensorManager: SensorManager? = null
@@ -441,6 +445,41 @@ class MainActivity : FlutterActivity() {
                     lightEventListener = null
                 }
             })
+        // 4. MethodChannel for OS Notification Settings deep-linking
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, notificationChannel)
+            .setMethodCallHandler { call: MethodCall, result: MethodChannel.Result ->
+                when (call.method) {
+                    "openNotificationSettings" -> {
+                        try {
+                            val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                                    putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                                }
+                            } else {
+                                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                    data = Uri.fromParts("package", packageName, null)
+                                }
+                            }
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            startActivity(intent)
+                            result.success(true)
+                        } catch (_: Exception) {
+                            try {
+                                val fallback = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                    data = Uri.fromParts("package", packageName, null)
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                startActivity(fallback)
+                                result.success(true)
+                            } catch (_: Exception) {
+                                result.success(false)
+                            }
+                        }
+                    }
+                    "consumePendingOpenNotificationSettings" -> result.success(false)
+                    else -> result.notImplemented()
+                }
+            }
     }
 
     override fun onDestroy() {

@@ -7,6 +7,7 @@ const Distance _distance = Distance();
 List<LatLng> sanitizeRouteForDisplay(
   List<LatLng> points, {
   required String activityType,
+  bool applyCurveSmoothing = true,
 }) {
   if (points.length < 3) return List<LatLng>.from(points);
 
@@ -22,12 +23,16 @@ List<LatLng> sanitizeRouteForDisplay(
     toleranceMeters: _simplifyToleranceMeters(normalized),
   );
   cleaned = _centeredBearingAwareSmooth(cleaned, normalized);
+  if (applyCurveSmoothing) {
+    cleaned = smoothCurveForDisplay(cleaned, iterations: 2);
+  }
   return cleaned;
 }
 
 List<LatLng> refineRouteForSavedDisplay(
   List<LatLng> points, {
   required String activityType,
+  bool applyCurveSmoothing = true,
 }) {
   if (points.length < 3) return List<LatLng>.from(points);
 
@@ -44,7 +49,90 @@ List<LatLng> refineRouteForSavedDisplay(
   );
   cleaned = _centeredBearingAwareSmooth(cleaned, normalized);
   cleaned = _corridorTighten(cleaned, normalized);
+  if (applyCurveSmoothing) {
+    cleaned = smoothCurveForDisplay(cleaned, iterations: 2);
+  }
   return cleaned;
+}
+
+/// Display-only helper that merges short GPS-hiccup segment breaks (e.g. indoor
+/// roof or 5–15s signal dropouts within [maxSeamlessGapMeters]) into continuous
+/// visual polylines so routes don't appear fragmented with empty holes.
+///
+/// Larger breaks (> [maxSeamlessGapMeters], such as tunnels or pause relocations)
+/// stay split so the renderer can draw an explicit dashed bridge instead of a
+/// solid measured track. Never mutates persisted GPS data or distance metrics.
+List<List<LatLng>> bridgeShortDisplayGaps(
+  List<List<LatLng>> segments, {
+  double maxSeamlessGapMeters = 45.0,
+}) {
+  final nonEmpty = segments.where((s) => s.isNotEmpty).toList(growable: false);
+  if (nonEmpty.isEmpty) return const <List<LatLng>>[];
+
+  final merged = <List<LatLng>>[List<LatLng>.from(nonEmpty.first)];
+  for (var i = 1; i < nonEmpty.length; i++) {
+    final next = nonEmpty[i];
+    final current = merged.last;
+    final gapMeters = _distance.distance(current.last, next.first);
+    if (gapMeters <= maxSeamlessGapMeters) {
+      if (gapMeters > 0.2) {
+        current.addAll(next);
+      } else if (next.length > 1) {
+        current.addAll(next.sublist(1));
+      }
+    } else {
+      merged.add(List<LatLng>.from(next));
+    }
+  }
+
+  return merged.where((s) => s.length >= 2).toList(growable: false);
+}
+
+/// Display-only Chaikin corner-cutting subdivision (quadratic B-spline).
+///
+/// Produces silky, organic Strava-like curves strictly inside the convex hull
+/// of the GPS polyline (zero overshoot or self-intersecting loops on U-turns),
+/// pins exact start/end anchors, and never alters persisted distance/metrics.
+List<LatLng> smoothCurveForDisplay(
+  List<LatLng> points, {
+  int iterations = 2,
+}) {
+  if (points.length < 3 || iterations <= 0) {
+    return List<LatLng>.from(points);
+  }
+
+  // Cap subdivision passes on very long traces to keep rendering 60fps.
+  final effectiveIterations = points.length > 600
+      ? 1
+      : iterations.clamp(1, 3);
+
+  var current = points;
+  for (var pass = 0; pass < effectiveIterations; pass++) {
+    if (current.length < 3 || current.length > 1800) break;
+    final next = <LatLng>[current.first];
+    for (var i = 0; i < current.length - 1; i++) {
+      final p0 = current[i];
+      final p1 = current[i + 1];
+      final q = LatLng(
+        p0.latitude * 0.75 + p1.latitude * 0.25,
+        p0.longitude * 0.75 + p1.longitude * 0.25,
+      );
+      final r = LatLng(
+        p0.latitude * 0.25 + p1.latitude * 0.75,
+        p0.longitude * 0.25 + p1.longitude * 0.75,
+      );
+      if (i > 0) {
+        next.add(q);
+      }
+      if (i < current.length - 2) {
+        next.add(r);
+      }
+    }
+    next.add(current.last);
+    current = next;
+  }
+
+  return current;
 }
 
 List<List<LatLng>> refineRouteSegmentsForSavedDisplay({

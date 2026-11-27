@@ -30,47 +30,47 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
     if (lang == AppLanguage.vi) {
       switch (activity.toLowerCase()) {
         case 'running':
-          return 'CHẠY BỘ';
+          return 'Chạy bộ';
         case 'walking':
-          return 'ĐI BỘ';
+          return 'Đi bộ';
         case 'cycling':
-          return 'ĐẠP XE';
+          return 'Đạp xe';
         case 'rest':
-          return 'NGHỈ NGƠI';
+          return 'Nghỉ ngơi';
         default:
-          return activity.toUpperCase();
+          return activity;
       }
     }
-    return activity.toUpperCase();
+    return activity.isEmpty ? '' : '${activity[0].toUpperCase()}${activity.substring(1)}';
   }
 
   String _formatIntensityLabel(String intensity, AppLanguage lang) {
     if (lang == AppLanguage.vi) {
       switch (intensity.toLowerCase()) {
         case 'recovery':
-          return 'PHỤC HỒI';
+          return 'Phục hồi';
         case 'aerobic':
-          return 'AEROBIC';
+          return 'Aerobic';
         case 'tempo':
-          return 'TEMPO';
+          return 'Tempo';
         case 'interval':
-          return 'INTERVAL';
+          return 'Interval';
         default:
-          return intensity.toUpperCase();
+          return intensity;
       }
     }
-    return intensity.toUpperCase();
+    return intensity.isEmpty ? '' : '${intensity[0].toUpperCase()}${intensity.substring(1)}';
   }
 
   String _formatSignalName(String signalKey, AppLanguage lang) {
     switch (signalKey) {
       case 'pace_fatigue_slope':
         return lang == AppLanguage.vi
-            ? 'Độ dốc suy giảm Pace (Fatigue Slope)'
+            ? 'Độ dốc suy giảm nhịp độ (Fatigue Slope)'
             : 'Pace Fatigue Slope';
       case 'pace_consistency_cv':
         return lang == AppLanguage.vi
-            ? 'Hệ số biến thiên nhịp (Consistency CV)'
+            ? 'Hệ số biến thiên nhịp độ (Consistency CV)'
             : 'Pace Consistency CV';
       case 'rest_ratio':
         return lang == AppLanguage.vi
@@ -82,7 +82,7 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
             : 'GPS Reliability Score';
       case 'baseline_pace_zscore':
         return lang == AppLanguage.vi
-            ? 'Lệch chuẩn Pace so với 30 ngày (Z-Score)'
+            ? 'Lệch chuẩn nhịp độ so với 30 ngày (Z-Score)'
             : '30-Day Pace Z-Score';
       case 'baseline_distance_zscore':
         return lang == AppLanguage.vi
@@ -140,7 +140,7 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          isVi ? 'PHÂN TÍCH TỪ AI COACH' : 'AI COACH ANALYSIS',
+                          isVi ? 'Phân tích từ AI Coach' : 'AI Coach analysis',
                           style: KineticTypography.headlineSmall.copyWith(
                             color: colors.textPrimary,
                             fontWeight: FontWeight.w900,
@@ -178,7 +178,7 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
                       ),
                     ),
                     child: Text(
-                      isLlm ? 'AI ACTIVE' : 'SMART OFFLINE',
+                      isLlm ? 'AI Active' : 'Smart Offline',
                       style: KineticTypography.unitLabel.copyWith(
                         color: accentColor,
                         fontSize: 11,
@@ -236,8 +236,8 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
                                 children: [
                                   Text(
                                     isVi
-                                        ? 'TỔNG QUAN HIỆU SUẤT'
-                                        : 'PERFORMANCE OVERVIEW',
+                                        ? 'Tổng quan hiệu suất'
+                                        : 'Performance overview',
                                     style: KineticTypography.unitLabel.copyWith(
                                       color: accentColor,
                                       fontSize: 11,
@@ -288,8 +288,8 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
                   if (insight.strengths.isNotEmpty) ...[
                     _DetailCardSection(
                       title: isVi
-                          ? 'ĐIỂM NỔI BẬT ĐẠT ĐƯỢC'
-                          : 'KEY STRENGTHS ACHIEVED',
+                          ? 'Điểm nổi bật đạt được'
+                          : 'Key strengths achieved',
                       icon: Icons.check_circle_rounded,
                       accentColor: colors.secondary,
                       items: insight.strengths,
@@ -301,8 +301,8 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
                   if (insight.watchouts.isNotEmpty) ...[
                     _DetailCardSection(
                       title: isVi
-                          ? 'LƯU Ý VỀ THỂ LỰC & CẢI THIỆN'
-                          : 'PHYSIOLOGICAL FOCUS AREAS',
+                          ? 'Lưu ý về thể lực & cải thiện'
+                          : 'Physiological focus areas',
                       icon: Icons.lightbulb_rounded,
                       accentColor: colors.tertiary,
                       items: insight.watchouts,
@@ -347,8 +347,8 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
                                 children: [
                                   Text(
                                     isVi
-                                        ? 'KẾ HOẠCH BUỔI TẬP KẾ TIẾP'
-                                        : 'NEXT SESSION BLUEPRINT',
+                                        ? 'Kế hoạch buổi tập kế tiếp'
+                                        : 'Next session blueprint',
                                     style: KineticTypography.unitLabel.copyWith(
                                       color: colors.primary,
                                       fontSize: 12,
@@ -378,7 +378,7 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
                           children: [
                             Expanded(
                               child: _MetricPillBox(
-                                label: isVi ? 'HOẠT ĐỘNG' : 'ACTIVITY',
+                                label: isVi ? 'Hoạt động' : 'Activity',
                                 value: _formatActivityLabel(
                                   insight
                                       .nextSessionSuggestion
@@ -396,7 +396,7 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
                             const SizedBox(width: 10),
                             Expanded(
                               child: _MetricPillBox(
-                                label: isVi ? 'THỜI LƯỢNG' : 'DURATION',
+                                label: isVi ? 'Thời lượng' : 'Duration',
                                 value:
                                     '${insight.nextSessionSuggestion.targetDurationMin} ${isVi ? 'phút' : 'min'}',
                                 icon: Icons.timer_rounded,
@@ -406,7 +406,7 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
                             const SizedBox(width: 10),
                             Expanded(
                               child: _MetricPillBox(
-                                label: isVi ? 'CƯỜNG ĐỘ' : 'INTENSITY',
+                                label: isVi ? 'Cường độ' : 'Intensity',
                                 value: _formatIntensityLabel(
                                   insight.nextSessionSuggestion.targetIntensity,
                                   currentLang,
@@ -491,8 +491,8 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
                               const SizedBox(width: 8),
                               Text(
                                 isVi
-                                    ? 'CƠ SỞ TÍN HIỆU TOÁN HỌC ĐÃ PHÂN TÍCH'
-                                    : 'TELEMETRY SIGNALS ANALYZED',
+                                    ? 'Cơ sở tín hiệu toán học đã phân tích'
+                                    : 'Telemetry signals analyzed',
                                 style: KineticTypography.unitLabel.copyWith(
                                   color: colors.primary,
                                   fontSize: 11,
@@ -540,7 +540,7 @@ class WorkoutAiInsightDetailScreen extends ConsumerWidget {
 
                   // 6. Done Button
                   KineticButton(
-                    label: isVi ? 'QUAY LẠI' : 'BACK TO WORKOUT',
+                    label: isVi ? 'Quay lại' : 'Back to workout',
                     icon: Icons.check_rounded,
                     onPressed: () => Navigator.of(context).pop(),
                   ),

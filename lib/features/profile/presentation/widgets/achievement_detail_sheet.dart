@@ -146,7 +146,7 @@ class AchievementDetailSheet extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            badge.category.label(currentLang).toUpperCase(),
+                            badge.category.label(currentLang),
                             style: KineticTypography.unitLabel.copyWith(
                               fontWeight: FontWeight.w800,
                               color: colors.secondary,
@@ -236,11 +236,11 @@ class AchievementDetailSheet extends StatelessWidget {
                           Text(
                             isUnlocked
                                 ? (currentLang == AppLanguage.vi
-                                      ? 'TRẠNG THÁI'
-                                      : 'STATUS')
+                                      ? 'Trạng thái'
+                                      : 'Status')
                                 : (currentLang == AppLanguage.vi
-                                      ? 'TIẾN ĐỘ THỰC HIỆN'
-                                      : 'PROGRESS'),
+                                      ? 'Tiến độ thực hiện'
+                                      : 'Progress'),
                             style: KineticTypography.unitLabel.copyWith(
                               color: isUnlocked
                                   ? colors.secondary
@@ -309,7 +309,7 @@ class AchievementDetailSheet extends StatelessWidget {
 
                 // Action Button
                 KineticButton(
-                  label: currentLang == AppLanguage.vi ? 'ĐÓNG' : 'CLOSE',
+                  label: currentLang == AppLanguage.vi ? 'Đóng' : 'Close',
                   icon: Icons.check_circle_outline_rounded,
                   onPressed: () => Navigator.of(context).pop(),
                 ),

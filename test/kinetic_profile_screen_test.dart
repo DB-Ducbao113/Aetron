@@ -113,7 +113,7 @@ void main() {
 
       expect(find.text('Duc Bao Runner'), findsOneWidget);
       expect(find.text('12'), findsOneWidget);
-      expect(find.text('NGÀY LIÊN TIẾP'), findsOneWidget);
+      expect(find.text('ngày liên tiếp'), findsOneWidget);
       // Verify VẬN ĐỘNG VIÊN badge is removed
       expect(find.text('VẬN ĐỘNG VIÊN'), findsNothing);
       expect(find.textContaining('05/2023'), findsOneWidget);
@@ -139,7 +139,7 @@ void main() {
         ),
       );
 
-      expect(find.text('DỮ LIỆU SINH TRẮC'), findsOneWidget);
+      expect(find.text('Dữ liệu sinh trắc'), findsOneWidget);
       expect(find.text('70.0 kg'), findsOneWidget);
       expect(find.text('1.75 m'), findsOneWidget);
       expect(find.text('28 • Nam'), findsOneWidget);
@@ -163,7 +163,7 @@ void main() {
         ),
       );
 
-      expect(find.text('BIOMETRIC DATA'), findsOneWidget);
+      expect(find.text('Biometric data'), findsOneWidget);
       expect(find.text('154.3 lb'), findsOneWidget);
       expect(find.text('5\'9"'), findsOneWidget);
       expect(find.text('28 • Male'), findsOneWidget);
@@ -226,7 +226,7 @@ void main() {
         ),
       );
 
-      expect(find.text('ẢNH ĐẠI DIỆN'), findsOneWidget);
+      expect(find.text('Ảnh đại diện'), findsOneWidget);
       expect(find.text('Chọn từ thư viện ảnh'), findsOneWidget);
       expect(find.text('Chụp ảnh mới'), findsOneWidget);
       expect(find.text('Xóa ảnh hiện tại'), findsNothing);

@@ -71,7 +71,16 @@ void main() {
       expect(rect.width, closeTo(rect.height, 0.5));
       expect(rect.width, greaterThan(0));
       expect(safeRect.contains(rect.topLeft), isTrue);
-      expect(rect.bottom, lessThan(tester.getTopLeft(find.text('Aetron')).dy));
+      expect(
+        rect.bottom,
+        lessThan(
+          tester
+              .getTopLeft(
+                find.byKey(const ValueKey('aetron-globe-brand-lockup')),
+              )
+              .dy,
+        ),
+      );
       expect(
         tester.getRect(find.textContaining('%')).bottom,
         lessThanOrEqualTo(safeRect.bottom),

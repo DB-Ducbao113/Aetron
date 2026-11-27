@@ -15,7 +15,6 @@ import 'package:fitness_exercise_application/shared/kinetic/kinetic.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class NotificationSettingsScreen extends ConsumerStatefulWidget {
@@ -33,7 +32,8 @@ class NotificationSettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _NotificationSettingsScreenState
-    extends ConsumerState<NotificationSettingsScreen> {
+    extends ConsumerState<NotificationSettingsScreen>
+    with WidgetsBindingObserver {
   bool _masterEnabled = true;
 
   // Group 1: Luyện tập & Chuỗi ngày (Daily Workout & Streak)
@@ -49,28 +49,51 @@ class _NotificationSettingsScreenState
   String _quietEnd = '07:00';
 
   bool _isOsAllowed = true;
-  bool _loading = true;
+  NotificationOsPermissionState _osPermissionState =
+      NotificationOsPermissionState.granted;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadSettings();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadSettings();
+    }
   }
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    var allowed = true;
+    var osState = NotificationOsPermissionState.granted;
     try {
-      allowed =
-          widget.osPermissionOverride ??
-          await NotificationService.instance.areNotificationsAllowed();
+      if (widget.osPermissionOverride != null) {
+        osState = widget.osPermissionOverride!
+            ? NotificationOsPermissionState.granted
+            : NotificationOsPermissionState.denied;
+      } else {
+        osState = await NotificationService.instance.getOsPermissionState();
+      }
     } catch (_) {
-      allowed = true;
+      osState = NotificationOsPermissionState.granted;
     }
+    final allowed = osState == NotificationOsPermissionState.granted;
 
     if (!mounted) return;
     setState(() {
-      _masterEnabled = prefs.getBool(kNotificationsPrefKey) ?? true;
+      _osPermissionState = osState;
+      _isOsAllowed = allowed;
+      final userPref = prefs.getBool(kNotificationsPrefKey) ?? true;
+      _masterEnabled = allowed && userPref;
 
       // Group 1: Tập luyện & Chuỗi ngày
       final workout = prefs.getBool(kWorkoutRemindersPrefKey) ?? true;
@@ -89,18 +112,56 @@ class _NotificationSettingsScreenState
       _quietHours = prefs.getBool(kQuietHoursPrefKey) ?? true;
       _quietStart = prefs.getString(kQuietHoursStartPrefKey) ?? '22:00';
       _quietEnd = prefs.getString(kQuietHoursEndPrefKey) ?? '07:00';
-
-      _isOsAllowed = allowed;
-      _loading = false;
     });
   }
 
+  Future<void> _openSystemNotificationSettings() async {
+    await NotificationService.instance.openNotificationSettings();
+  }
+
   Future<void> _updateMaster(bool val) async {
-    setState(() => _masterEnabled = val);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(kNotificationsPrefKey, val);
-    if (!mounted) return;
-    _triggerScheduler();
+    if (val) {
+      bool allowed = _isOsAllowed;
+      final isTestBlocked =
+          NotificationService.instance.shouldBypassOsBridgeInTest;
+      if (!allowed) {
+        if (isTestBlocked) {
+          allowed = widget.osPermissionOverride ?? true;
+        } else if (_osPermissionState == NotificationOsPermissionState.denied) {
+          await _openSystemNotificationSettings();
+          return;
+        } else {
+          allowed = await NotificationService.instance.requestPermissions();
+          if (!allowed) {
+            allowed =
+                await NotificationService.instance.areNotificationsAllowed();
+          }
+        }
+      }
+
+      if (!allowed) {
+        if (!isTestBlocked) {
+          await _openSystemNotificationSettings();
+        }
+        return;
+      }
+
+      setState(() {
+        _osPermissionState = NotificationOsPermissionState.granted;
+        _isOsAllowed = true;
+        _masterEnabled = true;
+      });
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(kNotificationsPrefKey, true);
+      if (!mounted) return;
+      _triggerScheduler();
+    } else {
+      setState(() => _masterEnabled = false);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(kNotificationsPrefKey, false);
+      if (!mounted) return;
+      _triggerScheduler();
+    }
   }
 
   Future<void> _toggleWorkoutAndStreak(bool val) async {
@@ -228,13 +289,7 @@ class _NotificationSettingsScreenState
             ),
 
             Expanded(
-              child: _loading
-                  ? Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(colors.primary),
-                      ),
-                    )
-                  : SingleChildScrollView(
+              child: SingleChildScrollView(
                       padding: EdgeInsets.fromLTRB(
                         hPad,
                         KineticTokens.spaceXS,
@@ -245,25 +300,44 @@ class _NotificationSettingsScreenState
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // OS Permission Notice (if OS disabled)
+                          // OS Permission Notice (if OS disabled or not yet determined)
                           if (!_isOsAllowed) ...[
                             KineticCard(
-                              borderColor: colors.error,
+                              borderColor:
+                                  _osPermissionState ==
+                                      NotificationOsPermissionState.denied
+                                  ? colors.error
+                                  : colors.primary,
                               child: Row(
                                 children: [
                                   Container(
                                     width: 36,
                                     height: 36,
                                     decoration: BoxDecoration(
-                                      color: colors.error.withValues(alpha: 0.12),
+                                      color:
+                                          (_osPermissionState ==
+                                                      NotificationOsPermissionState
+                                                          .denied
+                                                  ? colors.error
+                                                  : colors.primary)
+                                              .withValues(alpha: 0.12),
                                       borderRadius: BorderRadius.circular(
                                         KineticTokens.radiusMD,
                                       ),
                                     ),
                                     alignment: Alignment.center,
                                     child: Icon(
-                                      Icons.notifications_off_rounded,
-                                      color: colors.error,
+                                      _osPermissionState ==
+                                              NotificationOsPermissionState
+                                                  .denied
+                                          ? Icons.notifications_off_rounded
+                                          : Icons.notifications_none_rounded,
+                                      color:
+                                          _osPermissionState ==
+                                              NotificationOsPermissionState
+                                                  .denied
+                                          ? colors.error
+                                          : colors.primary,
                                       size: 20,
                                     ),
                                   ),
@@ -273,9 +347,15 @@ class _NotificationSettingsScreenState
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          isVi
-                                              ? 'Thông báo bị tắt trong hệ thống'
-                                              : 'Notifications disabled in OS Settings',
+                                          _osPermissionState ==
+                                                  NotificationOsPermissionState
+                                                      .denied
+                                              ? (isVi
+                                                    ? 'Thông báo bị tắt trong hệ thống'
+                                                    : 'Notifications disabled in OS Settings')
+                                              : (isVi
+                                                    ? 'Chưa cấp quyền thông báo trên thiết bị'
+                                                    : 'System notification permission required'),
                                           style: KineticTypography.bodyMedium.copyWith(
                                             color: colors.textPrimary,
                                             fontWeight: FontWeight.w700,
@@ -295,7 +375,11 @@ class _NotificationSettingsScreenState
                                   ),
                                   const SizedBox(width: 4),
                                   TextButton(
-                                    onPressed: () => openAppSettings(),
+                                    onPressed:
+                                        _osPermissionState ==
+                                            NotificationOsPermissionState.denied
+                                        ? _openSystemNotificationSettings
+                                        : () => _updateMaster(true),
                                     style: TextButton.styleFrom(
                                       foregroundColor: colors.primary,
                                       minimumSize: const Size(48, 36),
@@ -306,7 +390,11 @@ class _NotificationSettingsScreenState
                                           MaterialTapTargetSize.shrinkWrap,
                                     ),
                                     child: Text(
-                                      isVi ? 'MỞ' : 'OPEN',
+                                      _osPermissionState ==
+                                              NotificationOsPermissionState
+                                                  .denied
+                                          ? (isVi ? 'Mở' : 'Open')
+                                          : (isVi ? 'Bật' : 'Enable'),
                                       style: KineticTypography.unitLabel.copyWith(
                                         color: colors.primary,
                                         fontWeight: FontWeight.bold,
@@ -323,6 +411,7 @@ class _NotificationSettingsScreenState
                           KineticCard(
                             useLiquidGlass: true,
                             borderRadius: 21,
+                            onTap: () => _updateMaster(!_masterEnabled),
                             padding: const EdgeInsets.symmetric(
                               horizontal: KineticTokens.spaceMD,
                               vertical: 14,
@@ -487,7 +576,7 @@ class _NotificationSettingsScreenState
                           IgnorePointer(
                             ignoring: !_masterEnabled,
                             child: KineticSettingsSectionGroup(
-                              title: isVi ? 'Khung giờ yên tĩnh' : 'Quiet Hours',
+                              title: isVi ? 'Khung giờ yên tĩnh' : 'Quiet hours',
                               children: [
                                 KineticSettingsTile(
                                   icon: Icons.nights_stay_rounded,
@@ -528,6 +617,77 @@ class _NotificationSettingsScreenState
                                       (val) => _updateQuietTime(end: val),
                                     ),
                                   ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: KineticTokens.spaceLG),
+
+                          // 4. Direct Link to Device OS Notification Settings
+                          KineticCard(
+                            useLiquidGlass: true,
+                            borderRadius: 21,
+                            onTap: _openSystemNotificationSettings,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: KineticTokens.spaceMD,
+                              vertical: 14,
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 38,
+                                  height: 38,
+                                  decoration: BoxDecoration(
+                                    color: isLight
+                                        ? colors.surface1
+                                        : colors.primaryTint,
+                                    borderRadius: BorderRadius.circular(
+                                      KineticTokens.radiusMD,
+                                    ),
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Icon(
+                                    Icons.tune_rounded,
+                                    size: 20,
+                                    color: colors.primary,
+                                  ),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        isVi
+                                            ? 'Cài đặt thông báo hệ thống'
+                                            : 'System Notification Settings',
+                                        style: KineticTypography.headlineSmall
+                                            .copyWith(
+                                              color: colors.textPrimary,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        isVi
+                                            ? 'Quản lý biểu ngữ, âm thanh & quyền trên điện thoại'
+                                            : 'Manage banners, sounds & device OS permissions',
+                                        style: KineticTypography.bodySmall
+                                            .copyWith(
+                                              color: colors.textSecondary,
+                                              fontSize: 12,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Icon(
+                                  Icons.open_in_new_rounded,
+                                  size: 18,
+                                  color: colors.primary,
+                                ),
                               ],
                             ),
                           ),

@@ -32,5 +32,13 @@ with (qa / "start.log").open("w") as log:
         "studio,edge-runtime,realtime,logflare,vector,mailpit,postgres-meta,supavisor,imgproxy"],
         stdout=log, stderr=log)
 if result.returncode != 0:
-    raise SystemExit(f"Local QA startup failed (exit {result.returncode}); see private start.log")
+    lines = (qa / "start.log").read_text(errors="replace").splitlines()
+    safe = [
+        line for line in lines
+        if not re.search(r"(key|secret|password|token|jwt|bearer|eyJ[A-Za-z0-9_-]{8,})", line, re.I)
+    ]
+    tail = "\n".join(safe[-80:])
+    raise SystemExit(
+        f"Local QA startup failed (exit {result.returncode}). Redacted log tail:\n{tail}"
+    )
 print(f"Started isolated {project_id} at http://127.0.0.1:56321")
