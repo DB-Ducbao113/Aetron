@@ -2,7 +2,10 @@ import 'dart:collection';
 import 'dart:math' as math;
 
 /// Streaming adaptation of Salvi et al., EMBC 2018,
-/// doi:10.1109/EMBC.2018.8513319.
+/// doi:10.1109/EMBC.2018.8513319, paired with a causal Magnitude-Variance
+/// Zero-Velocity GLRT (Skog et al., IEEE TBME 2010, Eq. 13,
+/// doi:10.1109/TBME.2010.2060723; Brajdic & Harle, ACM UbiComp 2013,
+/// doi:10.1145/2493432.2493449) to reject stationary noise and single-tap spikes.
 /// Reference: Oxford-step-counter/Java-Step-Counter, MIT,
 /// dfd079a2678c8d29adbba08de840367f4d4fcd41.
 ///
@@ -13,12 +16,16 @@ class OxfordStepDetector {
   static const _periodUs = 10000;
   static const _mergeUs = 200000;
   static const _maxGapUs = 250000;
-  /// Minimum peak score floor (m/s²) and 1-second dynamic magnitude span (m/s²)
-  /// to reject accelerometer sensor noise, breathing, resting hand tremor, and
-  /// casual screen tilting while standing still.
+
+  /// Minimum peak score floor (m/s²) for Salvi et al. (2018) WPD prominence.
   static const _minPeakThreshold = 0.35;
-  static const _minDynamicRange = 1.40;
-  static const _rangeWindowSize = 100;
+
+  /// Skog et al. (2010, Eq. 13) Magnitude-Variance GLRT stationary threshold
+  /// T_MV = (1/W) * sum((||a_k|| - mean)^2) >= gamma_MV.
+  /// Brajdic & Harle (ACM UbiComp 2013, Section 4.1) identify walk-detection
+  /// accelerometer SD floor sigma >= 0.60 m/s² -> gamma_MV = 0.36 (m/s²)².
+  static const _zuptMvGamma = 0.36;
+  static const _zuptWindowSize = 100;
   static final _weights = List<double>.generate(
     13,
     (i) => math.exp(-0.5 * math.pow((i - 6) / (0.35 * 6), 2)),
@@ -27,7 +34,9 @@ class OxfordStepDetector {
 
   final _rawWindow = ListQueue<double>(13);
   final _smoothWindow = ListQueue<double>(35);
-  final _rangeWindow = ListQueue<double>(_rangeWindowSize);
+  final _zuptWindow = ListQueue<double>(_zuptWindowSize);
+  double _zuptSum = 0.0;
+  double _zuptSqSum = 0.0;
   int? _previousTime, _nextTime, _pendingTime;
   double _previousMagnitude = 0, _pendingScore = 0;
   double _mean = 0, _std = 0;
@@ -38,7 +47,9 @@ class OxfordStepDetector {
   void reset() {
     _rawWindow.clear();
     _smoothWindow.clear();
-    _rangeWindow.clear();
+    _zuptWindow.clear();
+    _zuptSum = 0.0;
+    _zuptSqSum = 0.0;
     _previousTime = _nextTime = _pendingTime = null;
     _previousMagnitude = _pendingScore = _mean = _std = 0;
     _samples = 0;
@@ -79,9 +90,13 @@ class OxfordStepDetector {
   }
 
   void _process(int time, double magnitude, List<int> events) {
-    _rangeWindow.addLast(magnitude);
-    if (_rangeWindow.length > _rangeWindowSize) {
-      _rangeWindow.removeFirst();
+    _zuptWindow.addLast(magnitude);
+    _zuptSum += magnitude;
+    _zuptSqSum += magnitude * magnitude;
+    if (_zuptWindow.length > _zuptWindowSize) {
+      final evicted = _zuptWindow.removeFirst();
+      _zuptSum -= evicted;
+      _zuptSqSum -= evicted * evicted;
     }
     _rawWindow.addLast(magnitude);
     if (_rawWindow.length < 13) return;
@@ -126,14 +141,16 @@ class OxfordStepDetector {
     // losing a terminal peak and delaying a step indefinitely at rest.
     // Confirm the strongest candidate after its 200ms refractory interval
     // instead. This is an explicit live adaptation of its PostProcessStage.
-    var minMag = magnitude;
-    var maxMag = magnitude;
-    for (final v in _rangeWindow) {
-      if (v < minMag) minMag = v;
-      if (v > maxMag) maxMag = v;
+    // Skog et al. (IEEE TBME 2010, Eq. 13) Magnitude-Variance GLRT:
+    // T_MV = E[||a||^2] - (E[||a||])^2 >= gamma_MV rejects stationary stance
+    // while remaining immune to isolated single-tap accelerometer impulses.
+    final zwLen = _zuptWindow.length;
+    double mvStat = 0.0;
+    if (zwLen >= 35) {
+      final zwMean = _zuptSum / zwLen;
+      mvStat = math.max(0.0, (_zuptSqSum / zwLen) - (zwMean * zwMean));
     }
-    final isDynamicMotion =
-        _rangeWindow.length >= 35 && (maxMag - minMag) >= _minDynamicRange;
+    final isDynamicMotion = zwLen >= 35 && mvStat >= _zuptMvGamma;
 
     final pending = _pendingTime;
     if (!isDynamicMotion) {

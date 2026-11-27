@@ -1,5 +1,11 @@
-/// Gates workout step accumulation against stationary noise, isolated hand/body
-/// movements, and outdoor stationary GNSS lock.
+/// Causal gait-bout confirmation and stationary cross-check gate grounded in:
+/// 1. Brajdic & Harle (ACM UbiComp 2013, doi:10.1145/2493432.2493449):
+///    distinguishing sustained rhythmic walking bouts (consecutive steps within
+///    physiological step frequency [0.65, 4.5] Hz) from isolated non-locomotor
+///    device manipulation impulses.
+/// 2. Skog et al. (IEEE TBME 2010, doi:10.1109/TBME.2010.2060723):
+///    zero-velocity stance rejection paired with outdoor GNSS spatial-lock
+///    corroboration (explicitly documented as a multi-sensor runtime safeguard).
 ///
 /// Guarantees:
 /// 1. Rejected stationary impulses never accumulate into workout steps and

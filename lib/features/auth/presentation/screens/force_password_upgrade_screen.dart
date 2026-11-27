@@ -111,9 +111,6 @@ class _ForcePasswordUpgradeScreenState
     final hPad = AetronBottomBar.horizontalPagePaddingOf(context);
     final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
 
-    final hPad = AetronBottomBar.horizontalPagePaddingOf(context);
-    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
-
     return Scaffold(
       backgroundColor: kinetic.background,
       body: KineticGlasslineScaffoldBody(

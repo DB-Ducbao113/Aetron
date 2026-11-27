@@ -663,24 +663,6 @@ class AppTranslations {
       AppLanguage.vi: 'Có buổi tập chưa lưu của tài khoản khác. Đăng nhập lại tài khoản đó để thử lưu.',
       AppLanguage.en: 'An unsaved workout belongs to another account. Sign back into that account to retry.',
     },
-    'recording_save_failed': {
-      AppLanguage.vi: 'Chưa lưu được buổi tập',
-      AppLanguage.en: 'Workout not saved',
-    },
-    'recording_save_retry_message': {
-      AppLanguage.vi:
-          'Buổi tập đã dừng nhưng chưa được xác nhận lưu. Dữ liệu cuối vẫn còn trong bộ nhớ ứng dụng. Hãy thử lưu lại và không đóng ứng dụng.',
-      AppLanguage.en:
-          'Recording has stopped, but the save has not been confirmed. The final workout is still in app memory. Retry and do not close the app.',
-    },
-    'recording_retry_save': {
-      AppLanguage.vi: 'Thử lưu lại',
-      AppLanguage.en: 'Retry save',
-    },
-    'recording_other_owner': {
-      AppLanguage.vi: 'Có buổi tập chưa lưu của tài khoản khác. Đăng nhập lại tài khoản đó để thử lưu.',
-      AppLanguage.en: 'An unsaved workout belongs to another account. Sign back into that account to retry.',
-    },
     'auto_pause': {
       AppLanguage.vi: 'Tự động tạm dừng',
       AppLanguage.en: 'Auto pause',

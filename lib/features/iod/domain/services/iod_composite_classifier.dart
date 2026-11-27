@@ -6,14 +6,23 @@ import '../models/iod_sensor_snapshot.dart';
 import 'deepiod_baseline_classifier.dart';
 import 'deepiod_framework_classifier.dart';
 import 'deepiod_neural_classifier.dart';
+import 'ios_multisensor_iod_classifier.dart';
 import 'seamless_transition_detector.dart';
 
 /// Supported operation modes for the Aetron Indoor-Outdoor Detection subsystem.
 enum IodClassifierMode {
-  /// Live, availability-gated adaptation of DeepIOD Model C (4-channel).
-  /// Abstains rather than importing an unvalidated missing-channel prediction
-  /// into workout handover. Research modes retain their published replay setup.
+  /// Live, availability-gated cross-platform IOD:
+  /// - Android (with ambient light sensor): DeepIOD Model C-Mobile (4-channel).
+  /// - iOS / Light-free devices: iOS Multi-Sensor MagIO + IMU + CoreLocation + Barometer Causal HMM.
   liveMobile,
+
+  /// Dedicated iOS / Light-Free Multi-Sensor Classifier (Ashraf 2018 MagIO +
+  /// Esmaeili Kelishomi 2019 IMU/Baro + Bui 2020 GPS + Zhu 2019 Causal HMM).
+  iosMultiSensorHmm,
+
+  /// Pure MagIO Magnetometer Gaussian Naive Bayes + Causal HMM research mode
+  /// (Ashraf et al. 2018, Micromachines 9(10), 534, DOI: 10.3390/mi9100534).
+  magIoResearch,
 
   /// Composite Production Default: Dedicated Model C-Mobile (4 unprivileged sensors)
   /// with Yoo (2025) probabilistic transition boundary telemetry reported as an auxiliary signal.
@@ -50,6 +59,8 @@ enum IodClassifierMode {
 class IodCompositeClassifier {
   static const String modelVersion = 'aetron-iod-composite-v2.0';
   static const String liveModelVersion = 'aetron-deepiod-c-mobile-live-v1.0';
+  static const String iosLiveModelVersion =
+      IosMultiSensorIodClassifier.liveFusionModelVersion;
   static const String gpsFallbackModelVersion =
       'aetron-deepiod-gps-table4-adapted-v1.0';
 
@@ -59,6 +70,8 @@ class IodCompositeClassifier {
   final DeepIodNeuralClassifier _completeClassifier;
   final DeepIodBaselineClassifier _heuristicBaseline;
   final SeamlessTransitionDetector _yooTransition;
+  final IosMultiSensorIodClassifier _iosLiveClassifier;
+  final IosMultiSensorIodClassifier _magIoResearchClassifier;
   int _liveEpochCount = 0;
   DateTime? _lastLiveEpoch;
 
@@ -66,6 +79,10 @@ class IodCompositeClassifier {
     switch (mode) {
       case IodClassifierMode.liveMobile:
         return liveModelVersion;
+      case IodClassifierMode.iosMultiSensorHmm:
+        return iosLiveModelVersion;
+      case IodClassifierMode.magIoResearch:
+        return IosMultiSensorIodClassifier.magIoModelVersion;
       case IodClassifierMode.compositeDefault:
         return modelVersion;
       case IodClassifierMode.compositeGnssAssistedExperimental:
@@ -88,13 +105,23 @@ class IodCompositeClassifier {
     DeepIodNeuralClassifier? completeClassifier,
     DeepIodBaselineClassifier? heuristicBaseline,
     SeamlessTransitionDetector? yooTransition,
+    IosMultiSensorIodClassifier? iosLiveClassifier,
+    IosMultiSensorIodClassifier? magIoResearchClassifier,
   }) : _frameworkClassifier =
            frameworkClassifier ?? DeepIodFrameworkClassifier(),
        _mobileClassifier = mobileClassifier ?? DeepIodNeuralClassifier.mobile(),
        _completeClassifier =
            completeClassifier ?? DeepIodNeuralClassifier.complete(),
        _heuristicBaseline = heuristicBaseline ?? DeepIodBaselineClassifier(),
-       _yooTransition = yooTransition ?? SeamlessTransitionDetector();
+       _yooTransition = yooTransition ?? SeamlessTransitionDetector(),
+       _iosLiveClassifier =
+           iosLiveClassifier ??
+           IosMultiSensorIodClassifier(
+             mode: IosIodEvaluationMode.liveMultiSensorFusion,
+           ),
+       _magIoResearchClassifier =
+           magIoResearchClassifier ??
+           IosMultiSensorIodClassifier(mode: IosIodEvaluationMode.magIoOnly);
 
   factory IodCompositeClassifier.fullDeepIod({
     SeamlessTransitionDetector? yooTransition,
@@ -108,6 +135,12 @@ class IodCompositeClassifier {
 
   factory IodCompositeClassifier.liveMobile() =>
       IodCompositeClassifier(mode: IodClassifierMode.liveMobile);
+
+  factory IodCompositeClassifier.iosMultiSensor() =>
+      IodCompositeClassifier(mode: IodClassifierMode.iosMultiSensorHmm);
+
+  factory IodCompositeClassifier.magIoResearch() =>
+      IodCompositeClassifier(mode: IodClassifierMode.magIoResearch);
 
   factory IodCompositeClassifier.research8Channel() =>
       IodCompositeClassifier(mode: IodClassifierMode.deepiodModelCResearch);
@@ -137,6 +170,8 @@ class IodCompositeClassifier {
     _mobileClassifier.reset();
     _completeClassifier.reset();
     _yooTransition.reset();
+    _iosLiveClassifier.reset();
+    _magIoResearchClassifier.reset();
     _liveEpochCount = 0;
     _lastLiveEpoch = null;
   }
@@ -180,6 +215,26 @@ class IodCompositeClassifier {
       _mobileClassifier.reset();
       _liveEpochCount = 0;
       _lastLiveEpoch = null;
+
+      // On iOS / light-free smartphones where Magnetometer + Accelerometer are
+      // active, route through the CIOD-validated iOS Multi-Sensor + Causal HMM
+      // pipeline instead of failing open to an uncalibrated GPS-only threshold.
+      if (availability['light'] != true &&
+          availability['mag'] == true &&
+          availability['acc'] == true) {
+        final iosPred = _iosLiveClassifier.classify(snapshot);
+        if (_iosLiveClassifier.bufferedEpochs >=
+            IosMultiSensorIodClassifier.minLiveWarmupEpochs) {
+          return iosPred;
+        }
+        return _liveFallback(
+          snapshot,
+          availability,
+          'ios_magio_hmm_warmup:${_iosLiveClassifier.bufferedEpochs}/${IosMultiSensorIodClassifier.minLiveWarmupEpochs}',
+        );
+      }
+
+      _iosLiveClassifier.reset();
       return _liveFallback(
         snapshot,
         availability,
@@ -266,6 +321,10 @@ class IodCompositeClassifier {
     switch (mode) {
       case IodClassifierMode.liveMobile:
         return _predictLive(snapshot);
+      case IodClassifierMode.iosMultiSensorHmm:
+        return _iosLiveClassifier.classify(snapshot);
+      case IodClassifierMode.magIoResearch:
+        return _magIoResearchClassifier.classify(snapshot);
       case IodClassifierMode.deepiodFull:
         final pred = _frameworkClassifier.classify(snapshot);
         final yooPred = _yooTransition.evaluate(snapshot);

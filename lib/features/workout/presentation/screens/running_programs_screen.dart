@@ -882,6 +882,7 @@ class _ProgramGuideSheet extends ConsumerWidget {
               },
             ),
           ],
+        ),
       ),
     );
   }

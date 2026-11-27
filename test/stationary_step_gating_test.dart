@@ -56,6 +56,32 @@ void main() {
         expect(detectedSteps, 0);
       },
     );
+
+    test(
+      'Skog (2010) MV-GLRT rejects sharp isolated 2.2 m/s² screen taps while stationary',
+      () {
+        final oxford = OxfordStepDetector();
+        final xu = XuRunningStepDetector();
+        var oxSteps = 0;
+        var xuSteps = 0;
+
+        for (var i = 0; i < 3000; i++) {
+          final t = i / 100.0;
+          var az = 9.81 + 0.12 * math.sin(2 * math.pi * 1.4 * t);
+          // Sharp 50ms single-tap impulse every 5 seconds (peak-to-peak > 2.2 m/s²)
+          if ((i % 500) >= 200 && (i % 500) < 205) {
+            az += 2.2;
+          }
+          oxSteps += oxford.addSample(i * 10000, 0.0, 0.0, az).length;
+          if (i.isEven) {
+            xuSteps += xu.addSample(i * 10000, 0.0, 0.0, az).length;
+          }
+        }
+
+        expect(oxSteps, 0);
+        expect(xuSteps, 0);
+      },
+    );
   });
 
   group('StepMotionGate Bout & Stationary GNSS Blocking', () {
