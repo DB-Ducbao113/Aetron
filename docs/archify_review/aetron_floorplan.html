@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aetron Floorplan — Interactive Spatial Codebase Blueprint</title>
+  <style>
+    :root {
+      --bg: #060b16;
+      --grid: rgba(56, 189, 248, 0.07);
+      --grid-major: rgba(56, 189, 248, 0.14);
+      --panel: rgba(12, 19, 36, 0.9);
+      --card: rgba(19, 29, 52, 0.92);
+      --border: rgba(56, 189, 248, 0.24);
+      --text: #ecf3ff;
+      --muted: #8ea2c6;
+      --cyan: #38bdf8;
+      --lime: #a3e635;
+      --violet: #a78bfa;
+      --amber: #fbbf24;
+      --emerald: #34d399;
+      --rose: #fb7185;
+    }
+    [data-theme="light"] {
+      --bg: #eef4fb;
+      --grid: rgba(2, 132, 199, 0.08);
+      --grid-major: rgba(2, 132, 199, 0.16);
+      --panel: rgba(255, 255, 255, 0.94);
+      --card: rgba(248, 250, 252, 0.96);
+      --border: rgba(2, 132, 199, 0.25);
+      --text: #0f172a;
+      --muted: #475569;
+      --cyan: #0284c7;
+      --lime: #4d7c0f;
+      --violet: #6d28d9;
+      --amber: #d97706;
+      --emerald: #059669;
+      --rose: #e11d48;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    header.hud {
+      height: 60px;
+      padding: 0 18px;
+      background: var(--panel);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      z-index: 20;
+    }
+    .nav-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .nav-link, .tool-btn {
+      padding: 7px 12px;
+      border-radius: 9px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      text-decoration: none;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+    .nav-link.active, .tool-btn.active {
+      background: rgba(56, 189, 248, 0.18);
+      border-color: var(--cyan);
+      color: var(--cyan);
+    }
+    .nav-link:hover, .tool-btn:hover { border-color: var(--cyan); }
+    .search-box {
+      padding: 7px 12px;
+      border-radius: 9px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      font-size: 0.82rem;
+      width: 230px;
+      outline: none;
+    }
+    .search-box:focus { border-color: var(--cyan); }
+    .workspace {
+      flex: 1;
+      position: relative;
+      display: flex;
+      overflow: hidden;
+    }
+    #viewport {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      cursor: grab;
+      background-image:
+        linear-gradient(to right, var(--grid) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid) 1px, transparent 1px),
+        linear-gradient(to right, var(--grid-major) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid-major) 1px, transparent 1px);
+      background-size: 24px 24px, 24px 24px, 120px 120px, 120px 120px;
+    }
+    #viewport.dragging { cursor: grabbing; }
+    #world {
+      position: absolute;
+      top: 0; left: 0;
+      width: 2150px;
+      height: 1420px;
+      transform-origin: 0 0;
+    }
+    #wires-svg {
+      position: absolute;
+      inset: 0;
+      width: 2150px;
+      height: 1420px;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .wing {
+      position: absolute;
+      border: 2px dashed var(--wing-color, var(--cyan));
+      border-radius: 22px;
+      background: var(--wing-bg, rgba(56, 189, 248, 0.04));
+      padding: 16px;
+      z-index: 1;
+    }
+    .wing-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+    }
+    .wing-title {
+      font-size: 0.85rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--wing-color, var(--cyan));
+    }
+    .wing-sub {
+      font-size: 0.73rem;
+      color: var(--muted);
+      font-family: "SF Mono", Menlo, monospace;
+    }
+    .room {
+      position: absolute;
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 14px;
+      cursor: pointer;
+      z-index: 3;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, opacity 0.2s ease;
+      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .room:hover {
+      transform: translateY(-2px);
+      border-color: var(--room-accent, var(--cyan));
+      box-shadow: 0 14px 34px rgba(56, 189, 248, 0.22);
+    }
+    .room.selected {
+      border-width: 2.5px;
+      border-color: var(--room-accent, var(--lime));
+      box-shadow: 0 0 0 4px rgba(163, 230, 53, 0.2);
+    }
+    .room.dimmed { opacity: 0.2; }
+    .room-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 6px;
+    }
+    .room-name {
+      font-weight: 700;
+      font-size: 0.88rem;
+      line-height: 1.25;
+    }
+    .room-badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 6px;
+      background: rgba(56, 189, 248, 0.14);
+      color: var(--room-accent, var(--cyan));
+      white-space: nowrap;
+    }
+    .room-desc {
+      font-size: 0.74rem;
+      color: var(--muted);
+      line-height: 1.35;
+      margin: 6px 0;
+    }
+    .room-path {
+      font-family: "SF Mono", Menlo, monospace;
+      font-size: 0.67rem;
+      color: var(--cyan);
+      opacity: 0.9;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    aside.inspector {
+      width: 390px;
+      background: var(--panel);
+      backdrop-filter: blur(18px);
+      border-left: 1px solid var(--border);
+      padding: 20px;
+      overflow-y: auto;
+      z-index: 15;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .ins-section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .ins-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .file-pill {
+      display: block;
+      font-family: "SF Mono", Menlo, monospace;
+      font-size: 0.74rem;
+      padding: 6px 9px;
+      border-radius: 8px;
+      background: rgba(56, 189, 248, 0.09);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      color: var(--cyan);
+      margin-bottom: 6px;
+      word-break: break-all;
+    }
+    .conn-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 7px 9px;
+      border-radius: 8px;
+      background: rgba(148, 163, 184, 0.08);
+      font-size: 0.78rem;
+      margin-bottom: 6px;
+      cursor: pointer;
+    }
+    .conn-item:hover { background: rgba(56, 189, 248, 0.15); }
+    .audit-item {
+      padding: 8px 10px;
+      border-left: 3px solid var(--emerald);
+      background: rgba(52, 211, 153, 0.07);
+      border-radius: 0 8px 8px 0;
+      font-size: 0.77rem;
+      margin-bottom: 8px;
+    }
+    .audit-item.warn {
+      border-left-color: var(--amber);
+      background: rgba(251, 191, 36, 0.08);
+    }
+    .floating-controls {
+      position: absolute;
+      left: 18px;
+      bottom: 18px;
+      display: flex;
+      gap: 8px;
+      z-index: 12;
+      background: var(--panel);
+      padding: 8px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+    .legend {
+      position: absolute;
+      left: 18px;
+      top: 16px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      z-index: 12;
+      background: var(--panel);
+      padding: 8px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      font-size: 0.75rem;
+    }
+    .leg-dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 5px;
+    }
+    .wire-path {
+      fill: none;
+      stroke-width: 2;
+      opacity: 0.35;
+      transition: opacity 0.2s ease, stroke-width 0.2s ease;
+    }
+    .wire-path.active {
+      opacity: 0.95;
+      stroke-width: 3.2;
+      stroke-dasharray: 8 6;
+      animation: flowDash 0.9s linear infinite;
+    }
+    @keyframes flowDash {
+      to { stroke-dashoffset: -28; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hud">
+    <div class="nav-group">
+      <a class="nav-link" href="./index.html">⌂ Portal</a>
+      <a class="nav-link active" href="./aetron_floorplan.html">🗺️ Floorplan</a>
+      <a class="nav-link" href="./aetron_archify.html">⚡ Archify</a>
+      <a class="nav-link" href="./aetron_literature_benchmark.html">📐 Literature & Benchmark</a>
+      <a class="nav-link" href="./aetron_benchmark_playbook.html">🧪 Cách Đo Benchmark</a>
+    </div>
+    <div class="nav-group">
+      <input class="search-box" id="search" type="search" placeholder="Tìm phòng, file, thuật toán (vd: ekf, isar, iod)..." />
+      <button class="tool-btn active" id="toggle-wires" type="button">🔌 Hiện đường nối</button>
+      <button class="tool-btn" id="fit-btn" type="button">⊡ Vừa màn hình</button>
+      <button class="tool-btn" id="theme-btn" type="button">🌗 Sáng/Tối</button>
+    </div>
+  </header>
+
+  <div class="workspace">
+    <div id="viewport">
+      <div class="legend">
+        <span><i class="leg-dot" style="background:var(--cyan)"></i>UI & Shell</span>
+        <span><i class="leg-dot" style="background:var(--lime)"></i>GNSS & IMU Engine</span>
+        <span><i class="leg-dot" style="background:var(--violet)"></i>DeepIOD & AI</span>
+        <span><i class="leg-dot" style="background:var(--amber)"></i>Local Persistence</span>
+        <span><i class="leg-dot" style="background:var(--emerald)"></i>Supabase Edge & DB</span>
+        <span><i class="leg-dot" style="background:var(--rose)"></i>Benchmark Proving Ground</span>
+      </div>
+
+      <div id="world">
+        <svg id="wires-svg"></svg>
+      </div>
+
+      <div class="floating-controls">
+        <button class="tool-btn" id="zoom-in" type="button">＋</button>
+        <button class="tool-btn" id="zoom-out" type="button">－</button>
+        <span id="zoom-lbl" style="font-size:0.78rem;padding:6px 8px;color:var(--muted);">75%</span>
+      </div>
+    </div>
+
+    <aside class="inspector" id="inspector">
+      <div class="ins-section">
+        <div class="ins-label">Phòng đang chọn (Selected Room)</div>
+        <h2 id="ins-title" style="font-size:1.18rem;margin-bottom:6px;">Chọn một phòng trên bản vẽ</h2>
+        <p id="ins-desc" style="font-size:0.84rem;color:var(--muted);line-height:1.5;">
+          Nhấn vào bất kỳ phòng chức năng nào trên mặt bằng để xem danh sách file mã nguồn thực tế, thuật toán bên trong và các đường kết nối dữ liệu vào/ra.
+        </p>
+      </div>
+
+      <div class="ins-section">
+        <div class="ins-label">Bằng chứng File nguồn (Verified Source Files)</div>
+        <div id="ins-files"></div>
+      </div>
+
+      <div class="ins-section">
+        <div class="ins-label">Kết nối Kiến trúc (Inbound & Outbound Wiring)</div>
+        <div id="ins-conns"></div>
+      </div>
+
+      <div class="ins-section">
+        <div class="ins-label">Kiểm toán Kiến trúc & An toàn (Health & Security Scan)</div>
+        <div class="audit-item"><strong>✓ Zero Hardcoded Cloud Secrets:</strong> <code>lib/main.dart</code> bắt buộc đọc <code>SUPABASE_URL</code> &amp; <code>SUPABASE_ANON_KEY</code> qua <code>--dart-define</code>; Keychain/Keystore bảo vệ phiên đăng nhập.</div>
+        <div class="audit-item"><strong>✓ Offline-First Durability:</strong> <code>LocalDB</code> mở Isar với <code>relaxedDurability: false</code>, tạo checkpoint mỗi 5 giây và kiểm tra quyền sở hữu tài khoản trước khi đồng bộ.</div>
+        <div class="audit-item"><strong>✓ Server-Authority Nonce Guard:</strong> <code>deterministic-finalize-worker</code> &amp; <code>route-correction-worker</code> xác thực HMAC/Secret + <code>dispatch_nonce</code> chống gọi trái phép hoặc chạy lặp.</div>
+        <div class="audit-item warn"><strong>⚠ Honest Stub Disclosure:</strong> <code>routeMatchingAvailable()</code> trong <code>route-correction-worker</code> trả về <code>false</code> khi <code>ROUTE_MATCH_PROVIDER=stub</code> — không bao giờ giả mạo điểm tin cậy khớp bản đồ.</div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    const WINGS = [
+      { id: 'w-ui', title: 'Wing A — Mobile Presentation & Design System', sub: 'lib/app • lib/features/*/presentation • lib/shared • ios/WorkoutLiveActivity', x: 40, y: 40, w: 660, h: 830, color: '#38bdf8', bg: 'rgba(56,189,248,0.04)' },
+      { id: 'w-gnss', title: 'Wing B — GNSS & Inertial Positioning Lab', sub: 'lib/features/workout/domain/services • lib/core/services/sensor', x: 730, y: 40, w: 690, h: 830, color: '#a3e635', bg: 'rgba(163,230,53,0.04)' },
+      { id: 'w-iod', title: 'Wing C — Context-Aware DeepIOD & AI Signals', sub: 'lib/features/iod • workout_signal_extractor.dart', x: 1450, y: 40, w: 650, h: 430, color: '#a78bfa', bg: 'rgba(167,139,250,0.045)' },
+      { id: 'w-store', title: 'Wing D — Dual Local Persistence Vault', sub: 'Isar (Workout/GPS/Steps) + SQLite sqflite (Profile/Delete Queue)', x: 40, y: 900, w: 660, h: 470, color: '#fbbf24', bg: 'rgba(251,191,36,0.04)' },
+      { id: 'w-cloud', title: 'Wing E — Supabase Cloud, PostgreSQL/PostGIS & Deno Workers', sub: 'backend/database • backend/supabase/migrations • backend/supabase/functions', x: 730, y: 900, w: 690, h: 470, color: '#34d399', bg: 'rgba(52,211,153,0.04)' },
+      { id: 'w-bench', title: 'Wing F — Scientific Benchmark & Replay Proving Ground', sub: 'tooling/benchmark • tooling/step_benchmark • docs/research', x: 1450, y: 500, w: 650, h: 870, color: '#fb7185', bg: 'rgba(251,113,133,0.04)' }
+    ];
+
+    const ROOMS = [
+      // Wing A
+      { id: 'r-boot', wing: 'w-ui', accent: '#38bdf8', x: 65, y: 95, w: 295, h: 145, badge: 'Bootstrap', name: 'Startup, Auth & Security Gate', desc: 'Khởi tạo Supabase qua dart-defines, Keychain SecureLocalStorage, mở Isar DB và cổng đăng nhập Google OAuth / Email.', files: ['lib/main.dart#L13-L72', 'lib/app/app.dart#L140-L171', 'lib/features/auth/presentation/screens/auth_wrapper.dart', 'lib/core/storage/secure_local_storage.dart'] },
+      { id: 'r-shell', wing: 'w-ui', accent: '#38bdf8', x: 380, y: 95, w: 295, h: 145, badge: '5-Tab Shell', name: 'MainShell & Navigation Hub', desc: 'Điều phối 5 tab cốt lõi (Home, Activity/Record, Calendar History, Stats/Trophy Wall, Profile) bằng FadeIndexedStack.', files: ['lib/features/shell/presentation/screens/main_shell.dart#L24-L205', 'lib/features/shell/presentation/widgets/aetron_bottom_bar.dart'] },
+      { id: 'r-record', wing: 'w-ui', accent: '#38bdf8', x: 65, y: 260, w: 610, h: 185, badge: 'Live Cockpit', name: 'Workout Recording Cockpit & Coordinator', desc: 'Màn hình ghi bài tập thời gian thực: bản đồ trực tiếp, đếm ngược 3D, HUD chương trình chạy Intervals/Tempo, tạo checkpoint 5s và đẩy batch GPS/Steps.', files: ['lib/features/workout/presentation/screens/record/record_screen.dart', 'lib/features/workout/presentation/screens/record/workout_recording_coordinator.dart#L29-L180', 'lib/features/workout/presentation/screens/record/workout_session_finalizer.dart#L35-L220', 'lib/features/workout/presentation/screens/running_programs_screen.dart'] },
+      { id: 'r-tabs', wing: 'w-ui', accent: '#38bdf8', x: 65, y: 465, w: 295, h: 180, badge: 'Analytics & History', name: 'Home, Calendar, Trophy Wall & Share Card', desc: 'Chuỗi ngày tập (Streak), lịch tập luyện, bảng kỷ lục cá nhân (5K/10K/HM/FM) và xuất ảnh Workout Share Card.', files: ['lib/features/home/presentation/screens/home_screen.dart', 'lib/features/history/presentation/screens/calendar_screen.dart', 'lib/features/analytics/presentation/widgets/personal_records_trophy_wall.dart', 'lib/features/workout/presentation/widgets/workout_share_card.dart'] },
+      { id: 'r-profile', wing: 'w-ui', accent: '#38bdf8', x: 380, y: 465, w: 295, h: 180, badge: 'Compendium MET', name: 'Profile, Localization & Compendium MET', desc: 'Hồ sơ thể chất (chiều cao, cân nặng), tính BMR Mifflin-St Jeor, tra cứu mã 5 chữ số 2024 Adult Compendium MET và từ điển VI/EN.', files: ['lib/features/profile/domain/entities/user_profile.dart#L47-L165', 'lib/core/localization/app_translations.dart', 'lib/features/settings/presentation/screens/settings_screen.dart'] },
+      { id: 'r-design', wing: 'w-ui', accent: '#38bdf8', x: 65, y: 665, w: 295, h: 180, badge: 'UI Systems', name: 'Aetron & Kinetic Liquid-Glass Design', desc: 'Hệ thống token màu sắc, typography, hiệu ứng Liquid Glass bản địa và biểu tượng Blade Icons.', files: ['lib/shared/aetron/aetron_ui.dart', 'lib/shared/kinetic/kinetic.dart', 'lib/shared/kinetic/native_liquid_glass.dart'] },
+      { id: 'r-ios', wing: 'w-ui', accent: '#38bdf8', x: 380, y: 665, w: 295, h: 180, badge: 'SwiftKit / iOS', name: 'iOS Dynamic Island & Live Activity', desc: 'Widget SwiftUI hiển thị quãng đường, nhịp độ và trạng thái tạm dừng trực tiếp ngoài màn hình khóa & Dynamic Island.', files: ['ios/WorkoutLiveActivity/WorkoutLiveActivityWidget.swift', 'lib/core/services/ios_live_activity_service.dart'] },
+
+      // Wing B
+      { id: 'r-p01', wing: 'w-gnss', accent: '#a3e635', x: 755, y: 95, w: 310, h: 220, badge: 'Phase 1 (P01)', name: 'Trajectory Preprocessing & Quality Gate', desc: 'Li et al. (2025) + Zheng (2009, 2015) + Mobile-GVIO: giới hạn động học theo môn, lọc trung vị cửa sổ trượt, phát hiện điểm dừng và đứt quãng >5s.', files: ['lib/features/workout/domain/services/trajectory_preprocessing/streaming_trajectory_preprocessor.dart#L14-L116', 'lib/features/workout/domain/services/trajectory_preprocessing/kinematic_limits.dart#L11-L172', 'lib/features/workout/domain/services/trajectory_preprocessing/stay_point_segmenter.dart#L63-L250', 'lib/features/workout/domain/services/trajectory_preprocessing/mobile_gvio_quality_gate.dart#L74-L250'] },
+      { id: 'r-p02', wing: 'w-gnss', accent: '#a3e635', x: 1085, y: 95, w: 310, h: 220, badge: 'Phase 2 (P02)', name: '4-State EKF / AEKF & Fixed-Alpha Smoother', desc: 'Trạng thái [px, py, v, θ] kết hợp cổng kiểm định Mahalanobis χ² (5.991 / 13.816), bơm phương sai R thích nghi và tăng nhiễu góc cua tâm hướng.', files: ['lib/features/workout/domain/services/ekf/extended_kalman_filter.dart#L38-L125', 'lib/features/workout/domain/services/gnss_correction/adaptive_gnss_correction_engine.dart#L14-L285', 'lib/features/workout/domain/services/gps_smoothing_service.dart#L38-L325'] },
+      { id: 'r-p03', wing: 'w-gnss', accent: '#a3e635', x: 755, y: 335, w: 310, h: 220, badge: 'Phase 3 (P03)', name: 'Monotone PCHIP Reconstruction & Polyline', desc: 'Nội suy Hermite bậc 3 đơn điệu Fritsch–Carlson (1980) cho khoảng trống 2–15s (chỉ phục vụ hiển thị) và nén Google Polyline giảm 94.2% dung lượng.', files: ['lib/features/workout/domain/services/trajectory_reconstruction/kinematic_trajectory_reconstruction_engine.dart#L18-L300', 'lib/features/workout/domain/services/polyline_compression_service.dart#L45-L222'] },
+      { id: 'r-dbscan', wing: 'w-gnss', accent: '#a3e635', x: 1085, y: 335, w: 310, h: 220, badge: 'Dwell & Gate', name: 'Tracking Engine, T-DBSCAN & StepMotionGate', desc: 'Phân cụm dừng đèn đỏ T-DBSCAN (ε=6.5m, t≥10s), khóa bước chân giả khi GPS đứng yên ngoài trời và xác nhận chuỗi tối thiểu 5 bước nhịp nhàng.', files: ['lib/features/workout/domain/services/workout_tracking_engine.dart#L1-L120', 'lib/features/workout/domain/services/dbscan/gps_dbscan_service.dart#L50-L125', 'lib/features/workout/domain/services/step_motion_gate.dart#L23-L162'] },
+      { id: 'r-steps', wing: 'w-gnss', accent: '#a3e635', x: 755, y: 575, w: 310, h: 270, badge: 'IMU Detectors', name: 'Oxford Walking & Xu Running Step Detectors', desc: 'Salvi et al. (EMBC 2018) nội suy 100Hz + lọc Gauss 13-tap cho đi bộ; Xu et al. (2022) 50Hz FIR 11-tap + DFT 256 điểm thích nghi tần số cho chạy bộ.', files: ['lib/core/services/sensor/oxford_step_detector.dart#L12-L155', 'lib/core/services/sensor/xu_running_step_detector.dart#L8-L192', 'lib/core/services/sensor/research_walking_step_sensor_adapter.dart', 'lib/core/services/cadence_calculator_service.dart'] },
+      { id: 'r-stride', wing: 'w-gnss', accent: '#a3e635', x: 1085, y: 575, w: 310, h: 270, badge: 'LOSO Stride', name: 'Renaudin Adaptive Step Length & Fallback', desc: 'Mô hình tuyến tính chiều cao × tần số bước Renaudin et al. (2012, Eq. 8) hiệu chỉnh LOSO cho đi bộ (SLEDataset2), chạy bộ (Fukuchi RBDS) và fallback.', files: ['lib/features/workout/domain/services/research_walking_step_length.dart#L5-L34', 'lib/features/workout/domain/services/research_running_step_length.dart#L6-L31', 'lib/features/workout/domain/services/research_step_length_fallback.dart#L9-L50'] },
+
+      // Wing C
+      { id: 'r-deepiod', wing: 'w-iod', accent: '#a78bfa', x: 1475, y: 95, w: 290, h: 350, badge: 'KAIST Sensors 2024', name: 'DeepIOD Neural Suite (Models A/B/C & AMV)', desc: 'Triển khai Model A (CNN-LSTM), Model B (CNN-MHA), Model C (8-ch & 4-ch Mobile DWS-Conv2D) cùng hợp nhất AMV (Eq. 7–9) ở chế độ quan sát độc lập.', files: ['lib/features/iod/domain/services/deepiod_framework_classifier.dart#L52-L405', 'lib/features/iod/domain/services/deepiod_neural_classifier.dart#L32-L207', 'lib/features/iod/domain/services/iod_composite_classifier.dart'] },
+      { id: 'r-yoo', wing: 'w-iod', accent: '#a78bfa', x: 1785, y: 95, w: 290, h: 170, badge: 'Electronics 2025', name: 'Yoo Seamless Transition Handover', desc: 'Hợp nhất xác suất GNSS C/N0 (30–40 dB-Hz), cửa tòa nhà Gaussian và RadioMap; tự động triệt trọng số khi thiếu bản đồ khảo sát.', files: ['lib/features/iod/domain/services/seamless_transition_detector.dart#L32-L250', 'lib/features/iod/data/datasources/iod_sensor_acquisition_service.dart'] },
+      { id: 'r-aisig', wing: 'w-iod', accent: '#a78bfa', x: 1785, y: 280, w: 290, h: 165, badge: 'Telemetry Signals', name: 'Workout AI Signal Extractor', desc: 'Trích xuất độ dốc mỏi cơ (pace fatigue slope), hệ số biến thiên CV, tỉ lệ nghỉ và Z-score đối chiếu lịch sử 7 ngày.', files: ['lib/features/workout/domain/services/workout_signal_extractor.dart', 'lib/features/workout/data/repositories/workout_ai_repository.dart'] },
+
+      // Wing D
+      { id: 'r-isar', wing: 'w-store', accent: '#fbbf24', x: 65, y: 955, w: 300, h: 390, badge: 'Isar NoSQL', name: 'LocalDB (Workouts, Raw GPS & Step Intervals)', desc: 'Lưu trữ bền vững 3 schema Isar với cơ chế phục hồi bản sao lưu tự động, cô lập chủ sở hữu tài khoản và khóa ghi hoàn tất buổi tập.', files: ['lib/features/workout/data/local/local_db.dart#L16-L165', 'lib/features/workout/data/local/schema/local_workout.dart', 'lib/features/workout/data/local/schema/local_gps_point.dart', 'lib/features/workout/data/local/schema/local_step_interval.dart'] },
+      { id: 'r-sqlite', wing: 'w-store', accent: '#fbbf24', x: 385, y: 955, w: 290, h: 185, badge: 'SQLite v6', name: 'DatabaseHelper (Profile & Sync Tombstones)', desc: 'Lưu trữ bảng user_profile ngoại tuyến và hàng đợi đồng bộ xóa bài tập (pending_workout_sync_operations).', files: ['lib/core/storage/database_helper.dart#L4-L135', 'lib/features/workout/data/local/pending_workout_sync_store.dart'] },
+      { id: 'r-repo', wing: 'w-store', accent: '#fbbf24', x: 385, y: 1160, w: 290, h: 185, badge: 'Reconciler', name: 'WorkoutRepositoryImpl (Offline↔Cloud Sync)', desc: 'Phân trang ổn định theo ID, bảo vệ bản ghi chưa đồng bộ khỏi bị ghi đè và giữ nguyên P03 cục bộ cho tới khi server duyệt xong.', files: ['lib/features/workout/data/repositories/workout_repository_impl.dart', 'lib/features/workout/domain/services/route_match_quality_service.dart#L5-L76'] },
+
+      // Wing E
+      { id: 'r-edge-ingest', wing: 'w-cloud', accent: '#34d399', x: 755, y: 955, w: 310, h: 185, badge: 'Deno Ingestion', name: 'workouts-start • gps-track • workouts-end', desc: 'Xác thực JWT Supabase, kiểm tra kích thước gói tin, lưu batch tọa độ thô và đẩy job deterministic_finalize vào hàng đợi.', files: ['backend/supabase/functions/workouts-start/index.ts', 'backend/supabase/functions/gps-track/index.ts', 'backend/supabase/functions/workouts-end/index.ts', 'backend/supabase/functions/_shared/security.ts'] },
+      { id: 'r-edge-workers', wing: 'w-cloud', accent: '#34d399', x: 1085, y: 955, w: 310, h: 185, badge: 'Server Authority', name: 'deterministic-finalize & route-correction', desc: 'Kiểm toán phân đoạn từ dữ liệu thô, tính chuẩn hóa Compendium MET từ thời gian di chuyển, lưu trữ P03 tách biệt và chấm điểm khớp đường.', files: ['backend/supabase/functions/deterministic-finalize-worker/index.ts#L133-L225', 'backend/supabase/functions/route-correction-worker/index.ts#L71-L243', 'backend/supabase/functions/_shared/compendium_met.ts'] },
+      { id: 'r-edge-ai', wing: 'w-cloud', accent: '#34d399', x: 755, y: 1160, w: 310, h: 185, badge: 'AI & Auth Ops', name: 'generate-workout-insight & Account Ops', desc: 'Sinh phân tích bài tập kèm bộ lọc từ khóa an toàn y khoa (VI/EN), giới hạn tần suất (rate-limit), khôi phục email và xóa tài khoản.', files: ['backend/supabase/functions/generate-workout-insight/index.ts#L41-L150', 'backend/supabase/functions/recovery-email-start/index.ts', 'backend/supabase/functions/delete-account/index.ts'] },
+      { id: 'r-pg', wing: 'w-cloud', accent: '#34d399', x: 1085, y: 1160, w: 310, h: 185, badge: 'PostgreSQL + PostGIS', name: '32 Migrations, RLS Tables & Audit Views', desc: 'Cơ sở dữ liệu quan hệ bật PostGIS & RLS: workout_sessions, raw_gps_points, raw_step_intervals, workout_processing_jobs, segment_audits.', files: ['backend/database/schema.sql', 'backend/database/workouts.sql', 'backend/database/raw_tracking.sql', 'backend/database/processing.sql'] },
+
+      // Wing F
+      { id: 'r-b-gnss', wing: 'w-bench', accent: '#fb7185', x: 1475, y: 555, w: 595, h: 190, badge: 'RTK Ground Truth', name: 'TU Wien Smartphone Phase-RTK & SnapperGPS Cycling Replay', desc: 'Đối sánh trực tiếp Raw, Fixed Alpha, Legacy EKF và P01+AEKF trên 2.694 mẫu RTK điện thoại Pixel 7 Pro/9a và 20.770 mẫu xe đạp Oxford.', files: ['tooling/benchmark/gnss_p01_p02_active_replay_test.dart', 'tooling/benchmark/gnss_phase_selection_test.dart', 'tooling/benchmark/cycling_snappergps_replay_test.dart', 'docs/research/CYCLING_GNSS_SNAPPERGPS_BENCHMARK_20261119.md'] },
+      { id: 'r-b-step', wing: 'w-bench', accent: '#fb7185', x: 1475, y: 765, w: 595, h: 190, badge: 'IMU & Gait Suites', name: 'OxWalk (39h) • PedEval (90 runs) • Xu Running • Renaudin LOSO', desc: 'Kiểm định bảo toàn bước chân, độ trễ dừng/khởi động và sai số chiều dài bước Leave-One-Subject-Out trên SLEDataset2 & Fukuchi RBDS.', files: ['tooling/step_benchmark/run_final_closure_benchmark.dart', 'tooling/step_benchmark/run_xu_running_validation.dart', 'tooling/benchmark/renaudin_step_length_replay.py', 'tooling/benchmark/renaudin_running_rbds.py'] },
+      { id: 'r-b-iod', wing: 'w-bench', accent: '#fb7185', x: 1475, y: 975, w: 595, h: 180, badge: '201,731 Held-Out', name: 'Cambridge CIOD & HAR-PMD (480 Recordings) Generalization Audit', desc: 'Đánh giá tách biệt phiên (Sessions 72..84) không rò rỉ thời gian và kiểm tra chéo trọng số PyTorch ↔ Dart cho DeepIOD Model A/B/C.', files: ['tooling/benchmark/run_full_ciod_benchmark.dart', 'tooling/benchmark/har_pmd_full_cohort_benchmark.py', 'tooling/reproduce_deepiod.py'] },
+      { id: 'r-b-manifest', wing: 'w-bench', accent: '#fb7185', x: 1475, y: 1175, w: 595, h: 170, badge: 'SHA-256 Provenance', name: 'Pinned Dataset Hashes & Unified Benchmark Summary', desc: 'Lưu vết mã băm SHA-256 của toàn bộ tập dữ liệu gốc, kết quả chạy thực nghiệm và báo cáo độ tin cậy lưu trữ cục bộ.', files: ['tooling/benchmark/results/app_benchmark_20261118/summary.json', 'docs/research/LOCAL_STORAGE_RELIABILITY_20261119.md', 'test/gps_accuracy_benchmark_test.dart'] }
+    ];
+
+    const WIRES = [
+      { from: 'r-boot', to: 'r-shell', label: 'Authenticated Session', color: '#38bdf8' },
+      { from: 'r-boot', to: 'r-isar', label: 'LocalDB.init()', color: '#fbbf24' },
+      { from: 'r-shell', to: 'r-record', label: 'Center Tab / Start Workout', color: '#38bdf8' },
+      { from: 'r-shell', to: 'r-tabs', label: 'History & Analytics', color: '#38bdf8' },
+      { from: 'r-record', to: 'r-ios', label: 'MethodChannel LiveActivity', color: '#38bdf8' },
+      { from: 'r-record', to: 'r-p01', label: '1Hz Geolocator Stream', color: '#a3e635' },
+      { from: 'r-p01', to: 'r-p02', label: 'Accepted Fix + Cov Scale', color: '#a3e635' },
+      { from: 'r-p02', to: 'r-p03', label: 'Finalizer Batch Points', color: '#a3e635' },
+      { from: 'r-record', to: 'r-steps', label: 'Raw Accel Stream', color: '#a3e635' },
+      { from: 'r-steps', to: 'r-dbscan', label: 'Step Events + Cadence', color: '#a3e635' },
+      { from: 'r-steps', to: 'r-stride', label: 'Cadence spm + Height', color: '#a3e635' },
+      { from: 'r-profile', to: 'r-stride', label: 'User Height cm', color: '#38bdf8' },
+      { from: 'r-profile', to: 'r-record', label: '2024 Compendium MET', color: '#38bdf8' },
+      { from: 'r-record', to: 'r-deepiod', label: 'Observational 1Hz Snapshot', color: '#a78bfa' },
+      { from: 'r-deepiod', to: 'r-yoo', label: 'Outdoor Prob + GNSS C/N0', color: '#a78bfa' },
+      { from: 'r-record', to: 'r-isar', label: '5s Checkpoint + Raw GPS/Steps', color: '#fbbf24' },
+      { from: 'r-isar', to: 'r-repo', label: 'Owner-Checked Queries', color: '#fbbf24' },
+      { from: 'r-sqlite', to: 'r-repo', label: 'Delete Queue & Profile', color: '#fbbf24' },
+      { from: 'r-record', to: 'r-edge-ingest', label: 'HTTPS Batch Upload', color: '#34d399' },
+      { from: 'r-repo', to: 'r-edge-ingest', label: 'Offline Retry Sync', color: '#34d399' },
+      { from: 'r-edge-ingest', to: 'r-pg', label: 'Insert Raw & Queue Job', color: '#34d399' },
+      { from: 'r-edge-workers', to: 'r-pg', label: 'Canonical Metrics v2 + Audits', color: '#34d399' },
+      { from: 'r-aisig', to: 'r-edge-ai', label: 'WorkoutSignals Payload', color: '#a78bfa' },
+      { from: 'r-b-gnss', to: 'r-p02', label: 'Replay Shared Production Code', color: '#fb7185' },
+      { from: 'r-b-step', to: 'r-steps', label: 'Replay Exact Dart Detectors', color: '#fb7185' },
+      { from: 'r-b-iod', to: 'r-deepiod', label: 'Weight Parity & Held-Out Eval', color: '#fb7185' }
+    ];
+
+    const world = document.getElementById('world');
+    const svg = document.getElementById('wires-svg');
+
+    // Render Wings
+    WINGS.forEach(w => {
+      const el = document.createElement('div');
+      el.className = 'wing';
+      el.style.cssText = `left:${w.x}px;top:${w.y}px;width:${w.w}px;height:${w.h}px;--wing-color:${w.color};--wing-bg:${w.bg};`;
+      el.innerHTML = `<div class="wing-header"><span class="wing-title">${w.title}</span><span class="wing-sub">${w.sub}</span></div>`;
+      world.appendChild(el);
+    });
+
+    // Render Rooms
+    const roomEls = {};
+    ROOMS.forEach(r => {
+      const el = document.createElement('div');
+      el.className = 'room';
+      el.dataset.id = r.id;
+      el.style.cssText = `left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px;--room-accent:${r.accent};`;
+      el.innerHTML = `
+        <div>
+          <div class="room-top">
+            <div class="room-name">${r.name}</div>
+            <span class="room-badge">${r.badge}</span>
+          </div>
+          <div class="room-desc">${r.desc}</div>
+        </div>
+        <div class="room-path">${r.files[0]}</div>
+      `;
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectRoom(r.id);
+      });
+      world.appendChild(el);
+      roomEls[r.id] = el;
+    });
+
+    // Render Wires
+    const wireEls = [];
+    function centerOf(id) {
+      const r = ROOMS.find(x => x.id === id);
+      return { x: r.x + r.w / 2, y: r.y + r.h / 2 };
+    }
+    WIRES.forEach(w => {
+      const a = centerOf(w.from), b = centerOf(w.to);
+      const dx = (b.x - a.x) * 0.45;
+      const d = `M ${a.x} ${a.y} C ${a.x + dx} ${a.y}, ${b.x - dx} ${b.y}, ${b.x} ${b.y}`;
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', d);
+      path.setAttribute('stroke', w.color);
+      path.setAttribute('class', 'wire-path');
+      svg.appendChild(path);
+      wireEls.push({ ...w, el: path });
+    });
+
+    function selectRoom(id) {
+      const room = ROOMS.find(r => r.id === id);
+      if (!room) return;
+      Object.values(roomEls).forEach(el => el.classList.remove('selected', 'dimmed'));
+      const neighborIds = new Set([id]);
+      wireEls.forEach(w => {
+        const match = w.from === id || w.to === id;
+        w.el.classList.toggle('active', match);
+        if (match) { neighborIds.add(w.from); neighborIds.add(w.to); }
+      });
+      Object.entries(roomEls).forEach(([rid, el]) => {
+        if (rid === id) el.classList.add('selected');
+        else if (!neighborIds.has(rid)) el.classList.add('dimmed');
+      });
+
+      document.getElementById('ins-title').textContent = room.name;
+      document.getElementById('ins-desc').textContent = room.desc;
+      document.getElementById('ins-files').innerHTML = room.files
+        .map(f => `<span class="file-pill">📄 ${f}</span>`).join('');
+
+      const related = WIRES.filter(w => w.from === id || w.to === id);
+      document.getElementById('ins-conns').innerHTML = related.map(w => {
+        const otherId = w.from === id ? w.to : w.from;
+        const dir = w.from === id ? '→ Gửi tới' : '← Nhận từ';
+        const other = ROOMS.find(r => r.id === otherId);
+        return `<div class="conn-item" data-Jump="${otherId}"><span><strong>${dir}:</strong> ${other.name}</span><span style="color:var(--cyan);font-size:0.72rem;">${w.label}</span></div>`;
+      }).join('') || '<div style="font-size:0.8rem;color:var(--muted);">Không có kết nối trực tiếp</div>';
+
+      document.querySelectorAll('[data-Jump]').forEach(btn => {
+        btn.addEventListener('click', () => selectRoom(btn.getAttribute('data-Jump')));
+      });
+    }
+
+    document.getElementById('viewport').addEventListener('click', () => {
+      Object.values(roomEls).forEach(el => el.classList.remove('selected', 'dimmed'));
+      wireEls.forEach(w => w.el.classList.remove('active'));
+    });
+
+    // Pan & Zoom
+    const viewport = document.getElementById('viewport');
+    let scale = 0.72, panX = 20, panY = 20, dragging = false, startX = 0, startY = 0;
+    function applyTransform() {
+      world.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+      document.getElementById('zoom-lbl').textContent = Math.round(scale * 100) + '%';
+    }
+    function fitScreen() {
+      const vw = viewport.clientWidth, vh = viewport.clientHeight;
+      scale = Math.min((vw - 40) / 2150, (vh - 40) / 1420);
+      panX = (vw - 2150 * scale) / 2;
+      panY = Math.max(16, (vh - 1420 * scale) / 2);
+      applyTransform();
+    }
+    viewport.addEventListener('mousedown', e => {
+      if (e.target.closest('.room') || e.target.closest('.floating-controls')) return;
+      dragging = true; viewport.classList.add('dragging');
+      startX = e.clientX - panX; startY = e.clientY - panY;
+    });
+    window.addEventListener('mousemove', e => {
+      if (!dragging) return;
+      panX = e.clientX - startX; panY = e.clientY - startY;
+      applyTransform();
+    });
+    window.addEventListener('mouseup', () => { dragging = false; viewport.classList.remove('dragging'); });
+    viewport.addEventListener('wheel', e => {
+      e.preventDefault();
+      const rect = viewport.getBoundingClientRect();
+      const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+      const prev = scale;
+      scale = Math.min(1.6, Math.max(0.32, scale * (e.deltaY < 0 ? 1.09 : 0.92)));
+      panX = mx - (mx - panX) * (scale / prev);
+      panY = my - (my - panY) * (scale / prev);
+      applyTransform();
+    }, { passive: false });
+
+    document.getElementById('zoom-in').onclick = () => { scale = Math.min(1.6, scale * 1.15); applyTransform(); };
+    document.getElementById('zoom-out').onclick = () => { scale = Math.max(0.32, scale / 1.15); applyTransform(); };
+    document.getElementById('fit-btn').onclick = fitScreen;
+
+    let wiresVisible = true;
+    document.getElementById('toggle-wires').onclick = (e) => {
+      wiresVisible = !wiresVisible;
+      svg.style.display = wiresVisible ? 'block' : 'none';
+      e.currentTarget.classList.toggle('active', wiresVisible);
+    };
+
+    document.getElementById('search').addEventListener('input', e => {
+      const q = e.target.value.trim().toLowerCase();
+      ROOMS.forEach(r => {
+        const hay = (r.name + ' ' + r.desc + ' ' + r.badge + ' ' + r.files.join(' ')).toLowerCase();
+        roomEls[r.id].classList.toggle('dimmed', q.length > 0 && !hay.includes(q));
+      });
+    });
+
+    const savedTheme = localStorage.getItem('aetron_doc_theme');
+    if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
+    document.getElementById('theme-btn').onclick = () => {
+      const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('aetron_doc_theme', next);
+    };
+
+    window.addEventListener('resize', fitScreen);
+    fitScreen();
+    selectRoom('r-p02');
+  </script>
+</body>
+</html>

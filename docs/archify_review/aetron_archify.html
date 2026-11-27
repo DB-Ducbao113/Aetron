@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aetron Archify — Grounded Runtime & Pipeline Architecture Compiler</title>
+  <style>
+    :root {
+      --bg: #070b14;
+      --panel: rgba(13, 20, 38, 0.92);
+      --card: rgba(20, 30, 54, 0.92);
+      --border: rgba(56, 189, 248, 0.24);
+      --text: #eef4ff;
+      --muted: #8ea3c7;
+      --cyan: #38bdf8;
+      --lime: #a3e635;
+      --violet: #a78bfa;
+      --amber: #fbbf24;
+      --emerald: #34d399;
+      --rose: #fb7185;
+    }
+    [data-theme="light"] {
+      --bg: #f1f5f9;
+      --panel: rgba(255, 255, 255, 0.95);
+      --card: rgba(248, 250, 252, 0.98);
+      --border: rgba(2, 132, 199, 0.25);
+      --text: #0f172a;
+      --muted: #475569;
+      --cyan: #0284c7;
+      --lime: #4d7c0f;
+      --violet: #6d28d9;
+      --amber: #d97706;
+      --emerald: #059669;
+      --rose: #e11d48;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    header.topbar {
+      padding: 10px 18px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      z-index: 20;
+    }
+    .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .btn {
+      padding: 7px 12px;
+      border-radius: 9px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+    .btn:hover { border-color: var(--cyan); }
+    .btn.active {
+      background: rgba(56, 189, 248, 0.18);
+      border-color: var(--cyan);
+      color: var(--cyan);
+    }
+    .btn.trace-btn.active {
+      background: rgba(163, 230, 53, 0.2);
+      border-color: var(--lime);
+      color: var(--lime);
+    }
+    .subbar {
+      padding: 8px 18px;
+      background: rgba(15, 23, 42, 0.55);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      font-size: 0.79rem;
+    }
+    .main {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+    #stage {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      cursor: grab;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(56, 189, 248, 0.06), transparent 45%),
+        radial-gradient(circle at 80% 75%, rgba(167, 139, 250, 0.06), transparent 45%);
+    }
+    #stage.dragging { cursor: grabbing; }
+    #arch-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    aside.drawer {
+      width: 390px;
+      background: var(--panel);
+      border-left: 1px solid var(--border);
+      padding: 18px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .lbl {
+      font-size: 0.71rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .src-tag {
+      display: block;
+      font-family: "SF Mono", Menlo, monospace;
+      font-size: 0.74rem;
+      padding: 6px 9px;
+      border-radius: 8px;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      color: var(--cyan);
+      margin-bottom: 6px;
+      word-break: break-all;
+    }
+    .spec-pill {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 7px;
+      font-size: 0.74rem;
+      background: rgba(163, 230, 53, 0.12);
+      color: var(--lime);
+      margin: 0 6px 6px 0;
+      font-family: "SF Mono", Menlo, monospace;
+    }
+    .ir-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--emerald);
+      font-weight: 700;
+    }
+    .node-group { cursor: pointer; transition: opacity 0.2s ease; }
+    .node-group.dim { opacity: 0.22; }
+    .edge-line { fill: none; stroke-width: 2.2; opacity: 0.55; transition: opacity 0.2s ease; }
+    .edge-line.highlight { opacity: 1; stroke-width: 3.2; }
+    .edge-line.dim { opacity: 0.12; }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="row">
+      <a class="btn" href="./index.html">⌂ Portal</a>
+      <a class="btn" href="./aetron_floorplan.html">🗺️ Floorplan</a>
+      <a class="btn active" href="./aetron_archify.html">⚡ Archify</a>
+      <a class="btn" href="./aetron_literature_benchmark.html">📐 Literature & Benchmark</a>
+      <a class="btn" href="./aetron_benchmark_playbook.html">🧪 Cách Đo Benchmark</a>
+    </div>
+    <div class="row" id="diagram-tabs">
+      <button class="btn active" data-view="runtime">1. Runtime Architecture</button>
+      <button class="btn" data-view="gnss">2. GNSS & IMU Pipeline (P01–P03)</button>
+      <button class="btn" data-view="reconcile">3. Offline↔Server Reconciliation</button>
+      <button class="btn" data-view="iod">4. DeepIOD & Yoo Fusion</button>
+    </div>
+    <div class="row">
+      <button class="btn" id="export-svg" type="button">⬇ Xuất SVG</button>
+      <button class="btn" id="reset-view" type="button">⊡ Reset Zoom</button>
+      <button class="btn" id="theme-btn" type="button">🌗 Sáng/Tối</button>
+    </div>
+  </header>
+
+  <div class="subbar">
+    <div class="row">
+      <span class="ir-badge">● Typed IR Schema Verified (0 Hallucinated Nodes)</span>
+      <span style="color:var(--muted);">| Chọn kịch bản chạy hạt dữ liệu (Trace Motion):</span>
+      <button class="btn trace-btn active" data-trace="all">Tất cả luồng</button>
+      <button class="btn trace-btn" data-trace="outdoor">🏃 Chạy ngoài trời (GNSS AEKF)</button>
+      <button class="btn trace-btn" data-trace="indoor">🏠 Máy chạy bộ / Mất sóng (IMU + Renaudin)</button>
+      <button class="btn trace-btn" data-trace="sync">☁️ Lưu Isar & Đối soát Server</button>
+    </div>
+    <div style="color:var(--muted);" id="view-caption">Sơ đồ kiến trúc tổng thể thực thi Mobile ↔ Local DB ↔ Supabase Deno Edge</div>
+  </div>
+
+  <div class="main">
+    <div id="stage">
+      <svg id="arch-svg" viewBox="0 0 1460 840" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+
+    <aside class="drawer">
+      <div class="box">
+        <div class="lbl">Node Inspector (Grounded IR)</div>
+        <h2 id="d-title" style="font-size:1.15rem;margin-bottom:6px;">Chọn một khối trong sơ đồ</h2>
+        <div id="d-layer" style="font-size:0.76rem;color:var(--cyan);font-weight:700;margin-bottom:8px;"></div>
+        <p id="d-desc" style="font-size:0.84rem;color:var(--muted);line-height:1.52;"></p>
+      </div>
+      <div class="box">
+        <div class="lbl">Thông số Toán học & Kỹ thuật (Parameters)</div>
+        <div id="d-specs"></div>
+      </div>
+      <div class="box">
+        <div class="lbl">SRC Evidence (Git-Verified Source Paths)</div>
+        <div id="d-src"></div>
+      </div>
+      <div class="box">
+        <div class="lbl">Typed JSON IR Preview</div>
+        <pre id="d-json" style="font-family:'SF Mono',Menlo,monospace;font-size:0.71rem;color:var(--muted);overflow-x:auto;white-space:pre-wrap;"></pre>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    const ARCHIFY_IR = {
+      runtime: {
+        caption: 'Kiến trúc thực thi toàn hệ thống: Cảm biến phần cứng → Flutter Engine → Isar/SQLite → Supabase Edge Workers → PostGIS',
+        lanes: [
+          { x: 25, y: 25, w: 265, h: 790, title: 'DEVICE SENSORS & OS', color: '#38bdf8' },
+          { x: 315, y: 25, w: 405, h: 790, title: 'FLUTTER CLIENT & DOMAIN', color: '#a3e635' },
+          { x: 745, y: 25, w: 300, h: 790, title: 'OFFLINE-FIRST STORAGE', color: '#fbbf24' },
+          { x: 1070, y: 25, w: 365, h: 790, title: 'SUPABASE EDGE & POSTGIS', color: '#34d399' }
+        ],
+        nodes: [
+          { id: 'gnss_hw', x: 48, y: 90, w: 220, h: 105, color: '#38bdf8', layer: 'Hardware Stream', title: 'Geolocator GNSS Stream', sub: '1 Hz Lat/Lng, Acc, Speed, Course', desc: 'Cung cấp chuỗi vị trí vệ tinh thô từ CoreLocation (iOS) và FusedLocationProvider (Android).', specs: ['1 Hz nominal', '68% 1σ Accuracy'], src: ['lib/core/services/location_tracking_service.dart'] },
+          { id: 'imu_hw', x: 48, y: 245, w: 220, h: 105, color: '#38bdf8', layer: 'Hardware Stream', title: 'Accelerometer & Pedometer', sub: 'Raw Accel (m/s²) + OS Steps', desc: 'Đọc gia tốc kế 3 trục bao gồm trọng trường cho bộ phát hiện bước Oxford/Xu và bộ đếm bước phần cứng.', specs: ['sensors_plus', 'pedometer'], src: ['lib/core/services/sensor/research_walking_step_sensor_adapter.dart', 'lib/core/services/step_tracking_service.dart'] },
+          { id: 'env_hw', x: 48, y: 400, w: 220, h: 105, color: '#a78bfa', layer: 'Observational Telemetry', title: 'Light, Mag & GNSS C/N0', sub: '1 Hz Multi-Sensor Snapshot', desc: 'Thu thập cường độ sáng (Lux), từ trường, C/N0 vệ tinh phục vụ phân loại môi trường DeepIOD & Yoo.', specs: ['1 Hz Epoch', 'Zero Audio Capture'], src: ['lib/features/iod/data/datasources/iod_sensor_acquisition_service.dart'] },
+          { id: 'live_act', x: 48, y: 585, w: 220, h: 105, color: '#38bdf8', layer: 'Native Extension', title: 'iOS Live Activity Widget', sub: 'SwiftUI + ActivityKit', desc: 'Đồng bộ HUD quãng đường, pace và trạng thái tạm dừng ra Dynamic Island và Lock Screen.', specs: ['MethodChannel', 'SwiftUI'], src: ['ios/WorkoutLiveActivity/WorkoutLiveActivityWidget.swift', 'lib/core/services/ios_live_activity_service.dart'] },
+
+          { id: 'coord', x: 345, y: 90, w: 345, h: 120, color: '#a3e635', layer: 'Presentation Coordinator', title: 'WorkoutRecordingCoordinator', sub: 'Session State + 5s Flush + Checkpoints', desc: 'Điều phối toàn bộ vòng đời buổi tập: nhận mẫu GPS/Step, lưu bền vững tức thì vào Isar và gom lô gửi lên Edge.', specs: ['GPS Batch = 24', 'Step Batch = 6', 'Checkpoint = 5s'], src: ['lib/features/workout/presentation/screens/record/workout_recording_coordinator.dart#L29-L180'] },
+          { id: 'eng', x: 345, y: 250, w: 345, h: 135, color: '#a3e635', layer: 'Domain Positioning Core', title: 'P01 + P02 (4-State AEKF) + StepGate', sub: 'Outlier Gate → Mahalanobis AEKF → Stride', desc: 'Lõi tính toán quãng đường và vận tốc: lọc nhiễu động học P01, bộ lọc Kalman mở rộng thích nghi P02 và cổng bước chân.', specs: ['State [px,py,v,θ]', 'γ₁=5.991, γ₂=13.816'], src: ['lib/features/workout/domain/services/workout_tracking_engine.dart', 'lib/features/workout/domain/services/ekf/extended_kalman_filter.dart'] },
+          { id: 'iod_cls', x: 345, y: 425, w: 345, h: 110, color: '#a78bfa', layer: 'Domain Context AI', title: 'DeepIOD 4-Ch Mobile & Yoo Handover', sub: 'DWS-Conv2D (10s window) — Observational', desc: 'Dự đoán xác suất Trong nhà / Ngoài trời / Chuyển tiếp theo thời gian thực mà không làm sai lệch bộ lọc EKF.', specs: ['Window = 10s', 'Latency < 0.05ms'], src: ['lib/features/iod/domain/services/deepiod_neural_classifier.dart', 'lib/features/iod/domain/services/seamless_transition_detector.dart'] },
+          { id: 'finalizer', x: 345, y: 575, w: 345, h: 130, color: '#a3e635', layer: 'Session Finalization', title: 'WorkoutSessionFinalizer + P03 + MET', sub: 'Monotone PCHIP + 2024 Compendium kcal', desc: 'Chốt kết quả buổi tập: tái tạo đường hiển thị P03, tính calo từ thời gian di chuyển thực tế và nén Polyline.', specs: ['P03 Display-Only', 'PACOMPENDIUM 2024'], src: ['lib/features/workout/presentation/screens/record/workout_session_finalizer.dart#L35-L220'] },
+
+          { id: 'isar', x: 770, y: 120, w: 250, h: 165, color: '#fbbf24', layer: 'Local NoSQL Vault', title: 'Isar LocalDB', sub: 'LocalWorkout • GPSPoint • StepInterval', desc: 'Cơ sở dữ liệu cục bộ tốc độ cao với relaxedDurability:false, kiểm tra chủ sở hữu và khôi phục bản sao lưu hỏng.', specs: ['Isar 3.1.0+1', 'relaxedDurability:false'], src: ['lib/features/workout/data/local/local_db.dart#L16-L157'] },
+          { id: 'sqlite', x: 770, y: 335, w: 250, h: 140, color: '#fbbf24', layer: 'Local Relational Store', title: 'SQLite DatabaseHelper', sub: 'user_profile + delete sync queue', desc: 'Lưu hồ sơ thể chất ngoại tuyến (v6) và hàng đợi đồng bộ thao tác xóa khi mất mạng.', specs: ['Schema v6', 'Tombstone Queue'], src: ['lib/core/storage/database_helper.dart#L4-L135'] },
+          { id: 'repo', x: 770, y: 525, w: 250, h: 165, color: '#fbbf24', layer: 'Sync & Reconciliation', title: 'WorkoutRepositoryImpl', sub: 'ID Pagination + Non-Destructive Merge', desc: 'Đồng bộ hai chiều giữa Isar và Supabase, bảo toàn bài tập offline khi chuyển tài khoản hoặc rớt mạng.', specs: ['Owner Isolation', 'Encoded Polyline 94%'], src: ['lib/features/workout/data/repositories/workout_repository_impl.dart'] },
+
+          { id: 'edge_in', x: 1095, y: 90, w: 315, h: 130, color: '#34d399', layer: 'Deno Edge API', title: 'workouts-start / gps-track / end', sub: 'JWT Auth + Payload Guard + Job Enqueue', desc: 'Các cổng HTTP nhận dữ liệu trực tiếp từ mobile, xác thực người dùng và xếp hàng tác vụ hậu xử lý.', specs: ['Max 512KB/batch', 'Idempotent Upsert'], src: ['backend/supabase/functions/workouts-start/index.ts', 'backend/supabase/functions/gps-track/index.ts', 'backend/supabase/functions/workouts-end/index.ts'] },
+          { id: 'det_worker', x: 1095, y: 260, w: 315, h: 150, color: '#34d399', layer: 'Server Authority Worker', title: 'deterministic-finalize-worker', sub: 'Raw Segment Audit + Canonical MET v2', desc: 'Đối soát độc lập dữ liệu GPS & Step thô trên server, kiểm toán từng chặng và xuất bản chỉ số chuẩn hóa v2.', specs: ['METRICS_VERSION=2', 'Dispatch Nonce Auth'], src: ['backend/supabase/functions/deterministic-finalize-worker/index.ts#L115-L225'] },
+          { id: 'route_worker', x: 1095, y: 445, w: 315, h: 130, color: '#34d399', layer: 'Post-Process Worker', title: 'route-correction & AI insight', sub: 'Chunk Overlap Scorer + Safety Guardrail', desc: 'Đánh giá chất lượng khớp đường chạy và sinh nhận xét huấn luyện AI kèm danh sách chặn thuật ngữ y khoa.', specs: ['Chunk=100, Overlap=8', 'Medical Blacklist'], src: ['backend/supabase/functions/route-correction-worker/index.ts', 'backend/supabase/functions/generate-workout-insight/index.ts'] },
+          { id: 'postgis', x: 1095, y: 610, w: 315, h: 155, color: '#34d399', layer: 'Cloud Persistence', title: 'Supabase PostgreSQL + PostGIS', sub: '32 Migrations + Row-Level Security', desc: 'Lưu trữ chính thức phiên tập, điểm GPS thô, khoảng bước chân, nhật ký xử lý và kết quả kiểm toán.', specs: ['RLS Enabled', 'PostGIS Geometry'], src: ['backend/database/schema.sql', 'backend/supabase/migrations/202611200003_server_authority.sql'] }
+        ],
+        edges: [
+          { from: 'gnss_hw', to: 'coord', label: '1Hz Position', color: '#38bdf8', traces: ['outdoor'] },
+          { from: 'coord', to: 'eng', label: 'Evaluate Fix', color: '#a3e635', traces: ['outdoor', 'indoor'] },
+          { from: 'imu_hw', to: 'eng', label: 'Steps & Cadence', color: '#38bdf8', traces: ['indoor', 'outdoor'] },
+          { from: 'env_hw', to: 'iod_cls', label: 'Lux/Mag/CN0', color: '#a78bfa', traces: ['indoor', 'outdoor'] },
+          { from: 'coord', to: 'live_act', label: 'HUD Push', color: '#38bdf8', traces: ['outdoor', 'indoor'] },
+          { from: 'eng', to: 'finalizer', label: 'Filtered Route & Steps', color: '#a3e635', traces: ['outdoor', 'indoor', 'sync'] },
+          { from: 'sqlite', to: 'finalizer', label: 'Height/Weight', color: '#fbbf24', traces: ['indoor', 'outdoor', 'sync'] },
+          { from: 'coord', to: 'isar', label: 'Raw GPS/Steps + 5s Ckpt', color: '#fbbf24', traces: ['outdoor', 'indoor', 'sync'] },
+          { from: 'finalizer', to: 'isar', label: 'Sealed Workout', color: '#fbbf24', traces: ['sync'] },
+          { from: 'isar', to: 'repo', label: 'Unsynced Queue', color: '#fbbf24', traces: ['sync'] },
+          { from: 'coord', to: 'edge_in', label: 'Live Batch POST', color: '#34d399', traces: ['outdoor', 'sync'] },
+          { from: 'repo', to: 'edge_in', label: 'Offline Reconciliation', color: '#34d399', traces: ['sync'] },
+          { from: 'edge_in', to: 'postgis', label: 'Insert & Enqueue', color: '#34d399', traces: ['sync'] },
+          { from: 'postgis', to: 'det_worker', label: 'Claim Queued Job', color: '#34d399', traces: ['sync'] },
+          { from: 'det_worker', to: 'postgis', label: 'Publish Metrics v2', color: '#34d399', traces: ['sync'] },
+          { from: 'det_worker', to: 'route_worker', label: 'Trigger Phase 3 & AI', color: '#34d399', traces: ['sync'] }
+        ]
+      },
+
+      gnss: {
+        caption: 'Pipeline Định vị Đa tầng (P01 → P02 → P03) và Hợp nhất Cảm biến Quán tính Đi bộ / Chạy bộ',
+        lanes: [
+          { x: 25, y: 25, w: 330, h: 790, title: 'STAGE 0 & P01: PREPROCESSING', color: '#38bdf8' },
+          { x: 380, y: 25, w: 350, h: 790, title: 'P02: ADAPTIVE EKF SMOOTHING', color: '#a3e635' },
+          { x: 755, y: 25, w: 330, h: 790, title: 'INERTIAL STEP & STRIDE LAB', color: '#a78bfa' },
+          { x: 1110, y: 25, w: 325, h: 790, title: 'P03 & CANONICAL OUTPUTS', color: '#34d399' }
+        ],
+        nodes: [
+          { id: 'g_cont', x: 50, y: 95, w: 280, h: 125, color: '#38bdf8', layer: 'Continuity Guard', title: 'GpsRawSignalContinuity', sub: 'Monotonic UTC + Gap > 5.0s Detector', desc: 'Loại bỏ bản tin GPS trễ thứ tự thời gian và phát hiện mất sóng > 5 giây để ngắt đoạn thay vì nối thẳng xuyên tòa nhà.', specs: ['dt_gap = 5.0 s', 'Chronological Lock'], src: ['lib/features/workout/domain/services/gps_raw_signal_continuity.dart'] },
+          { id: 'g_p01', x: 50, y: 265, w: 280, h: 165, color: '#38bdf8', layer: 'Phase 1 (Li 2025 & Zheng 2015)', title: 'StreamingTrajectoryPreprocessor', sub: 'Kinematic Bounds + Acute Rebound 140°', desc: 'Kiểm tra vận tốc/gia tốc cực đại theo từng môn (Đi bộ 3.5 m/s, Chạy 8.0 m/s, Đạp xe 22.0 m/s) và loại bỏ gai nhiễu đa đường phản xạ nhọn.', specs: ['v_max: 3.5/8.0/22 m/s', 'Window W = 5'], src: ['lib/features/workout/domain/services/trajectory_preprocessing/streaming_trajectory_preprocessor.dart', 'lib/features/workout/domain/services/trajectory_preprocessing/kinematic_limits.dart'] },
+          { id: 'g_stay', x: 50, y: 475, w: 280, h: 150, color: '#38bdf8', layer: 'Stay-Point & Dwell', title: 'Zheng (2009) + GpsDbscanService', sub: 'Stay (D_max, T_min=10s) & T-DBSCAN ε=6.5m', desc: 'Tách biệt các cụm đứng chờ đèn đỏ hoặc nghỉ chân khỏi quãng đường di chuyển thực sự, ngăn cộng dồn sai số trôi tĩnh.', specs: ['ε = 6.5 m', 't_min = 10.0 s'], src: ['lib/features/workout/domain/services/trajectory_preprocessing/stay_point_segmenter.dart', 'lib/features/workout/domain/services/dbscan/gps_dbscan_service.dart'] },
+
+          { id: 'g_nis', x: 405, y: 95, w: 300, h: 175, color: '#a3e635', layer: 'Phase 2 Gate (Sukhenko 2025)', title: 'Mahalanobis NIS χ² Innovation Gate', sub: 'd_M² = yᵀ S⁻¹ y (2-DOF Ellipsoid)', desc: 'Tính khoảng cách Mahalanobis trên mặt phẳng ENU cục bộ. Điểm nằm giữa 5.991 và 13.816 được bơm phương sai R; vượt 13.816 bị từ chối.', specs: ['γ₁ = 5.991 (95%)', 'γ₂ = 13.816 (99.9%)', 'Re-anchor N = 4'], src: ['lib/features/workout/domain/services/gnss_correction/adaptive_gnss_correction_engine.dart#L115-L284'] },
+          { id: 'g_ekf', x: 405, y: 310, w: 300, h: 175, color: '#a3e635', layer: 'Phase 2 Estimator (Groves 2013)', title: '4-State Extended Kalman Filter', sub: 'x = [p_E, p_N, v, θ]ᵀ + Turn Noise Scaling', desc: 'Dự đoán phi tuyến vận tốc-góc hướng, khóa góc hướng nhiễu ở tốc độ thấp (deadband) và nhân nhiễu quá trình khi ôm cua gấp.', specs: ['4x4 Covariance P', 'Cauchy-Schwarz Clamp'], src: ['lib/features/workout/domain/services/ekf/extended_kalman_filter.dart#L31-L260'] },
+          { id: 'g_alpha', x: 405, y: 525, w: 300, h: 130, color: '#fbbf24', layer: 'Historical Comparator', title: 'Fixed Alpha Turn-Boost Baseline', sub: 'α ∈ {0.34, 0.52, 0.72}, Turn α=0.82', desc: 'Bộ lọc làm mượt mũ lịch sử được giữ lại dưới cờ cấu hình để đối sánh chuẩn xác RMSE/MAE trên cùng quỹ đạo RTK.', specs: ['Comparator Only', 'RMSE 8.75m vs 3.43m'], src: ['lib/features/workout/domain/services/gps_smoothing_service.dart#L292-L321'] },
+
+          { id: 'g_oxxu', x: 780, y: 95, w: 280, h: 175, color: '#a78bfa', layer: 'Raw IMU Step Detection', title: 'Oxford WPD (Walk) & Xu FIR-DFT (Run)', sub: '100Hz Gauss Peak vs 50Hz Adaptive Threshold', desc: 'Đếm bước nhân quả trực tiếp từ gia tốc thô mà không nhìn trước cuối buổi tập; triệt nhiễu rung tay tĩnh bằng ngưỡng biên độ động.', specs: ['Walk: 93.16% Acc', 'Run: 98.69% Acc'], src: ['lib/core/services/sensor/oxford_step_detector.dart', 'lib/core/services/sensor/xu_running_step_detector.dart'] },
+          { id: 'g_gate', x: 780, y: 310, w: 280, h: 165, color: '#a78bfa', layer: 'Anti-Ghost-Step Gate', title: 'StepMotionGate', sub: 'Min 5-Step Bout + Stationary GPS Lock', desc: 'Loại bỏ các cú lắc điện thoại rời rạc (1–4 nhịp) và khóa cộng bước nếu GPS độ chính xác cao chứng minh người dùng đang đứng yên.', specs: ['kMinBoutSteps = 5', 'Grace = 3.5 s'], src: ['lib/features/workout/domain/services/step_motion_gate.dart#L23-L148'] },
+          { id: 'g_ren', x: 780, y: 515, w: 280, h: 165, color: '#a78bfa', layer: 'Adaptive Stride Length', title: 'Renaudin (2012) Eq. 8 + Fallback', sub: 'L = H·(a·f + b) + c (LOSO Fitted)', desc: 'Ước lượng chiều dài từng bước theo chiều cao H và tần số bước f khi chạy trong nhà hoặc mất sóng GPS tạm thời.', specs: ['Walk MAE 8.61 cm', 'Run MAE 17.80 cm'], src: ['lib/features/workout/domain/services/research_walking_step_length.dart', 'lib/features/workout/domain/services/research_running_step_length.dart'] },
+
+          { id: 'g_p03', x: 1135, y: 120, w: 275, h: 185, color: '#34d399', layer: 'Phase 3 Display Spline', title: 'Monotone PCHIP Reconstruction', sub: 'Fritsch–Carlson (1980) on 2s < dt ≤ 15s', desc: 'Tái tạo đường cong C¹ mượt mà không vọt lố (overshoot) cho các khoảng thưa sóng ngắn; tuyệt đối không nội suy qua hố đen >15s.', specs: ['2s < dt ≤ 15s', 'Never Enters Distance'], src: ['lib/features/workout/domain/services/trajectory_reconstruction/kinematic_trajectory_reconstruction_engine.dart#L221-L300'] },
+          { id: 'g_dist', x: 1135, y: 350, w: 275, h: 175, color: '#34d399', layer: 'Official Workout Metrics', title: 'Segmented Distance & Moving Time', sub: 'AEKF Route + Step Segments + MET kcal', desc: 'Hợp nhất quãng đường GPS đã lọc và quãng đường bước chân khi mất sóng mà không tính trùng lặp hay cộng P03.', specs: ['TU Wien Dist Err 1.34%', 'Zero Double-Counting'], src: ['lib/features/workout/presentation/screens/record/workout_session_finalizer.dart#L146-L208'] },
+          { id: 'g_poly', x: 1135, y: 565, w: 275, h: 150, color: '#34d399', layer: 'Geometric Compression', title: 'Google Encoded Polyline', sub: 'Delta Quantization + 5-bit Varint ASCII', desc: 'Nén danh sách tọa độ giảm 94.18% kích thước JSON (sai số lượng tử RMSE chỉ 0.37m ở precision=5 và 0.023m ở precision=6).', specs: ['17.19× Smaller (p=5)', 'RMSE 0.375 m'], src: ['lib/features/workout/domain/services/polyline_compression_service.dart#L45-L174'] }
+        ],
+        edges: [
+          { from: 'g_cont', to: 'g_p01', label: 'Chronological Fix', color: '#38bdf8', traces: ['outdoor'] },
+          { from: 'g_p01', to: 'g_stay', label: 'Clean Samples', color: '#38bdf8', traces: ['outdoor'] },
+          { from: 'g_p01', to: 'g_nis', label: 'Accepted + σ Scale', color: '#a3e635', traces: ['outdoor'] },
+          { from: 'g_nis', to: 'g_ekf', label: 'Inflated R / Gated', color: '#a3e635', traces: ['outdoor'] },
+          { from: 'g_p01', to: 'g_alpha', label: 'Benchmark Shadow', color: '#fbbf24', traces: [] },
+          { from: 'g_oxxu', to: 'g_gate', label: 'Confirmed Peaks', color: '#a78bfa', traces: ['indoor', 'outdoor'] },
+          { from: 'g_stay', to: 'g_gate', label: 'Stationary GPS Lock', color: '#38bdf8', traces: ['outdoor'] },
+          { from: 'g_gate', to: 'g_ren', label: 'Validated Step Delta', color: '#a78bfa', traces: ['indoor'] },
+          { from: 'g_ekf', to: 'g_p03', label: 'Batch Finalize', color: '#34d399', traces: ['outdoor', 'sync'] },
+          { from: 'g_ekf', to: 'g_dist', label: 'AEKF Filtered Path', color: '#a3e635', traces: ['outdoor', 'sync'] },
+          { from: 'g_ren', to: 'g_dist', label: 'Indoor/Outage Meters', color: '#a78bfa', traces: ['indoor', 'sync'] },
+          { from: 'g_dist', to: 'g_poly', label: 'Route Segments', color: '#34d399', traces: ['sync'] }
+        ]
+      },
+
+      reconcile: {
+        caption: 'Chu trình Lưu trữ Bền vững Offline-First và Đối soát Quyền lực Máy chủ (Server Authority Reconciliation)',
+        lanes: [
+          { x: 25, y: 25, w: 330, h: 790, title: '1. RECORDING & CHECKPOINTS', color: '#38bdf8' },
+          { x: 380, y: 25, w: 330, h: 790, title: '2. SEALED LOCAL FINALIZATION', color: '#fbbf24' },
+          { x: 735, y: 25, w: 340, h: 790, title: '3. DETERMINISTIC SERVER AUDIT', color: '#34d399' },
+          { x: 1100, y: 25, w: 335, h: 790, title: '4. ROUTE MATCH & RECONCILE', color: '#a78bfa' }
+        ],
+        nodes: [
+          { id: 's_shell', x: 50, y: 110, w: 280, h: 145, color: '#38bdf8', layer: 'Session Start', title: 'workouts-start & Local Registration', sub: 'UUID v4 + processing_status=client_recording', desc: 'Đăng ký phiên đang ghi trong LocalDB (ngăn trình dọn rác hoặc đồng bộ sớm) và tạo shell phiên trên Supabase.', specs: ['UUID v4 Enforced', 'Active Session Lock'], src: ['lib/features/workout/data/local/local_db.dart#L23-L31', 'backend/supabase/functions/workouts-start/index.ts'] },
+          { id: 's_ckpt', x: 50, y: 315, w: 280, h: 165, color: '#38bdf8', layer: 'Crash Resilience', title: '5-Second Summary Checkpoints', sub: 'recording_checkpoint: true in Isar', desc: 'Lưu nhanh trạng thái mỗi 5 giây khi có tiến triển và ngay khi bấm Tạm dừng; không bao giờ đẩy nhầm checkpoint thành bài tập hoàn tất.', specs: ['5s Cadence', 'Recover or Discard'], src: ['docs/research/LOCAL_STORAGE_RELIABILITY_20261119.md'] },
+          { id: 's_raw', x: 50, y: 530, w: 280, h: 160, color: '#38bdf8', layer: 'Raw Evidence Stream', title: 'Dual Raw GPS & Step Persistence', sub: 'LocalGPSPoint + gps-track Edge Batch', desc: 'Ghi từng điểm GPS và khoảng bước chân vào Isar đồng thời đẩy lô lên bảng raw_gps_points / raw_step_intervals.', specs: ['Retry Queue on Error', 'Idempotent Keys'], src: ['lib/features/workout/presentation/screens/record/workout_recording_coordinator.dart#L82-L118'] },
+
+          { id: 's_drain', x: 405, y: 140, w: 280, h: 175, color: '#fbbf24', layer: 'Atomic Drain Gate', title: 'drainLocalWrites() Barrier', sub: 'Blocks Finish Until Raw Evidence Saved', desc: 'Trước khi báo hoàn tất buổi tập, hệ thống buộc phải ghi xong toàn bộ dữ liệu thô còn chờ và thử lại nếu lỗi đĩa.', specs: ['Zero False Finish', 'relaxedDurability:false'], src: ['lib/features/workout/presentation/screens/record/workout_recording_coordinator.dart#L99-L118'] },
+          { id: 's_seal', x: 405, y: 375, w: 280, h: 185, color: '#fbbf24', layer: 'Client Artifact', title: 'Sealed LocalWorkout + P03 Archive', sub: 'client_research_result_json Provenance', desc: 'Đóng gói kết quả nghiên cứu phía client (bao gồm mã commit Git, tên thuật toán AEKF/P03 và lộ trình hiển thị) vào Isar.', specs: ['Git SHA Provenance', 'Account Owner Tag'], src: ['lib/features/workout/domain/services/scientific_result_metadata.dart'] },
+
+          { id: 's_end', x: 760, y: 110, w: 290, h: 155, color: '#34d399', layer: 'Job Queueing', title: 'workouts-end Edge Enqueue', sub: 'Queue deterministic_finalize (max 3 tries)', desc: 'Kiểm tra ràng buộc moving_time_sec ≤ duration_sec, cập nhật trạng thái chờ xử lý và sinh job kèm dispatch_nonce.', specs: ['MAX_ATTEMPTS = 3', '23505 Dedup Safe'], src: ['backend/supabase/functions/workouts-end/index.ts#L80-L141'] },
+          { id: 's_det', x: 760, y: 315, w: 290, h: 205, color: '#34d399', layer: 'Canonical Server Audit', title: 'deterministic-finalize-worker', sub: 'Segment Audits + Server Compendium MET', desc: 'Tải toàn bộ điểm GPS & Step thô, chấm điểm hợp lệ/nghi ngờ/loại bỏ cho từng đoạn, tính lại calo chuẩn Compendium 2024 và lưu P03 riêng biệt.', specs: ['Gap=5s, HardGap=90s', 'Acc Gate 20/50/100m'], src: ['backend/supabase/functions/deterministic-finalize-worker/index.ts#L173-L225'] },
+          { id: 's_audit_tbl', x: 760, y: 565, w: 290, h: 140, color: '#34d399', layer: 'Audit Trail', title: 'workout_segment_audits & logs', sub: 'Per-Leg Speed, Accuracy & Status', desc: 'Lưu bằng chứng kiểm toán chi tiết từng đoạn đường để phục vụ truy vết khoa học và chống gian lận.', specs: ['valid/suspicious/invalid', 'Immutable Logs'], src: ['backend/database/processing.sql'] },
+
+          { id: 's_rm', x: 1125, y: 140, w: 285, h: 195, color: '#a78bfa', layer: 'Map-Matching Contract', title: 'route-correction-worker', sub: 'Chunk 100/8 + Honest Stub Fallback', desc: 'Chỉ chạy sau khi finalize hoàn tất. Bảo toàn kết quả kiểm toán khoa học và từ chối giả mạo độ tin cậy khi chưa gắn OSRM thật.', specs: ['High Conf ≥ 0.90', 'Stub -> false'], src: ['backend/supabase/functions/route-correction-worker/index.ts#L124-L243'] },
+          { id: 's_merge', x: 1125, y: 395, w: 285, h: 195, color: '#a78bfa', layer: 'Client Reconciliation', title: 'RouteMatchQualityService & Sync', sub: 'Non-Destructive Pagination Reconcile', desc: 'Chuẩn hóa nguồn quãng đường (filtered vs matched vs filtered_display_matched) và đồng bộ ngược về Isar mà không xóa nhầm dữ liệu offline.', specs: ['Stable ID Cursor', 'Owner Verified'], src: ['lib/features/workout/domain/services/route_match_quality_service.dart#L8-L75', 'lib/features/workout/data/repositories/workout_repository_impl.dart'] }
+        ],
+        edges: [
+          { from: 's_shell', to: 's_ckpt', label: 'Start Timer', color: '#38bdf8', traces: ['outdoor', 'indoor', 'sync'] },
+          { from: 's_ckpt', to: 's_raw', label: 'Continuous Stream', color: '#38bdf8', traces: ['outdoor', 'indoor', 'sync'] },
+          { from: 's_raw', to: 's_drain', label: 'User Taps Stop', color: '#fbbf24', traces: ['sync'] },
+          { from: 's_drain', to: 's_seal', label: 'All Writes Acked', color: '#fbbf24', traces: ['sync'] },
+          { from: 's_seal', to: 's_end', label: 'Upload Summary + Raw', color: '#34d399', traces: ['sync'] },
+          { from: 's_end', to: 's_det', label: 'Dispatch Nonce', color: '#34d399', traces: ['sync'] },
+          { from: 's_det', to: 's_audit_tbl', label: 'Persist Segment Audits', color: '#34d399', traces: ['sync'] },
+          { from: 's_det', to: 's_rm', label: 'Finalize Completed', color: '#a78bfa', traces: ['sync'] },
+          { from: 's_rm', to: 's_merge', label: 'Normalized Route Status', color: '#a78bfa', traces: ['sync'] }
+        ]
+      },
+
+      iod: {
+        caption: 'Kiến trúc Nhận diện Môi trường Trong nhà / Ngoài trời DeepIOD (KAIST 2024) và Chuyển vùng Mượt Yoo (2025)',
+        lanes: [
+          { x: 25, y: 25, w: 320, h: 790, title: '1Hz TELEMETRY & NORMALIZATION', color: '#38bdf8' },
+          { x: 370, y: 25, w: 360, h: 790, title: 'DEEPIOD NEURAL ENSEMBLE', color: '#a78bfa' },
+          { x: 755, y: 25, w: 335, h: 790, title: 'CONTEXT MODULES & YOO (2025)', color: '#a3e635' },
+          { x: 1115, y: 25, w: 320, h: 790, title: 'CONSENSUS & OBSERVATIONAL LOG', color: '#34d399' }
+        ],
+        nodes: [
+          { id: 'i_snap', x: 50, y: 120, w: 270, h: 185, color: '#38bdf8', layer: '1 Hz Sensor Epoch', title: 'IodSensorSnapshot', sub: 'Lux • Mag • Acc • Daytime • C/N0 • LTE', desc: 'Đóng gói mẫu cảm biến đồng bộ mỗi 1 giây. Tuyệt đối không thu âm microphone (Sound=false) và không dùng giá trị giả thay thế cảm biến thiếu.', specs: ['10s Sliding Window', 'Privacy-Preserving'], src: ['lib/features/iod/domain/models/iod_sensor_snapshot.dart'] },
+          { id: 'i_imp', x: 50, y: 365, w: 270, h: 185, color: '#38bdf8', layer: 'Rigorous Missingness Policy', title: 'Z-Score & Zero-Imputation', sub: 'Missing Channel → z = 0.0 (Pop. Mean)', desc: 'Chuẩn hóa theo trung bình và độ lệch chuẩn tập huấn luyện (Sessions 00..59). Kênh thiếu được gán z=0.0 thay vì gán 0 lux gây sai lệch.', specs: ['Zero Data Leakage', 'Train Split 00..59'], src: ['lib/features/iod/domain/services/deepiod_neural_classifier.dart#L118-L157'] },
+
+          { id: 'i_ab', x: 395, y: 95, w: 310, h: 175, color: '#a78bfa', layer: 'Sequence Models (Table 1)', title: 'Model A (CNN-LSTM) & Model B (CNN-MHA)', sub: 'Temporal Feature Encoders', desc: 'Model A giải mã chuỗi bằng LSTM; Model B dùng cơ chế Multi-Head Self-Attention nắm bắt tương quan dài hạn trong cửa sổ 10 giây.', specs: ['w_A = 0.345', 'w_B = 0.321'], src: ['lib/features/iod/domain/services/deepiod_model_a.dart', 'lib/features/iod/domain/services/deepiod_model_b.dart'] },
+          { id: 'i_c8', x: 395, y: 310, w: 310, h: 175, color: '#a78bfa', layer: 'Complete Benchmark Network', title: 'Model C Complete (8-Channel DWS-Conv2D)', sub: '90.59% Acc / 90.17% Macro-F1 on CIOD', desc: 'Mạng tích chập tách chiều sâu 2D trên đủ 8 kênh của bộ dữ liệu Cambridge CIOD (201.731 mẫu kiểm thử độc lập).', specs: ['Acc: 90.59%', 'Macro-F1: 90.17%'], src: ['lib/features/iod/domain/services/deepiod_model_c.dart'] },
+          { id: 'i_c4', x: 395, y: 525, w: 310, h: 185, color: '#a3e635', layer: 'Deployed Mobile Variant', title: 'Model C-Mobile (4-Channel Dedicated)', sub: '[Light, Mag, Acc, Daytime] — Unprivileged', desc: 'Huấn luyện chuyên biệt chỉ trên 4 kênh cảm biến luôn truy cập được trên iOS/Android tiêu chuẩn: đạt Recall Indoor 93.37%, Precision Outdoor 82.61%.', specs: ['Indoor Recall 93.37%', 'Latency < 0.01 ms'], src: ['lib/features/iod/domain/services/deepiod_neural_classifier.dart#L124-L133'] },
+
+          { id: 'i_ctx', x: 780, y: 120, w: 285, h: 195, color: '#a3e635', layer: 'DeepIOD Eq. 7 & Eq. 8', title: 'Adaptive Light & 5m GPS Modules', sub: 'Solar Twilight Lux + 5m Horizontal Gate', desc: 'Mô-đun ánh sáng thích nghi theo ban ngày/chạng vạng (Eq. 7) và mô-đun độ chính xác GPS ngưỡng 5 mét công bố trong bài báo (Eq. 8).', specs: ['GPS Gate = 5.0 m', 'Civil Twilight Aware'], src: ['lib/features/iod/domain/services/deepiod_framework_classifier.dart#L365-L500'] },
+          { id: 'i_yoo', x: 780, y: 375, w: 285, h: 220, color: '#a3e635', layer: 'Yoo (Electronics 2025)', title: 'SeamlessTransitionDetector', sub: 'GNSS C/N0 (30–40 dB-Hz) + Doorway + RSSI', desc: 'Phát hiện vùng chuyển tiếp cửa ra vào dựa trên độ sụt giảm C/N0 (≥4 dB-Hz/s) và số vệ tinh; tự động đặt w_pos=0, w_rssi=0 khi chưa khảo sát.', specs: ['CN0: 30..40 dB-Hz', 'Sat: ≤2 In / ≥5 Out'], src: ['lib/features/iod/domain/services/seamless_transition_detector.dart#L197-L250'] },
+
+          { id: 'i_amv', x: 1140, y: 140, w: 270, h: 205, color: '#34d399', layer: 'Decision Fusion (Eq. 9)', title: 'Adaptive Majority Voter (AMV)', sub: 'Weighted Consensus + Session Hysteresis', desc: 'Hợp nhất xác suất có trọng số F1 trên tập validation (Sessions 60..71) kèm bộ lọc trễ (hysteresis) chống nhấp nháy trạng thái.', specs: ['w_C = 0.334', 'Val Prior = 0.181'], src: ['lib/features/iod/domain/services/deepiod_framework_classifier.dart#L278-L405'] },
+          { id: 'i_obs', x: 1140, y: 405, w: 270, h: 195, color: '#34d399', layer: 'Strict Isolation Guarantee', title: 'Observational IodPrediction Output', sub: 'isObservationalOnly: true', desc: 'Xuất nhãn môi trường, độ tin cậy và sự kiện chuyển giao mà tuyệt đối không ghi đè hay làm nhiễu quãng đường/calo của bộ lọc GPS sản xuất.', specs: ['Zero EKF Side-Effect', 'Experiment Storage'], src: ['lib/features/iod/domain/models/iod_prediction.dart', 'lib/features/iod/data/repositories/iod_experiment_storage.dart'] }
+        ],
+        edges: [
+          { from: 'i_snap', to: 'i_imp', label: '1Hz Raw Features', color: '#38bdf8', traces: ['indoor', 'outdoor'] },
+          { from: 'i_imp', to: 'i_ab', label: '10×8 Tensor', color: '#a78bfa', traces: ['outdoor'] },
+          { from: 'i_imp', to: 'i_c8', label: '10×8 Imputed', color: '#a78bfa', traces: ['outdoor'] },
+          { from: 'i_imp', to: 'i_c4', label: '10×4 Mobile Tensor', color: '#a3e635', traces: ['indoor', 'outdoor'] },
+          { from: 'i_snap', to: 'i_ctx', label: 'Lux + GPS Acc', color: '#a3e635', traces: ['outdoor'] },
+          { from: 'i_snap', to: 'i_yoo', label: 'Top-4 C/N0 + Sats', color: '#a3e635', traces: ['indoor', 'outdoor'] },
+          { from: 'i_ab', to: 'i_amv', label: 'p_A, p_B', color: '#a78bfa', traces: ['outdoor'] },
+          { from: 'i_c8', to: 'i_amv', label: 'p_C', color: '#a78bfa', traces: ['outdoor'] },
+          { from: 'i_ctx', to: 'i_amv', label: 'Light & GPS Votes', color: '#a3e635', traces: ['outdoor'] },
+          { from: 'i_c4', to: 'i_obs', label: 'Mobile Live Pred', color: '#34d399', traces: ['indoor', 'outdoor'] },
+          { from: 'i_yoo', to: 'i_obs', label: 'Handover Event', color: '#34d399', traces: ['indoor', 'outdoor'] },
+          { from: 'i_amv', to: 'i_obs', label: 'Fused AMV State', color: '#34d399', traces: ['outdoor'] }
+        ]
+      }
+    };
+
+    const svg = document.getElementById('arch-svg');
+    let currentView = 'runtime';
+    let currentTrace = 'all';
+    let selectedNodeId = null;
+    let animFrame = null;
+    let particles = [];
+
+    // Pan/zoom on SVG via viewBox
+    let vb = { x: 0, y: 0, w: 1460, h: 840 };
+    let isPanning = false, startPt = { x: 0, y: 0 };
+    function updateViewBox() {
+      svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+    }
+
+    function renderDiagram() {
+      cancelAnimationFrame(animFrame);
+      const data = ARCHIFY_IR[currentView];
+      document.getElementById('view-caption').textContent = data.caption;
+      const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+      const laneFill = isLight ? 'rgba(255,255,255,0.65)' : 'rgba(13,20,38,0.62)';
+      const nodeFill = isLight ? '#ffffff' : '#131d36';
+      const textMain = isLight ? '#0f172a' : '#eef4ff';
+      const textSub = isLight ? '#475569' : '#93a4c3';
+
+      let html = `<defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 1 L 10 5 L 0 9 z" fill="#64748b"/>
+        </marker>
+      </defs>`;
+
+      // Lanes
+      data.lanes.forEach(l => {
+        html += `<g>
+          <rect x="${l.x}" y="${l.y}" width="${l.w}" height="${l.h}" rx="18" fill="${laneFill}" stroke="${l.color}" stroke-opacity="0.35" stroke-dasharray="6 5" stroke-width="1.6"/>
+          <text x="${l.x + 18}" y="${l.y + 30}" fill="${l.color}" font-size="12" font-weight="800" letter-spacing="1.2">${l.title}</text>
+        </g>`;
+      });
+
+      // Edges
+      const nodeMap = Object.fromEntries(data.nodes.map(n => [n.id, n]));
+      particles = [];
+      data.edges.forEach((e, idx) => {
+        const a = nodeMap[e.from], b = nodeMap[e.to];
+        const sameCol = Math.abs(a.x - b.x) < 40;
+        let x1, y1, x2, y2, d;
+        if (sameCol) {
+          x1 = a.x + a.w / 2; y1 = a.y < b.y ? a.y + a.h : a.y;
+          x2 = b.x + b.w / 2; y2 = a.y < b.y ? b.y : b.y + b.h;
+          d = `M ${x1} ${y1} L ${x2} ${y2}`;
+        } else {
+          x1 = a.x < b.x ? a.x + a.w : a.x;
+          y1 = a.y + a.h / 2;
+          x2 = a.x < b.x ? b.x : b.x + b.w;
+          y2 = b.y + b.h / 2;
+          const cx = (x1 + x2) / 2;
+          d = `M ${x1} ${y1} C ${cx} ${y1}, ${cx} ${y2}, ${x2} ${y2}`;
+        }
+        const activeTrace = currentTrace === 'all' || e.traces.includes(currentTrace);
+        const cls = activeTrace ? 'edge-line highlight' : 'edge-line dim';
+        html += `<path id="edge-${idx}" d="${d}" stroke="${e.color}" class="${cls}" marker-end="url(#arrow)"/>`;
+        const mx = (x1 + x2) / 2, my = (y1 + y2) / 2 - 6;
+        if (activeTrace) {
+          html += `<text x="${mx}" y="${my}" text-anchor="middle" fill="${textSub}" font-size="10.5" font-weight="600">${e.label}</text>`;
+          particles.push({ pathId: `edge-${idx}`, color: e.color, t: (idx * 0.27) % 1, speed: 0.0045 + (idx % 3) * 0.001 });
+        }
+      });
+
+      html += `<g id="particle-layer"></g>`;
+
+      // Nodes
+      data.nodes.forEach(n => {
+        html += `<g class="node-group" data-id="${n.id}">
+          <rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="14" fill="${nodeFill}" stroke="${n.color}" stroke-width="2"/>
+          <rect x="${n.x}" y="${n.y}" width="6" height="${n.h}" rx="3" fill="${n.color}"/>
+          <text x="${n.x + 16}" y="${n.y + 24}" fill="${n.color}" font-size="10.5" font-weight="700">${n.layer.toUpperCase()}</text>
+          <text x="${n.x + 16}" y="${n.y + 46}" fill="${textMain}" font-size="14" font-weight="800">${n.title}</text>
+          <text x="${n.x + 16}" y="${n.y + 66}" fill="${textSub}" font-size="11.5">${n.sub}</text>
+          <text x="${n.x + 16}" y="${n.y + n.h - 14}" fill="${textSub}" font-family="Menlo, monospace" font-size="10">SRC: ${n.src[0].split('/').pop()}</text>
+        </g>`;
+      });
+
+      svg.innerHTML = html;
+
+      svg.querySelectorAll('.node-group').forEach(g => {
+        g.addEventListener('click', () => inspectNode(g.getAttribute('data-id')));
+      });
+
+      const pLayer = document.getElementById('particle-layer');
+      const pCircles = particles.map(p => {
+        const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        c.setAttribute('r', '4.2');
+        c.setAttribute('fill', p.color);
+        pLayer.appendChild(c);
+        return { ...p, circle: c, path: document.getElementById(p.pathId) };
+      });
+
+      function stepParticles() {
+        pCircles.forEach(p => {
+          if (!p.path) return;
+          p.t = (p.t + p.speed) % 1;
+          const len = p.path.getTotalLength();
+          const pt = p.path.getPointAtLength(p.t * len);
+          p.circle.setAttribute('cx', pt.x);
+          p.circle.setAttribute('cy', pt.y);
+        });
+        animFrame = requestAnimationFrame(stepParticles);
+      }
+      stepParticles();
+
+      inspectNode(data.nodes[1]?.id || data.nodes[0].id);
+    }
+
+    function inspectNode(id) {
+      const data = ARCHIFY_IR[currentView];
+      const n = data.nodes.find(x => x.id === id);
+      if (!n) return;
+      selectedNodeId = id;
+      document.getElementById('d-title').textContent = n.title;
+      document.getElementById('d-layer').textContent = n.layer + ' — ' + n.sub;
+      document.getElementById('d-desc').textContent = n.desc;
+      document.getElementById('d-specs').innerHTML = n.specs.map(s => `<span class="spec-pill">${s}</span>`).join('');
+      document.getElementById('d-src').innerHTML = n.src.map(s => `<span class="src-tag">📄 ${s}</span>`).join('');
+      document.getElementById('d-json').textContent = JSON.stringify(n, null, 2);
+    }
+
+    document.querySelectorAll('#diagram-tabs .btn').forEach(b => {
+      b.addEventListener('click', () => {
+        document.querySelectorAll('#diagram-tabs .btn').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        currentView = b.dataset.view;
+        vb = { x: 0, y: 0, w: 1460, h: 840 };
+        updateViewBox();
+        renderDiagram();
+      });
+    });
+
+    document.querySelectorAll('.trace-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        document.querySelectorAll('.trace-btn').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        currentTrace = b.dataset.trace;
+        renderDiagram();
+      });
+    });
+
+    const stage = document.getElementById('stage');
+    stage.addEventListener('mousedown', e => {
+      if (e.target.closest('.node-group')) return;
+      isPanning = true; stage.classList.add('dragging');
+      startPt = { x: e.clientX, y: e.clientY };
+    });
+    window.addEventListener('mousemove', e => {
+      if (!isPanning) return;
+      const dx = (e.clientX - startPt.x) * (vb.w / stage.clientWidth);
+      const dy = (e.clientY - startPt.y) * (vb.h / stage.clientHeight);
+      vb.x -= dx; vb.y -= dy;
+      startPt = { x: e.clientX, y: e.clientY };
+      updateViewBox();
+    });
+    window.addEventListener('mouseup', () => { isPanning = false; stage.classList.remove('dragging'); });
+    stage.addEventListener('wheel', e => {
+      e.preventDefault();
+      const factor = e.deltaY < 0 ? 0.9 : 1.1;
+      vb.w = Math.min(2400, Math.max(600, vb.w * factor));
+      vb.h = Math.min(1400, Math.max(350, vb.h * factor));
+      updateViewBox();
+    }, { passive: false });
+
+    document.getElementById('reset-view').onclick = () => {
+      vb = { x: 0, y: 0, w: 1460, h: 840 };
+      updateViewBox();
+    };
+
+    document.getElementById('export-svg').onclick = () => {
+      const blob = new Blob([svg.outerHTML], { type: 'image/svg+xml;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `aetron_archify_${currentView}.svg`;
+      a.click();
+    };
+
+    const saved = localStorage.getItem('aetron_doc_theme');
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+    document.getElementById('theme-btn').onclick = () => {
+      const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('aetron_doc_theme', next);
+      renderDiagram();
+    };
+
+    renderDiagram();
+  </script>
+</body>
+</html>

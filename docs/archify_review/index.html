@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aetron — Architecture (Archify & Floorplan) + Literature & Benchmark Portal</title>
+  <style>
+    :root {
+      --bg: #070b14;
+      --bg-elev: #0f1626;
+      --card: rgba(18, 26, 45, 0.78);
+      --border: rgba(99, 179, 237, 0.2);
+      --border-strong: rgba(56, 189, 248, 0.5);
+      --text: #eef4ff;
+      --muted: #93a4c3;
+      --cyan: #38bdf8;
+      --lime: #a3e635;
+      --violet: #a78bfa;
+      --amber: #fbbf24;
+      --rose: #fb7185;
+      --emerald: #34d399;
+      --shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+    }
+
+    [data-theme="light"] {
+      --bg: #f4f7fb;
+      --bg-elev: #ffffff;
+      --card: rgba(255, 255, 255, 0.88);
+      --border: rgba(15, 23, 42, 0.1);
+      --border-strong: rgba(2, 132, 199, 0.45);
+      --text: #0f172a;
+      --muted: #475569;
+      --cyan: #0284c7;
+      --lime: #4d7c0f;
+      --violet: #6d28d9;
+      --amber: #d97706;
+      --rose: #e11d48;
+      --emerald: #059669;
+      --shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    #bg-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.65;
+    }
+
+    .shell {
+      position: relative;
+      z-index: 1;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 28px 24px 72px;
+    }
+
+    header.topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 20px;
+      border-radius: 18px;
+      background: var(--card);
+      backdrop-filter: blur(18px);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      margin-bottom: 40px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      font-size: 1.05rem;
+    }
+
+    .brand-badge {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--cyan), var(--lime));
+      color: #06101f;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      font-size: 1.05rem;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      background: rgba(148, 163, 184, 0.08);
+    }
+
+    .btn {
+      cursor: pointer;
+      padding: 8px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg-elev);
+      color: var(--text);
+      font-weight: 600;
+      font-size: 0.85rem;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn:hover {
+      border-color: var(--border-strong);
+      transform: translateY(-1px);
+    }
+
+    .hero {
+      text-align: center;
+      max-width: 920px;
+      margin: 0 auto 48px;
+      animation: rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    @keyframes rise {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border-strong);
+      color: var(--cyan);
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 18px;
+      background: rgba(56, 189, 248, 0.08);
+    }
+
+    h1 {
+      font-size: clamp(2.1rem, 4.4vw, 3.4rem);
+      line-height: 1.12;
+      letter-spacing: -0.03em;
+      margin-bottom: 16px;
+    }
+
+    .grad {
+      background: linear-gradient(90deg, var(--cyan), var(--lime), var(--violet));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero p {
+      font-size: 1.05rem;
+      color: var(--muted);
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    .kpi-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+      gap: 14px;
+      margin-bottom: 40px;
+    }
+
+    .kpi {
+      background: var(--card);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      transition: transform 0.25s ease, border-color 0.25s ease;
+    }
+
+    .kpi:hover {
+      transform: translateY(-3px);
+      border-color: var(--border-strong);
+    }
+
+    .kpi-val {
+      font-size: 1.75rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--cyan);
+    }
+
+    .kpi-lbl {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 22px;
+      margin-bottom: 44px;
+    }
+
+    .portal-card {
+      position: relative;
+      background: var(--card);
+      backdrop-filter: blur(18px);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .portal-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 4px;
+      background: var(--accent, var(--cyan));
+    }
+
+    .portal-card:hover {
+      transform: translateY(-6px);
+      border-color: var(--accent, var(--cyan));
+    }
+
+    .card-tag {
+      display: inline-block;
+      font-size: 0.74rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 4px 10px;
+      border-radius: 8px;
+      background: rgba(56, 189, 248, 0.12);
+      color: var(--accent, var(--cyan));
+      margin-bottom: 14px;
+      width: fit-content;
+    }
+
+    .portal-card h2 {
+      font-size: 1.42rem;
+      letter-spacing: -0.02em;
+      margin-bottom: 10px;
+    }
+
+    .portal-card p {
+      color: var(--muted);
+      font-size: 0.93rem;
+      margin-bottom: 18px;
+    }
+
+    .feature-list {
+      list-style: none;
+      display: grid;
+      gap: 8px;
+      margin-bottom: 24px;
+      font-size: 0.86rem;
+    }
+
+    .feature-list li::before {
+      content: "✦ ";
+      color: var(--accent, var(--cyan));
+      font-weight: 700;
+    }
+
+    .card-cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-radius: 12px;
+      background: rgba(148, 163, 184, 0.1);
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: var(--text);
+      transition: background 0.2s ease;
+    }
+
+    .portal-card:hover .card-cta {
+      background: rgba(56, 189, 248, 0.18);
+    }
+
+    .latex-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 26px 28px;
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 24px;
+      align-items: center;
+      box-shadow: var(--shadow);
+    }
+
+    @media (max-width: 820px) {
+      .latex-box {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    code.path {
+      font-family: "SF Mono", "JetBrains Mono", Menlo, monospace;
+      font-size: 0.82rem;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(56, 189, 248, 0.12);
+      color: var(--cyan);
+    }
+
+    .cmd-block {
+      background: #050811;
+      color: #dbeafe;
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-family: "SF Mono", Menlo, monospace;
+      font-size: 0.8rem;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="bg-canvas"></canvas>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-badge">⚡</div>
+        <div>
+          <div>AETRON RESEARCH & ARCHITECTURE SUITE</div>
+          <div style="font-size:0.75rem;color:var(--muted);font-weight:500;">Grounded Repository Inspection • Gitignored
+            Local Workspace</div>
+        </div>
+      </div>
+      <div class="top-actions">
+        <span class="pill">Flutter 3.44 + Riverpod + Isar</span>
+        <span class="pill">Supabase + Deno Workers</span>
+        <button class="btn" id="theme-btn" type="button">🌗 Đổi giao diện Sáng/Tối</button>
+      </div>
+    </header>
+
+    <section class="hero">
+      <div class="eyebrow">● Verified Against Source Tree & Public Datasets</div>
+      <h1>Toàn cảnh Kiến trúc <span class="grad">Archify & Floorplan</span> cùng Tổng quan Thuật toán & Benchmark</h1>
+      <p>Bộ tài liệu tương tác độc lập (standalone HTML không phụ thuộc server) được biên dịch trực tiếp từ mã nguồn
+        thực tế của <strong>Aetron</strong>, kết hợp bài báo <strong>IEEEtran LaTeX</strong> phân tích 9 trụ cột thuật
+        toán và phương pháp thiết lập benchmark khoa học.</p>
+    </section>
+
+    <section class="kpi-strip">
+      <div class="kpi">
+        <div class="kpi-val" data-count="12">12</div>
+        <div class="kpi-lbl">Phân hệ Feature-First (Flutter)</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val" data-count="9">9</div>
+        <div class="kpi-lbl">Deno Edge Functions & Workers</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val" data-count="9">9</div>
+        <div class="kpi-lbl">Nhóm Thuật toán Nghiên cứu (DOI)</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val">1.34%</div>
+        <div class="kpi-lbl">Sai số quãng đường P01+AEKF (TU Wien RTK)</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val">98.69%</div>
+        <div class="kpi-lbl">Độ chính xác đếm bước chạy Xu (2022)</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val">94.18%</div>
+        <div class="kpi-lbl">Tỉ lệ nén Google Polyline (17.2×)</div>
+      </div>
+    </section>
+
+    <section class="cards">
+      <a class="portal-card" href="./aetron_floorplan.html" style="--accent: var(--lime);">
+        <div>
+          <span class="card-tag">01 • Spatial Blueprint</span>
+          <h2>Bản đồ Mặt bằng Codebase (Floorplan)</h2>
+          <p>Khám phá toàn bộ repo dưới dạng bản vẽ mặt bằng kiến trúc (6 phân khu chức năng, các phòng module, đường
+            dây kết nối API/Storage/Sensor và kiểm toán an toàn).</p>
+          <ul class="feature-list">
+            <li>Kéo thả, phóng to/thu nhỏ (Pan & Zoom) mượt mà kèm Minimap</li>
+            <li>6 Khu vực (Presentation, GNSS/IMU Lab, DeepIOD Lab, Local Vault, Edge Cloud, Benchmark Ground)</li>
+            <li>Click vào từng phòng để xem danh sách file thật, vai trò và kết nối vào/ra</li>
+            <li>Bảng kiểm tra sức khỏe kiến trúc & bảo mật (RLS, Nonce, Guardrails)</li>
+          </ul>
+        </div>
+        <div class="card-cta"><span>Mở Bản vẽ Floorplan</span><span>→</span></div>
+      </a>
+
+      <a class="portal-card" href="./aetron_archify.html" style="--accent: var(--cyan);">
+        <div>
+          <span class="card-tag">02 • Grounded System Compiler</span>
+          <h2>Sơ đồ Luồng Thực thi & Dữ liệu (Archify)</h2>
+          <p>Biên dịch kiến trúc từ Typed JSON IR gắn nhãn bằng chứng mã nguồn (<code>SRC</code> file & dòng lệnh),
+            chống bịa đặt thành phần, hỗ trợ hiệu ứng chạy hạt dữ liệu trực tiếp.</p>
+          <ul class="feature-list">
+            <li>4 Chế độ sơ đồ: Runtime Map, GNSS P01→P03 Pipeline, Server Reconciliation, DeepIOD Fusion</li>
+            <li>Hiệu ứng Trace Motion mô phỏng luồng chạy ngoài trời, máy chạy bộ & đồng bộ Offline</li>
+            <li>Drawer chi tiết cho từng Node kèm đường dẫn file thực tế và thông số kỹ thuật</li>
+            <li>Hỗ trợ xuất ảnh SVG sắc nét phục vụ báo cáo / slide thuyết trình</li>
+          </ul>
+        </div>
+        <div class="card-cta"><span>Mở Trình duyệt Archify</span><span>→</span></div>
+      </a>
+
+      <a class="portal-card" href="./aetron_literature_benchmark.html" style="--accent: var(--violet);">
+        <div>
+          <span class="card-tag">03 • Interactive Paper & Benchmarks</span>
+          <h2>Literature Review & Đối sánh Benchmark</h2>
+          <p>Trình đọc học thuật tương tác giải thích công thức toán học, cách từng bài báo gốc tạo ra con số benchmark,
+            và kết quả kiểm chứng thực nghiệm trên Aetron.</p>
+          <ul class="feature-list">
+            <li>Đầy đủ 9 nhóm thuật toán (GNSS P01/P02/P03, T-DBSCAN, Step, Stride, DeepIOD, MET, Map-Match)</li>
+            <li>Biểu đồ tương tác so sánh: Bài báo gốc vs. Bản tái lập vs. Bản Production Aetron</li>
+            <li>Phân tích minh bạch dữ liệu thiếu (Data Gaps) và kết quả âm tính (SnapperGPS Cycling, 4-ch IOD)</li>
+            <li>Hiển thị công thức Toán học trực quan, bộ lọc tìm kiếm và sao chép trích dẫn BibTeX</li>
+          </ul>
+        </div>
+        <div class="card-cta"><span>Đọc Literature Review & Benchmark</span><span>→</span></div>
+      </a>
+
+      <a class="portal-card" href="./aetron_benchmark_playbook.html" style="--accent: var(--emerald);">
+        <div>
+          <span class="card-tag">04 • Field & Lab Measurement Playbook</span>
+          <h2>Cách Họ Đo Benchmark & Áp dụng cho App</h2>
+          <p>Cẩm nang thực hành từng bước: bài báo dùng thiết bị chuẩn gì, ghép đồng hồ và bấm công thức ra con số thế
+            nào, và cách bạn tự đo ngoài sân thật cho Aetron.</p>
+          <ul class="feature-list">
+            <li>Quy trình 5 bước từ thiết bị Ground Truth → Mặt nạ UTC chung → Công thức ra số cuối cùng</li>
+            <li>Hướng dẫn tự đo không cần máy đắt tiền: Sân 400m làn 1, Thước dây 100m, Video 60fps, Đi qua cửa</li>
+            <li>Tích hợp lệnh CLI <code>export_workout.dart</code> +
+              <code>aetron_field_and_paper_evaluator_test.dart</code></li>
+            <li>3 Máy tính tương tác tính ngay MAPE, Bland–Altman LoA, WAPE, Macro-F1 và xuất bảng LaTeX</li>
+          </ul>
+        </div>
+        <div class="card-cta"><span>Mở Cẩm nang Đo & Tính Benchmark</span><span>→</span></div>
+      </a>
+    </section>
+
+    <section class="latex-box">
+      <div>
+        <div class="card-tag" style="--accent: var(--amber); margin-bottom: 10px;">IEEEtran LaTeX &amp; Compiled PDF
+          (.pdf + .tex + .bib)</div>
+        <h3 style="font-size:1.3rem; margin-bottom: 8px;">Bài báo Khoa học Chuẩn Quốc tế (Đã biên dịch sẵn bản PDF 2 cột
+          IEEEtran)</h3>
+        <p style="color:var(--muted); font-size:0.92rem; margin-bottom: 12px;">
+          Toàn bộ nội dung tổng quan tài liệu, công thức toán học, quy trình thiết lập benchmark của bài báo gốc và 8
+          bảng kết quả thực nghiệm của Aetron đã được biên dịch sẵn thành file <strong>PDF chuẩn IEEEtran</strong> để
+          bạn bấm mở đọc ngay:
+        </p>
+        <div style="margin-bottom: 12px;">
+          <a href="./latex/aetron_literature_review_benchmark.pdf" target="_blank"
+            style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:999px;background:var(--amber);color:#0f172a;font-weight:800;font-size:0.88rem;text-decoration:none;">📄
+            Mở Đọc Ngay File PDF (IEEEtran) &rarr;</a>
+        </div>
+        <div style="display:flex; flex-wrap:wrap; gap:8px;">
+          <code class="path">docs/archify_review/latex/aetron_literature_review_benchmark.pdf</code>
+          <code class="path">docs/archify_review/latex/aetron_literature_review_benchmark.tex</code>
+          <code class="path">docs/archify_review/latex/references.bib</code>
+        </div>
+      </div>
+      <div class="cmd-block">
+        # Biên dịch sang PDF trên Overleaf hoặc máy có TeX Live:
+        cd docs/archify_review/latex
+        pdflatex aetron_literature_review_benchmark.tex
+        bibtex aetron_literature_review_benchmark
+        pdflatex aetron_literature_review_benchmark.tex
+        pdflatex aetron_literature_review_benchmark.tex
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const btn = document.getElementById('theme-btn');
+    const saved = localStorage.getItem('aetron_doc_theme');
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+    btn.addEventListener('click', () => {
+      const cur = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', cur);
+      localStorage.setItem('aetron_doc_theme', cur);
+    });
+
+    // Subtle interactive constellation background
+    const canvas = document.getElementById('bg-canvas');
+    const ctx = canvas.getContext('2d');
+    let w, h, nodes;
+    function resize() {
+      w = canvas.width = window.innerWidth;
+      h = canvas.height = window.innerHeight;
+      nodes = Array.from({ length: 46 }, () => ({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        vx: (Math.random() - 0.5) * 0.35,
+        vy: (Math.random() - 0.5) * 0.35,
+        r: Math.random() * 2 + 1
+      }));
+    }
+    window.addEventListener('resize', resize);
+    resize();
+    function tick() {
+      ctx.clearRect(0, 0, w, h);
+      const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+      const stroke = isLight ? 'rgba(2,132,199,' : 'rgba(56,189,248,';
+      for (let i = 0; i < nodes.length; i++) {
+        const a = nodes[i];
+        a.x += a.vx; a.y += a.vy;
+        if (a.x < 0 || a.x > w) a.vx *= -1;
+        if (a.y < 0 || a.y > h) a.vy *= -1;
+        ctx.beginPath();
+        ctx.arc(a.x, a.y, a.r, 0, Math.PI * 2);
+        ctx.fillStyle = stroke + '0.55)';
+        ctx.fill();
+        for (let j = i + 1; j < nodes.length; j++) {
+          const b = nodes[j];
+          const d = Math.hypot(a.x - b.x, a.y - b.y);
+          if (d < 150) {
+            ctx.beginPath();
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(b.x, b.y);
+            ctx.strokeStyle = stroke + ((1 - d / 150) * 0.16).toFixed(3) + ')';
+            ctx.stroke();
+          }
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+    tick();
+  </script>
+</body>
+
+</html>

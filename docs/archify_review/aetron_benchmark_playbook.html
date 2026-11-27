@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aetron — Cẩm nang Cách Bài báo Đo Benchmark & Cách Áp dụng Thực tế</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous" />
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"
+    onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'\\(',right:'\\)',display:false}]});"></script>
+  <style>
+    :root {
+      --bg: #070b14;
+      --bg2: #0f172a;
+      --card: rgba(18, 27, 48, 0.88);
+      --border: rgba(56, 189, 248, 0.22);
+      --border-hi: rgba(56, 189, 248, 0.55);
+      --text: #eef4ff;
+      --muted: #93a5c6;
+      --cyan: #38bdf8;
+      --lime: #a3e635;
+      --violet: #a78bfa;
+      --amber: #fbbf24;
+      --emerald: #34d399;
+      --rose: #fb7185;
+    }
+    [data-theme="light"] {
+      --bg: #f4f7fb;
+      --bg2: #ffffff;
+      --card: rgba(255, 255, 255, 0.95);
+      --border: rgba(15, 23, 42, 0.12);
+      --border-hi: rgba(2, 132, 199, 0.5);
+      --text: #0f172a;
+      --muted: #475569;
+      --cyan: #0284c7;
+      --lime: #4d7c0f;
+      --violet: #6d28d9;
+      --amber: #d97706;
+      --emerald: #059669;
+      --rose: #e11d48;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.66;
+    }
+    header.topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+      background: var(--card);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .nav-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .btn {
+      padding: 7px 12px;
+      border-radius: 9px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+    .btn:hover { border-color: var(--border-hi); transform: translateY(-1px); }
+    .btn.active { background: rgba(163, 230, 53, 0.18); border-color: var(--lime); color: var(--lime); }
+    .container {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 32px 24px 96px;
+    }
+    .hero {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 34px;
+      margin-bottom: 30px;
+    }
+    .tag {
+      display: inline-block;
+      font-size: 0.74rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 5px 12px;
+      border-radius: 999px;
+      background: rgba(163, 230, 53, 0.14);
+      color: var(--lime);
+      border: 1px solid rgba(163, 230, 53, 0.35);
+      margin-bottom: 12px;
+    }
+    h1 { font-size: clamp(1.75rem, 3.2vw, 2.4rem); letter-spacing: -0.025em; margin-bottom: 12px; }
+    .pipeline-5 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 12px;
+      margin-top: 22px;
+    }
+    .step-node {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      position: relative;
+    }
+    .step-num {
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: var(--cyan);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 4px;
+    }
+    .step-node h4 { font-size: 0.92rem; margin-bottom: 5px; }
+    .step-node p { font-size: 0.8rem; color: var(--muted); }
+    .module-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 28px;
+      margin-bottom: 26px;
+    }
+    .mod-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding-bottom: 14px;
+      margin-bottom: 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .mod-head h2 { font-size: 1.3rem; letter-spacing: -0.02em; }
+    .tri-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 16px;
+    }
+    .col-box {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .col-box.paper { border-top: 3.5px solid var(--violet); }
+    .col-box.math { border-top: 3.5px solid var(--cyan); }
+    .col-box.aetron { border-top: 3.5px solid var(--lime); }
+    .col-title {
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .col-box.paper .col-title { color: var(--violet); }
+    .col-box.math .col-title { color: var(--cyan); }
+    .col-box.aetron .col-title { color: var(--lime); }
+    .col-box ul, .col-box ol { padding-left: 18px; display: grid; gap: 6px; font-size: 0.85rem; color: var(--muted); }
+    .col-box p { font-size: 0.85rem; color: var(--muted); }
+    .col-box strong { color: var(--text); }
+    .formula {
+      background: rgba(56, 189, 248, 0.06);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      overflow-x: auto;
+      font-size: 0.9rem;
+    }
+    pre.cli {
+      background: #050811;
+      color: #dbeafe;
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 10px;
+      padding: 11px 13px;
+      font-family: "SF Mono", Menlo, monospace;
+      font-size: 0.75rem;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+    code {
+      font-family: "SF Mono", Menlo, monospace;
+      font-size: 0.79rem;
+      padding: 2px 6px;
+      border-radius: 5px;
+      background: rgba(56, 189, 248, 0.12);
+      color: var(--cyan);
+    }
+    .calc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 20px;
+      margin-top: 18px;
+    }
+    .calc-card {
+      background: var(--bg2);
+      border: 1.5px solid var(--border-hi);
+      border-radius: 18px;
+      padding: 20px;
+    }
+    .calc-card h3 { font-size: 1.05rem; margin-bottom: 6px; color: var(--lime); }
+    label.field {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-top: 10px;
+    }
+    input.inp, textarea.inp, select.inp {
+      width: 100%;
+      margin-top: 4px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      font-family: "SF Mono", Menlo, monospace;
+      font-size: 0.82rem;
+    }
+    .res-panel {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 10px;
+      background: rgba(52, 211, 153, 0.08);
+      border: 1px solid rgba(52, 211, 153, 0.3);
+      font-size: 0.83rem;
+    }
+    .copy-note { font-size: 0.74rem; color: var(--emerald); margin-left: 8px; }
+    .prov-box {
+      margin-top: 14px;
+      padding: 13px 16px;
+      border-radius: 12px;
+      background: rgba(167, 139, 250, 0.07);
+      border: 1px solid rgba(167, 139, 250, 0.3);
+      font-size: 0.81rem;
+      color: var(--muted);
+    }
+    .prov-box strong { color: var(--text); }
+    .prov-box a { color: var(--cyan); text-decoration: underline; }
+    .prov-box ul { margin-top: 6px; padding-left: 18px; display: grid; gap: 5px; }
+    .src-pill {
+      display: inline-block;
+      font-family: "SF Mono", Menlo, monospace;
+      font-size: 0.69rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 5px;
+      margin-right: 5px;
+      vertical-align: middle;
+    }
+    .src-pill.paper {
+      background: rgba(56, 189, 248, 0.16);
+      color: var(--cyan);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+    }
+    .src-pill.dataset {
+      background: rgba(163, 230, 53, 0.14);
+      color: var(--lime);
+      border: 1px solid rgba(163, 230, 53, 0.35);
+    }
+    .src-pill.eng {
+      background: rgba(251, 191, 36, 0.15);
+      color: var(--amber);
+      border: 1px solid rgba(251, 191, 36, 0.4);
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="nav-row">
+      <a class="btn" href="./index.html">⌂ Portal</a>
+      <a class="btn" href="./aetron_floorplan.html">🗺️ Floorplan</a>
+      <a class="btn" href="./aetron_archify.html">⚡ Archify</a>
+      <a class="btn" href="./aetron_literature_benchmark.html">📐 Literature Review</a>
+      <a class="btn active" href="./aetron_benchmark_playbook.html">🧪 Cách Đo & Tính Benchmark</a>
+    </div>
+    <div class="nav-row">
+      <a class="btn" href="#live-calculators">🧮 Mở Máy tính Xuất LaTeX</a>
+      <button class="btn" id="theme-btn" type="button">🌗 Sáng/Tối</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <section class="hero">
+      <span class="tag">Step-by-Step Measurement & Calculation Recipe</span>
+      <h1>Làm sao các Bài báo Đo & Đưa ra Con số Benchmark — và Cách Bạn Tự Làm cho App Aetron</h1>
+      <p style="color:var(--muted);font-size:0.95rem;">
+        Mọi con số benchmark trong bài báo khoa học đều không tự nhiên sinh ra mà luôn đi qua đúng <strong>5 bước chuẩn hóa</strong> dưới đây. Tài liệu này chỉ rõ từng thiết bị chuẩn (Ground Truth), cách lọc đồng bộ, công thức bấm máy ra từng con số, và <strong>cách bạn tự thực hiện ngoài thực địa bằng điện thoại cài Aetron mà không cần phòng thí nghiệm đắt tiền</strong>.
+      </p>
+
+      <div class="pipeline-5">
+        <div class="step-node">
+          <div class="step-num">Bước 1 • Ground Truth</div>
+          <h4>Thiết lập Chuẩn Tham chiếu</h4>
+          <p>Dùng thiết bị có độ chính xác cao hơn ít nhất 10 lần so với điện thoại (trạm RTK 1–2 cm, sân điền kinh chuẩn 400m làn 1, camera 60fps quay chân, thước dây 100m, nhật ký bấm giờ).</p>
+        </div>
+        <div class="step-node">
+          <div class="step-num">Bước 2 • Clock & Mask</div>
+          <h4>Khớp Đồng hồ & Mặt nạ Chung</h4>
+          <p>Ghép theo mốc giây UTC (\(\pm 500\text{ ms}\)). Chỉ chấm điểm trên tập giao \(\mathcal{T}_{\text{common}}\) nơi <em>mọi thuật toán đều có đầu ra</em> để không thiên vị thuật toán vứt bỏ mẫu khó.</p>
+        </div>
+        <div class="step-node">
+          <div class="step-num">Bước 3 • Zero Leakage</div>
+          <h4>Chia tách Chống Học vẹt</h4>
+          <p>Mô hình có tham số học (Renaudin, DeepIOD) bắt buộc chia tách theo <strong>Người tập (LOSO)</strong> hoặc <strong>Phiên ghi độc lập (Held-Out Sessions)</strong>, tuyệt đối không trộn ngẫu nhiên cửa sổ trượt.</p>
+        </div>
+        <div class="step-node">
+          <div class="step-num">Bước 4 • Per-Sample Error</div>
+          <h4>Tính Sai số Từng Mẫu</h4>
+          <p>Tính khoảng cách trắc địa \(e_t = d_{\text{geo}}(\hat{\mathbf{p}}_t, \mathbf{p}_t^{\text{ref}})\), sai số bước \(|\hat{N}-N|\), hoặc lập bảng nhầm lẫn 4 ô \((\text{TP}, \text{TN}, \text{FP}, \text{FN})\).</p>
+        </div>
+        <div class="step-node">
+          <div class="step-num">Bước 5 • Aggregation</div>
+          <h4>Gộp thành Con số Cuối cùng</h4>
+          <p>Tổng hợp thành RMSE, MAE, Median, \(P_{95}\), MAPE + Bland–Altman 95% LoA, WAPE hoặc Macro-F1 để đưa vào bảng kết quả bài báo.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 0: INPUT DATA HYGIENE & OS-KILL PROTECTION -->
+    <section class="module-card" style="border-color: rgba(251, 191, 36, 0.45);">
+      <div class="mod-head">
+        <h2>0. Vệ sinh Dữ liệu Đầu vào, Xử lý Rớt Ghi hình / OS Kill &amp; Tách bạch Nguồn Gốc Chống Hallucination</h2>
+        <code>Verified Paper Provenance vs. Aetron Engineering Rules</code>
+      </div>
+      <p style="color:var(--muted);font-size:0.86rem;margin-bottom:12px;">
+        Để đảm bảo <strong>0% bịa đặt (zero hallucination)</strong>, toàn bộ tài liệu này gắn nhãn phân biệt rõ 3 loại nguồn:
+        <span class="src-pill paper">BÀI BÁO GỐC (DOI)</span> là phương pháp/con số thật do tác giả công bố;
+        <span class="src-pill dataset">DATASET &amp; MANIFEST</span> là thông số kiểm chứng trực tiếp từ file dữ liệu công khai trong <code>tooling/data/</code>; và
+        <span class="src-pill eng">QUY TẮC KỸ THUẬT AETRON</span> là thiết kế phần mềm / cài đặt iOS–Android của riêng dự án Aetron (tuyệt đối không gán ghép thành lời của tác giả bài báo).
+      </p>
+      <div class="tri-grid">
+        <div class="col-box paper">
+          <div class="col-title">① Trong bài báo gốc, tác giả xử lý mất mẫu &amp; trễ log ra sao?</div>
+          <ul>
+            <li><span class="src-pill paper">DOI: 10.2196/17118</span> <strong>Gilgen-Ammann, Schweizer &amp; Wyss (2020, <em>JMIR mHealth uHealth</em> 8(6):e17118):</strong> Khi kiểm định 8 đồng hồ thể thao trên 36 lượt đo dự kiến/thiết bị so với bánh xe trắc địa <em>Nedo Leichtmessrad Professional</em> (độ chính xác <code>1 cm</code>), thiết bị bị rớt bản ghi kỹ thuật (như <em>Suunto 9 Baro</em> chỉ thu thành công <code>35/36</code> lượt = <code>97%</code>) được <strong>loại bỏ lượt hỏng khỏi thống kê sai số và báo cáo minh bạch mẫu số thực tế \(n = 35/36\)</strong> thay vì chấm điểm đường chạy bị đứt.</li>
+            <li><span class="src-pill dataset">DOI: 10.48436/y6gxm-6mg51</span> <strong>Dürnberger (2025, <em>TU Wien Research Data</em> — kiểm chứng tại <code>source_preparation_manifest.json</code>):</strong> Trên Google Pixel 7 Pro, đồng hồ ghi file của OS Android bị trễ <code>2,521–2,601 ms</code> so với giờ vệ tinh UTC trong bản tin NMEA <code>GGA/RMC</code>, nên phải đồng bộ theo <strong>giờ vệ tinh UTC</strong>; đồng thời tách rõ nhãn chất lượng trạm Leica (<code>GNSSPhaseMeasuredRTK</code>, <code>GNSSCodeMeasuredRTK</code> và <code>35</code> mốc <code>Navigated</code> mất khóa RTK ở <code>dataset_33</code>).</li>
+            <li><span class="src-pill dataset">DOI: 10.5287/bodleian:ORQ2abnbR</span> <strong>Small et al. (2022, <em>OxWalk</em>, Univ. of Oxford — kiểm chứng tại <code>oxwalk_manifest.json</code>):</strong> Trong 39 phiên dự kiến <code>3,600 s</code>, các phiên dừng ghi sớm ngoài đời thực (<code>P12 = 3,370.5 s</code>, <code>P13 = 2,339.93 s</code>, <code>P37 = 1,079.96 s</code>) được cắt đồng bộ cả luồng gia tốc kế 25 Hz lẫn nhãn camera chân đúng theo cửa sổ thực tế còn ghi được.</li>
+          </ul>
+        </div>
+        <div class="col-box math">
+          <div class="col-title">② Code Aetron bảo vệ dữ liệu thô ra sao? (Thực tế mã nguồn)</div>
+          <ul>
+            <li><span class="src-pill eng">CODE AETRON</span> <strong>Cấu hình luồng nền (<code>location_tracking_service.dart</code>):</strong> Android bật <code>ForegroundNotificationConfig(enableWakeLock: true)</code>, <code>distanceFilter: 0</code>, chu kỳ <code>500 ms</code>; iOS bật <code>UIBackgroundModes: [location, processing]</code>, <code>allowBackgroundLocationUpdates: true</code>, <code>pauseLocationUpdatesAutomatically: false</code>.</li>
+            <li><span class="src-pill eng">CODE AETRON</span> <strong>Ghi bền vững xuống Isar (<code>workout_recording_coordinator.dart</code> &amp; <code>LOCAL_STORAGE_RELIABILITY_20261119.md</code>):</strong> Mở Isar với <code>relaxedDurability: false</code>, ghi ngay từng điểm <code>LocalDB.saveRawGpsPoint</code> và lưu checkpoint <code>5s</code> (tài liệu nội bộ nêu rõ <code>5s</code> là <em>engineering policy</em>, tiến trình bị SIGKILL vẫn có thể mất các mẫu chưa kịp flush xuống đĩa).</li>
+            <li><span class="src-pill eng">CODE AETRON</span> <strong>Chống nối đường thẳng giả tạo (<code>gps_raw_signal_continuity.dart</code>):</strong> Khi luồng thô đứt quá ngưỡng <code>kStaleSignalGapThresholdSec</code>, hệ thống gắn cờ <code>signalGap</code>, đặt <code>shouldAddDistance: false</code> và ngắt đoạn hiển thị.</li>
+          </ul>
+        </div>
+        <div class="col-box aetron">
+          <div class="col-title">③ Quy tắc vận hành iPhone/Android &amp; Cổng QC của riêng Aetron</div>
+          <ol>
+            <li><span class="src-pill eng">VẬN HÀNH iOS/ANDROID</span> Cài bản độc lập <code>./run.sh --release</code>. Trên <strong>iPhone</strong>: vào <em>Cài đặt &rarr; Ứng dụng &rarr; Aetron</em> chọn <strong>Vị trí = Luôn luôn (Always) + Vị trí chính xác (Precise) = BẬT</strong>, <strong>Chuyển động &amp; Thể chất = BẬT</strong>, và <strong>TẮT Chế độ nguồn điện thấp (Low Power Mode)</strong> ở mục Pin; đứng ngoài trời 30–60s chờ khóa vệ tinh trước khi bấm <em>Start</em>.</li>
+            <li><span class="src-pill eng">AETRON STAGE-0 QC GATE</span> Các ngưỡng tự động trong <code>aetron_field_and_paper_evaluator_test.dart</code> (\(\Delta t_{\text{med}} \le 1.5\text{ s}\), khoảng chết <code>&gt; 15.0s</code> lấy theo <code>maxRecoverableGapSec = 15.0</code> của Aetron, độ phủ \(\ge 95\%\)) là <strong>ngưỡng kiểm soát kỹ thuật do Aetron thiết lập</strong> — <em>không phải hằng số trích từ bài báo</em>.</li>
+            <li><strong>Cách báo cáo minh bạch khi có phiên lỗi OS Kill:</strong> Áp dụng đúng nguyên tắc công bố \(n_{\text{valid}}/n_{\text{planned}}\) của Gilgen-Ammann et al. (2020) — loại phiên đứt quãng ở bước QC dữ liệu thô trước khi chạy thuật toán và ghi rõ số phiên bị loại do lỗi tiến trình thiết bị.</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODULE 1: GNSS POSITION & DISTANCE -->
+    <section class="module-card">
+      <div class="mod-head">
+        <h2>1. Định vị &amp; Quãng đường GNSS (P01 Preprocessing + P02 4-State AEKF vs. Fixed Alpha)</h2>
+        <code>Dürnberger 2025 • Beuchert 2023 • Scott et al. 2016 • Gilgen-Ammann et al. 2020</code>
+      </div>
+      <div class="tri-grid">
+        <div class="col-box paper">
+          <div class="col-title">① Trong bài báo họ đo như thế nào?</div>
+          <ol>
+            <li><span class="src-pill dataset">DOI: 10.48436/y6gxm-6mg51</span> <strong>Dürnberger (TU Wien, 2025):</strong> Thu 10 quỹ đạo đi bộ (<code>dataset_31..35</code>) trên 2 máy <strong>Google Pixel 7 Pro &amp; Pixel 9a</strong> ghi bản tin NMEA <code>GGA/RMC</code> song song với quỹ đạo tham chiếu trắc địa <strong>Leica RTK</strong>. <em>(Lưu ý minh bạch: file NMEA không chứa <code>getAccuracy()</code> gốc của Android, nên Aetron dùng <code>HDOP &times; 4</code> sàn <code>2.5 m</code> làm đại lượng xấp xỉ kỹ thuật).</em></li>
+            <li><span class="src-pill dataset">DOI: 10.5287/ora-xq5b8xva7</span> <strong>Beuchert (Oxford SnapperGPS 2, 2023):</strong> Thu 12 lộ trình đạp xe (<code>c00..c11</code>, <code>27,237</code> điểm 1 Hz, <code>7h 34m</code>) đối chiếu trạm <strong>u-blox ZED-F9P RTK</strong> kết nối mạng trạm gốc di động; tác giả báo cáo ở <em>Table 2</em> sai số trung vị thô 1s là <code>14.5 m</code> (RTS/GPR/FGO ngoại tuyến đạt <code>7.3–7.7 m</code>).</li>
+            <li><span class="src-pill paper">DOI: 10.2196/17118</span> <strong>Gilgen-Ammann et al. (2020):</strong> Đo chuẩn mặt đất cho cả 3 môi trường (sân điền kinh 400m, khu đô thị, rừng cây) bằng <strong>bánh xe đo trắc địa <em>Nedo Leichtmessrad Professional</em> (sai số <code>1 cm</code>)</strong> qua đi bộ, chạy bộ và đạp xe.</li>
+          </ol>
+        </div>
+
+        <div class="col-box math">
+          <div class="col-title">② Họ bấm công thức gì để ra con số?</div>
+          <p><strong>A. Sai số vị trí từng giây trên mặt nạ giao nhau chung \(N\) giây:</strong></p>
+          <div class="formula">
+            $$e_t = d_{\text{WGS84}}(\hat{\mathbf{p}}_t, \mathbf{p}_t^{\text{RTK}})$$
+            $$\text{RMSE} = \sqrt{\frac{1}{N}\sum_{t=1}^N e_t^2}, \quad \text{MAE} = \frac{1}{N}\sum_{t=1}^N e_t$$
+          </div>
+          <p><em>Kết quả kiểm chứng TU Wien (\(N = 2{,}694\)):</em> <code>Fixed Alpha</code> \(\text{RMSE}=8.753\text{ m}\) (Dist Err <code>9.77%</code>) &rarr; <code>P01+P02 AEKF</code> \(\mathbf{3.432\text{ m}}\) (Dist Err <strong><code>1.34%</code></strong>).</p>
+          <p><strong>B. Sai số quãng đường &amp; Bland–Altman 95% LoA (<span class="src-pill paper">Gilgen-Ammann 2020</span>):</strong></p>
+          <div class="formula">
+            $$\text{MAPE} = \frac{100\%}{K}\sum_{k=1}^K \frac{|D_k^{\text{app}} - D_k^{\text{true}}|}{D_k^{\text{true}}}$$
+            $$\text{LoA}_{95\%} = \bar{\delta} \pm 1.96 \cdot s_{\delta}, \quad \delta_k = \frac{D_k^{\text{app}} - D_k^{\text{true}}}{D_k^{\text{true}}}\times 100\%$$
+          </div>
+          <p><span class="src-pill paper">Scott et al. 2016</span> Phân hạng tổng quãng đường: <code>&lt; 5%</code> <strong>Good</strong>, <code>5–10%</code> <strong>Moderate</strong>, <code>&gt; 10%</code> <strong>Poor</strong>.</p>
+        </div>
+
+        <div class="col-box aetron">
+          <div class="col-title">③ Bạn tự áp dụng cho App Aetron như thế nào?</div>
+          <ol>
+            <li><strong>Ra sân điền kinh chuẩn 400m (hoặc đường đo bằng bánh xe trắc địa):</strong> Chạy đúng \(N\) vòng làn 1 (\(D^{\text{true}} = 0.400 \times N\text{ km}\)), lặp lại \(K \ge 10\text{--}15\) buổi theo thiết kế đa tốc độ/môi trường của Gilgen-Ammann et al. (2020).</li>
+            <li><strong>Xuất file GPS thô của buổi chạy về máy tính:</strong></li>
+          </ol>
+          <pre class="cli">dart run tool/export_workout.dart &lt;WORKOUT_UUID&gt; -s &lt;SERVICE_ROLE_KEY&gt;</pre>
+          <p>Chạy bộ chấm điểm tự động đối sánh cả 4 nhánh (Raw, Fixed Alpha, Legacy EKF, P01+P02 AEKF) trên cùng chuỗi mẫu:</p>
+          <pre class="cli">AETRON_BENCH_MODE=field-gps \
+AETRON_CSV=exports/&lt;UUID&gt;/raw_gps_points.csv \
+AETRON_REF_KM=2.000 AETRON_ACTIVITY=running \
+~/development/flutter/bin/flutter test --no-pub \
+tooling/benchmark/aetron_field_and_paper_evaluator_test.dart --reporter expanded</pre>
+        </div>
+      </div>
+      <div class="prov-box">
+        <strong>📚 Trích dẫn xác thực Mục 1 (Click để mở bài báo gốc):</strong>
+        <ul>
+          <li><strong>Cổng Mahalanobis NIS \(\chi^2_2\) (\(\gamma_1=5.991, \gamma_2=13.816\)) &amp; EKF/GNSS-INS:</strong> Bar-Shalom, Li &amp; Kirubarajan (2001, Wiley, <em>Estimation with Applications to Tracking and Navigation</em>, Sec. 2.3 &amp; 5.4); Groves (2013, Artech House, 2nd ed., Sec. 11.4); Rong Li &amp; Jilkov (2003, <a href="https://doi.org/10.1109/TAES.2003.1261132" target="_blank">DOI: 10.1109/TAES.2003.1261132</a>); Boguspayev, Akhmedov, Raskaliyev, Kim &amp; Sukhenko (2023, <em>Applied Sciences</em> 13(8):4819, <a href="https://doi.org/10.3390/app13084819" target="_blank">DOI: 10.3390/app13084819</a>). <em>(Đính chính minh bạch: chuỗi DOI cũ <code>10.3390/app152212304</code> trong một comment mã nguồn trỏ nhầm sang bài báo GPR đường hầm nên đã được chuẩn hóa về đúng nguồn gốc ở đây).</em></li>
+          <li><strong>Chuẩn đánh giá quãng đường thể thao &amp; dữ liệu RTK công khai:</strong> Scott, Scott &amp; Kelly (2016, <em>J. Strength Cond. Res.</em> 30(5):1470–1490, <a href="https://doi.org/10.1519/JSC.0000000000001221" target="_blank">DOI: 10.1519/JSC.0000000000001221</a>); Gilgen-Ammann, Schweizer &amp; Wyss (2020, <em>JMIR mHealth uHealth</em> 8(6):e17118, <a href="https://doi.org/10.2196/17118" target="_blank">DOI: 10.2196/17118</a> — đồng hồ thương mại đạt MAPE <code>0.9–4.1%</code> sân 400m, <code>3.9–8.9%</code> đô thị); Dürnberger (2025, <a href="https://doi.org/10.48436/y6gxm-6mg51" target="_blank">DOI: 10.48436/y6gxm-6mg51</a>); Beuchert (2023, <a href="https://doi.org/10.5287/ora-xq5b8xva7" target="_blank">DOI: 10.5287/ora-xq5b8xva7</a>).</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- MODULE 2: P03 RECONSTRUCTION -->
+    <section class="module-card">
+      <div class="mod-head">
+        <h2>2. Tái tạo Quỹ đạo Mất sóng Ngắn (P03 Monotone PCHIP vs. Linear Chord)</h2>
+        <code>Fritsch &amp; Carlson 1980 • Czerwiński et al. 2026 • Aetron 5s Masked Holdout</code>
+      </div>
+      <div class="tri-grid">
+        <div class="col-box paper">
+          <div class="col-title">① Bài báo gốc làm gì vs. Giao thức che điểm của Aetron?</div>
+          <ol>
+            <li><span class="src-pill paper">DOI: 10.1137/0717021</span> <strong>Fritsch &amp; Carlson (1980, <em>SIAM J. Numer. Anal.</em> 17(2):238–246):</strong> Đưa ra điều kiện cần và đủ cho nội suy bậc ba Hermite đơn điệu từng khúc (<strong>PCHIP</strong>): chiếu tỉ số đạo hàm hai đầu mút \((\alpha, \beta)\) vào đĩa đơn điệu \(\alpha^2 + \beta^2 \le 9\) qua hệ số \(\tau = 3/\sqrt{\alpha^2+\beta^2}\) để triệt tiêu vọt lố giả tạo (overshoot).</li>
+            <li><span class="src-pill paper">DOI: 10.3390/app16188972</span> <strong>Czerwiński, Wydra, Rachwał, Jachuła &amp; Zubrzycki (2026, <em>Applied Sciences</em> 16(18):8972):</strong> Đề xuất khung tái tạo đa tầng cho thiết bị đeo phổ thông (chọn cửa sổ hoạt động, lọc &amp; chiếu nhất quán tuyến đường, hiệu chỉnh độ cao theo tham chiếu, tái tạo pace) đối chiếu với quỹ đạo tham chiếu gộp từ nhiều thiết bị đeo độ trung thực cao.</li>
+            <li><span class="src-pill eng">GIAO THỨC CHE ĐIỂM AETRON</span> Để kiểm định riêng thành phần toán học nội suy (<code>Linear Chord</code> vs. <code>Monotone PCHIP</code>) một cách khách quan mà không trộn lẫn mô hình độ cao/pace, Aetron thiết lập bài test <strong>che mẫu chu kỳ 5 giây</strong> (chỉ giữ mốc <code>UTC sec mod 5 == 0</code>, giấu các giây 1, 2, 3, 4 ở giữa trong miền <code>2s &lt; dt &le; 15s</code>) như đã ghi nhận tại <code>docs/research/CYCLING_GNSS_SNAPPERGPS_BENCHMARK_20261119.md</code>.</li>
+          </ol>
+        </div>
+
+        <div class="col-box math">
+          <div class="col-title">② Họ bấm công thức gì để ra con số?</div>
+          <p>Chỉ tính sai số trắc địa trên tập các mốc giây nội suy <strong>đã bị giấu đi</strong> \(\mathcal{M}\) (không tính các mốc đầu mút giữ lại):</p>
+          <div class="formula">
+            $$\text{RMSE}_{\text{P03}} = \sqrt{\frac{1}{|\mathcal{M}|}\sum_{t \in \mathcal{M}} d_{\text{geo}}\!\left(\hat{\mathbf{p}}_t^{\text{interp}},\, \mathbf{p}_t^{\text{true}}\right)^2}$$
+          </div>
+          <p>Trên TU Wien (\(|\mathcal{M}| = 2{,}150\)): Linear đạt <code>2.108 m</code>, PCHIP đạt <code>2.125 m</code>; trên SnapperGPS (\(|\mathcal{M}| = 10{,}543\)): Linear <code>14.114 m</code>, PCHIP <code>15.486 m</code>.</p>
+        </div>
+
+        <div class="col-box aetron">
+          <div class="col-title">③ Bạn tự áp dụng cho App Aetron như thế nào?</div>
+          <p><strong>Không cần trạm RTK ngoài:</strong> Lấy bất kỳ file <code>raw_gps_points.csv</code> thu 1 Hz ngoài trời thông thoáng (<code>accuracy &le; 15 m</code>) của bạn trên Aetron, mục <code>2)</code> của <code>aetron_field_and_paper_evaluator_test.dart</code> tự động giữ các mốc chia hết cho 5 giây, giấu các điểm ở giữa làm chuẩn đối chiếu nội tại và in ra RMSE/MAE của <code>Linear Chord</code> vs. <code>Monotone PCHIP</code>. <em>(Trong sản phẩm Aetron, P03 chỉ dùng vẽ bản đồ mượt, không cộng vào quãng đường chính thức).</em></p>
+        </div>
+      </div>
+      <div class="prov-box">
+        <strong>📚 Trích dẫn xác thực Mục 2:</strong> Fritsch &amp; Carlson (1980, <a href="https://doi.org/10.1137/0717021" target="_blank">DOI: 10.1137/0717021</a>); Czerwiński et al. (2026, <a href="https://doi.org/10.3390/app16188972" target="_blank">DOI: 10.3390/app16188972</a>); Giao thức che mẫu 5s của Aetron được định nghĩa minh bạch tại <code>docs/research/CYCLING_GNSS_SNAPPERGPS_BENCHMARK_20261119.md</code> (dòng 45–51) và <code>kinematic_trajectory_reconstruction_engine.dart</code> (<code>maxRecoverableGapSec = 15.0</code>).
+      </div>
+    </section>
+
+    <!-- MODULE 3: STOP / TRIP & AUTO-PAUSE -->
+    <section class="module-card">
+      <div class="mod-head">
+        <h2>3. Phát hiện Điểm dừng Đèn đỏ &amp; Auto-Pause (T-DBSCAN, Stay-Point &amp; StepMotionGate)</h2>
+        <code>Zheng et al. 2009 • Ester et al. 1996 • Spang et al. STAGA 2022</code>
+      </div>
+      <div class="tri-grid">
+        <div class="col-box paper">
+          <div class="col-title">① Trong bài báo họ đo như thế nào?</div>
+          <ol>
+            <li><span class="src-pill dataset">DOI: 10.5194/isprs-archives-XLVIII-4-W1-2022-443-2022</span> <strong>Spang et al. (ISPRS 2022 — Bộ dữ liệu STAGA):</strong> Thu thập liên tục <code>122,808</code> điểm GPS suốt <code>126 ngày</code> đời sống thực (\(\Delta t_{\text{med}} = 10.0\text{ s}\)). Người tham gia dùng ứng dụng iOS chuyên dụng <em>GPS-Diary</em> ghi lại chính xác mốc bắt đầu và kết thúc từng khoảng dừng để gán nhãn sự thật <code>stop</code> vs. <code>trip</code>.</li>
+            <li><span class="src-pill paper">DOI: 10.1145/1526709.1526816</span> <strong>Zheng, Zhang, Xie &amp; Ma (WWW 2009):</strong> Thuật toán <em>Stay-Point Detection</em> quét tuần tự từ mỏ neo \(p_i\) tới \(p_j\) thỏa \(d(p_i, p_j) \le D_{\text{threh}}\) và \(\Delta t \ge T_{\text{threh}}\). <strong>Lưu ý phân biệt rõ:</strong> trong bài báo gốc tìm địa điểm du lịch/trung tâm thương mại, Zheng đặt <code>DistThreh = 200 m</code> và <code>TimeThreh = 20–30 phút</code>; còn ngưỡng <code>D_max = 8 m, T_min = 10 s</code> (và <code>T-DBSCAN</code> \(\varepsilon = 6.5\text{ m}, t \ge 10\text{ s}\)) là <strong>cấu hình tinh chỉnh cho điểm dừng thể thao ngắn (đèn đỏ) của Aetron</strong>.</li>
+          </ol>
+        </div>
+
+        <div class="col-box math">
+          <div class="col-title">② Họ bấm công thức gì để ra con số?</div>
+          <div class="formula">
+            $$\text{Precision}_{\text{stop}} = \frac{\text{TP}}{\text{TP} + \text{FP}}, \qquad \text{Recall}_{\text{stop}} = \frac{\text{TP}}{\text{TP} + \text{FN}}$$
+            $$\text{F1}_{\text{stop}} = \frac{2 \cdot \text{Precision} \cdot \text{Recall}}{\text{Precision} + \text{Recall}}, \quad \Delta t_{\text{lag}} = t_{\text{trigger}} - t_{\text{stop}}$$
+          </div>
+          <p>Đếm thêm số <strong>cụm dừng giả liên tiếp (False STOP Bouts)</strong> khi nhãn thật là <code>trip</code> (trên STAGA: <code>T-DBSCAN</code> chỉ sinh <code>122</code> cụm dừng giả so với <code>1,117</code> cụm của cổng vận tốc 3 giây đơn thuần).</p>
+        </div>
+
+        <div class="col-box aetron">
+          <div class="col-title">③ Bạn tự áp dụng cho App Aetron như thế nào?</div>
+          <ol>
+            <li><span class="src-pill eng">KỊCH BẢN THỰC ĐỊA AETRON</span> Thay vì ghi nhật ký 126 ngày như STAGA, bạn tạo nhãn Ground Truth chính xác tới từng giây bằng đồng hồ bấm giờ: chạy <code>0–120s</code> &rarr; đứng yên 30s (<code>120–150s</code>) &rarr; chạy tiếp <code>150–270s</code> &rarr; dừng chờ đèn đỏ 30s (<code>270–300s</code>).</li>
+            <li>Truyền <code>AETRON_STOP_WIN="120-150,270-300"</code> vào <code>field-gps</code> để tự động lập ma trận nhầm lẫn và xuất <strong>Precision, Recall, F1, Accuracy</strong>.</li>
+          </ol>
+        </div>
+      </div>
+      <div class="prov-box">
+        <strong>📚 Trích dẫn xác thực Mục 3:</strong> Spang, Pieper, Oesterle, Brauer, Haeger, Mümken, Gellert &amp; Voigt-Antons (2022, <em>Int. Arch. Photogramm. Remote Sens. Spatial Inf. Sci.</em> XLVIII-4/W1-2022, 443–448, <a href="https://doi.org/10.5194/isprs-archives-XLVIII-4-W1-2022-443-2022" target="_blank">DOI: 10.5194/isprs-archives-XLVIII-4-W1-2022-443-2022</a>); Zheng et al. (WWW 2009, <a href="https://doi.org/10.1145/1526709.1526816" target="_blank">DOI: 10.1145/1526709.1526816</a>); Ester, Kriegel, Sander &amp; Xu (KDD 1996, pp. 226–231). Cổng <code>StepMotionGate</code> (5 bước liên tiếp, khóa GPS 3.5s) là thiết kế kỹ thuật thời gian thực của Aetron.
+      </div>
+    </section>
+
+    <!-- MODULE 4: STEP COUNTING & CADENCE -->
+    <section class="module-card">
+      <div class="mod-head">
+        <h2>4. Đếm Bước chân &amp; Nhịp Bước (Cadence) từ IMU: Salvi (Oxford 2018) &amp; Xu (2022)</h2>
+        <code>Salvi et al. EMBC 2018 • Small et al. OxWalk 2022 • Hoover PedEval • Xu et al. 2022</code>
+      </div>
+      <div class="tri-grid">
+        <div class="col-box paper">
+          <div class="col-title">① Trong bài báo họ đo như thế nào?</div>
+          <ol>
+            <li><span class="src-pill paper">DOI: 10.1109/EMBC.2018.8513319</span> <strong>Salvi, Velardo, Brynes &amp; Tarassenko (IEEE EMBC 2018):</strong> Thu gia tốc kế điện thoại qua đúng <strong>6 vị trí mang máy</strong> (<code>hand</code>, <code>frontpocket</code>, <code>backpocket</code>, <code>neckpouch</code>, <code>bag</code>, <code>armband</code>; 12 chuỗi kiểm định trên GitHub commit <code>922cc0d8</code>, tổng <code>4,107</code> bước đếm chuẩn thủ công), chỉ ra rằng vị trí túi quần sau (<code>backpocket</code>) lỏng lẻo gây nhiễu mạnh nhất.</li>
+            <li><span class="src-pill dataset">DOI: 10.5287/bodleian:ORQ2abnbR</span> <strong>OxWalk (Small et al., 2022):</strong> 39 người sinh hoạt tự do (~1 giờ/người, <code>62,904</code> bước, IMU 25 Hz) gắn camera hành trình nhìn xuống chân để gán nhãn từng bước. <strong>PedEval (Hoover et al., Clemson Univ.):</strong> 42 người mang IMU 100 Hz đồng bộ video đếm chạm gót chân (<code>steps.txt</code>).</li>
+            <li><span class="src-pill paper">DOI: 10.3390/rs14122926</span> <strong>Xu et al. (<em>Remote Sensing</em> 2022, 14(12):2926):</strong> Công bố 25 chuỗi dữ liệu ràng buộc (commit <code>3da2d6e6</code>); trong đó <strong>Group 3 chạy bộ</strong> gồm 5 phiên (Subjects 11–15, <code>1,280</code> bước chuẩn; bài báo báo cáo <code>StepCount = 89.92%</code>, <code>Xu = 98.94%</code>).</li>
+          </ol>
+        </div>
+
+        <div class="col-box math">
+          <div class="col-title">② Họ bấm công thức gì để ra con số?</div>
+          <div class="formula">
+            $$\text{Count Accuracy}_i = \left(1 - \frac{|\hat{N}_i - N_i^{\text{true}}|}{N_i^{\text{true}}}\right)\times 100\%$$
+            $$\text{WAPE} = \frac{\sum_{i=1}^M |\hat{N}_i - N_i^{\text{true}}|}{\sum_{i=1}^M N_i^{\text{true}}}\times 100\%$$
+            $$\text{Cadence MAE} = \frac{1}{W}\sum_{w=1}^W \left|\widehat{\text{spm}}_w - \text{spm}_w^{\text{true}}\right|$$
+          </div>
+          <p>Aetron đạt <strong><code>93.16%</code></strong> trên 12 chuỗi Oxford (Java tác giả: <code>93.36%</code>) và <strong><code>98.69%</code></strong> nhân quả trên Xu Running Group 3 (<code>1,279/1,280</code> bước).</p>
+        </div>
+
+        <div class="col-box aetron">
+          <div class="col-title">③ Bạn tự áp dụng cho App Aetron như thế nào?</div>
+          <ol>
+            <li>Áp dụng đúng phương pháp đếm chuẩn video/tally của Salvi (2018) &amp; PedEval: quay video 60fps từ hông xuống bàn chân (hoặc dùng cò bấm tay cơ học) khi đi bộ 300 bước và chạy bộ 300 bước ở các vị trí cầm tay / túi quần trước / bao đeo tay.</li>
+            <li>Nhập cặp \((N^{\text{true}}, \hat{N})\) vào <strong>Máy tính số 2</strong> bên dưới hoặc chạy <code>AETRON_BENCH_MODE=field-gait</code>.</li>
+          </ol>
+        </div>
+      </div>
+      <div class="prov-box">
+        <strong>📚 Trích dẫn xác thực Mục 4:</strong> Salvi et al. (IEEE EMBC 2018, pp. 4432–4435, <a href="https://doi.org/10.1109/EMBC.2018.8513319" target="_blank">DOI: 10.1109/EMBC.2018.8513319</a>); Small et al. (OxWalk 2022, <a href="https://doi.org/10.5287/bodleian:ORQ2abnbR" target="_blank">DOI: 10.5287/bodleian:ORQ2abnbR</a>); Hoover et al. (Clemson PedEval, <a href="https://cecas.clemson.edu/~ahoover/pedometer/" target="_blank">cecas.clemson.edu/~ahoover/pedometer</a>); Xu et al. (2022, <em>"Smartphone-Based Unconstrained Step Detection Fusing a Variable Sliding Window and an Adaptive Threshold"</em>, <a href="https://doi.org/10.3390/rs14122926" target="_blank">DOI: 10.3390/rs14122926</a>).
+      </div>
+    </section>
+
+    <!-- MODULE 5: STRIDE LENGTH -->
+    <section class="module-card">
+      <div class="mod-head">
+        <h2>5. Ước lượng Chiều dài Bước Thích nghi: Renaudin et al. (2012) Eq. 8</h2>
+        <code>Renaudin et al. 2012 • Vezočnik et al. 2021 (SLEDataset2) • Fukuchi et al. 2017 (RBDS)</code>
+      </div>
+      <div class="tri-grid">
+        <div class="col-box paper">
+          <div class="col-title">① Trong bài báo họ đo như thế nào?</div>
+          <ol>
+            <li><span class="src-pill paper">DOI: 10.3390/s120708507</span> <strong>Renaudin, Susi &amp; Lachapelle (<em>Sensors</em> 2012, 12(7):8507–8525, Eq. 8):</strong> Thiết lập mô hình tuyến tính phụ thuộc chiều cao người tập \(h_{\text{user}}\) và tần số bước \(f_{\text{step}}\): \(s = h_{\text{user}}(a f_{\text{step}} + b) + c\).</li>
+            <li><span class="src-pill dataset">DOI: 10.3390/s21103527</span> <strong>Vezočnik, Kamnik &amp; Juric (<em>Sensors</em> 2021 — <code>SLEDataset2</code>):</strong> Đo 10 người trưởng thành (6 nam, 4 nữ) mang 4 điện thoại (<code>upper arm</code>, <code>hand</code>, <code>pelvis</code>, <code>thigh</code>, 100 Hz) đi bộ ở 3 tốc độ (chậm, vừa, nhanh) trên thảm chạy có đo <code>stride_lengths</code> và tốc độ tự chọn trên đa giác chuẩn có đo <code>path_length</code>.</li>
+            <li><span class="src-pill dataset">DOI: 10.7717/peerj.3298</span> <strong>Fukuchi, Fukuchi &amp; Duarte (<em>PeerJ</em> 2017 — <code>RBDS</code>):</strong> Đo 28 vận động viên chạy trên <strong>thảm chạy đôi gắn bàn đo lực (force-plate instrumented treadmill)</strong> kết hợp camera quang học 3D ở đúng 3 vận tốc <code>2.5, 3.5 và 4.5 m/s</code> (84 phiên).</li>
+          </ol>
+        </div>
+
+        <div class="col-box math">
+          <div class="col-title">② Họ bấm công thức gì để ra con số?</div>
+          <div class="formula">
+            $$\bar{L}_k^{\text{true}} = \frac{D_k^{\text{true}}}{N_k^{\text{true}}}, \qquad \hat{L}_k = H \cdot \left(a^{(-s)}\frac{\text{spm}_k}{60} + b^{(-s)}\right) + c^{(-s)}$$
+            $$\text{MAE}_{\text{cm}} = \frac{100}{K}\sum_{k=1}^K \left|\hat{L}_k - \bar{L}_k^{\text{true}}\right|$$
+          </div>
+          <p><strong>Lưu ý trung thực:</strong> Aetron dùng đúng <em>dạng hàm Eq. 8</em> của Renaudin (2012), nhưng <strong>tự khớp lại bộ hệ số \((a,b,c)\) bằng kiểm định chéo Leave-One-Subject-Out (LOSO)</strong> trên <code>SLEDataset2</code> và <code>Fukuchi RBDS</code> chứ không chép hằng số thiết bị cầm tay riêng của bài báo 2012.</p>
+        </div>
+
+        <div class="col-box aetron">
+          <div class="col-title">③ Bạn tự áp dụng cho App Aetron như thế nào?</div>
+          <ol>
+            <li>Áp dụng đúng phương pháp đường chuẩn đo sẵn (<code>path_length</code> trong <code>SLEDataset2</code>): dùng vạch kẻ <strong>100.0 m đường thẳng sân điền kinh</strong>.</li>
+            <li>Đi bộ 3 lượt (chậm, vừa, nhanh) và chạy bộ 3 lượt (chậm, vừa, nhanh) trên đúng đoạn 100m, đếm số bước thật \(N^{\text{true}}\) và thời gian giây &rarr; \(\bar{L}^{\text{true}} = 100 / N^{\text{true}}\).</li>
+            <li>Đưa vào <code>field-gait</code> hoặc Máy tính số 2 để đối chiếu sai số cm &amp; % của công thức tĩnh cũ (\(0.415H\) / \(0.65H\)) với Renaudin Eq. 8 của Aetron!</li>
+          </ol>
+        </div>
+      </div>
+      <div class="prov-box">
+        <strong>📚 Trích dẫn xác thực Mục 5:</strong> Renaudin, Susi &amp; Lachapelle (2012, <a href="https://doi.org/10.3390/s120708507" target="_blank">DOI: 10.3390/s120708507</a>, Eq. 8); Vezočnik, Kamnik &amp; Juric (2021, <a href="https://doi.org/10.3390/s21103527" target="_blank">DOI: 10.3390/s21103527</a> — <code>SLEDataset2</code>); Fukuchi, Fukuchi &amp; Duarte (2017, <a href="https://doi.org/10.7717/peerj.3298" target="_blank">DOI: 10.7717/peerj.3298</a> — <code>RBDS</code>). Ghi chú nguồn gốc hệ số nằm ngay đầu file <code>lib/features/workout/domain/services/research_walking_step_length.dart</code>.
+      </div>
+    </section>
+
+    <!-- MODULE 6: DEEPIOD & POLYLINE -->
+    <section class="module-card">
+      <div class="mod-head">
+        <h2>6. Nhận diện Trong nhà / Ngoài trời (DeepIOD &amp; Yoo) + Nén Lộ trình Polyline</h2>
+        <code>Dastagir et al. 2024 • Bakirtzis et al. CIOD 2022 • Yoo 2025 • Google Polyline Spec</code>
+      </div>
+      <div class="tri-grid">
+        <div class="col-box paper">
+          <div class="col-title">① Trong bài báo họ đo như thế nào?</div>
+          <ol>
+            <li><span class="src-pill paper">DOI: 10.3390/s24165125</span> <strong>Dastagir, Tariq &amp; Han (KAIST, <em>Sensors</em> 2024, 24(16):5125 — DeepIOD):</strong> Phân đoạn chuỗi cảm biến bằng cửa sổ trượt 10 giây trên 8 kênh <code>[RSRP, RSRQ, Light, Mag, Acc, Sound, Proximity, Daytime]</code> kết hợp mô-đun Ánh sáng (Eq. 7), Độ chính xác GPS \(\le 5\text{ m}\) (Eq. 8) và bỏ phiếu đa số thích nghi AMV của 3 mạng sâu Model A/B/C (Eq. 9).</li>
+            <li><span class="src-pill dataset">DOI: 10.1109/JIOT.2022.3195691</span> <strong>Bakirtzis et al. (2022) &amp; Bộ dữ liệu Cambridge CIOD (<code>10.17863/CAM.82668</code>):</strong> File <code>Data_Supporting_IOD_DL_MTSC_JIoT.csv</code> cung cấp cột đánh dấu ranh giới phiên ghi mới <strong><code>New_seq</code></strong> (tương ứng ngày, giờ và tòa nhà khác nhau, tổng 85 phiên <code>00..84</code>) để nhà nghiên cứu cô lập các phiên kiểm thử độc lập (<code>Sessions 72..84</code> = <code>201,731</code> mẫu 1 Hz), chống rò rỉ cửa sổ trượt.</li>
+            <li><span class="src-pill paper">DOI: 10.3390/electronics14132598</span> <strong>Yoo (<em>Electronics</em> 2025, 14(13):2598):</strong> Phát hiện xác suất 3 vùng (<code>indoor</code>, <code>transition</code>, <code>outdoor</code>) tại lối vào tòa nhà dựa trên suy hao \(C/N_0\) vệ tinh, RSSI Wi-Fi/BLE và chuyển giao IMU.</li>
+          </ol>
+        </div>
+
+        <div class="col-box math">
+          <div class="col-title">② Họ bấm công thức gì để ra con số?</div>
+          <div class="formula">
+            $$\text{Macro-F1} = \frac{\text{F1}_{\text{Indoor}} + \text{F1}_{\text{Outdoor}}}{2}$$
+            $$\text{Saved}\% = \left(1 - \frac{\text{Bytes}_{\text{encoded}}}{\text{Bytes}_{\text{raw JSON}}}\right)\times 100\%$$
+          </div>
+          <p><strong>Tách bạch cấu hình:</strong> Trên CIOD <code>Sessions 72..84</code>, Model C đủ 8 kênh đạt <strong><code>90.59%</code></strong> Acc (Macro-F1 <strong><code>90.17%</code></strong>); còn bản <strong>4 kênh không đặc quyền của Aetron</strong> (bỏ <code>RSRP/RSRQ/Sound/Proximity</code> do giới hạn OS &amp; quyền riêng tư) đạt <code>73.64%</code> Acc, giữ <strong>Indoor Recall <code>93.37%</code></strong>.</p>
+        </div>
+
+        <div class="col-box aetron">
+          <div class="col-title">③ Bạn tự áp dụng cho App Aetron như thế nào?</div>
+          <ol>
+            <li><span class="src-pill eng">CODE AETRON</span> Lớp <code>IodExperimentStorage</code> ghi tách biệt <code>session_&lt;id&gt;.jsonl</code> và nhãn sự thật <code>ground_truth_&lt;id&gt;.jsonl</code> khi bạn bấm nút đánh dấu lúc bước qua cửa tòa nhà.</li>
+            <li>Chạy lệnh chấm điểm tự động:</li>
+          </ol>
+          <pre class="cli">AETRON_BENCH_MODE=field-iod \
+AETRON_IOD_JSONL=session_01.jsonl AETRON_IOD_GT=ground_truth_01.jsonl \
+~/development/flutter/bin/flutter test --no-pub \
+tooling/benchmark/aetron_field_and_paper_evaluator_test.dart</pre>
+        </div>
+      </div>
+      <div class="prov-box">
+        <strong>📚 Trích dẫn xác thực Mục 6:</strong> Dastagir, Tariq &amp; Han (2024, <a href="https://doi.org/10.3390/s24165125" target="_blank">DOI: 10.3390/s24165125</a>); Bakirtzis, Qiu, Wassell, Fiore &amp; Zhang (2022, <a href="https://doi.org/10.1109/JIOT.2022.3195691" target="_blank">DOI: 10.1109/JIOT.2022.3195691</a> &amp; Dataset <a href="https://doi.org/10.17863/CAM.82668" target="_blank">DOI: 10.17863/CAM.82668</a>); Yoo (2025, <a href="https://doi.org/10.3390/electronics14132598" target="_blank">DOI: 10.3390/electronics14132598</a>). Thuật toán nén <em>Encoded Polyline Algorithm Format</em> (<code>1e-5</code> / <code>1e-6</code> deg) là đặc tả kỹ thuật công nghiệp của Google Maps Platform, không phải bài báo tạp chí học thuật.
+      </div>
+    </section>
+
+    <!-- LIVE INTERACTIVE CALCULATORS -->
+    <section class="module-card" id="live-calculators">
+      <div class="mod-head">
+        <h2>🧮 Phòng Tính toán Benchmark Tương tác & Xuất Bảng LaTeX Tự động</h2>
+        <code>Paste Your Own Aetron Field Numbers → Instant Metrics + LaTeX</code>
+      </div>
+      <p style="color:var(--muted);font-size:0.88rem;">
+        Sau khi bạn đi chạy thử ngoài sân vận động hoặc hành lang 100m với điện thoại cài Aetron, hãy nhập trực tiếp các con số đo được vào 3 ô tính dưới đây. Trang sẽ tự động tính chuẩn xác mọi chỉ số theo công thức bài báo và sinh sẵn bảng <code>\begin{table}...\end{table}</code> để bạn copy vào file <code>.tex</code>!
+      </p>
+
+      <div class="calc-grid">
+        <!-- CALC 1 -->
+        <div class="calc-card">
+          <h3>Máy tính 1: Quãng đường GPS Sân chuẩn (Scott 2016 & Bland–Altman)</h3>
+          <label class="field">Nhập danh sách các buổi chạy (mỗi dòng: <code>Quãng_đường_thật_km, Quãng_đường_Aetron_km</code>):</label>
+          <textarea class="inp" id="c1-input" rows="5">2.000, 2.024
+2.000, 1.982
+2.000, 2.015
+2.000, 1.976
+2.000, 2.011</textarea>
+          <div style="margin-top:10px;display:flex;gap:8px;align-items:center;">
+            <button class="btn active" type="button" onclick="calcTrack()">Tính Benchmark GPS</button>
+            <button class="btn" type="button" onclick="copyTex('c1-tex')">📋 Copy LaTeX</button>
+            <span id="c1-msg" class="copy-note"></span>
+          </div>
+          <div class="res-panel" id="c1-res"></div>
+          <pre class="cli" id="c1-tex" style="margin-top:8px;max-height:140px;"></pre>
+        </div>
+
+        <!-- CALC 2 -->
+        <div class="calc-card">
+          <h3>Máy tính 2: Đếm Bước & Chiều dài Bước 100m (Salvi/Xu & Renaudin)</h3>
+          <label class="field">Chế độ & Chiều cao người chạy (cm):</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <select class="inp" id="c2-mode" onchange="calcGait()">
+              <option value="running">Chạy bộ (Running)</option>
+              <option value="walking">Đi bộ (Walking)</option>
+            </select>
+            <input class="inp" id="c2-h" type="number" value="172" onchange="calcGait()" />
+          </div>
+          <label class="field">Mỗi dòng: <code>Quãng_đường_thật_m, Số_bước_đếm_tay, Số_bước_Aetron, Thời_gian_giây</code>:</label>
+          <textarea class="inp" id="c2-input" rows="4">100.0, 82, 81, 28.5
+100.0, 94, 95, 34.0
+100.0, 74, 74, 24.2</textarea>
+          <div style="margin-top:10px;display:flex;gap:8px;align-items:center;">
+            <button class="btn active" type="button" onclick="calcGait()">Tính Step & Stride</button>
+            <button class="btn" type="button" onclick="copyTex('c2-tex')">📋 Copy LaTeX</button>
+            <span id="c2-msg" class="copy-note"></span>
+          </div>
+          <div class="res-panel" id="c2-res"></div>
+          <pre class="cli" id="c2-tex" style="margin-top:8px;max-height:140px;"></pre>
+        </div>
+
+        <!-- CALC 3 -->
+        <div class="calc-card">
+          <h3>Máy tính 3: Phân loại Môi trường IOD / Điểm dừng (Macro-F1)</h3>
+          <label class="field">Nhập Ma trận Nhầm lẫn 4 ô <code>TP (Outdoor/Stop đúng), TN (Indoor/Move đúng), FP, FN</code>:</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;">
+            <div><small style="color:var(--muted)">TP (Dương thật)</small><input class="inp" id="c3-tp" type="number" value="37478" /></div>
+            <div><small style="color:var(--muted)">TN (Âm thật)</small><input class="inp" id="c3-tn" type="number" value="111076" /></div>
+            <div><small style="color:var(--muted)">FP (Dương giả)</small><input class="inp" id="c3-fp" type="number" value="7888" /></div>
+            <div><small style="color:var(--muted)">FN (Âm giả)</small><input class="inp" id="c3-fn" type="number" value="45289" /></div>
+          </div>
+          <div style="margin-top:10px;display:flex;gap:8px;align-items:center;">
+            <button class="btn active" type="button" onclick="calcF1()">Tính Precision / Recall / Macro-F1</button>
+            <button class="btn" type="button" onclick="copyTex('c3-tex')">📋 Copy LaTeX</button>
+            <span id="c3-msg" class="copy-note"></span>
+          </div>
+          <div class="res-panel" id="c3-res"></div>
+          <pre class="cli" id="c3-tex" style="margin-top:8px;max-height:140px;"></pre>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    function calcTrack() {
+      const lines = document.getElementById('c1-input').value.trim().split('\n').filter(Boolean);
+      const pairs = lines.map(l => l.split(',').map(x => parseFloat(x.trim()))).filter(a => a.length >= 2 && a[0] > 0 && !isNaN(a[1]));
+      if (!pairs.length) return;
+      const k = pairs.length;
+      const apes = pairs.map(([r, a]) => Math.abs(a - r) / r * 100);
+      const signed = pairs.map(([r, a]) => (a - r) / r * 100);
+      const absM = pairs.map(([r, a]) => Math.abs(a - r) * 1000);
+      const mape = apes.reduce((s, x) => s + x, 0) / k;
+      const maeM = absM.reduce((s, x) => s + x, 0) / k;
+      const rmseM = Math.sqrt(absM.reduce((s, x) => s + x * x, 0) / k);
+      const bias = signed.reduce((s, x) => s + x, 0) / k;
+      const sd = k > 1 ? Math.sqrt(signed.reduce((s, x) => s + Math.pow(x - bias, 2), 0) / (k - 1)) : 0;
+      const lo = bias - 1.96 * sd, hi = bias + 1.96 * sd;
+      const w5 = apes.filter(x => x <= 5.0).length / k * 100;
+      const rating = mape < 5 ? 'GOOD (< 5%)' : (mape <= 10 ? 'MODERATE (5–10%)' : 'POOR (> 10%)');
+
+      document.getElementById('c1-res').innerHTML = `
+        <strong>Số buổi (K):</strong> ${k} &nbsp;|&nbsp; <strong>Xếp hạng Scott (2016):</strong> ${rating}<br/>
+        <strong>MAPE:</strong> ${mape.toFixed(2)}% &nbsp;|&nbsp; <strong>MAE / RMSE:</strong> ${maeM.toFixed(1)} m / ${rmseM.toFixed(1)} m<br/>
+        <strong>Signed Bias:</strong> ${(bias >= 0 ? '+' : '') + bias.toFixed(2)}% &nbsp;|&nbsp; <strong>95% LoA:</strong> [${lo.toFixed(2)}%, ${hi.toFixed(2)}%] &nbsp;|&nbsp; <strong>Đạt ±5%:</strong> ${w5.toFixed(1)}%
+      `;
+      document.getElementById('c1-tex').textContent =
+`% Paste into IEEEtran LaTeX table:
+Aetron Field GPS ($K=${k}$) & ${mape.toFixed(2)}\\% & ${maeM.toFixed(1)}\\text{ m} & ${rmseM.toFixed(1)}\\text{ m} & ${(bias>=0?'+':'')+bias.toFixed(2)}\\% & [${lo.toFixed(2)}\\%, ${hi.toFixed(2)}\\%] \\\\`;
+    }
+
+    function calcGait() {
+      const mode = document.getElementById('c2-mode').value;
+      const hCm = parseFloat(document.getElementById('c2-h').value) || 172;
+      const hM = hCm / 100.0;
+      const lines = document.getElementById('c2-input').value.trim().split('\n').filter(Boolean);
+      const rows = lines.map(l => l.split(',').map(x => parseFloat(x.trim()))).filter(a => a.length >= 4 && a[1] > 0);
+      if (!rows.length) return;
+
+      let sumAbsStepErr = 0, sumTrueSteps = 0, sumStepAcc = 0, sumCadErr = 0;
+      let errStaticCm = [], errRenCm = [], apeRen = [];
+
+      rows.forEach(([distM, nTrue, nApp, durS]) => {
+        sumAbsStepErr += Math.abs(nApp - nTrue);
+        sumTrueSteps += nTrue;
+        sumStepAcc += (1 - Math.abs(nApp - nTrue) / nTrue) * 100;
+        const cadTrue = nTrue / (durS / 60), cadApp = nApp / (durS / 60);
+        sumCadErr += Math.abs(cadApp - cadTrue);
+
+        const trueStepM = distM / nTrue;
+        const fHz = Math.round(cadApp) / 60.0;
+        const staticM = mode === 'running' ? 0.65 * hM : 0.415 * hM;
+        const renM = mode === 'running'
+          ? hM * (0.321056455 * fHz + 0.725254091) - 1.680950042
+          : hM * (0.132763435 * fHz + 0.021659704) + 0.275458078;
+
+        errStaticCm.push(Math.abs(staticM - trueStepM) * 100);
+        errRenCm.push(Math.abs(renM - trueStepM) * 100);
+        apeRen.push(Math.abs(renM - trueStepM) / trueStepM * 100);
+      });
+
+      const m = rows.length;
+      const macroAcc = sumStepAcc / m;
+      const wape = sumAbsStepErr / sumTrueSteps * 100;
+      const cadMae = sumCadErr / m;
+      const maeStat = errStaticCm.reduce((s, x) => s + x, 0) / m;
+      const maeRen = errRenCm.reduce((s, x) => s + x, 0) / m;
+      const mapeR = apeRen.reduce((s, x) => s + x, 0) / m;
+
+      document.getElementById('c2-res').innerHTML = `
+        <strong>Đếm bước:</strong> Macro Acc = <strong>${macroAcc.toFixed(2)}%</strong> | WAPE = ${wape.toFixed(2)}% | Cadence MAE = ${cadMae.toFixed(2)} spm<br/>
+        <strong>Chiều dài bước:</strong> Tĩnh cũ MAE = ${maeStat.toFixed(2)} cm &rarr; <strong>Renaudin Aetron MAE = ${maeRen.toFixed(2)} cm</strong> (MAPE ${mapeR.toFixed(2)}%)
+      `;
+      document.getElementById('c2-tex').textContent =
+`% Step & Stride LaTeX row (${mode}, M=${m} trials):
+Aetron ${mode} ($M=${m}$) & ${macroAcc.toFixed(2)}\\% & ${wape.toFixed(2)}\\% & ${cadMae.toFixed(2)}\\text{ spm} & ${maeRen.toFixed(2)}\\text{ cm} & ${mapeR.toFixed(2)}\\% \\\\`;
+    }
+
+    function calcF1() {
+      const tp = parseFloat(document.getElementById('c3-tp').value) || 0;
+      const tn = parseFloat(document.getElementById('c3-tn').value) || 0;
+      const fp = parseFloat(document.getElementById('c3-fp').value) || 0;
+      const fn = parseFloat(document.getElementById('c3-fn').value) || 0;
+      const tot = tp + tn + fp + fn;
+      if (!tot) return;
+      const acc = (tp + tn) / tot * 100;
+      const pPos = (tp + fp) ? tp / (tp + fp) * 100 : 0;
+      const rPos = (tp + fn) ? tp / (tp + fn) * 100 : 0;
+      const f1Pos = (pPos + rPos) ? 2 * pPos * rPos / (pPos + rPos) : 0;
+      const pNeg = (tn + fn) ? tn / (tn + fn) * 100 : 0;
+      const rNeg = (tn + fp) ? tn / (tn + fp) * 100 : 0;
+      const f1Neg = (pNeg + rNeg) ? 2 * pNeg * rNeg / (pNeg + rNeg) : 0;
+      const macro = 0.5 * (f1Pos + f1Neg);
+
+      document.getElementById('c3-res').innerHTML = `
+        <strong>Tổng mẫu (N):</strong> ${tot.toLocaleString()} &nbsp;|&nbsp; <strong>Accuracy:</strong> ${acc.toFixed(2)}% &nbsp;|&nbsp; <strong>Macro-F1:</strong> <strong>${macro.toFixed(2)}%</strong><br/>
+        <strong>Lớp Dương (Outdoor/Stop):</strong> Prec ${pPos.toFixed(2)}% | Rec ${rPos.toFixed(2)}% | F1 ${f1Pos.toFixed(2)}%<br/>
+        <strong>Lớp Âm (Indoor/Move):</strong> Prec ${pNeg.toFixed(2)}% | Rec ${rNeg.toFixed(2)}% | F1 ${f1Neg.toFixed(2)}%
+      `;
+      document.getElementById('c3-tex').textContent =
+`% Classification LaTeX row (N=${tot}):
+Aetron Classifier ($N=${tot}$) & ${acc.toFixed(2)}\\% & ${macro.toFixed(2)}\\% & ${rNeg.toFixed(2)}\\% & ${pPos.toFixed(2)}\\% & ${f1Pos.toFixed(2)}\\% \\\\`;
+    }
+
+    function copyTex(id) {
+      const txt = document.getElementById(id).textContent;
+      navigator.clipboard?.writeText(txt);
+      const msgId = id.replace('-tex', '-msg');
+      document.getElementById(msgId).textContent = 'Đã copy!';
+      setTimeout(() => { document.getElementById(msgId).textContent = ''; }, 1800);
+    }
+
+    calcTrack();
+    calcGait();
+    calcF1();
+
+    const saved = localStorage.getItem('aetron_doc_theme');
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+    document.getElementById('theme-btn').onclick = () => {
+      const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('aetron_doc_theme', next);
+    };
+  </script>
+</body>
+</html>
