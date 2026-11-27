@@ -63,9 +63,39 @@ class WorkoutEnvironmentController {
     final prediction = iod.currentPrediction;
     final probability = prediction.deepIodOutdoorProbability;
     final predicted = prediction.state;
-    if (prediction.modelVersion != IodCompositeClassifier.liveModelVersion ||
-        prediction.nativeClass !=
-            'deepiod_c_mobile_adapted:${predicted.code}' ||
+    final isAndroidLiveModel =
+        prediction.modelVersion == IodCompositeClassifier.liveModelVersion &&
+        prediction.nativeClass ==
+            'deepiod_c_mobile_adapted:${predicted.code}' &&
+        [
+          'light',
+          'mag',
+          'acc',
+          'daytime',
+        ].every((channel) => prediction.sensorAvailability[channel] == true) &&
+        snapshot.hasLightSensor &&
+        snapshot.hasImuData &&
+        [
+          snapshot.ambientLux,
+          snapshot.magneticMagnitudeMean,
+          snapshot.accelMagnitudeMean,
+        ].every((value) => value != null && value.isFinite && value >= 0);
+
+    final isIosLiveModel =
+        prediction.modelVersion == IodCompositeClassifier.iosLiveModelVersion &&
+        prediction.nativeClass == 'ios_magio_hmm:${predicted.code}' &&
+        [
+          'mag',
+          'acc',
+          'daytime',
+        ].every((channel) => prediction.sensorAvailability[channel] == true) &&
+        snapshot.hasImuData &&
+        [
+          snapshot.magneticMagnitudeMean,
+          snapshot.accelMagnitudeMean,
+        ].every((value) => value != null && value.isFinite && value >= 0);
+
+    if ((!isAndroidLiveModel && !isIosLiveModel) ||
         (predicted != IndoorOutdoorState.indoor &&
             predicted != IndoorOutdoorState.outdoor) ||
         probability == null ||
@@ -75,20 +105,7 @@ class WorkoutEnvironmentController {
         (probability >= 0.5) != (predicted == IndoorOutdoorState.outdoor) ||
         !prediction.confidence.isFinite ||
         prediction.confidence < 0 ||
-        prediction.confidence > 1 ||
-        ![
-          'light',
-          'mag',
-          'acc',
-          'daytime',
-        ].every((channel) => prediction.sensorAvailability[channel] == true) ||
-        !snapshot.hasLightSensor ||
-        !snapshot.hasImuData ||
-        ![
-          snapshot.ambientLux,
-          snapshot.magneticMagnitudeMean,
-          snapshot.accelMagnitudeMean,
-        ].every((value) => value != null && value.isFinite && value >= 0)) {
+        prediction.confidence > 1) {
       return base;
     }
     final hint = predicted.code;

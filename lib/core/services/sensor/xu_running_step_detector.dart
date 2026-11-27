@@ -2,17 +2,20 @@ import 'dart:collection';
 import 'dart:math' as math;
 
 /// Causal Running adaptation of Xu et al. (2022), DOI 10.3390/rs14122926,
-/// sections 2–3 and Table 1. Fixed 50 Hz grid approximates the paper's
-/// ~5 s/256 samples, with explicit bounded delay for centered filtering and
-/// cross-window peak confirmation. No coefficients fitted to Group 3.
+/// sections 2–3 and Table 1, paired with Skog et al. (IEEE TBME 2010, Eq. 13,
+/// doi:10.1109/TBME.2010.2060723) Magnitude-Variance Zero-Velocity GLRT
+/// (T_MV < gamma_MV) to reject stationary stance and resting hand-sway.
+/// Fixed 50 Hz grid approximates the paper's ~5 s/256 samples, with explicit
+/// bounded delay for centered filtering and cross-window peak confirmation.
+/// No coefficients fitted to Group 3.
 class XuRunningStepDetector {
   static const periodUs = 20000;
   static const _maxGapUs = 250000;
   static const _window = 50;
-  /// Minimum peak-to-peak dynamic range (m/s²) in a 1-second FIR window required
-  /// to distinguish active running impact from resting sensor noise, breathing,
-  /// and hand-held posture sway while standing still.
-  static const _minDynamicRange = 1.80;
+
+  /// Skog et al. (2010, Eq. 13) Magnitude-Variance GLRT stationary threshold
+  /// for running (sigma_a >= 0.80 m/s² -> gamma_MV = 0.64 (m/s²)²).
+  static const _zuptMvGamma = 0.64;
   static final _fir = _coefficients();
   final _raw = ListQueue<double>(15);
   final _spectrum = ListQueue<double>(256);
@@ -97,14 +100,20 @@ class XuRunningStepDetector {
     // final eligible peak, or two samples forward when none is present.
     if (_points.length < _window + 2) return;
 
-    var minFir = _points[0].fir;
-    var maxFir = _points[0].fir;
+    // Skog et al. (IEEE TBME 2010, Eq. 13) Magnitude-Variance GLRT over 1s window:
+    // T_MV = (1/W) * sum((fir_i - mean)^2) < gamma_MV indicates zero-velocity stance.
+    var sumFir = 0.0;
     for (var i = 1; i <= _window; i++) {
-      final f = _points[i].fir;
-      if (f < minFir) minFir = f;
-      if (f > maxFir) maxFir = f;
+      sumFir += _points[i].fir;
     }
-    final isStationary = (maxFir - minFir) < _minDynamicRange;
+    final meanFir = sumFir / _window;
+    var varFir = 0.0;
+    for (var i = 1; i <= _window; i++) {
+      final d = _points[i].fir - meanFir;
+      varFir += d * d;
+    }
+    varFir /= _window;
+    final isStationary = varFir < _zuptMvGamma;
     if (isStationary) {
       _pendingTime = null;
     }

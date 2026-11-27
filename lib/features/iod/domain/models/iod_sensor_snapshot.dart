@@ -65,6 +65,14 @@ class IodSensorSnapshot {
   // Pedometer Telemetry
   final int stepDelta;
 
+  // Barometric Altimeter Telemetry (iOS CMAltimeter / Android TYPE_PRESSURE via sensors_plus)
+  final bool hasBarometer;
+  final double? pressureHpa;
+  final double? pressureDelta10sHpa;
+
+  // Raw GPS silence duration (seconds since last OS location fix, if known)
+  final int? gpsFixAgeSeconds;
+
   // Contextual flags
   final bool isNightTime;
   final bool isScreenOff;
@@ -106,6 +114,10 @@ class IodSensorSnapshot {
     this.bleBeaconCount,
     this.bleFingerprint,
     this.stepDelta = 0,
+    this.hasBarometer = false,
+    this.pressureHpa,
+    this.pressureDelta10sHpa,
+    this.gpsFixAgeSeconds,
     this.isNightTime = false,
     this.isScreenOff = false,
   });
@@ -167,6 +179,10 @@ class IodSensorSnapshot {
       'magnetic_magnitude_mean': magneticMagnitudeMean,
       'magnetic_variance': magneticVariance,
       'step_delta': stepDelta,
+      'has_barometer': hasBarometer,
+      'pressure_hpa': pressureHpa,
+      'pressure_delta_10s_hpa': pressureDelta10sHpa,
+      'gps_fix_age_seconds': gpsFixAgeSeconds,
       'is_night_time': isNightTime,
       'is_screen_off': isScreenOff,
     };
@@ -198,6 +214,11 @@ class IodSensorSnapshot {
           (json['magnetic_magnitude_mean'] as num?)?.toDouble(),
       magneticVariance: (json['magnetic_variance'] as num?)?.toDouble(),
       stepDelta: json['step_delta'] as int? ?? 0,
+      hasBarometer: json['has_barometer'] as bool? ?? false,
+      pressureHpa: (json['pressure_hpa'] as num?)?.toDouble(),
+      pressureDelta10sHpa:
+          (json['pressure_delta_10s_hpa'] as num?)?.toDouble(),
+      gpsFixAgeSeconds: json['gps_fix_age_seconds'] as int?,
       isNightTime: json['is_night_time'] as bool? ?? false,
       isScreenOff: json['is_screen_off'] as bool? ?? false,
     );

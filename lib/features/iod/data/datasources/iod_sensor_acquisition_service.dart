@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
@@ -19,6 +20,7 @@ class IodSensorAcquisitionService {
   StreamSubscription<MagnetometerEvent>? _magSub;
   StreamSubscription<UserAccelerometerEvent>? _accelSub;
   StreamSubscription<GyroscopeEvent>? _gyroSub;
+  StreamSubscription<BarometerEvent>? _barometerSub;
   StreamSubscription<GnssSatelliteData>? _gnssSub;
   StreamSubscription<LightSensorData>? _lightSub;
   Timer? _epochTimer;
@@ -28,10 +30,13 @@ class IodSensorAcquisitionService {
   final List<double> _gyroMagnitudes = [];
   final List<double> _magMagnitudes = [];
   final List<double> _recentLuxReadings = [];
+  final List<double> _recentPressuresHpa = [];
+  final Queue<double> _pressureEpochHistory = Queue<double>();
 
   // Latest hardware state
   GnssSatelliteData? _latestGnss;
   double? _latestLux;
+  double? _latestPressureHpa;
   WifiScanData? _latestWifiScan;
   BleScanData? _latestBleScan;
   Position? _latestPosition;
@@ -110,6 +115,25 @@ class IodSensorAcquisitionService {
       debugPrint('[IodAcquisition] Gyroscope listener failed: $e');
     }
 
+    // 3b. Subscribe to Barometer (iOS CMAltimeter / Android TYPE_PRESSURE)
+    try {
+      _barometerSub = barometerEventStream().listen(
+        (event) {
+          if (event.pressure.isFinite && event.pressure > 100.0) {
+            _latestPressureHpa = event.pressure;
+            _recentPressuresHpa.add(event.pressure);
+          }
+        },
+        onError: (e) {
+          _latestPressureHpa = null;
+          _recentPressuresHpa.clear();
+          debugPrint('[IodAcquisition] Barometer stream unavailable: $e');
+        },
+      );
+    } catch (e) {
+      debugPrint('[IodAcquisition] Barometer listener failed: $e');
+    }
+
     // 4. Subscribe to Android Native GNSS status (C/N0 & satellites)
     try {
       _gnssSub = _nativeChannel.gnssStatusStream.listen(
@@ -181,6 +205,8 @@ class IodSensorAcquisitionService {
     _accelSub = null;
     _gyroSub?.cancel();
     _gyroSub = null;
+    _barometerSub?.cancel();
+    _barometerSub = null;
     _gnssSub?.cancel();
     _gnssSub = null;
     _lightSub?.cancel();
@@ -203,12 +229,15 @@ class IodSensorAcquisitionService {
     _gyroMagnitudes.clear();
     _magMagnitudes.clear();
     _recentLuxReadings.clear();
+    _recentPressuresHpa.clear();
     _stepDeltaSinceLastEpoch = 0;
   }
 
   void _clearHardwareCache() {
     _latestGnss = null;
     _latestLux = null;
+    _latestPressureHpa = null;
+    _pressureEpochHistory.clear();
     _latestWifiScan = null;
     _latestBleScan = null;
     _latestPosition = null;
@@ -252,8 +281,28 @@ class IodSensorAcquisitionService {
         ? _computeMean(_recentLuxReadings)
         : _latestLux; // Android TYPE_LIGHT is an on-change sensor.
 
-    // GPS fix
+    // Barometer stats (hPa) & 10-second vertical pressure delta
+    final double? pressureHpa = _recentPressuresHpa.isNotEmpty
+        ? _computeMean(_recentPressuresHpa)
+        : _latestPressureHpa;
+    double? pressureDelta10sHpa;
+    if (pressureHpa != null) {
+      if (_pressureEpochHistory.isNotEmpty) {
+        pressureDelta10sHpa = pressureHpa - _pressureEpochHistory.first;
+      } else {
+        pressureDelta10sHpa = 0.0;
+      }
+    }
+
+    // GPS fix & silence age
     final cachedPosition = _latestPosition;
+    int? gpsFixAgeSec;
+    if (cachedPosition != null) {
+      final rawAge = now.difference(cachedPosition.timestamp);
+      if (!rawAge.isNegative) {
+        gpsFixAgeSec = rawAge.inSeconds;
+      }
+    }
     final pos = cachedPosition != null && _fresh(cachedPosition.timestamp, now)
         ? cachedPosition
         : null;
@@ -312,6 +361,10 @@ class IodSensorAcquisitionService {
       bleBeaconCount: _latestBleScan?.count,
       bleFingerprint: _latestBleScan?.fingerprint,
       stepDelta: _stepDeltaSinceLastEpoch,
+      hasBarometer: pressureHpa != null,
+      pressureHpa: pressureHpa,
+      pressureDelta10sHpa: pressureDelta10sHpa,
+      gpsFixAgeSeconds: gpsFixAgeSec,
       isNightTime: isNight,
     );
   }
@@ -343,6 +396,12 @@ class IodSensorAcquisitionService {
     }
 
     final snapshot = snapshotNow();
+    if (snapshot.pressureHpa != null) {
+      _pressureEpochHistory.addLast(snapshot.pressureHpa!);
+      while (_pressureEpochHistory.length > 10) {
+        _pressureEpochHistory.removeFirst();
+      }
+    }
     _snapshotController.add(snapshot);
 
     // Reset intra-epoch accumulators for next 1s window
@@ -350,6 +409,7 @@ class IodSensorAcquisitionService {
     _gyroMagnitudes.clear();
     _magMagnitudes.clear();
     _recentLuxReadings.clear();
+    _recentPressuresHpa.clear();
     _stepDeltaSinceLastEpoch = 0;
   }
 

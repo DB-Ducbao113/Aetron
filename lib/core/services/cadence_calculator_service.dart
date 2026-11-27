@@ -15,7 +15,14 @@ class _StepTimestampEntry {
 }
 
 /// Service that computes instantaneous and average cadence according to
-/// biomechanical research standards (steps/min = steps in interval * 60 / duration in seconds).
+/// standard biomechanical definition (`steps/min = steps * 60 / duration_sec`).
+///
+/// Provenance (per SDD-05 audit):
+/// - Formula `steps * 60 / dt` is a standard mathematical definition.
+/// - `windowDuration = 6s`, `inactivityTimeout = 4s`, `kMinWindowDurationSec = 1.5s`,
+///   and `kMaxCadenceSpm = 270.0` are Aetron engineering parameters, verified by
+///   window ablation on PedEval (N=90), OxWalk (N=39), and Oxford (2,347 windows:
+///   11.20 spm MAE vs 15.55–23.45 spm for step-interval median).
 class CadenceCalculatorService {
   /// Window duration for instantaneous cadence calculation (default 6 seconds).
   final Duration windowDuration;
